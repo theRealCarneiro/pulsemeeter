@@ -444,7 +444,7 @@ def cmd(command):
 def get_config_path(glade=False):
     config_path = os.getenv('XDG_CONFIG_HOME')
     if config_path == None:
-        config_path = os.environ('HOME')
+        config_path = os.getenv('HOME')
         config_path = os.path.join(config_path,'.config')
     config_path = os.path.join(config_path,'pulsemeeter')
     Path(config_path).mkdir(parents=True, exist_ok=True)
