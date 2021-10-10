@@ -36,9 +36,11 @@ class MainWindow(Gtk.Window):
         
         gladefile = get_config_path(True)
         if not os.path.exists(gladefile):
-            gladefile = '/usr/local/share/pulsemeeter/Interface.glade'
+            gladefile = '/usr/local/share/doc/pulsemeeter/Interface.glade'
             if not os.path.exists(gladefile):
-                gladefile = '/usr/share/pulsemeeter/Interface.glade'
+                gladefile = '/usr/share/doc/pulsemeeter/Interface.glade'
+                if not os.path.exists(gladefile):
+                    gladefile = 'Interface.glade'
 
         try:
             self.builder.add_objects_from_file(
