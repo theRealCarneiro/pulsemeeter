@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Pulsemeeter
+GenericName=Audio Mixer
+Exec=pulsemeeter
