@@ -84,6 +84,19 @@ get (){
 
 }
 
+list (){
+	if [ "$1" = 'sinks' ]; then
+		list=$(pacmd list-sinks | awk '/name:/ {print $0} /driver:/ {print $0} /device.description/ {print $0};' | sed 's/.*<//g; s/>//; s/.*= //g; s/"//g' | sed ':a;N;s/\n/&/1;Ta;/null/!{P;D};:b;N;s/\n/&/2;Tb;d' | sed '/module/d')
+	else
+		list=$(pacmd list-sources | awk '/name:/ {print $0} /driver:/ {print $0} /device.description/ {print $0};' | sed 's/.*<//g; s/>//; s/.*= //g; s/"//g' | sed ':a;N;s/\n/&/1;Ta;/null/!{P;D};:b;N;s/\n/&/2;Tb;d' | sed ':a;N;s/\n/&/1;Ta;/remap/!{P;D};:b;N;s/\n/&/2;Tb;d' | sed '/module/d; /Monitor/d; /monitor/d')
+	fi
+	echo "$list"
+	#for i in $list; do
+		#echo $i
+	#done
+	#pactl list $1 short | awk '/alsa-card/{print $2}'
+}
+
 case $1 in
 	"init")
 		init $2 $3
@@ -102,6 +115,9 @@ case $1 in
 	;;
 	"get")
 		get $2 $3 $4
+	;;
+	"list")
+		list $2
 	;;
 	"*") echo "command not found";;
 esac

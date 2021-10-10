@@ -1,0 +1,94 @@
+{
+	"a": {
+		"1": {
+			"name": "alsa_output.usb-Behringer_BCD3000-00.analog-surround-40",
+			"vol": 100
+		},
+		"2": {
+			"name": "",
+			"vol": 100
+		},
+		"3": {
+			"name": "",
+			"vol": 100
+		}
+	},
+	"b": {
+		"1": {
+			"name": "Mic",
+			"vol": 100
+		},
+		"2": {
+			"name": "Mic_Aux",
+			"vol": 100
+		},
+		"3": {
+			"name": "Mic_Aux_2",
+			"vol": 100
+		}
+	},
+	"vi": {
+		"1": {
+			"name": "Virtual_Sink",
+			"a1": false,
+			"a2": false,
+			"a3": false,
+			"b1": false,
+			"b2": false,
+			"b3": false,
+			"vol": 100
+		},
+		"2": {
+			"name": "Virtual_Sink_Aux",
+			"a1": false,
+			"a2": false,
+			"a3": false,
+			"b1": false,
+			"b2": false,
+			"b3": false,
+			"vol": 100
+		},
+		"3": {
+			"name": "Virtual_Sink_Aux_2",
+			"a1": false,
+			"a2": false,
+			"a3": false,
+			"b1": false,
+			"b2": false,
+			"b3": false,
+			"vol": 100
+		}
+	},
+	"hi": {
+		"1": {
+			"name": "",
+			"a1": false,
+			"a2": false,
+			"a3": false,
+			"b1": false,
+			"b2": false,
+			"b3": false,
+			"vol": 100
+		},
+		"2": {
+			"name": "",
+			"a1": false,
+			"a2": false,
+			"a3": false,
+			"b1": false,
+			"b2": false,
+			"b3": false,
+			"vol": 100
+		},
+		"3": {
+			"name": "",
+			"a1": false,
+			"a2": false,
+			"a3": false,
+			"b1": false,
+			"b2": false,
+			"b3": false,
+			"vol": 100
+		}
+	}
+}
