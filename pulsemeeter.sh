@@ -1,47 +1,28 @@
-#!/bin/sh
-
-ho="$(iniparser hardware_output $HOME/Bibliotecas/Projects/pulsemeeter/config.ini)"
-hon="$(echo "$ho" | wc -l)"
-eval $ho
-
-hi="$(iniparser hardware_input $HOME/Bibliotecas/Projects/pulsemeeter/config.ini)"
-hin="$(echo "$hi" | wc -l)"
-eval $hi
-
-vi="$(iniparser virtual_input $HOME/Bibliotecas/Projects/pulsemeeter/config.ini)"
-vin="$(echo "$vi" | wc -l)"
-eval $vi
-
-vo="$(iniparser virtual_output $HOME/Bibliotecas/Projects/pulsemeeter/config.ini)"
-von="$(echo "$vo" | wc -l)"
-eval $vo
-
+#!/bin/env bash
 
 init (){
-	for i in $(seq 1 $vin); do
-		eval "j="\$vi$i""
-		if ! get sink vi$i >/dev/null; then
-			pactl load-module module-null-sink sink_name=$j sink_properties="device.description="$j""
-			pacmd update-sink-proplist $j device.description=$j
-		fi
-	done
-
-	for i in $(seq 1 $von); do
-		eval "j="\$b$i""
-		if ! get "source" b$i >/dev/null; then
-			pactl load-module module-null-sink sink_name=$j"_sink"
-			pacmd update-sink-proplist $j"_sink" device.description=$j"_sink"
-			pactl load-module module-remap-source source_name=$j master=$j"_sink.monitor"
-			pacmd update-source-proplist $j device.description=$j
-		fi
-	done
+	case $1 in
+		"sink")
+			sink=$2
+			pactl list sinks short | grep $sink && exit
+			pactl load-module module-null-sink sink_name=$sink sink_properties="device.description="$sink""
+			pacmd update-sink-proplist $sink device.description=$sink
+		;;
+		"source")
+			source=$2
+			pactl list sources short | grep $source && exit
+			pactl load-module module-null-sink sink_name=$source"_sink"
+			pacmd update-sink-proplist $source"_sink" device.description=$source"_sink"
+			pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor"
+			pacmd update-source-proplist $source device.description=$source
+		;;
+	esac
+	
 }
 
-
 connect (){
-
-	eval "vi="\$$1""
-	eval "ho="\$$2""
+	vi=$1
+	ho=$2
 
 	[ -z "$vi" -o -z "$ho" ] && exit
 	pacmd list-modules | grep -B 2 "$ho source=$vi" >/dev/null || \
@@ -49,8 +30,8 @@ connect (){
 }
 
 disconnect (){
-	eval "vi="\$$1""
-	eval "ho="\$$2""
+	vi=$1
+	ho=$2
 
 	[ -z "$vi" -o -z "$ho" ] && exit
 	index="$(pacmd list-modules | grep -B 2 "$ho source=$vi" | grep index | sed 's/[^0-9]*//g')"
@@ -58,29 +39,45 @@ disconnect (){
 }
 
 remove (){
-	eval "vi="\$$1""
-	eval "ho="\$$2""
+	vi=$1
+
 	index="$(pacmd list-modules | grep -B 2 "$vi>" | grep index | sed 's/[^0-9]*//g')"
 	[ -z $index ] || pactl unload-module $index
 }
 
 volume (){
-	eval "vi="\$$2""
+	vi=$2
 	[ -z $vi ] && exit
 	pactl set-$1-volume $vi $3%
 }
 
 get (){
 		eval "j="\$$2""
-		[ -z $j ] && exit
-		if [ "$1" = "sink" ]; then
-			aux=$(pacmd list-sinks | grep -A 40 $j | grep alsa.card.name | sed 's/.*= //g; s/"//g')
-		else
-			aux=$(pacmd list-sources | grep -A 37 $j | grep alsa.card_name | sed 's/.*= //g; s/"//g')
-		fi
+		[ "$1" = "vol" ] && [ -z $j ] && echo 0
+		[ -z $j ] &&  return
+		case $1 in
+			"sink")
+				aux=$(pacmd list-sinks | grep -A 50 $j | grep alsa.card.name | sed 's/.*= //g; s/"//g')
+			;;
+			"virtual_sink")
+				aux=$(pacmd list-sinks | grep $j >/dev/null && echo $j)
+			;;
+			"src")
+				aux=$(pacmd list-sources | grep -A 37 $j | grep alsa.card_name | sed 's/.*= //g; s/"//g')
+			;;
+			"virtual_src")
+				aux=$(pacmd list-sources | grep $j >/dev/null && echo $j)
+			;;
+			"vol")
+				aux=$(pactl list $3 | grep -A 7 $j | tr ' ' '\n' | grep -m1 '%' | tr -d '%')
+				[ -z $aux ]
+				echo $aux
+				exit
+			;;
+		esac
 
 		if [ -z "$aux" ]; then 
-			eval "echo "\$$2""
+			[ -z $3 ] && eval "echo "\$$2""
 		else
 			echo $aux
 		fi
@@ -89,7 +86,7 @@ get (){
 
 case $1 in
 	"init")
-		init
+		init $2 $3
 	;;
 	"connect") 
 		connect $2 $3 $4
@@ -104,7 +101,7 @@ case $1 in
 		volume $2 $3 $4
 	;;
 	"get")
-		get $2 $3
+		get $2 $3 $4
 	;;
 	"*") echo "command not found";;
 esac
