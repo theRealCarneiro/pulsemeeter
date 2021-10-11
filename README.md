@@ -1,6 +1,9 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
+![](https://i.imgur.com/iiX8btV.png)
+
+
 ## Features
  - Create virtual inputs and outputs
  - Route audio from one device to another
