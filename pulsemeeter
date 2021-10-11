@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import shutil
 import os
 import json
 import re
@@ -27,9 +28,48 @@ class Pulse:
                     source = config['b'][str(i)]['name']
                     os.popen(f"pmctl init source {source}")
 
+
+    def reconnect(self, config, device, number):
+        sink_sufix = '' if device == 'hi' else '.monitor'
+        for output in ['a1','a2','a3','b1','b3','b3']:
+            dev = list(output)
+            sink_index = [device, str(number), 'name']
+            source_index = [dev[0], dev[1], 'name']
+            source_sufix = '_sink' if list(output)[0] == 'b' else ''
+            if config[device][str(number)][output] == True:
+                self.connect(config, "connect", source_index, sink_index, sink_sufix, source_sufix)
+
+        
+
+    def connect(self, config, state, source_index, sink_index, sink_sufix='', source_sufix=''):
+        source = config[source_index[0]][source_index[1]][source_index[2]]
+        sink = config[sink_index[0]][sink_index[1]][sink_index[2]]
+        if (source == '' or sink == ''):
+            return
+        command = f"pmctl {state} {sink}{sink_sufix} {source}{source_sufix}"
+        # print(command)
+        os.popen(command)
+
+    def volume(self, name, sink, val):
+        if (name == '' or sink == ''):
+            return
+        command = f"pmctl volume {name} {sink} {val}"
+        # print(command)
+        os.popen(command)
+
+    def get_hardware_devices(self, kind):
+        command = f"pmctl list {kind}"
+        devices = cmd(command).split('\n')
+        devices_concat = []
+        for i in range(0, len(devices)-1, 2):
+            devices_concat.append([devices[i], devices[i + 1]])
+        return devices_concat
+    
+
+
 class MainWindow(Gtk.Window):
 
-    def __init__(self, config):
+    def __init__(self, config, pulse):
         self.config = config
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
@@ -41,11 +81,17 @@ class MainWindow(Gtk.Window):
                 gladefile = '/usr/share/doc/pulsemeeter/Interface.glade'
                 if not os.path.exists(gladefile):
                     gladefile = 'Interface.glade'
+                else:
+                    shutil.copy(gladefile, get_config_path(True))
+            else:
+                shutil.copy(gladefile, get_config_path(True))
 
         try:
             self.builder.add_objects_from_file(
                 gladefile,
                 [
+                    'Popover',
+                    'Popover_Entry',
                     'A1_Combobox',
                     'A2_Combobox',
                     'A3_Combobox',
@@ -80,6 +126,7 @@ class MainWindow(Gtk.Window):
                     'Hardware_Input_3_B3',
 
                     'Virtual_Input_1_Label',
+                    'Virtual_Input_1_Label_Event_Box',
                     'Virtual_Input_1_Adjust',
                     'Virtual_Input_1_A1',
                     'Virtual_Input_1_A2',
@@ -89,6 +136,7 @@ class MainWindow(Gtk.Window):
                     'Virtual_Input_1_B3',
 
                     'Virtual_Input_2_Label',
+                    'Virtual_Input_2_Label_Event_Box',
                     'Virtual_Input_2_Adjust',
                     'Virtual_Input_2_A1',
                     'Virtual_Input_2_A2',
@@ -98,6 +146,7 @@ class MainWindow(Gtk.Window):
                     'Virtual_Input_2_B3',
 
                     'Virtual_Input_3_Label',
+                    'Virtual_Input_3_Label_Event_Box',
                     'Virtual_Input_3_Adjust',
                     'Virtual_Input_3_A1',
                     'Virtual_Input_3_A2',
@@ -119,92 +168,64 @@ class MainWindow(Gtk.Window):
             print('\\nError building main window!\\n{}'.format(ex))
             sys.exit(1)
 
+        self.pulse = pulse
+
         self.src_list = Gtk.ListStore(str)
-        self.src_concat = self.get_hardware_devices("sources")
-        self.src_list.append("")
-        for device in self.src_concat:
-            self.src_list.append([device[1]])
+        self.src_concat = self.pulse.get_hardware_devices("sources")
 
         self.Hardware_Input_1_Combobox = self.builder.get_object('Hardware_Input_1_Combobox')
         self.Hardware_Input_2_Combobox = self.builder.get_object('Hardware_Input_2_Combobox')
         self.Hardware_Input_3_Combobox = self.builder.get_object('Hardware_Input_3_Combobox')
-
+        
         self.Hardware_Input_1_Combobox.append_text("")
-        for device in self.src_concat:
-            self.Hardware_Input_1_Combobox.append_text(device[1])
-        index = -1
-        for i in range(0, len(self.src_concat)):
-            if self.src_concat[i][0] == self.config['hi']['1']['name']:
-                index = i
-                break;
-        self.Hardware_Input_1_Combobox.set_active(index + 1)
-        self.Hardware_Input_1_Combobox.connect("changed", self.on_combo_changed, ['hi','1'], self.src_concat)
-
-
         self.Hardware_Input_2_Combobox.append_text("")
-        for device in self.src_concat:
-            self.Hardware_Input_2_Combobox.append_text(device[1])
-        index = -1
-        for i in range(0, len(self.src_concat)):
-            if self.src_concat[i][0] == self.config['hi']['2']['name']:
-                index = i
-                break;
-        self.Hardware_Input_2_Combobox.set_active(index + 1)
-        self.Hardware_Input_2_Combobox.connect("changed", self.on_combo_changed, ['hi','2'], self.src_concat)
-
         self.Hardware_Input_3_Combobox.append_text("")
         for device in self.src_concat:
+            self.Hardware_Input_1_Combobox.append_text(device[1])
+            self.Hardware_Input_2_Combobox.append_text(device[1])
             self.Hardware_Input_3_Combobox.append_text(device[1])
-        index = -1
-        for i in range(0, len(self.src_concat)):
-            if self.src_concat[i][0] == self.config['hi']['3']['name']:
-                index = i
-                break;
-        self.Hardware_Input_3_Combobox.set_active(index + 1)
+
+        index = [-1, -1, -1]
+        for j in range(1, 4):
+            for i in range(0, len(self.src_concat)):
+                if self.src_concat[i][0] == self.config['hi'][str(j)]['name']:
+                    index[j - 1] = i + 1
+                    break;
+
+        self.Hardware_Input_1_Combobox.set_active(index[0])
+        self.Hardware_Input_2_Combobox.set_active(index[1])
+        self.Hardware_Input_3_Combobox.set_active(index[2])
+        self.Hardware_Input_1_Combobox.connect("changed", self.on_combo_changed, ['hi','1'], self.src_concat)
+        self.Hardware_Input_2_Combobox.connect("changed", self.on_combo_changed, ['hi','2'], self.src_concat)
         self.Hardware_Input_3_Combobox.connect("changed", self.on_combo_changed, ['hi','3'], self.src_concat)
 
         self.device_list = Gtk.ListStore(str)
-        self.devices_concat = self.get_hardware_devices("sinks")
-        self.device_list.append("")
-        for device in self.devices_concat:
-            self.device_list.append([device[1]])
+        self.devices_concat = self.pulse.get_hardware_devices("sinks")
 
         self.A1_Combobox = self.builder.get_object('A1_Combobox')
-        self.A1_Combobox.append_text("")
-        for device in self.devices_concat:
-            self.A1_Combobox.append_text(device[1])
-        index = -1
-        for i in range(0, len(self.devices_concat)):
-            if self.devices_concat[i][0] == self.config['a']['1']['name']:
-                index = i
-                break;
-        self.A1_Combobox.set_active(index + 1)
-        self.A1_Combobox.connect("changed", self.on_combo_changed, ['a','1'], self.devices_concat)
-
         self.A2_Combobox = self.builder.get_object('A2_Combobox')
-        self.A2_Combobox.append_text("")
-        for device in self.devices_concat:
-            self.A2_Combobox.append_text(device[1])
-
-        index = -1
-        for i in range(0, len(self.devices_concat)):
-            if self.devices_concat[i][0] == self.config['a']['2']['name']:
-                index = i
-                break;
-        self.A2_Combobox.set_active(index + 1)
-        self.A2_Combobox.connect("changed", self.on_combo_changed, ['a','2'], self.devices_concat)
-
         self.A3_Combobox = self.builder.get_object('A3_Combobox')
+
+        self.A1_Combobox.append_text("")
+        self.A2_Combobox.append_text("")
         self.A3_Combobox.append_text("")
         for device in self.devices_concat:
+            self.A1_Combobox.append_text(device[1])
+            self.A2_Combobox.append_text(device[1])
             self.A3_Combobox.append_text(device[1])
-        index = -1
-        for i in range(0, len(self.devices_concat)):
-            if self.devices_concat[i][0] == self.config['a']['3']['name']:
-                index = i
-                break;
 
-        self.A3_Combobox.set_active(index + 1)
+        index = [-1, -1, -1]
+        for j in range(1, 4):
+            for i in range(0, len(self.devices_concat)):
+                if self.devices_concat[i][0] == self.config['a'][str(j)]['name']:
+                    index[j - 1] = i + 1
+                    break;
+
+        self.A1_Combobox.set_active(index[0])
+        self.A2_Combobox.set_active(index[1])
+        self.A3_Combobox.set_active(index[2])
+        self.A1_Combobox.connect("changed", self.on_combo_changed, ['a','1'], self.devices_concat)
+        self.A2_Combobox.connect("changed", self.on_combo_changed, ['a','2'], self.devices_concat)
         self.A3_Combobox.connect("changed", self.on_combo_changed, ['a','3'], self.devices_concat)
 
         self.Hardware_Input_1_Label = self.builder.get_object('Hardware_Input_1_Label')
@@ -218,18 +239,18 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_1_B1 = self.builder.get_object('Hardware_Input_1_B1')
         self.Hardware_Input_1_B2 = self.builder.get_object('Hardware_Input_1_B2')
         self.Hardware_Input_1_B3 = self.builder.get_object('Hardware_Input_1_B3')
-        self.Hardware_Input_1_A1.set_active(self.config['hi']['1']['a1'])
-        self.Hardware_Input_1_A2.set_active(self.config['hi']['1']['a2'])
-        self.Hardware_Input_1_A3.set_active(self.config['hi']['1']['a3'])
-        self.Hardware_Input_1_B1.set_active(self.config['hi']['1']['b1'])
-        self.Hardware_Input_1_B2.set_active(self.config['hi']['1']['b2'])
-        self.Hardware_Input_1_B3.set_active(self.config['hi']['1']['b3'])
         self.Hardware_Input_1_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['hi', '1', 'name'], ['a1','hi','1'])
         self.Hardware_Input_1_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['hi', '1', 'name'], ['a2','hi','1'])
         self.Hardware_Input_1_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['hi', '1', 'name'], ['a3','hi','1'])
         self.Hardware_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['hi', '1', 'name'], ['b1','hi','1'], "", "_sink")
         self.Hardware_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['hi', '1', 'name'], ['b2','hi','1'], "", "_sink")
         self.Hardware_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['hi', '1', 'name'], ['b3','hi','1'], "", "_sink")
+        self.Hardware_Input_1_A1.set_active(self.config['hi']['1']['a1'])
+        self.Hardware_Input_1_A2.set_active(self.config['hi']['1']['a2'])
+        self.Hardware_Input_1_A3.set_active(self.config['hi']['1']['a3'])
+        self.Hardware_Input_1_B1.set_active(self.config['hi']['1']['b1'])
+        self.Hardware_Input_1_B2.set_active(self.config['hi']['1']['b2'])
+        self.Hardware_Input_1_B3.set_active(self.config['hi']['1']['b3'])
 
         self.Hardware_Input_2_Label = self.builder.get_object('Hardware_Input_2')
         self.Hardware_Input_2_Adjust = self.builder.get_object('Hardware_Input_2_Adjust')
@@ -241,18 +262,18 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_2_B1 = self.builder.get_object('Hardware_Input_2_B1')
         self.Hardware_Input_2_B2 = self.builder.get_object('Hardware_Input_2_B2')
         self.Hardware_Input_2_B3 = self.builder.get_object('Hardware_Input_2_B3')
-        self.Hardware_Input_2_A1.set_active(self.config['hi']['2']['a1'])
-        self.Hardware_Input_2_A2.set_active(self.config['hi']['2']['a2'])
-        self.Hardware_Input_2_A3.set_active(self.config['hi']['2']['a3'])
-        self.Hardware_Input_2_B1.set_active(self.config['hi']['2']['b1'])
-        self.Hardware_Input_2_B2.set_active(self.config['hi']['2']['b2'])
-        self.Hardware_Input_2_B3.set_active(self.config['hi']['2']['b3'])
         self.Hardware_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['hi', '2', 'name'], ['a1','hi','2'])
         self.Hardware_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['hi', '2', 'name'], ['a2','hi','2'])
         self.Hardware_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['hi', '2', 'name'], ['a3','hi','2'])
         self.Hardware_Input_2_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['hi', '2', 'name'], ['b1','hi','2'], "", "_sink")
         self.Hardware_Input_2_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['hi', '2', 'name'], ['b2','hi','2'], "", "_sink")
         self.Hardware_Input_2_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['hi', '2', 'name'], ['b3','hi','2'], "", "_sink")
+        self.Hardware_Input_2_A1.set_active(self.config['hi']['2']['a1'])
+        self.Hardware_Input_2_A2.set_active(self.config['hi']['2']['a2'])
+        self.Hardware_Input_2_A3.set_active(self.config['hi']['2']['a3'])
+        self.Hardware_Input_2_B1.set_active(self.config['hi']['2']['b1'])
+        self.Hardware_Input_2_B2.set_active(self.config['hi']['2']['b2'])
+        self.Hardware_Input_2_B3.set_active(self.config['hi']['2']['b3'])
 
         self.Hardware_Input_3_Label = self.builder.get_object('Hardware_Input_3')
         self.Hardware_Input_3_Adjust = self.builder.get_object('Hardware_Input_3_Adjust')
@@ -264,58 +285,70 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_3_B1 = self.builder.get_object('Hardware_Input_3_B1')
         self.Hardware_Input_3_B2 = self.builder.get_object('Hardware_Input_3_B2')
         self.Hardware_Input_3_B3 = self.builder.get_object('Hardware_Input_3_B3')
-        self.Hardware_Input_3_A1.set_active(self.config['hi']['3']['a1'])
-        self.Hardware_Input_3_A2.set_active(self.config['hi']['3']['a2'])
-        self.Hardware_Input_3_A3.set_active(self.config['hi']['3']['a3'])
-        self.Hardware_Input_3_B1.set_active(self.config['hi']['3']['b1'])
-        self.Hardware_Input_3_B2.set_active(self.config['hi']['3']['b2'])
-        self.Hardware_Input_3_B3.set_active(self.config['hi']['3']['b3'])
         self.Hardware_Input_3_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['hi', '3', 'name'], ['a1','hi','3'])
         self.Hardware_Input_3_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['hi', '3', 'name'], ['a2','hi','3'])
         self.Hardware_Input_3_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['hi', '3', 'name'], ['a3','hi','3'])
         self.Hardware_Input_3_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['hi', '3', 'name'], ['b1','hi','3'], "", "_sink")
         self.Hardware_Input_3_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['hi', '3', 'name'], ['b2','hi','3'], "", "_sink")
         self.Hardware_Input_3_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['hi', '3', 'name'], ['b3','hi','3'], "", "_sink")
+        self.Hardware_Input_3_A1.set_active(self.config['hi']['3']['a1'])
+        self.Hardware_Input_3_A2.set_active(self.config['hi']['3']['a2'])
+        self.Hardware_Input_3_A3.set_active(self.config['hi']['3']['a3'])
+        self.Hardware_Input_3_B1.set_active(self.config['hi']['3']['b1'])
+        self.Hardware_Input_3_B2.set_active(self.config['hi']['3']['b2'])
+        self.Hardware_Input_3_B3.set_active(self.config['hi']['3']['b3'])
+
+        self.Popover = self.builder.get_object('Popover')
+        self.Popover_Entry = self.builder.get_object('Popover_Entry')
+        self.Popover_Entry.connect('activate', self.set_popup_entry)
 
         self.Virtual_Input_1_Label = self.builder.get_object('Virtual_Input_1_Label')
-        # self.Virtual_Input_1_Label.set_text(self.get_name('vi1','virtual_sink'))
+        self.Virtual_Input_1_Label_Event_Box = self.builder.get_object('Virtual_Input_1_Label_Event_Box')
+        self.Virtual_Input_1_Label_Event_Box.connect('button_press_event', self.label_click, self.Virtual_Input_1_Label, ['vi', '1', 'name'])
+        self.Virtual_Input_1_Label.set_text(self.config['vi']['1']['name'] if self.config['vi']['1']['name'] != '' else 'Hardware_Input_1')
+
         self.Virtual_Input_1_Adjust = self.builder.get_object('Virtual_Input_1_Adjust')
         self.Virtual_Input_1_Adjust.set_value(self.config['vi']['1']['vol'])
         self.Virtual_Input_1_Adjust.connect('value-changed', self.slider_change, "sink", self.config['vi']['1']['name'], ['vol','vi','1'])
+
         self.Virtual_Input_1_A1 = self.builder.get_object('Virtual_Input_1_A1')
         self.Virtual_Input_1_A2 = self.builder.get_object('Virtual_Input_1_A2')
         self.Virtual_Input_1_A3 = self.builder.get_object('Virtual_Input_1_A3')
         self.Virtual_Input_1_B1 = self.builder.get_object('Virtual_Input_1_B1')
         self.Virtual_Input_1_B2 = self.builder.get_object('Virtual_Input_1_B2')
         self.Virtual_Input_1_B3 = self.builder.get_object('Virtual_Input_1_B3')
-        self.Virtual_Input_1_A1.set_active(self.config['vi']['1']['a1'])
-        self.Virtual_Input_1_A2.set_active(self.config['vi']['1']['a2'])
-        self.Virtual_Input_1_A3.set_active(self.config['vi']['1']['a3'])
-        self.Virtual_Input_1_B1.set_active(self.config['vi']['1']['b1'])
-        self.Virtual_Input_1_B2.set_active(self.config['vi']['1']['b2'])
-        self.Virtual_Input_1_B3.set_active(self.config['vi']['1']['b3'])
         self.Virtual_Input_1_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['vi', '1', 'name'], ['a1','vi','1'], ".monitor")
         self.Virtual_Input_1_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['vi', '1', 'name'], ['a2','vi','1'], ".monitor")
         self.Virtual_Input_1_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['vi', '1', 'name'], ['a3','vi','1'], ".monitor")
         self.Virtual_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['vi', '1', 'name'], ['b1','vi','1'], ".monitor", "_sink")
         self.Virtual_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['vi', '1', 'name'], ['b2','vi','1'], ".monitor", "_sink")
         self.Virtual_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['vi', '1', 'name'], ['b3','vi','1'], ".monitor", "_sink")
+        self.Virtual_Input_1_A1.set_active(self.config['vi']['1']['a1'])
+        self.Virtual_Input_1_A2.set_active(self.config['vi']['1']['a2'])
+        self.Virtual_Input_1_A3.set_active(self.config['vi']['1']['a3'])
+        self.Virtual_Input_1_B1.set_active(self.config['vi']['1']['b1'])
+        self.Virtual_Input_1_B2.set_active(self.config['vi']['1']['b2'])
+        self.Virtual_Input_1_B3.set_active(self.config['vi']['1']['b3'])
         
 
         self.Virtual_Input_2_Label = self.builder.get_object('Virtual_Input_2_Label')
-        # self.Virtual_Input_2_Label.set_text(self.get_name('vi2','virtual_sink'))
+        self.Virtual_Input_2_Label_Event_Box = self.builder.get_object('Virtual_Input_2_Label_Event_Box')
+        self.Virtual_Input_2_Label_Event_Box.connect('button_press_event', self.label_click, self.Virtual_Input_2_Label, ['vi', '2', 'name'])
+        self.Virtual_Input_2_Label.set_text(self.config['vi']['2']['name'] if self.config['vi']['2']['name'] != '' else 'Hardware_Input_2')
+
         self.Virtual_Input_2_Adjust = self.builder.get_object('Virtual_Input_2_Adjust')
         self.Virtual_Input_2_Adjust.set_value(self.config['vi']['2']['vol'])
         self.Virtual_Input_2_Adjust.connect('value-changed', self.slider_change, "sink", self.config['vi']['2']['name'], ['vol','vi','2'])
+
         self.Virtual_Input_2_A1 = self.builder.get_object('Virtual_Input_2_A1')
         self.Virtual_Input_2_A2 = self.builder.get_object('Virtual_Input_2_A2')
         self.Virtual_Input_2_A3 = self.builder.get_object('Virtual_Input_2_A3')
         self.Virtual_Input_2_B1 = self.builder.get_object('Virtual_Input_2_B1')
         self.Virtual_Input_2_B2 = self.builder.get_object('Virtual_Input_2_B2')
         self.Virtual_Input_2_B3 = self.builder.get_object('Virtual_Input_2_B3')
-        self.Virtual_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['vi', '2', 'name'], ['a1','vi','2'], ".monitor", )
-        self.Virtual_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['vi', '2', 'name'], ['a2','vi','2'], ".monitor", )
-        self.Virtual_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['vi', '2', 'name'], ['a3','vi','2'], ".monitor", )
+        self.Virtual_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['vi', '2', 'name'], ['a1','vi','2'], ".monitor")
+        self.Virtual_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['vi', '2', 'name'], ['a2','vi','2'], ".monitor")
+        self.Virtual_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['vi', '2', 'name'], ['a3','vi','2'], ".monitor")
         self.Virtual_Input_2_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['vi', '2', 'name'], ['b1','vi','2'], ".monitor", "_sink")
         self.Virtual_Input_2_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['vi', '2', 'name'], ['b2','vi','2'], ".monitor", "_sink")
         self.Virtual_Input_2_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['vi', '2', 'name'], ['b3','vi','2'], ".monitor", "_sink")
@@ -327,7 +360,9 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_2_B3.set_active(self.config['vi']['2']['b3'])
 
         self.Virtual_Input_3_Label = self.builder.get_object('Virtual_Input_3_Label')
-        # self.Virtual_Input_3_Label.set_text(self.get_name('vi3','virtual_sink'))
+        self.Virtual_Input_3_Label_Event_Box = self.builder.get_object('Virtual_Input_3_Label_Event_Box')
+        self.Virtual_Input_3_Label_Event_Box.connect('button_press_event', self.label_click, self.Virtual_Input_3_Label, ['vi', '3', 'name'])
+        self.Virtual_Input_3_Label.set_text(self.config['vi']['3']['name'] if self.config['vi']['3']['name'] != '' else 'Hardware_Input_3')
         self.Virtual_Input_3_Adjust = self.builder.get_object('Virtual_Input_3_Adjust')
         self.Virtual_Input_3_Adjust.set_value(self.config['vi']['3']['vol'])
         self.Virtual_Input_3_Adjust.connect('value-changed', self.slider_change, "sink", self.config['vi']['3']['name'], ['vol','vi','3'])
@@ -374,7 +409,6 @@ class MainWindow(Gtk.Window):
         self.Master_B3_Adjust.set_value(self.config['b']['3']['vol'])
         self.Master_B3_Adjust.connect('value-changed', self.slider_change, "source", self.config['b']['3']['name'], ['vol','b','3'])
 
-
         self.Window = self.builder.get_object('Window')
 
         self.Window.connect("delete_event", self.delete_event, self.config)
@@ -384,26 +418,39 @@ class MainWindow(Gtk.Window):
         self.builder.connect_signals(self)
         self.Window.show_all()
 
+    def set_popup_entry(self, widget):
+        name = widget.get_text()
+        old_name = self.config[self.Label_Index[0]][self.Label_Index[1]][self.Label_Index[2]]
+        if name == old_name:
+            self.Popover.popdown()
+            widget.set_text('')
+            return
+
+        if old_name != '':
+            os.popen(f'pmctl remove {old_name}')
+
+        os.popen(f'pmctl init sink {name}')
+        self.PopActive.set_text(name)
+        self.Popover.popdown()
+        self.config[self.Label_Index[0]][self.Label_Index[1]][self.Label_Index[2]] = name
+        if name != '':
+            self.pulse.reconnect(self.config, self.Label_Index[0], self.Label_Index[1])
+
+    def label_click(self, widget, event, label, index):
+        self.Label_Index = index
+        self.Popover.set_relative_to(widget)
+        self.Popover.popup()
+        self.PopActive = label
+
     def slider_change(self, slider, name, sink, index):
         val = int(slider.get_value())
         self.config[index[1]][index[2]][index[0]] = val
-        if (name == '' or sink == ''):
-            return
-        command = f"pmctl volume {name} {sink} {val}"
-        print(command)
-        os.popen(command)
+        self.pulse.volume(name, sink, val)
 
     def on_button_toggled(self, button, source_index, sink_index, index, sink_sufix='', source_sufix=''):
         self.config[index[1]][index[2]][index[0]] = button.get_active()
         state = "connect" if button.get_active() else "disconnect"
-        print(source_index[0], source_index[1], source_index[2])
-        source = self.config[source_index[0]][source_index[1]][source_index[2]]
-        sink = self.config[sink_index[0]][sink_index[1]][sink_index[2]]
-        if (source == '' or sink == ''):
-            return
-        command = f"pmctl {state} {sink}{sink_sufix} {source}{source_sufix}"
-        print(command)
-        os.popen(command)
+        self.pulse.connect(self.config, state, source_index, sink_index, sink_sufix, source_sufix)
 
     def delete_event(self, widget, event, donnees=None):
         with open(get_config_path(), 'w') as outfile:
@@ -411,23 +458,13 @@ class MainWindow(Gtk.Window):
         Gtk.main_quit()
         return False
 
-    def get_hardware_devices(self, kind):
-        command = f"pmctl list {kind}"
-        # device_list = Gtk.ListStore(str)
-        devices = cmd(command).split('\n')
-        devices_concat = []
-        for i in range(0, len(devices)-1, 2):
-            devices_concat.append([devices[i], devices[i + 1]])
-        return devices_concat
-    
     def on_combo_changed(self, widget, index, device):
         model = widget.get_active()
-        # print(model)
         if model > 0:
             self.config[index[0]][index[1]]['name'] = device[model - 1][0]
         else:
             self.config[index[0]][index[1]]['name'] = ""
-        print(self.config[index[0]][index[1]]['name'])
+        # print(self.config[index[0]][index[1]]['name'])
 
 def save_config(path):
     with open('config.json', 'w') as outfile:
@@ -467,7 +504,7 @@ def main():
         config = json.load(open(config_file))
     # config = json.load(open('config.json'))
     pulse = Pulse(config)
-    app = MainWindow(config)
+    app = MainWindow(config, pulse)
     return Gtk.main()
 
 

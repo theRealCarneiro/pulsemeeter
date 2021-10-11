@@ -227,17 +227,6 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="Virtual_Input_1_Label">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes"> Virtual Input 1 </property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
                             <property name="name">Vi1_Control_Grid</property>
@@ -405,6 +394,24 @@
                             <property name="height">3</property>
                           </packing>
                         </child>
+                        <child>
+                          <object class="GtkEventBox" id="Virtual_Input_1_Label_Event_Box">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="visible-window">False</property>
+                            <child>
+                              <object class="GtkLabel" id="Virtual_Input_1_Label">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes"> Virtual Input 1 </property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
@@ -419,17 +426,6 @@
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
                         <property name="vexpand">True</property>
-                        <child>
-                          <object class="GtkLabel" id="Virtual_Input_2_Label">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">Virtual Input 2</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
                         <child>
                           <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
@@ -613,6 +609,24 @@
                             <property name="height">3</property>
                           </packing>
                         </child>
+                        <child>
+                          <object class="GtkEventBox" id="Virtual_Input_2_Label_Event_Box">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="visible-window">False</property>
+                            <child>
+                              <object class="GtkLabel" id="Virtual_Input_2_Label">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Virtual Input 2</property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -791,17 +805,6 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="Virtual_Input_3_Label">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">Virtual Input 3</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkSeparator">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -838,6 +841,24 @@
                           <packing>
                             <property name="left-attach">1</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkEventBox" id="Virtual_Input_3_Label_Event_Box">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="visible-window">False</property>
+                            <child>
+                              <object class="GtkLabel" id="Virtual_Input_3_Label">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Virtual Input 3</property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                       </object>
@@ -1818,6 +1839,16 @@
             <property name="position">1</property>
           </packing>
         </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkPopover" id="Popover">
+    <property name="can-focus">False</property>
+    <property name="relative-to">Virtual_Input_1_Label_Event_Box</property>
+    <child>
+      <object class="GtkEntry" id="Popover_Entry">
+        <property name="visible">True</property>
+        <property name="can-focus">True</property>
       </object>
     </child>
   </object>
