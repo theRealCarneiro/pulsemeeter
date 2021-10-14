@@ -30,3 +30,6 @@ sudo make install
 ```sh
 sudo make uninstall
 ```
+
+### Discord Server
+If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)
