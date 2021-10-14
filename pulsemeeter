@@ -750,15 +750,27 @@ def get_config_path(glade=False):
     return config_file
 
 def main():
-    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false}, "2": {"name": "", "vol": 100, "mute": false}, "3": {"name": "", "vol": 100, "mute": false}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}}}'
+    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}}'
+    config_orig = json.loads(config_orig)
     config_file = get_config_path()
     config = None
     if not os.path.isfile(config_file):
-        config = json.loads(config_orig)
+        config = config_orig
         with open(config_file, 'w') as outfile:
             json.dump(config, outfile, indent='\t', separators=(',', ': '))
     else:
         config = json.load(open(config_file))
+        changed = False
+        for i in ['a', 'b', 'vi', 'hi']:
+            for j in range(1, 4):
+                for k in config_orig[i][str(j)]:
+                    if not k in config[i][str(j)]:
+                        print(k)
+                        changed = True
+                        config[i][str(j)][k] = config_orig[i][str(j)][k]
+        if changed == True:
+            with open(config_file, 'w') as outfile:
+                json.dump(config, outfile, indent='\t', separators=(',', ': '))
     # config = json.load(open('config.json'))
     pulse = Pulse(config)
     if len(sys.argv) > 1 and sys.argv[1] == 'init':
