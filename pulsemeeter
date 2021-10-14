@@ -41,12 +41,8 @@ class Pulse:
 
         
 
-    def connect(self, config, state, source_index, sink_index, sink_sufix='', source_sufix=''):
-        source = config[source_index[0]][source_index[1]][source_index[2]]
-        sink = config[sink_index[0]][sink_index[1]][sink_index[2]]
-        if (source == '' or sink == ''):
-            return
-        command = f"pmctl {state} {sink}{sink_sufix} {source}{source_sufix}"
+    def connect(self, config, state, sink, source):
+        command = f"pmctl {state} {source} {sink}"
         # print(command)
         os.popen(command)
 
@@ -64,7 +60,156 @@ class Pulse:
         for i in range(0, len(devices)-1, 2):
             devices_concat.append([devices[i], devices[i + 1]])
         return devices_concat
+
+    def mute(self, name, device, state):
+        command = f"pmctl mute {device} {name} {state}"
+        os.popen(command)
+
+    def apply_eq(self, config, index, name, control, status=''):
+        master = config[index[0]][index[1]]['name']
+
+        config[index[0]][index[1]]['eq_control'] = control
+
+        if not 'eq_name' in config[index[0]][index[1]]:
+            config[index[0]][index[1]]['eq_name'] = name
+        if index[0] == 'b':
+            master = master + "_sink"
+        command = f'pmctl eq {name} {master} {control}\n'
+        if status != 'init':
+            output = index[0] + index[1]
+            for i in ['hi', 'vi']:
+                for j in range (1, 4):
+                    if config[i][str(j)][output] == True:
+                        vi = config[i][str(j)]['name']
+                        command = command + f'pmctl disconnect {vi} {master}\n'
+                        if i == 'vi':
+                            vi = vi + '.monitor'
+                        command = command + f'pmctl connect {vi} {name}\n'
+        # print(command)
+        os.popen(command)
+
+    def remove_eq(self, config, master, name, output):
+        command = f'pmctl eq {name} remove\n'
+
+        for i in ['hi', 'vi']:
+            for j in range (1, 4):
+                if config[i][str(j)][output] == True:
+                    vi = config[i][str(j)]['name']
+                    if i == 'vi':
+                        vi = vi + '.monitor'
+                    elif list(output)[0] == 'b':
+                        master = master + '_sink'
+                    command = command + f'pmctl connect {vi} {master}\n'
+
+        print(command)
+        os.popen(command)
     
+
+class EqPopover():
+
+    def __init__(self, button, config, pulse, gladefile, index, name):
+
+        self.config = config
+        # Gtk.Window.__init__(self)
+        self.builder = Gtk.Builder()
+        self.pulse = pulse
+
+        try:
+            self.builder.add_objects_from_file(
+                gladefile,
+                [
+                    'EQ_Popup',
+                    'EQ_50_hz_Adjust',
+                    'EQ_100_hz_Adjust',
+                    'EQ_156_hz_Adjust',
+                    'EQ_220_hz_Adjust',
+                    'EQ_311_hz_Adjust',
+                    'EQ_440_hz_Adjust',
+                    'EQ_622_hz_Adjust',
+                    'EQ_880_hz_Adjust',
+                    'EQ_1_25_khz_Adjust',
+                    'EQ_1_75_khz_Adjust',
+                    'EQ_2_5_khz_Adjust',
+                    'EQ_3_5_khz_Adjust',
+                    'EQ_5_khz_Adjust',
+                    'EQ_10_khz_Adjust',
+                    'EQ_20_khz_Adjust',
+                    'Apply_EQ_Button',
+                    'Reset_EQ_Button',
+                    'Disable_EQ_Button'
+                ]
+            )
+        except Exception as ex:
+            print('Error building main window!\n{}'.format(ex))
+            sys.exit(1)
+
+
+        self.eq = []
+        self.eq.append(self.builder.get_object('EQ_50_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_100_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_156_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_220_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_311_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_440_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_622_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_880_hz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_1_25_khz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_1_75_khz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_2_5_khz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_3_5_khz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_5_khz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_10_khz_Adjust'))
+        self.eq.append(self.builder.get_object('EQ_20_khz_Adjust'))
+        self.Apply_EQ_Button = self.builder.get_object('Apply_EQ_Button')
+        self.Reset_EQ_Button = self.builder.get_object('Reset_EQ_Button')
+        self.Disable_EQ_Button = self.builder.get_object('Disable_EQ_Button')
+
+        # for i in self.eq:
+            # i.connect('event', self.reset_value)
+        control = self.config[index[0]][index[1]]['eq_control'] if 'eq_control' in self.config[index[0]][index[1]] else ''
+        # control = self.config[index[0]][index[1]]['eq_control']
+        j = 0
+        if control != '':
+            for i in control.split(','):
+                self.eq[j].set_value(float(i))
+                j = j + 1
+
+        self.Apply_EQ_Button.connect('pressed', self.apply_eq, index, name)
+        self.Reset_EQ_Button.connect('pressed', self.reset_eq)
+        self.Disable_EQ_Button.connect('pressed', self.disable_eq, index, name)
+
+        self.EQ_Popup = self.builder.get_object('EQ_Popup')
+
+        self.EQ_Popup.set_relative_to(button)
+        self.EQ_Popup.popup()
+
+        self.builder.connect_signals(self)
+
+    def apply_eq(self, widget, index, name):
+        control=''
+        for i in self.eq:
+            control = control + ',' + str(i.get_value())
+        control = control[1:]
+        self.pulse.apply_eq(self.config, index, name, control)
+
+    def disable_eq(self, widget, index, name):
+        self.config[index[0]][index[1]]['eq_control'] = ''
+        master = self.config[index[0]][index[1]]['name']
+        output = index[0] + index[1]
+
+        self.pulse.remove_eq(self.config, master, name, output)
+
+    def reset_eq(self, widget):
+        for i in self.eq:
+            i.set_value(0)
+
+    def reset_value(self, widget, event):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            widget.set_value(0)
+
+    def delete_event(self, widget, event, donnees=None):
+        pass
+
 
 
 class MainWindow(Gtk.Window):
@@ -85,6 +230,7 @@ class MainWindow(Gtk.Window):
                     shutil.copy(gladefile, get_config_path(True))
             else:
                 shutil.copy(gladefile, get_config_path(True))
+        self.gladefile = gladefile
 
         try:
             self.builder.add_objects_from_file(
@@ -95,6 +241,8 @@ class MainWindow(Gtk.Window):
                     'A1_Combobox',
                     'A2_Combobox',
                     'A3_Combobox',
+                    'Hardware_Input_Popover',
+
                     'Hardware_Input_1_Combobox',
                     'Hardware_Input_2_Combobox',
                     'Hardware_Input_3_Combobox',
@@ -107,7 +255,6 @@ class MainWindow(Gtk.Window):
                     'Hardware_Input_1_B2',
                     'Hardware_Input_1_B3',
 
-                    'Hardware_Input_2_Label',
                     'Hardware_Input_2_Adjust',
                     'Hardware_Input_2_A1',
                     'Hardware_Input_2_A2',
@@ -116,7 +263,6 @@ class MainWindow(Gtk.Window):
                     'Hardware_Input_2_B2',
                     'Hardware_Input_2_B3',
 
-                    'Hardware_Input_3_Label',
                     'Hardware_Input_3_Adjust',
                     'Hardware_Input_3_A1',
                     'Hardware_Input_3_A2',
@@ -125,8 +271,6 @@ class MainWindow(Gtk.Window):
                     'Hardware_Input_3_B2',
                     'Hardware_Input_3_B3',
 
-                    'Virtual_Input_1_Label',
-                    'Virtual_Input_1_Label_Event_Box',
                     'Virtual_Input_1_Adjust',
                     'Virtual_Input_1_A1',
                     'Virtual_Input_1_A2',
@@ -135,8 +279,6 @@ class MainWindow(Gtk.Window):
                     'Virtual_Input_1_B2',
                     'Virtual_Input_1_B3',
 
-                    'Virtual_Input_2_Label',
-                    'Virtual_Input_2_Label_Event_Box',
                     'Virtual_Input_2_Adjust',
                     'Virtual_Input_2_A1',
                     'Virtual_Input_2_A2',
@@ -145,8 +287,6 @@ class MainWindow(Gtk.Window):
                     'Virtual_Input_2_B2',
                     'Virtual_Input_2_B3',
 
-                    'Virtual_Input_3_Label',
-                    'Virtual_Input_3_Label_Event_Box',
                     'Virtual_Input_3_Adjust',
                     'Virtual_Input_3_A1',
                     'Virtual_Input_3_A2',
@@ -155,13 +295,53 @@ class MainWindow(Gtk.Window):
                     'Virtual_Input_3_B2',
                     'Virtual_Input_3_B3',
 
+                    'Mute_A1',
+                    'Mute_A2',
+                    'Mute_A3',
+                    'Mute_B1',
+                    'Mute_B2',
+                    'Mute_B3',
+
+                    'Mono_A1',
+                    'Mono_A2',
+                    'Mono_A3',
+                    'Mono_B1',
+                    'Mono_B2',
+                    'Mono_B3',
+
+                    'EQ_A1',
+                    'EQ_A2',
+                    'EQ_A3',
+                    'EQ_B1',
+                    'EQ_B2',
+                    'EQ_B3',
+
                     'Master_A1_Adjust',
                     'Master_A2_Adjust',
                     'Master_A3_Adjust',
                     'Master_B1_Adjust',
                     'Master_B2_Adjust',
                     'Master_B3_Adjust',
-                    'Window',
+
+                    'EQ_50_hz_Adjust',
+                    'EQ_100_hz_Adjust',
+                    'EQ_156_hz_Adjust',
+                    'EQ_220_hz_Adjust',
+                    'EQ_311_hz_Adjust',
+                    'EQ_440_hz_Adjust',
+                    'EQ_622_hz_Adjust',
+                    'EQ_880_hz_Adjust',
+                    'EQ_1_25_khz_Adjust',
+                    'EQ_1_75_khz_Adjust',
+                    'EQ_2_5_khz_Adjust',
+                    'EQ_3_5_khz_Adjust',
+                    'EQ_5_khz_Adjust',
+                    'EQ_10_khz_Adjust',
+                    'EQ_20_khz_Adjust',
+                    'Apply_EQ_Button',
+                    'EQ_Popup',
+
+                    'Window'
                 ]
             )
         except Exception as ex:
@@ -169,6 +349,11 @@ class MainWindow(Gtk.Window):
             sys.exit(1)
 
         self.pulse = pulse
+
+        for i in ['a','b']:
+            for j in range(1, 4):
+                if 'eq_control' in self.config[i][str(j)] and self.config[i][str(j)]['eq_control'] != '':
+                    self.pulse.apply_eq(self.config, [i, str(j)], self.config[i][str(j)]['eq_name'], self.config[i][str(j)]['eq_control'], 'init')
 
         self.src_list = Gtk.ListStore(str)
         self.src_concat = self.pulse.get_hardware_devices("sources")
@@ -181,9 +366,9 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_2_Combobox.append_text("")
         self.Hardware_Input_3_Combobox.append_text("")
         for device in self.src_concat:
-            self.Hardware_Input_1_Combobox.append_text(device[1])
-            self.Hardware_Input_2_Combobox.append_text(device[1])
-            self.Hardware_Input_3_Combobox.append_text(device[1])
+            self.Hardware_Input_1_Combobox.append_text(device[1][:20] + '...')
+            self.Hardware_Input_2_Combobox.append_text(device[1][:20] + '...')
+            self.Hardware_Input_3_Combobox.append_text(device[1][:20] + '...')
 
         index = [-1, -1, -1]
         for j in range(1, 4):
@@ -228,23 +413,21 @@ class MainWindow(Gtk.Window):
         self.A2_Combobox.connect("changed", self.on_combo_changed, ['a','2'], self.devices_concat)
         self.A3_Combobox.connect("changed", self.on_combo_changed, ['a','3'], self.devices_concat)
 
-        self.Hardware_Input_1_Label = self.builder.get_object('Hardware_Input_1_Label')
-        # self.Hardware_Input_1_Label.set_text(self.get_name('hi1','src'))
         self.Hardware_Input_1_Adjust = self.builder.get_object('Hardware_Input_1_Adjust')
         self.Hardware_Input_1_Adjust.set_value(self.config['hi']['1']['vol'])
-        self.Hardware_Input_1_Adjust.connect('value-changed', self.slider_change, "source", self.config['hi']['1']['name'], ['vol','hi','1'])
+        self.Hardware_Input_1_Adjust.connect('value-changed', self.slider_change, "source", ['hi', '1']) # self.config['hi']['1']['name'], ['vol','hi','1'])
         self.Hardware_Input_1_A1 = self.builder.get_object('Hardware_Input_1_A1')
         self.Hardware_Input_1_A2 = self.builder.get_object('Hardware_Input_1_A2')
         self.Hardware_Input_1_A3 = self.builder.get_object('Hardware_Input_1_A3')
         self.Hardware_Input_1_B1 = self.builder.get_object('Hardware_Input_1_B1')
         self.Hardware_Input_1_B2 = self.builder.get_object('Hardware_Input_1_B2')
         self.Hardware_Input_1_B3 = self.builder.get_object('Hardware_Input_1_B3')
-        self.Hardware_Input_1_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['hi', '1', 'name'], ['a1','hi','1'])
-        self.Hardware_Input_1_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['hi', '1', 'name'], ['a2','hi','1'])
-        self.Hardware_Input_1_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['hi', '1', 'name'], ['a3','hi','1'])
-        self.Hardware_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['hi', '1', 'name'], ['b1','hi','1'], "", "_sink")
-        self.Hardware_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['hi', '1', 'name'], ['b2','hi','1'], "", "_sink")
-        self.Hardware_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['hi', '1', 'name'], ['b3','hi','1'], "", "_sink")
+        self.Hardware_Input_1_A1.connect("toggled", self.on_button_toggled, ['a', '1'], ['hi', '1'])
+        self.Hardware_Input_1_A2.connect("toggled", self.on_button_toggled, ['a', '2'], ['hi', '1'])
+        self.Hardware_Input_1_A3.connect("toggled", self.on_button_toggled, ['a', '3'], ['hi', '1'])
+        self.Hardware_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['hi', '1'])
+        self.Hardware_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['hi', '1'])
+        self.Hardware_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['hi', '1'])
         self.Hardware_Input_1_A1.set_active(self.config['hi']['1']['a1'])
         self.Hardware_Input_1_A2.set_active(self.config['hi']['1']['a2'])
         self.Hardware_Input_1_A3.set_active(self.config['hi']['1']['a3'])
@@ -255,19 +438,19 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_2_Label = self.builder.get_object('Hardware_Input_2')
         self.Hardware_Input_2_Adjust = self.builder.get_object('Hardware_Input_2_Adjust')
         self.Hardware_Input_2_Adjust.set_value(self.config['hi']['2']['vol'])
-        self.Hardware_Input_2_Adjust.connect('value-changed', self.slider_change, "source", self.config['hi']['2']['name'], ['vol','hi','2'])
+        self.Hardware_Input_2_Adjust.connect('value-changed', self.slider_change, "source", ['hi', '2'])
         self.Hardware_Input_2_A1 = self.builder.get_object('Hardware_Input_2_A1')
         self.Hardware_Input_2_A2 = self.builder.get_object('Hardware_Input_2_A2')
         self.Hardware_Input_2_A3 = self.builder.get_object('Hardware_Input_2_A3')
         self.Hardware_Input_2_B1 = self.builder.get_object('Hardware_Input_2_B1')
         self.Hardware_Input_2_B2 = self.builder.get_object('Hardware_Input_2_B2')
         self.Hardware_Input_2_B3 = self.builder.get_object('Hardware_Input_2_B3')
-        self.Hardware_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['hi', '2', 'name'], ['a1','hi','2'])
-        self.Hardware_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['hi', '2', 'name'], ['a2','hi','2'])
-        self.Hardware_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['hi', '2', 'name'], ['a3','hi','2'])
-        self.Hardware_Input_2_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['hi', '2', 'name'], ['b1','hi','2'], "", "_sink")
-        self.Hardware_Input_2_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['hi', '2', 'name'], ['b2','hi','2'], "", "_sink")
-        self.Hardware_Input_2_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['hi', '2', 'name'], ['b3','hi','2'], "", "_sink")
+        self.Hardware_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1'], ['hi', '2'])
+        self.Hardware_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2'], ['hi', '2'])
+        self.Hardware_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3'], ['hi', '2'])
+        self.Hardware_Input_2_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['hi', '2'])
+        self.Hardware_Input_2_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['hi', '2'])
+        self.Hardware_Input_2_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['hi', '2'])
         self.Hardware_Input_2_A1.set_active(self.config['hi']['2']['a1'])
         self.Hardware_Input_2_A2.set_active(self.config['hi']['2']['a2'])
         self.Hardware_Input_2_A3.set_active(self.config['hi']['2']['a3'])
@@ -278,19 +461,19 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_3_Label = self.builder.get_object('Hardware_Input_3')
         self.Hardware_Input_3_Adjust = self.builder.get_object('Hardware_Input_3_Adjust')
         self.Hardware_Input_3_Adjust.set_value(self.config['hi']['3']['vol'])
-        self.Hardware_Input_3_Adjust.connect('value-changed', self.slider_change, "source", self.config['hi']['3']['name'], ['vol','hi','3'])
+        self.Hardware_Input_3_Adjust.connect('value-changed', self.slider_change, "source", ['hi', '3'])
         self.Hardware_Input_3_A1 = self.builder.get_object('Hardware_Input_3_A1')
         self.Hardware_Input_3_A2 = self.builder.get_object('Hardware_Input_3_A2')
         self.Hardware_Input_3_A3 = self.builder.get_object('Hardware_Input_3_A3')
         self.Hardware_Input_3_B1 = self.builder.get_object('Hardware_Input_3_B1')
         self.Hardware_Input_3_B2 = self.builder.get_object('Hardware_Input_3_B2')
         self.Hardware_Input_3_B3 = self.builder.get_object('Hardware_Input_3_B3')
-        self.Hardware_Input_3_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['hi', '3', 'name'], ['a1','hi','3'])
-        self.Hardware_Input_3_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['hi', '3', 'name'], ['a2','hi','3'])
-        self.Hardware_Input_3_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['hi', '3', 'name'], ['a3','hi','3'])
-        self.Hardware_Input_3_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['hi', '3', 'name'], ['b1','hi','3'], "", "_sink")
-        self.Hardware_Input_3_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['hi', '3', 'name'], ['b2','hi','3'], "", "_sink")
-        self.Hardware_Input_3_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['hi', '3', 'name'], ['b3','hi','3'], "", "_sink")
+        self.Hardware_Input_3_A1.connect("toggled", self.on_button_toggled, ['a', '1'], ['hi', '3'])
+        self.Hardware_Input_3_A2.connect("toggled", self.on_button_toggled, ['a', '2'], ['hi', '3'])
+        self.Hardware_Input_3_A3.connect("toggled", self.on_button_toggled, ['a', '3'], ['hi', '3'])
+        self.Hardware_Input_3_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['hi', '3'])
+        self.Hardware_Input_3_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['hi', '3'])
+        self.Hardware_Input_3_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['hi', '3'])
         self.Hardware_Input_3_A1.set_active(self.config['hi']['3']['a1'])
         self.Hardware_Input_3_A2.set_active(self.config['hi']['3']['a2'])
         self.Hardware_Input_3_A3.set_active(self.config['hi']['3']['a3'])
@@ -298,6 +481,7 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_3_B2.set_active(self.config['hi']['3']['b2'])
         self.Hardware_Input_3_B3.set_active(self.config['hi']['3']['b3'])
 
+        
         self.Popover = self.builder.get_object('Popover')
         self.Popover_Entry = self.builder.get_object('Popover_Entry')
         self.Popover_Entry.connect('activate', self.set_popup_entry)
@@ -309,7 +493,7 @@ class MainWindow(Gtk.Window):
 
         self.Virtual_Input_1_Adjust = self.builder.get_object('Virtual_Input_1_Adjust')
         self.Virtual_Input_1_Adjust.set_value(self.config['vi']['1']['vol'])
-        self.Virtual_Input_1_Adjust.connect('value-changed', self.slider_change, "sink", self.config['vi']['1']['name'], ['vol','vi','1'])
+        self.Virtual_Input_1_Adjust.connect('value-changed', self.slider_change, "sink", ['vi', '1'])
 
         self.Virtual_Input_1_A1 = self.builder.get_object('Virtual_Input_1_A1')
         self.Virtual_Input_1_A2 = self.builder.get_object('Virtual_Input_1_A2')
@@ -317,12 +501,12 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_1_B1 = self.builder.get_object('Virtual_Input_1_B1')
         self.Virtual_Input_1_B2 = self.builder.get_object('Virtual_Input_1_B2')
         self.Virtual_Input_1_B3 = self.builder.get_object('Virtual_Input_1_B3')
-        self.Virtual_Input_1_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['vi', '1', 'name'], ['a1','vi','1'], ".monitor")
-        self.Virtual_Input_1_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['vi', '1', 'name'], ['a2','vi','1'], ".monitor")
-        self.Virtual_Input_1_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['vi', '1', 'name'], ['a3','vi','1'], ".monitor")
-        self.Virtual_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['vi', '1', 'name'], ['b1','vi','1'], ".monitor", "_sink")
-        self.Virtual_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['vi', '1', 'name'], ['b2','vi','1'], ".monitor", "_sink")
-        self.Virtual_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['vi', '1', 'name'], ['b3','vi','1'], ".monitor", "_sink")
+        self.Virtual_Input_1_A1.connect("toggled", self.on_button_toggled, ['a', '1'], ['vi', '1'])
+        self.Virtual_Input_1_A2.connect("toggled", self.on_button_toggled, ['a', '2'], ['vi', '1'])
+        self.Virtual_Input_1_A3.connect("toggled", self.on_button_toggled, ['a', '3'], ['vi', '1'])
+        self.Virtual_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['vi', '1'])
+        self.Virtual_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['vi', '1'])
+        self.Virtual_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['vi', '1'])
         self.Virtual_Input_1_A1.set_active(self.config['vi']['1']['a1'])
         self.Virtual_Input_1_A2.set_active(self.config['vi']['1']['a2'])
         self.Virtual_Input_1_A3.set_active(self.config['vi']['1']['a3'])
@@ -338,7 +522,7 @@ class MainWindow(Gtk.Window):
 
         self.Virtual_Input_2_Adjust = self.builder.get_object('Virtual_Input_2_Adjust')
         self.Virtual_Input_2_Adjust.set_value(self.config['vi']['2']['vol'])
-        self.Virtual_Input_2_Adjust.connect('value-changed', self.slider_change, "sink", self.config['vi']['2']['name'], ['vol','vi','2'])
+        self.Virtual_Input_2_Adjust.connect('value-changed', self.slider_change, "sink", ['vi', '2'])
 
         self.Virtual_Input_2_A1 = self.builder.get_object('Virtual_Input_2_A1')
         self.Virtual_Input_2_A2 = self.builder.get_object('Virtual_Input_2_A2')
@@ -346,12 +530,12 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_2_B1 = self.builder.get_object('Virtual_Input_2_B1')
         self.Virtual_Input_2_B2 = self.builder.get_object('Virtual_Input_2_B2')
         self.Virtual_Input_2_B3 = self.builder.get_object('Virtual_Input_2_B3')
-        self.Virtual_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['vi', '2', 'name'], ['a1','vi','2'], ".monitor")
-        self.Virtual_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['vi', '2', 'name'], ['a2','vi','2'], ".monitor")
-        self.Virtual_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['vi', '2', 'name'], ['a3','vi','2'], ".monitor")
-        self.Virtual_Input_2_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['vi', '2', 'name'], ['b1','vi','2'], ".monitor", "_sink")
-        self.Virtual_Input_2_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['vi', '2', 'name'], ['b2','vi','2'], ".monitor", "_sink")
-        self.Virtual_Input_2_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['vi', '2', 'name'], ['b3','vi','2'], ".monitor", "_sink")
+        self.Virtual_Input_2_A1.connect("toggled", self.on_button_toggled, ['a', '1'], ['vi', '2'])
+        self.Virtual_Input_2_A2.connect("toggled", self.on_button_toggled, ['a', '2'], ['vi', '2'])
+        self.Virtual_Input_2_A3.connect("toggled", self.on_button_toggled, ['a', '3'], ['vi', '2'])
+        self.Virtual_Input_2_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['vi', '2'])
+        self.Virtual_Input_2_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['vi', '2'])
+        self.Virtual_Input_2_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['vi', '2'])
         self.Virtual_Input_2_A1.set_active(self.config['vi']['2']['a1'])
         self.Virtual_Input_2_A2.set_active(self.config['vi']['2']['a2'])
         self.Virtual_Input_2_A3.set_active(self.config['vi']['2']['a3'])
@@ -365,19 +549,19 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_3_Label.set_text(self.config['vi']['3']['name'] if self.config['vi']['3']['name'] != '' else 'Hardware_Input_3')
         self.Virtual_Input_3_Adjust = self.builder.get_object('Virtual_Input_3_Adjust')
         self.Virtual_Input_3_Adjust.set_value(self.config['vi']['3']['vol'])
-        self.Virtual_Input_3_Adjust.connect('value-changed', self.slider_change, "sink", self.config['vi']['3']['name'], ['vol','vi','3'])
+        self.Virtual_Input_3_Adjust.connect('value-changed', self.slider_change, "sink", ['vi', '3'])
         self.Virtual_Input_3_A1 = self.builder.get_object('Virtual_Input_3_A1')
         self.Virtual_Input_3_A2 = self.builder.get_object('Virtual_Input_3_A2')
         self.Virtual_Input_3_A3 = self.builder.get_object('Virtual_Input_3_A3')
         self.Virtual_Input_3_B1 = self.builder.get_object('Virtual_Input_3_B1')
         self.Virtual_Input_3_B2 = self.builder.get_object('Virtual_Input_3_B2')
         self.Virtual_Input_3_B3 = self.builder.get_object('Virtual_Input_3_B3')
-        self.Virtual_Input_3_A1.connect("toggled", self.on_button_toggled, ['a', '1', 'name'], ['vi', '3', 'name'], ['a1','vi','3'], ".monitor")
-        self.Virtual_Input_3_A2.connect("toggled", self.on_button_toggled, ['a', '2', 'name'], ['vi', '3', 'name'], ['a2','vi','3'], ".monitor")
-        self.Virtual_Input_3_A3.connect("toggled", self.on_button_toggled, ['a', '3', 'name'], ['vi', '3', 'name'], ['a3','vi','3'], ".monitor")
-        self.Virtual_Input_3_B1.connect("toggled", self.on_button_toggled, ['b', '1', 'name'], ['vi', '3', 'name'], ['b1','vi','3'], ".monitor", "_sink")
-        self.Virtual_Input_3_B2.connect("toggled", self.on_button_toggled, ['b', '2', 'name'], ['vi', '3', 'name'], ['b2','vi','3'], ".monitor", "_sink")
-        self.Virtual_Input_3_B3.connect("toggled", self.on_button_toggled, ['b', '3', 'name'], ['vi', '3', 'name'], ['b3','vi','3'], ".monitor", "_sink")
+        self.Virtual_Input_3_A1.connect("toggled", self.on_button_toggled, ['a', '1'], ['vi', '3'])
+        self.Virtual_Input_3_A2.connect("toggled", self.on_button_toggled, ['a', '2'], ['vi', '3'])
+        self.Virtual_Input_3_A3.connect("toggled", self.on_button_toggled, ['a', '3'], ['vi', '3'])
+        self.Virtual_Input_3_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['vi', '3'])
+        self.Virtual_Input_3_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['vi', '3'])
+        self.Virtual_Input_3_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['vi', '3'])
         self.Virtual_Input_3_A1.set_active(self.config['vi']['3']['a1'])
         self.Virtual_Input_3_A2.set_active(self.config['vi']['3']['a2'])
         self.Virtual_Input_3_A3.set_active(self.config['vi']['3']['a3'])
@@ -385,29 +569,65 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_3_B2.set_active(self.config['vi']['3']['b2'])
         self.Virtual_Input_3_B3.set_active(self.config['vi']['3']['b3'])
 
+
         self.Master_A1_Adjust = self.builder.get_object('Master_A1_Adjust')
-        self.Master_A1_Adjust.set_value(self.config['a']['1']['vol'])
-        self.Master_A1_Adjust.connect('value-changed', self.slider_change, "sink", self.config['a']['1']['name'], ['vol','a','1'])
-
-        self.Master_A2_Adjust = self.builder.get_object('Master_A2_Adjust')
-        self.Master_A2_Adjust.set_value(self.config['a']['2']['vol'])
-        self.Master_A2_Adjust.connect('value-changed', self.slider_change, "sink", self.config['a']['2']['name'], ['vol','a','2'])
-
         self.Master_A3_Adjust = self.builder.get_object('Master_A3_Adjust')
+        self.Master_A2_Adjust = self.builder.get_object('Master_A2_Adjust')
+
+        self.Master_A1_Adjust.connect('value-changed', self.slider_change, "sink", ['a', '1'])
+        self.Master_A2_Adjust.connect('value-changed', self.slider_change, "sink", ['a', '2'])
+        self.Master_A3_Adjust.connect('value-changed', self.slider_change, "sink", ['a', '3'])
+
+        self.Master_A1_Adjust.set_value(self.config['a']['1']['vol'])
+        self.Master_A2_Adjust.set_value(self.config['a']['2']['vol'])
         self.Master_A3_Adjust.set_value(self.config['a']['3']['vol'])
-        self.Master_A3_Adjust.connect('value-changed', self.slider_change, "sink", self.config['a']['3']['name'], ['vol','a','3'])
+
 
         self.Master_B1_Adjust = self.builder.get_object('Master_B1_Adjust')
-        self.Master_B1_Adjust.set_value(self.config['b']['1']['vol'])
-        self.Master_B1_Adjust.connect('value-changed', self.slider_change, "source", self.config['b']['1']['name'], ['vol','b','1'])
-
         self.Master_B2_Adjust = self.builder.get_object('Master_B2_Adjust')
-        self.Master_B2_Adjust.set_value(self.config['b']['2']['vol'])
-        self.Master_B2_Adjust.connect('value-changed', self.slider_change, "source", self.config['b']['2']['name'], ['vol','b','2'])
-
         self.Master_B3_Adjust = self.builder.get_object('Master_B3_Adjust')
+
+        self.Master_B1_Adjust.connect('value-changed', self.slider_change, "source", ['b', '1'])
+        self.Master_B2_Adjust.connect('value-changed', self.slider_change, "source", ['b', '2'])
+        self.Master_B3_Adjust.connect('value-changed', self.slider_change, "source", ['b', '3'])
+        self.Master_B1_Adjust.set_value(self.config['b']['1']['vol'])
+        self.Master_B2_Adjust.set_value(self.config['b']['2']['vol'])
         self.Master_B3_Adjust.set_value(self.config['b']['3']['vol'])
-        self.Master_B3_Adjust.connect('value-changed', self.slider_change, "source", self.config['b']['3']['name'], ['vol','b','3'])
+
+        self.EQ_A1 = self.builder.get_object('EQ_A1')
+        self.EQ_A2 = self.builder.get_object('EQ_A2')
+        self.EQ_A3 = self.builder.get_object('EQ_A3')
+        self.EQ_A1.connect('pressed', self.open_eq, ['a', '1'], 'A1_EQ')
+        self.EQ_A2.connect('pressed', self.open_eq, ['a', '2'], 'A2_EQ')
+        self.EQ_A3.connect('pressed', self.open_eq, ['a', '3'], 'A3_EQ')
+
+        self.EQ_B1 = self.builder.get_object('EQ_B1')
+        self.EQ_B2 = self.builder.get_object('EQ_B2')
+        self.EQ_B3 = self.builder.get_object('EQ_B3')
+        self.EQ_B2.connect('pressed', self.open_eq, ['b', '2'], 'B2_EQ')
+        self.EQ_B1.connect('pressed', self.open_eq, ['b', '1'], 'B1_EQ')
+        self.EQ_B3.connect('pressed', self.open_eq, ['b', '3'], 'B3_EQ')
+
+        self.Mute_A1 = self.builder.get_object('Mute_A1')
+        self.Mute_A2 = self.builder.get_object('Mute_A2')
+        self.Mute_A3 = self.builder.get_object('Mute_A3')
+        self.Mute_A1.connect('toggled', self.mute_toggle, ['a', '1', 'name'], 'sink')
+        self.Mute_A2.connect('toggled', self.mute_toggle, ['a', '2', 'name'], 'sink')
+        self.Mute_A3.connect('toggled', self.mute_toggle, ['a', '3', 'name'], 'sink')
+        self.Mute_A1.set_active(self.config['a']['1']['mute'])
+        self.Mute_A2.set_active(self.config['a']['2']['mute'])
+        self.Mute_A3.set_active(self.config['a']['3']['mute'])
+
+        self.Mute_B1 = self.builder.get_object('Mute_B1')
+        self.Mute_B2 = self.builder.get_object('Mute_B2')
+        self.Mute_B3 = self.builder.get_object('Mute_B3')
+        self.Mute_B1.connect('toggled', self.mute_toggle, ['b', '1', 'name'], 'source')
+        self.Mute_B2.connect('toggled', self.mute_toggle, ['b', '2', 'name'], 'source')
+        self.Mute_B3.connect('toggled', self.mute_toggle, ['b', '3', 'name'], 'source')
+        self.Mute_B1.set_active(self.config['b']['1']['mute'])
+        self.Mute_B2.set_active(self.config['b']['2']['mute'])
+        self.Mute_B3.set_active(self.config['b']['3']['mute'])
+
 
         self.Window = self.builder.get_object('Window')
 
@@ -417,6 +637,25 @@ class MainWindow(Gtk.Window):
 
         self.builder.connect_signals(self)
         self.Window.show_all()
+
+    def open_eq(self, button, index, name):
+
+        if self.config[index[0]][index[1]]['name'] == '':
+            return
+
+        EqPopover(button, self.config, self.pulse, self.gladefile, index, name)
+
+
+    def mute_toggle(self, button, index, device):
+        name = self.config[index[0]][index[1]][index[2]]
+        self.config[index[0]][index[1]]['mute'] = button.get_active()
+        if name == '':
+            return
+        state = 1 if button.get_active() else 0
+        self.pulse.mute(name, device, state)
+
+    def mono_toggle(self, widget):
+        pass
 
     def set_popup_entry(self, widget):
         name = widget.get_text()
@@ -442,15 +681,31 @@ class MainWindow(Gtk.Window):
         self.Popover.popup()
         self.PopActive = label
 
-    def slider_change(self, slider, name, sink, index):
+    def slider_change(self, slider, device_type, index):
         val = int(slider.get_value())
-        self.config[index[1]][index[2]][index[0]] = val
-        self.pulse.volume(name, sink, val)
+        self.config[index[0]][index[1]]['vol'] = val
+        device = self.config[index[0]][index[1]]['name']
+        self.pulse.volume(device_type, device, val)
 
-    def on_button_toggled(self, button, source_index, sink_index, index, sink_sufix='', source_sufix=''):
-        self.config[index[1]][index[2]][index[0]] = button.get_active()
+    def on_button_toggled(self, button, sink_index, source_index):
+        is_eq = False
+        sink = self.config[sink_index[0]][sink_index[1]]['name']
+        if 'eq_control' in self.config[sink_index[0]][sink_index[1]]:
+            eq = self.config[sink_index[0]][sink_index[1]]['eq_control']
+            if eq != None and eq != '':
+                sink = self.config[sink_index[0]][sink_index[1]]['eq_name']
+                is_eq = True
+        source = self.config[source_index[0]][source_index[1]]['name']
+        if sink == '' or source == '':
+            return
+        if sink_index[0] == 'b' and is_eq == False:
+            sink = sink + '_sink'
+        if source_index[0] == 'vi':
+            source = source + '.monitor'
+
+        self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1]] = button.get_active()
         state = "connect" if button.get_active() else "disconnect"
-        self.pulse.connect(self.config, state, source_index, sink_index, sink_sufix, source_sufix)
+        self.pulse.connect(self.config, state, sink, source)
 
     def delete_event(self, widget, event, donnees=None):
         with open(get_config_path(), 'w') as outfile:
@@ -464,6 +719,7 @@ class MainWindow(Gtk.Window):
             self.config[index[0]][index[1]]['name'] = device[model - 1][0]
         else:
             self.config[index[0]][index[1]]['name'] = ""
+        # widget.set_text
         # print(self.config[index[0]][index[1]]['name'])
 
 def save_config(path):
@@ -493,7 +749,7 @@ def get_config_path(glade=False):
     return config_file
 
 def main():
-    config_orig='{"a": {"1": {"name": "", "vol": 100}, "2": {"name": "", "vol": 100}, "3": {"name": "", "vol": 100}}, "b": {"1": {"name": "Mic", "vol": 100}, "2": {"name": "Mic_Aux", "vol": 100}, "3": {"name": "Mic_Aux_2", "vol": 100}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100}}}'
+    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false}, "2": {"name": "", "vol": 100, "mute": false}, "3": {"name": "", "vol": 100, "mute": false}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false}}}'
     config_file = get_config_path()
     config = None
     if not os.path.isfile(config_file):
@@ -504,6 +760,8 @@ def main():
         config = json.load(open(config_file))
     # config = json.load(open('config.json'))
     pulse = Pulse(config)
+    if len(sys.argv) > 1 and sys.argv[1] == 'init':
+        exit()
     app = MainWindow(config, pulse)
     return Gtk.main()
 
