@@ -45,7 +45,7 @@ class Pulse:
 
     def connect(self, config, state, sink, source, latency):
         command = f"pmctl {state} {source} {sink} {latency}"
-        # print(command)
+        print(command)
         os.popen(command)
 
     def volume(self, name, sink, val):
@@ -72,9 +72,8 @@ class Pulse:
 
         config[index[0]][index[1]]['eq_control'] = control
         config[index[0]][index[1]]['use_eq'] = True
+        config[index[0]][index[1]]['eq_name'] = name
 
-        if not 'eq_name' in config[index[0]][index[1]]:
-            config[index[0]][index[1]]['eq_name'] = name
         if index[0] == 'b':
             master = master + "_sink"
         command = f'pmctl eq {name} {master} {control}\n'
@@ -877,7 +876,7 @@ class MainWindow(Gtk.Window):
     def on_button_toggled(self, button, sink_index, source_index):
         is_eq = False
         sink = self.config[sink_index[0]][sink_index[1]]['name']
-        if self.config[sink_index[0]][sink_index[1]]['eq_control'] == True:
+        if self.config[sink_index[0]][sink_index[1]]['use_eq'] == True:
             sink = self.config[sink_index[0]][sink_index[1]]['eq_name']
             is_eq = True
 
