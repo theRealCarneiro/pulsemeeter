@@ -33,3 +33,8 @@ sudo make uninstall
 
 ### Discord Server
 If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)
+
+### Special thanks to
+
+* [xiph.org](https://xiph.org)/[Mozilla's](https://mozilla.org) excellent [RNNoise](https://jmvalin.ca/demo/rnnoise/).
+* [@lawl](https://github.com/lawl) for making ladspa rnnoise plugin and [Noisetorch](https://github.com/lawl/NoiseTorch)
