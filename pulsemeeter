@@ -83,11 +83,15 @@ class Pulse:
                 for j in range (1, 4):
                     if config[i][str(j)][output] == True:
                         vi = config[i][str(j)]['name']
+
+                        if i == 'hi' and config[i][str(j)]['use_noisetorch'] == True:
+                            vi = config[i][str(j)]['noisetorch_name'] + '.monitor'
+
                         command = command + f'pmctl disconnect {vi} {master}\n'
-                        if i == 'vi':
-                            vi = vi + '.monitor'
+
+                        vi = vi + '.monitor' if i == 'vi' else vi
                         command = command + f'pmctl connect {vi} {name}\n'
-        # print(command)
+        print(command)
         os.popen(command)
 
     def remove_eq(self, config, master, name, output):
@@ -97,6 +101,9 @@ class Pulse:
             for j in range (1, 4):
                 if config[i][str(j)][output] == True:
                     vi = config[i][str(j)]['name']
+                    if i == 'hi' and config[i][str(j)]['use_noisetorch'] == True:
+                        vi = config[i][str(j)]['noisetorch_name'] + '.monitor'
+
                     if i == 'vi':
                         vi = vi + '.monitor'
                     elif list(output)[0] == 'b':
@@ -862,6 +869,8 @@ class MainWindow(Gtk.Window):
                 if self.config[source_index[0]][source_index[1]][i] == True:
                     output = list(i)
                     output_dev = self.config[output[0]][output[1]]['name']
+                    if self.config[output[0]][output[1]]['use_eq'] == True:
+                        output_dev = self.config[output[0]][output[1]]['eq_name']
                     latency = self.config[source_index[0]][source_index[1]][i + "_latency"]
                     if output[0] == 'b':
                         output_dev = output_dev + '_sink'
