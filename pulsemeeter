@@ -45,7 +45,7 @@ class Pulse:
 
     def connect(self, config, state, sink, source, latency):
         command = f"pmctl {state} {source} {sink} {latency}"
-        print(command)
+        # print(command)
         os.popen(command)
 
     def volume(self, name, sink, val):
@@ -76,6 +76,7 @@ class Pulse:
 
         if index[0] == 'b':
             master = master + "_sink"
+
         command = f'pmctl eq {name} {master} {control}\n'
         if status != 'init':
             output = index[0] + index[1]
@@ -91,7 +92,7 @@ class Pulse:
 
                         vi = vi + '.monitor' if i == 'vi' else vi
                         command = command + f'pmctl connect {vi} {name}\n'
-        print(command)
+        # print(command)
         os.popen(command)
 
     def remove_eq(self, config, master, name, output):
@@ -110,6 +111,28 @@ class Pulse:
                         master = master + '_sink'
                     command = command + f'pmctl connect {vi} {master}\n'
 
+        # print(command)
+        os.popen(command)
+
+    def noisetorch(self, config, source_index, sink_name, source, control, stat, latency, init):
+        command = f'pmctl noisetorch {sink_name} {source} {control} {stat} {latency}\n'
+        if init == False:
+            for i in ['a1','a2','a3','b1','b2','b3']:
+                if config[source_index[0]][source_index[1]][i] == True:
+                    output = list(i)
+                    output_dev = config[output[0]][output[1]]['name']
+                    use_eq = False
+                    if config[output[0]][output[1]]['use_eq'] == True:
+                        output_dev = config[output[0]][output[1]]['eq_name']
+                        use_eq = True
+                    latency = config[source_index[0]][source_index[1]][i + "_latency"]
+                    if output[0] == 'b' and use_eq == False:
+                        output_dev = output_dev + '_sink'
+                    if stat == 'connect':
+                        command = command + f'pmctl disconnect {source} {output_dev}\n'
+                        command = command + f'pmctl connect {sink_name}.monitor {output_dev} {latency}\n'
+                    else:
+                        command = command + f'pmctl connect {source} {output_dev} {latency}\n'
         # print(command)
         os.popen(command)
     
@@ -141,7 +164,6 @@ class Latency_Popup():
 
     def latency_adjust(self, widget, index):
         val = int(widget.get_value())
-        # print(f'bb {index[0]} {index[1]} {index[2]} {val} \n')
         self.config[index[0]][index[1]][index[2]] = val
 
 class Noisetorch_Popup():
@@ -178,12 +200,10 @@ class Noisetorch_Popup():
 
     def latency_adjust(self, widget, index):
         val = int(widget.get_value())
-        # print(f'{index[0]} {index[1]} {val} \n')
         self.config[index[0]][index[1]]['noisetorch_latency'] = val
 
     def threshold_adjust(self, widget, index):
         val = int(widget.get_value())
-        # print(f'{index[0]} {index[1]} {val} \n')
         self.config[index[0]][index[1]]['noisetorch_control'] = val
 
 
@@ -854,7 +874,6 @@ class MainWindow(Gtk.Window):
     def noisetorch_popop(self, widget, event, index):
         if event.button == 3:
             Noisetorch_Popup(widget, self.config, self.gladefile, index)
-    
 
     def noisetorch_toggle(self, widget, source_index, sink_name):
         stat = 'connect' if widget.get_active() == True else 'disconnect'
@@ -863,24 +882,7 @@ class MainWindow(Gtk.Window):
         self.config[source_index[0]][source_index[1]]['noisetorch_name'] = sink_name
         control = self.config[source_index[0]][source_index[1]]['noisetorch_control']
         latency = self.config[source_index[0]][source_index[1]]["noisetorch_latency"]
-        command = f'pmctl noisetorch {sink_name} {source} {control} {stat} {latency}\n'
-        if self.init == False:
-            for i in ['a1','a2','a3','b1','b2','b3']:
-                if self.config[source_index[0]][source_index[1]][i] == True:
-                    output = list(i)
-                    output_dev = self.config[output[0]][output[1]]['name']
-                    if self.config[output[0]][output[1]]['use_eq'] == True:
-                        output_dev = self.config[output[0]][output[1]]['eq_name']
-                    latency = self.config[source_index[0]][source_index[1]][i + "_latency"]
-                    if output[0] == 'b':
-                        output_dev = output_dev + '_sink'
-                    if stat == 'connect':
-                        command = command + f'pmctl disconnect {source} {output_dev}\n'
-                        command = command + f'pmctl connect {sink_name}.monitor {output_dev} {latency}\n'
-                    else:
-                        command = command + f'pmctl connect {source} {output_dev} {latency}\n'
-        os.popen(command)
-        # print(command)
+        self.pulse.noisetorch(self.config, source_index, sink_name, source, control, stat, latency, self.init)
 
     def on_button_toggled(self, button, sink_index, source_index):
         is_eq = False
