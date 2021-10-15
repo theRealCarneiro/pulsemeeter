@@ -581,6 +581,49 @@ KHz</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="Latency_Adjust">
+    <property name="lower">1</property>
+    <property name="upper">500</property>
+    <property name="value">200</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkPopover" id="Latency_Popover">
+    <property name="can-focus">False</property>
+    <child>
+      <!-- n-columns=1 n-rows=2 -->
+      <object class="GtkGrid">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="width-request">150</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Latency</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="Lantency_Adjust">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">Latency_Adjust</property>
+            <property name="round-digits">1</property>
+            <property name="digits">0</property>
+            <property name="value-pos">left</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkAdjustment" id="Master_A1_Adjust">
     <property name="upper">100</property>
     <property name="step-increment">1</property>
@@ -610,6 +653,85 @@ KHz</property>
     <property name="upper">100</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="Noisetorch_Latency_Adjust">
+    <property name="lower">1</property>
+    <property name="upper">500</property>
+    <property name="value">200</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="Noisetorch_Threshold_Adjust">
+    <property name="lower">1</property>
+    <property name="upper">100</property>
+    <property name="value">95</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkPopover" id="Noisetorch_Popover">
+    <property name="can-focus">False</property>
+    <child>
+      <!-- n-columns=1 n-rows=4 -->
+      <object class="GtkGrid">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="hexpand">True</property>
+        <property name="vexpand">True</property>
+        <child>
+          <object class="GtkScale">
+            <property name="width-request">150</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="hexpand">True</property>
+            <property name="adjustment">Noisetorch_Latency_Adjust</property>
+            <property name="round-digits">1</property>
+            <property name="digits">0</property>
+            <property name="value-pos">left</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="Noisetorch_Threshold">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="hexpand">True</property>
+            <property name="adjustment">Noisetorch_Threshold_Adjust</property>
+            <property name="round-digits">1</property>
+            <property name="digits">0</property>
+            <property name="value-pos">left</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Lantecy</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Threshold</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
   </object>
   <object class="GtkAdjustment" id="Virtual_Input_1_Adjust">
     <property name="upper">100</property>
@@ -1576,7 +1698,7 @@ KHz</property>
                     <property name="vexpand">True</property>
                     <property name="column-spacing">15</property>
                     <child>
-                      <!-- n-columns=3 n-rows=4 -->
+                      <!-- n-columns=3 n-rows=5 -->
                       <object class="GtkGrid" id="Hardware_Input_3_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -1598,7 +1720,22 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <!-- n-columns=2 n-rows=1 -->
+                              <object class="GtkGrid">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>
@@ -1810,8 +1947,21 @@ KHz</property>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">3</property>
+                            <property name="top-attach">4</property>
                             <property name="width">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkToggleButton" id="Hardware_Input_3_Noisetorch">
+                            <property name="label" translatable="yes">Noisetorch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="hexpand">True</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                       </object>
@@ -1821,7 +1971,7 @@ KHz</property>
                       </packing>
                     </child>
                     <child>
-                      <!-- n-columns=3 n-rows=4 -->
+                      <!-- n-columns=3 n-rows=5 -->
                       <object class="GtkGrid" id="Hardware_Input_2_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -1843,7 +1993,23 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <!-- n-columns=2 n-rows=1 -->
+                              <object class="GtkGrid">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">False</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>
@@ -2054,8 +2220,21 @@ KHz</property>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">3</property>
+                            <property name="top-attach">4</property>
                             <property name="width">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkToggleButton" id="Hardware_Input_2_Noisetorch">
+                            <property name="label" translatable="yes">Noisetorch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="hexpand">True</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                       </object>
@@ -2065,7 +2244,7 @@ KHz</property>
                       </packing>
                     </child>
                     <child>
-                      <!-- n-columns=3 n-rows=4 -->
+                      <!-- n-columns=3 n-rows=5 -->
                       <object class="GtkGrid" id="Hardware_Input_1_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -2089,7 +2268,23 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <!-- n-columns=2 n-rows=1 -->
+                              <object class="GtkGrid">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>
@@ -2298,8 +2493,21 @@ KHz</property>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">3</property>
+                            <property name="top-attach">4</property>
                             <property name="width">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkToggleButton" id="Hardware_Input_1_Noisetorch">
+                            <property name="label" translatable="yes">Noisetorch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="hexpand">True</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                       </object>

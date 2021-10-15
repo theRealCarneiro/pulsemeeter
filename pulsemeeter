@@ -11,6 +11,8 @@ gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk,Gdk
 
+PIDFILE = '/tmp/pulsemeeter.pid'
+
 class Pulse:
 
     def __init__(self, config):
@@ -41,8 +43,8 @@ class Pulse:
 
         
 
-    def connect(self, config, state, sink, source):
-        command = f"pmctl {state} {source} {sink}"
+    def connect(self, config, state, sink, source, latency):
+        command = f"pmctl {state} {source} {sink} {latency}"
         # print(command)
         os.popen(command)
 
@@ -69,6 +71,7 @@ class Pulse:
         master = config[index[0]][index[1]]['name']
 
         config[index[0]][index[1]]['eq_control'] = control
+        config[index[0]][index[1]]['use_eq'] = True
 
         if not 'eq_name' in config[index[0]][index[1]]:
             config[index[0]][index[1]]['eq_name'] = name
@@ -101,16 +104,88 @@ class Pulse:
                         master = master + '_sink'
                     command = command + f'pmctl connect {vi} {master}\n'
 
-        print(command)
+        # print(command)
         os.popen(command)
     
+class Latency_Popup():
+    def __init__(self, button, config, gladefile, index):
+
+        self.config = config
+        self.builder = Gtk.Builder()
+
+        try:
+            self.builder.add_objects_from_file(
+                gladefile,
+                [
+                    'Latency_Popover',
+                    'Latency_Adjust',
+                ]
+            )
+        except Exception as ex:
+            print('Error building main window!\n{}'.format(ex))
+            sys.exit(1)
+
+        self.Latency_Popover = self.builder.get_object('Latency_Popover')
+        self.Latency_Popover.set_relative_to(button)
+
+        self.Latency_Adjust = self.builder.get_object('Latency_Adjust')
+        self.Latency_Adjust.set_value(self.config[index[0]][index[1]][index[2] + '_latency'])
+        self.Latency_Adjust.connect('value_changed', self.latency_adjust, [index[0], index[1], index[2] + '_latency'])
+        self.Latency_Popover.popup()
+
+    def latency_adjust(self, widget, index):
+        val = int(widget.get_value())
+        # print(f'bb {index[0]} {index[1]} {index[2]} {val} \n')
+        self.config[index[0]][index[1]][index[2]] = val
+
+class Noisetorch_Popup():
+    def __init__(self, button, config, gladefile, index):
+
+        self.config = config
+        self.builder = Gtk.Builder()
+
+        try:
+            self.builder.add_objects_from_file(
+                gladefile,
+                [
+                    'Noisetorch_Popover',
+                    'Noisetorch_Latency_Adjust',
+                    'Noisetorch_Threshold_Adjust',
+                ]
+            )
+        except Exception as ex:
+            print('Error building main window!\n{}'.format(ex))
+            sys.exit(1)
+
+        self.Noisetorch_Popover = self.builder.get_object('Noisetorch_Popover')
+        self.Noisetorch_Popover.set_relative_to(button)
+
+        self.Noisetorch_Latency_Adjust = self.builder.get_object('Noisetorch_Latency_Adjust')
+        self.Noisetorch_Latency_Adjust.set_value(self.config[index[0]][index[1]]['noisetorch_latency'])
+        self.Noisetorch_Latency_Adjust.connect('value_changed', self.latency_adjust, [index[0], index[1]])
+
+        self.Noisetorch_Threshold_Adjust = self.builder.get_object('Noisetorch_Threshold_Adjust')
+        self.Noisetorch_Threshold_Adjust.set_value(self.config[index[0]][index[1]]['noisetorch_control'])
+        self.Noisetorch_Threshold_Adjust.connect('value_changed', self.threshold_adjust, [index[0], index[1]])
+
+        self.Noisetorch_Popover.popup()
+
+    def latency_adjust(self, widget, index):
+        val = int(widget.get_value())
+        # print(f'{index[0]} {index[1]} {val} \n')
+        self.config[index[0]][index[1]]['noisetorch_latency'] = val
+
+    def threshold_adjust(self, widget, index):
+        val = int(widget.get_value())
+        # print(f'{index[0]} {index[1]} {val} \n')
+        self.config[index[0]][index[1]]['noisetorch_control'] = val
+
 
 class EqPopover():
 
     def __init__(self, button, config, pulse, gladefile, index, name):
 
         self.config = config
-        # Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
         self.pulse = pulse
 
@@ -164,10 +239,7 @@ class EqPopover():
         self.Reset_EQ_Button = self.builder.get_object('Reset_EQ_Button')
         self.Disable_EQ_Button = self.builder.get_object('Disable_EQ_Button')
 
-        # for i in self.eq:
-            # i.connect('event', self.reset_value)
-        control = self.config[index[0]][index[1]]['eq_control'] if 'eq_control' in self.config[index[0]][index[1]] else ''
-        # control = self.config[index[0]][index[1]]['eq_control']
+        control = self.config[index[0]][index[1]]['eq_control'] 
         j = 0
         if control != '':
             for i in control.split(','):
@@ -193,7 +265,8 @@ class EqPopover():
         self.pulse.apply_eq(self.config, index, name, control)
 
     def disable_eq(self, widget, index, name):
-        self.config[index[0]][index[1]]['eq_control'] = ''
+        # self.config[index[0]][index[1]]['eq_control'] = ''
+        self.config[index[0]][index[1]]['use_eq'] = False
         master = self.config[index[0]][index[1]]['name']
         output = index[0] + index[1]
 
@@ -239,6 +312,11 @@ class MainWindow(Gtk.Window):
                 [
                     'Popover',
                     'Popover_Entry',
+                    'Latency_Popover',
+                    'Latency_Adjust',
+                    'Noisetorch_Popover',
+                    'Noisetorch_Latency_Adjust',
+                    'Noisetorch_Threshold_Adjust',
                     'A1_Combobox',
                     'A2_Combobox',
                     'A3_Combobox',
@@ -247,6 +325,11 @@ class MainWindow(Gtk.Window):
                     'Hardware_Input_1_Combobox',
                     'Hardware_Input_2_Combobox',
                     'Hardware_Input_3_Combobox',
+
+                    'Hardware_Input_1_Noisetorch',
+                    'Hardware_Input_2_Noisetorch',
+                    'Hardware_Input_3_Noisetorch',
+
                     'Hardware_Input_1_Label',
                     'Hardware_Input_1_Adjust',
                     'Hardware_Input_1_A1',
@@ -346,14 +429,15 @@ class MainWindow(Gtk.Window):
                 ]
             )
         except Exception as ex:
-            print('\\nError building main window!\\n{}'.format(ex))
+            print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
         self.pulse = pulse
+        self.init = True
 
         for i in ['a','b']:
             for j in range(1, 4):
-                if 'eq_control' in self.config[i][str(j)] and self.config[i][str(j)]['eq_control'] != '':
+                if self.config[i][str(j)]['use_eq'] == True:
                     self.pulse.apply_eq(self.config, [i, str(j)], self.config[i][str(j)]['eq_name'], self.config[i][str(j)]['eq_control'], 'init')
 
         self.src_list = Gtk.ListStore(str)
@@ -362,6 +446,15 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_1_Combobox = self.builder.get_object('Hardware_Input_1_Combobox')
         self.Hardware_Input_2_Combobox = self.builder.get_object('Hardware_Input_2_Combobox')
         self.Hardware_Input_3_Combobox = self.builder.get_object('Hardware_Input_3_Combobox')
+
+        self.Latency_Popover = self.builder.get_object('Latency_Popover')
+        # self.Latency_Popover.connect('closed')
+        self.Latency_Adjust = self.builder.get_object('Latency_Adjust')
+
+        self.Noisetorch_Popover = self.builder.get_object('Noisetorch_Popover')
+
+        self.Noisetorch_Latency_Adjust = self.builder.get_object('Noisetorch_Latency_Adjust')
+        self.Noisetorch_Threshold_Adjust = self.builder.get_object('Noisetorch_Threshold_Adjust')
         
         self.Hardware_Input_1_Combobox.append_text("")
         self.Hardware_Input_2_Combobox.append_text("")
@@ -417,6 +510,22 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_1_Adjust = self.builder.get_object('Hardware_Input_1_Adjust')
         self.Hardware_Input_1_Adjust.set_value(self.config['hi']['1']['vol'])
         self.Hardware_Input_1_Adjust.connect('value-changed', self.slider_change, "source", ['hi', '1']) # self.config['hi']['1']['name'], ['vol','hi','1'])
+        self.Hardware_Input_1_Noisetorch = self.builder.get_object('Hardware_Input_1_Noisetorch')
+        self.Hardware_Input_2_Noisetorch = self.builder.get_object('Hardware_Input_2_Noisetorch')
+        self.Hardware_Input_3_Noisetorch = self.builder.get_object('Hardware_Input_3_Noisetorch')
+
+        self.Hardware_Input_1_Noisetorch.connect('toggled', self.noisetorch_toggle, ['hi', '1'], 'hi1_noisetorch')
+        self.Hardware_Input_2_Noisetorch.connect('toggled', self.noisetorch_toggle, ['hi', '2'], 'hi2_noisetorch')
+        self.Hardware_Input_3_Noisetorch.connect('toggled', self.noisetorch_toggle, ['hi', '3'], 'hi3_noisetorch')
+
+        self.Hardware_Input_1_Noisetorch.set_active(self.config['hi']['1']['use_noisetorch'])
+        self.Hardware_Input_2_Noisetorch.set_active(self.config['hi']['2']['use_noisetorch'])
+        self.Hardware_Input_3_Noisetorch.set_active(self.config['hi']['3']['use_noisetorch'])
+
+        self.Hardware_Input_1_Noisetorch.connect("button_press_event", self.noisetorch_popop, ['hi', '1'])
+        self.Hardware_Input_2_Noisetorch.connect("button_press_event", self.noisetorch_popop, ['hi', '2'])
+        self.Hardware_Input_3_Noisetorch.connect("button_press_event", self.noisetorch_popop, ['hi', '3'])
+
         self.Hardware_Input_1_A1 = self.builder.get_object('Hardware_Input_1_A1')
         self.Hardware_Input_1_A2 = self.builder.get_object('Hardware_Input_1_A2')
         self.Hardware_Input_1_A3 = self.builder.get_object('Hardware_Input_1_A3')
@@ -435,6 +544,13 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_1_B1.set_active(self.config['hi']['1']['b1'])
         self.Hardware_Input_1_B2.set_active(self.config['hi']['1']['b2'])
         self.Hardware_Input_1_B3.set_active(self.config['hi']['1']['b3'])
+
+        self.Hardware_Input_1_A1.connect("button_press_event", self.loopback_latency_popop, ['hi', '1', 'a1'])
+        self.Hardware_Input_1_A2.connect("button_press_event", self.loopback_latency_popop, ['hi', '1', 'a2'])
+        self.Hardware_Input_1_A3.connect("button_press_event", self.loopback_latency_popop, ['hi', '1', 'a3'])
+        self.Hardware_Input_1_B1.connect("button_press_event", self.loopback_latency_popop, ['hi', '1', 'b1'])
+        self.Hardware_Input_1_B2.connect("button_press_event", self.loopback_latency_popop, ['hi', '1', 'b2'])
+        self.Hardware_Input_1_B3.connect("button_press_event", self.loopback_latency_popop, ['hi', '1', 'b3'])
 
         self.Hardware_Input_2_Label = self.builder.get_object('Hardware_Input_2')
         self.Hardware_Input_2_Adjust = self.builder.get_object('Hardware_Input_2_Adjust')
@@ -459,6 +575,13 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_2_B2.set_active(self.config['hi']['2']['b2'])
         self.Hardware_Input_2_B3.set_active(self.config['hi']['2']['b3'])
 
+        self.Hardware_Input_2_A1.connect("button_press_event", self.loopback_latency_popop, ['hi', '2', 'a1'])
+        self.Hardware_Input_2_A2.connect("button_press_event", self.loopback_latency_popop, ['hi', '2', 'a2'])
+        self.Hardware_Input_2_A3.connect("button_press_event", self.loopback_latency_popop, ['hi', '2', 'a3'])
+        self.Hardware_Input_2_B1.connect("button_press_event", self.loopback_latency_popop, ['hi', '2', 'b1'])
+        self.Hardware_Input_2_B2.connect("button_press_event", self.loopback_latency_popop, ['hi', '2', 'b2'])
+        self.Hardware_Input_2_B3.connect("button_press_event", self.loopback_latency_popop, ['hi', '2', 'b3'])
+
         self.Hardware_Input_3_Label = self.builder.get_object('Hardware_Input_3')
         self.Hardware_Input_3_Adjust = self.builder.get_object('Hardware_Input_3_Adjust')
         self.Hardware_Input_3_Adjust.set_value(self.config['hi']['3']['vol'])
@@ -481,6 +604,13 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_3_B1.set_active(self.config['hi']['3']['b1'])
         self.Hardware_Input_3_B2.set_active(self.config['hi']['3']['b2'])
         self.Hardware_Input_3_B3.set_active(self.config['hi']['3']['b3'])
+
+        self.Hardware_Input_3_A1.connect("button_press_event", self.loopback_latency_popop, ['hi', '3', 'a1'])
+        self.Hardware_Input_3_A2.connect("button_press_event", self.loopback_latency_popop, ['hi', '3', 'a2'])
+        self.Hardware_Input_3_A3.connect("button_press_event", self.loopback_latency_popop, ['hi', '3', 'a3'])
+        self.Hardware_Input_3_B1.connect("button_press_event", self.loopback_latency_popop, ['hi', '3', 'b1'])
+        self.Hardware_Input_3_B2.connect("button_press_event", self.loopback_latency_popop, ['hi', '3', 'b2'])
+        self.Hardware_Input_3_B3.connect("button_press_event", self.loopback_latency_popop, ['hi', '3', 'b3'])
 
         
         self.Popover = self.builder.get_object('Popover')
@@ -508,6 +638,14 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_1_B1.connect("toggled", self.on_button_toggled, ['b', '1'], ['vi', '1'])
         self.Virtual_Input_1_B2.connect("toggled", self.on_button_toggled, ['b', '2'], ['vi', '1'])
         self.Virtual_Input_1_B3.connect("toggled", self.on_button_toggled, ['b', '3'], ['vi', '1'])
+
+        self.Virtual_Input_1_A1.connect("button_press_event", self.loopback_latency_popop, ['vi', '1', 'a1'])
+        self.Virtual_Input_1_A2.connect("button_press_event", self.loopback_latency_popop, ['vi', '1', 'a2'])
+        self.Virtual_Input_1_A3.connect("button_press_event", self.loopback_latency_popop, ['vi', '1', 'a3'])
+        self.Virtual_Input_1_B1.connect("button_press_event", self.loopback_latency_popop, ['vi', '1', 'b1'])
+        self.Virtual_Input_1_B2.connect("button_press_event", self.loopback_latency_popop, ['vi', '1', 'b2'])
+        self.Virtual_Input_1_B3.connect("button_press_event", self.loopback_latency_popop, ['vi', '1', 'b3'])
+
         self.Virtual_Input_1_A1.set_active(self.config['vi']['1']['a1'])
         self.Virtual_Input_1_A2.set_active(self.config['vi']['1']['a2'])
         self.Virtual_Input_1_A3.set_active(self.config['vi']['1']['a3'])
@@ -544,6 +682,13 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_2_B2.set_active(self.config['vi']['2']['b2'])
         self.Virtual_Input_2_B3.set_active(self.config['vi']['2']['b3'])
 
+        self.Virtual_Input_2_A1.connect("button_press_event", self.loopback_latency_popop, ['vi', '2', 'a1'])
+        self.Virtual_Input_2_A2.connect("button_press_event", self.loopback_latency_popop, ['vi', '2', 'a2'])
+        self.Virtual_Input_2_A3.connect("button_press_event", self.loopback_latency_popop, ['vi', '2', 'a3'])
+        self.Virtual_Input_2_B1.connect("button_press_event", self.loopback_latency_popop, ['vi', '2', 'b1'])
+        self.Virtual_Input_2_B2.connect("button_press_event", self.loopback_latency_popop, ['vi', '2', 'b2'])
+        self.Virtual_Input_2_B3.connect("button_press_event", self.loopback_latency_popop, ['vi', '2', 'b3'])
+
         self.Virtual_Input_3_Label = self.builder.get_object('Virtual_Input_3_Label')
         self.Virtual_Input_3_Label_Event_Box = self.builder.get_object('Virtual_Input_3_Label_Event_Box')
         self.Virtual_Input_3_Label_Event_Box.connect('button_press_event', self.label_click, self.Virtual_Input_3_Label, ['vi', '3', 'name'])
@@ -569,6 +714,13 @@ class MainWindow(Gtk.Window):
         self.Virtual_Input_3_B1.set_active(self.config['vi']['3']['b1'])
         self.Virtual_Input_3_B2.set_active(self.config['vi']['3']['b2'])
         self.Virtual_Input_3_B3.set_active(self.config['vi']['3']['b3'])
+
+        self.Virtual_Input_3_A1.connect("button_press_event", self.loopback_latency_popop, ['vi', '3', 'a1'])
+        self.Virtual_Input_3_A2.connect("button_press_event", self.loopback_latency_popop, ['vi', '3', 'a2'])
+        self.Virtual_Input_3_A3.connect("button_press_event", self.loopback_latency_popop, ['vi', '3', 'a3'])
+        self.Virtual_Input_3_B1.connect("button_press_event", self.loopback_latency_popop, ['vi', '3', 'b1'])
+        self.Virtual_Input_3_B2.connect("button_press_event", self.loopback_latency_popop, ['vi', '3', 'b2'])
+        self.Virtual_Input_3_B3.connect("button_press_event", self.loopback_latency_popop, ['vi', '3', 'b3'])
 
 
         self.Master_A1_Adjust = self.builder.get_object('Master_A1_Adjust')
@@ -628,6 +780,7 @@ class MainWindow(Gtk.Window):
         self.Mute_B1.set_active(self.config['b']['1']['mute'])
         self.Mute_B2.set_active(self.config['b']['2']['mute'])
         self.Mute_B3.set_active(self.config['b']['3']['mute'])
+        self.init = False
 
 
         self.Window = self.builder.get_object('Window')
@@ -688,15 +841,50 @@ class MainWindow(Gtk.Window):
         device = self.config[index[0]][index[1]]['name']
         self.pulse.volume(device_type, device, val)
 
+    def loopback_latency_popop(self, widget, event, index):
+        if event.button == 3:
+            Latency_Popup(widget, self.config, self.gladefile, index)
+
+    def noisetorch_popop(self, widget, event, index):
+        if event.button == 3:
+            Noisetorch_Popup(widget, self.config, self.gladefile, index)
+    
+
+    def noisetorch_toggle(self, widget, source_index, sink_name):
+        stat = 'connect' if widget.get_active() == True else 'disconnect'
+        self.config[source_index[0]][source_index[1]]['use_noisetorch'] = True if stat == 'connect' else False
+        source = self.config[source_index[0]][source_index[1]]['name']
+        self.config[source_index[0]][source_index[1]]['noisetorch_name'] = sink_name
+        control = self.config[source_index[0]][source_index[1]]['noisetorch_control']
+        latency = self.config[source_index[0]][source_index[1]]["noisetorch_latency"]
+        command = f'pmctl noisetorch {sink_name} {source} {control} {stat} {latency}\n'
+        if self.init == False:
+            for i in ['a1','a2','a3','b1','b2','b3']:
+                if self.config[source_index[0]][source_index[1]][i] == True:
+                    output = list(i)
+                    output_dev = self.config[output[0]][output[1]]['name']
+                    latency = self.config[source_index[0]][source_index[1]][i + "_latency"]
+                    if output[0] == 'b':
+                        output_dev = output_dev + '_sink'
+                    if stat == 'connect':
+                        command = command + f'pmctl disconnect {source} {output_dev}\n'
+                        command = command + f'pmctl connect {sink_name}.monitor {output_dev} {latency}\n'
+                    else:
+                        command = command + f'pmctl connect {source} {output_dev} {latency}\n'
+        os.popen(command)
+        # print(command)
+
     def on_button_toggled(self, button, sink_index, source_index):
         is_eq = False
         sink = self.config[sink_index[0]][sink_index[1]]['name']
-        if 'eq_control' in self.config[sink_index[0]][sink_index[1]]:
-            eq = self.config[sink_index[0]][sink_index[1]]['eq_control']
-            if eq != None and eq != '':
-                sink = self.config[sink_index[0]][sink_index[1]]['eq_name']
-                is_eq = True
+        if self.config[sink_index[0]][sink_index[1]]['eq_control'] == True:
+            sink = self.config[sink_index[0]][sink_index[1]]['eq_name']
+            is_eq = True
+
         source = self.config[source_index[0]][source_index[1]]['name']
+        if source_index[0] == 'hi':
+            if self.config[source_index[0]][source_index[1]]['use_noisetorch'] == True:
+                source = self.config[source_index[0]][source_index[1]]['noisetorch_name'] + '.monitor'
         if sink == '' or source == '':
             return
         if sink_index[0] == 'b' and is_eq == False:
@@ -706,7 +894,8 @@ class MainWindow(Gtk.Window):
 
         self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1]] = button.get_active()
         state = "connect" if button.get_active() else "disconnect"
-        self.pulse.connect(self.config, state, sink, source)
+        latency = self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1] + "_latency"]
+        self.pulse.connect(self.config, state, sink, source, latency)
 
     def delete_event(self, widget, event, donnees=None):
         with open(get_config_path(), 'w') as outfile:
@@ -749,8 +938,16 @@ def get_config_path(glade=False):
         return glade_file
     return config_file
 
+def is_running():
+    try:
+        with open(PIDFILE) as f:
+            pid = int(next(f))
+        return os.kill(pid, 0)
+    except Exception:
+        return False
+
 def main():
-    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "vol": 100, "mute": false, "eq_control": "", "eq_name": ""}}}'
+    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_noisetorch": false, "noisetorch_name": "", "noisetorch_control": 95, "noisetorch_latency": 200}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_noisetorch": false, "noisetorch_name": "", "noisetorch_control": 95, "noisetorch_latency": 200}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_noisetorch": false, "noisetorch_name": "", "noisetorch_control": 95, "noisetorch_latency": 200}}}'
     config_orig = json.loads(config_orig)
     config_file = get_config_path()
     config = None
@@ -765,7 +962,6 @@ def main():
             for j in range(1, 4):
                 for k in config_orig[i][str(j)]:
                     if not k in config[i][str(j)]:
-                        print(k)
                         changed = True
                         config[i][str(j)][k] = config_orig[i][str(j)][k]
         if changed == True:
@@ -780,5 +976,10 @@ def main():
 
 
 if __name__ == '__main__':
+    if is_running() != False:
+        print('Another copy is already running')
+        sys.exit(0)
+    with open(PIDFILE, 'w') as f:
+        f.write(f'{os.getpid()}\n')
     mainret = main()
     sys.exit(mainret)

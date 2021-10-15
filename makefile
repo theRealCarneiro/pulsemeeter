@@ -2,6 +2,17 @@
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
+ifeq (${NOISETORCH}, true)
+install: noisetorch_install
+endif
+
+noisetorch:
+	[ -d "NoiseTorch" ] || git clone https://github.com/lawl/NoiseTorch
+	make -C NoiseTorch/c/ladspa
+
+noisetorch_install: noisetorch
+	install -Dm755 NoiseTorch/c/ladspa/rnnoise_ladspa.so ${DESTDIR}${PREFIX}/lib/ladspa/rnnoise_ladspa.so
+
 install:
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	install -Dm755 pulsemeeter pmctl ${DESTDIR}${PREFIX}/bin
@@ -18,9 +29,14 @@ install:
 uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/pulsemeeter
 	rm ${DESTDIR}${PREFIX}/bin/pmctl 
+	rm ${DESTDIR}/usr/share/applications/pulsemeeter.desktop
 	rm -rf ${DESTDIR}${PREFIX}/share/doc/pulsemeeter
 	rm -rf ${DESTDIR}${PREFIX}/share/licenses/pulsemeeter
-	rm ${DESTDIR}/usr/share/applications/pulsemeeter.desktop
+	rm -rf ${DESTDIR}${PREFIX}/share/licenses/noisetorch-ladspa
+	rm ${DESTDIR}${PREFIX}/lib/ladspa/rnnoise_ladspa.so
 	for size in "192x192" "128x128" "96x96" "64x64" "48x48" "32x32" "24x24" "22x22" "20x20" "16x16" "8x8"; do \
 		rm "${DESTDIR}${PREFIX}/share/icons/hicolor/$$size/apps/Pulsemeeter.png"; \
 	done
+
+clean: 
+	rm -rf NoiseTorch
