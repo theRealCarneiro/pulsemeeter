@@ -11,6 +11,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 ## Dependencies
  - python-gobject
+ - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
 
 ## Installation
 ### Arch/Manjaro
@@ -37,4 +38,4 @@ If you want to get updates about new features, patches or leave some sugestions,
 ### Special thanks to
 
 * [xiph.org](https://xiph.org)/[Mozilla's](https://mozilla.org) excellent [RNNoise](https://jmvalin.ca/demo/rnnoise/).
-* [@lawl](https://github.com/lawl) for making ladspa rnnoise plugin and [Noisetorch](https://github.com/lawl/NoiseTorch)
+* [@werman](https://github.com/werman/)'s [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
