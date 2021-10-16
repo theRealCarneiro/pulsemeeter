@@ -712,7 +712,7 @@ KHz</property>
           <object class="GtkLabel">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Lantecy</property>
+            <property name="label" translatable="yes">Latency</property>
           </object>
           <packing>
             <property name="left-attach">0</property>
@@ -900,6 +900,7 @@ KHz</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
                         <child>
                           <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
@@ -1071,6 +1072,7 @@ KHz</property>
                           <object class="GtkEventBox" id="Virtual_Input_1_Label_Event_Box">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
+                            <property name="vexpand">True</property>
                             <property name="visible-window">False</property>
                             <child>
                               <object class="GtkLabel" id="Virtual_Input_1_Label">
@@ -1111,7 +1113,19 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <!-- n-columns=1 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="vexpand">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">2</property>
+                          </packing>
                         </child>
                       </object>
                       <packing>
@@ -1796,6 +1810,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Press right button to change latency</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2344,6 +2359,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Press right button to change latency</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2358,6 +2374,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Press right button to change latency</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2671,7 +2688,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="EQ_A2">
+                              <object class="GtkToggleButton" id="EQ_A2">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -2748,7 +2765,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="EQ_A1">
+                              <object class="GtkToggleButton" id="EQ_A1">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -2825,7 +2842,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="EQ_A3">
+                              <object class="GtkToggleButton" id="EQ_A3">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -2993,7 +3010,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="EQ_B1">
+                              <object class="GtkToggleButton" id="EQ_B1">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -3070,7 +3087,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="EQ_B3">
+                              <object class="GtkToggleButton" id="EQ_B3">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -3147,7 +3164,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="EQ_B2">
+                              <object class="GtkToggleButton" id="EQ_B2">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>

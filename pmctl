@@ -6,15 +6,12 @@ init (){
 			sink=$2
 			pactl list sinks short | grep $sink && exit
 			pactl load-module module-null-sink sink_name=$sink sink_properties="device.description="$sink""
-			#pacmd update-sink-proplist $sink device.description=$sink
 		;;
 		"source")
 			source=$2
 			pactl list sources short | grep $source && exit
 			pactl load-module module-null-sink sink_name=$source"_sink" sink_properties=device.description=$source"_sink"
-			#pacmd update-sink-proplist $source"_sink" device.description=$source"_sink"
 			pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$source 
-			#pacmd update-source-proplist $source device.description=$source
 		;;
 	esac
 	
@@ -26,10 +23,8 @@ connect (){
 	latency=${3:-200}
 
 	[ -z "$vi" -o -z "$ho" ] && exit
-	#pacmd list-modules | grep -B 2 "$ho source=$vi" >/dev/null || \
-	#LC_ALL=C pactl list modules | grep -B 2 "$ho source=$vi" >/dev/null || \
-	index="$(LC_ALL=C pactl list modules | grep -B 1 -A 1 loopback | grep -B 2 $vi | grep Module | sed 's/.*#//g')"
-	[ -z "$index" ] && pactl load-module module-loopback sink=$ho source=$vi sink_dont_move=true source_dont_move=true latency_msec=$latency
+	LC_ALL=C pactl list modules | grep -B 2 "$ho source=$vi" >/dev/null || \
+	pactl load-module module-loopback sink=$ho source=$vi sink_dont_move=true source_dont_move=true latency_msec=$latency
 }
 
 disconnect (){
@@ -38,7 +33,7 @@ disconnect (){
 
 	[ -z "$vi" -o -z "$ho" ] && exit
 	index="$(LC_ALL=C pactl list modules | grep -B 2 "$ho source=$vi" | grep Module | sed 's/.*#//g')"
-	[ -z $index ] || pactl unload-module $index
+	[ -z "$index" ] || pactl unload-module $index
 }
 
 remove (){
@@ -151,7 +146,7 @@ noisetorch() {
 		pactl load-module module-null-sink sink_name=$sink_name
 
 		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noisetorch plugin=rnnoise_ladspa control=$control
-		pactl load-module module-loopback source=$master sink=$sink_name"_in" latency_msec=$latency source_dont_move=true sink_dont_move=true
+		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
 	else
 		index=$(LC_ALL=C pactl list modules | grep -B 2 noise | grep -B 2 -A 1 ladspa | grep Module | sed 's/.*#//g')
 		[ -z "$index" ] || pactl unload-module $index
