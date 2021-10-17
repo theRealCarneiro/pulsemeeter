@@ -507,7 +507,7 @@ KHz</property>
           </packing>
         </child>
         <child>
-          <!-- n-columns=1 n-rows=3 -->
+          <!-- n-columns=1 n-rows=2 -->
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -518,21 +518,7 @@ KHz</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <property name="valign">end</property>
-                <property name="margin-end">5</property>
-                <property name="margin-bottom">5</property>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="Reset_EQ_Button">
-                <property name="label" translatable="yes">Reset</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Apply settings</property>
                 <property name="valign">end</property>
                 <property name="margin-end">5</property>
                 <property name="margin-bottom">5</property>
@@ -543,11 +529,13 @@ KHz</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="Disable_EQ_Button">
-                <property name="label" translatable="yes">Disable</property>
+              <object class="GtkButton" id="Reset_EQ_Button">
+                <property name="label" translatable="yes">Reset</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Reset all bars to 0</property>
+                <property name="valign">end</property>
                 <property name="margin-end">5</property>
                 <property name="margin-bottom">5</property>
               </object>
@@ -591,7 +579,7 @@ KHz</property>
   <object class="GtkPopover" id="Latency_Popover">
     <property name="can-focus">False</property>
     <child>
-      <!-- n-columns=1 n-rows=2 -->
+      <!-- n-columns=2 n-rows=2 -->
       <object class="GtkGrid">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
@@ -619,6 +607,35 @@ KHz</property>
           <packing>
             <property name="left-attach">0</property>
             <property name="top-attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <!-- n-columns=1 n-rows=1 -->
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="valign">end</property>
+            <child>
+              <object class="GtkButton" id="Apply_Latency_Button">
+                <property name="label" translatable="yes">Apply</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Apply settings</property>
+                <property name="valign">end</property>
+                <property name="margin-end">5</property>
+                <property name="margin-bottom">5</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">0</property>
+            <property name="height">2</property>
           </packing>
         </child>
       </object>
@@ -671,7 +688,7 @@ KHz</property>
   <object class="GtkPopover" id="Noisetorch_Popover">
     <property name="can-focus">False</property>
     <child>
-      <!-- n-columns=1 n-rows=4 -->
+      <!-- n-columns=2 n-rows=4 -->
       <object class="GtkGrid">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
@@ -730,6 +747,43 @@ KHz</property>
             <property name="top-attach">2</property>
           </packing>
         </child>
+        <child>
+          <!-- n-columns=1 n-rows=1 -->
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="valign">end</property>
+            <child>
+              <object class="GtkButton" id="Apply_Noisetorch_Button">
+                <property name="label" translatable="yes">Apply</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Apply settings</property>
+                <property name="valign">end</property>
+                <property name="margin-end">5</property>
+                <property name="margin-bottom">5</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
       </object>
     </child>
   </object>
@@ -776,7 +830,7 @@ KHz</property>
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="margin-start">20</property>
+                    <property name="margin-start">10</property>
                     <property name="label" translatable="yes">A1</property>
                   </object>
                   <packing>
@@ -844,8 +898,9 @@ KHz</property>
                 </child>
               </object>
               <packing>
-                <property name="left-attach">1</property>
+                <property name="left-attach">0</property>
                 <property name="top-attach">0</property>
+                <property name="width">2</property>
               </packing>
             </child>
             <child>
@@ -859,9 +914,6 @@ KHz</property>
                 <property name="top-attach">1</property>
                 <property name="width">2</property>
               </packing>
-            </child>
-            <child>
-              <placeholder/>
             </child>
           </object>
           <packing>
@@ -953,6 +1005,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -968,6 +1021,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -983,6 +1037,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -997,6 +1052,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1011,6 +1067,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1025,6 +1082,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1078,6 +1136,7 @@ KHz</property>
                               <object class="GtkLabel" id="Virtual_Input_1_Label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Click to change device name</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <property name="label" translatable="yes"> Virtual Input 1 </property>
@@ -1164,6 +1223,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1179,6 +1239,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1194,6 +1255,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1208,6 +1270,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1222,6 +1285,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1236,6 +1300,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1320,6 +1385,7 @@ KHz</property>
                               <object class="GtkLabel" id="Virtual_Input_2_Label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Click to change device name</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <property name="label" translatable="yes">Virtual Input 2</property>
@@ -1456,6 +1522,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1470,6 +1537,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1484,6 +1552,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1498,6 +1567,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1512,6 +1582,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1526,6 +1597,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1596,6 +1668,7 @@ KHz</property>
                               <object class="GtkLabel" id="Virtual_Input_3_Label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Click to change device name</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <property name="label" translatable="yes">Virtual Input 3</property>
@@ -1770,13 +1843,13 @@ KHz</property>
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
+                                <property name="hexpand">False</property>
                                 <child>
                                   <object class="GtkScale">
-                                    <property name="visible">True</property>
                                     <property name="can-focus">True</property>
+                                    <property name="no-show-all">True</property>
                                     <property name="margin-top">18</property>
-                                    <property name="hexpand">True</property>
+                                    <property name="hexpand">False</property>
                                     <property name="vexpand">True</property>
                                     <property name="orientation">vertical</property>
                                     <property name="inverted">True</property>
@@ -1810,7 +1883,8 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
-                                    <property name="tooltip-text" translatable="yes">Press right button to change latency</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
+                                    <property name="margin-top">2</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1825,6 +1899,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1839,6 +1914,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1853,6 +1929,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1867,6 +1944,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1881,6 +1959,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -1968,10 +2047,12 @@ KHz</property>
                         </child>
                         <child>
                           <object class="GtkToggleButton" id="Hardware_Input_3_Noisetorch">
-                            <property name="label" translatable="yes">Noisetorch</property>
+                            <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="receives-default">True</property>
+                            <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
+                            <property name="margin-top">2</property>
                             <property name="hexpand">True</property>
                           </object>
                           <packing>
@@ -2045,13 +2126,13 @@ KHz</property>
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
+                                <property name="hexpand">False</property>
                                 <child>
                                   <object class="GtkScale">
-                                    <property name="visible">True</property>
                                     <property name="can-focus">True</property>
+                                    <property name="no-show-all">True</property>
                                     <property name="margin-top">18</property>
-                                    <property name="hexpand">True</property>
+                                    <property name="hexpand">False</property>
                                     <property name="vexpand">True</property>
                                     <property name="orientation">vertical</property>
                                     <property name="inverted">True</property>
@@ -2084,6 +2165,8 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
+                                    <property name="margin-top">2</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2098,6 +2181,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2112,6 +2196,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2126,6 +2211,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2140,6 +2226,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2154,6 +2241,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2241,10 +2329,12 @@ KHz</property>
                         </child>
                         <child>
                           <object class="GtkToggleButton" id="Hardware_Input_2_Noisetorch">
-                            <property name="label" translatable="yes">Noisetorch</property>
+                            <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="receives-default">True</property>
+                            <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
+                            <property name="margin-top">2</property>
                             <property name="hexpand">True</property>
                           </object>
                           <packing>
@@ -2323,10 +2413,10 @@ KHz</property>
                                 <property name="hexpand">False</property>
                                 <child>
                                   <object class="GtkScale">
-                                    <property name="visible">True</property>
                                     <property name="can-focus">True</property>
+                                    <property name="no-show-all">True</property>
                                     <property name="margin-top">18</property>
-                                    <property name="hexpand">True</property>
+                                    <property name="hexpand">False</property>
                                     <property name="vexpand">True</property>
                                     <property name="orientation">vertical</property>
                                     <property name="inverted">True</property>
@@ -2359,7 +2449,8 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
-                                    <property name="tooltip-text" translatable="yes">Press right button to change latency</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
+                                    <property name="margin-top">2</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2374,7 +2465,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
-                                    <property name="tooltip-text" translatable="yes">Press right button to change latency</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2389,6 +2480,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2403,6 +2495,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2417,6 +2510,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2431,6 +2525,7 @@ KHz</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
+                                    <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                   </object>
@@ -2516,10 +2611,12 @@ KHz</property>
                         </child>
                         <child>
                           <object class="GtkToggleButton" id="Hardware_Input_1_Noisetorch">
-                            <property name="label" translatable="yes">Noisetorch</property>
+                            <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="receives-default">True</property>
+                            <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
+                            <property name="margin-top">2</property>
                             <property name="hexpand">True</property>
                           </object>
                           <packing>
@@ -2693,6 +2790,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -2770,6 +2868,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -2847,6 +2946,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -3015,6 +3115,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -3092,6 +3193,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -3169,6 +3271,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
