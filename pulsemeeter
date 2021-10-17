@@ -20,7 +20,7 @@ class Pulse:
         command = command + self.start_sinks(config)
         command = command + self.start_sources(config)
         command = command + self.start_eqs(config)
-        command = command + self.start_noisetorch(config)
+        command = command + self.start_rnnoise(config)
         command = command + self.start_mute(config)
         command = command + self.start_conections(config)
         # print(command)
@@ -35,8 +35,8 @@ class Pulse:
                 return name
 
         if index[0] == 'hi':
-            if config[index[0]][index[1]]['use_noisetorch'] == True:
-                name = config[index[0]][index[1]]['noisetorch_name']
+            if config[index[0]][index[1]]['use_rnnoise'] == True:
+                name = config[index[0]][index[1]]['rnnoise_name']
                 return name + ".monitor"
             else:
                 name = config[index[0]][index[1]]['name']
@@ -92,13 +92,13 @@ class Pulse:
 
         return command
 
-    def start_noisetorch(self, config):
+    def start_rnnoise(self, config):
         command = ''
         for j in range(1, 4):
-            if config['hi'][str(j)]['use_noisetorch'] == True:
+            if config['hi'][str(j)]['use_rnnoise'] == True:
                 source_index = ['hi', str(j)]
-                sink_name = config['hi'][str(j)]['noisetorch_name']
-                command = command + self.noisetorch(config, source_index, sink_name, "connect", 'init')
+                sink_name = config['hi'][str(j)]['rnnoise_name']
+                command = command + self.rnnoise(config, source_index, sink_name, "connect", 'init')
         return command
 
     def start_conections(self, config):
@@ -127,13 +127,13 @@ class Pulse:
 
         return command
 
-    def noisetorch(self, config, source_index, sink_name, stat, init=''):
+    def rnnoise(self, config, source_index, sink_name, stat, init=''):
         source = config[source_index[0]][source_index[1]]['name']
-        control = config[source_index[0]][source_index[1]]['noisetorch_control']
-        latency = config[source_index[0]][source_index[1]]['noisetorch_latency']
-        config[source_index[0]][source_index[1]]['use_noisetorch'] = True if stat == 'connect' else False
-        config[source_index[0]][source_index[1]]['noisetorch_name'] = sink_name
-        command = f'pmctl noisetorch {sink_name} {source} {control} {stat} {latency}\n'
+        control = config[source_index[0]][source_index[1]]['rnnoise_control']
+        latency = config[source_index[0]][source_index[1]]['rnnoise_latency']
+        config[source_index[0]][source_index[1]]['use_rnnoise'] = True if stat == 'connect' else False
+        config[source_index[0]][source_index[1]]['rnnoise_name'] = sink_name
+        command = f'pmctl rnnoise {sink_name} {source} {control} {stat} {latency}\n'
 
         if init != 'init':
             for i in ['a1','a2','a3','b1','b2','b3']:
@@ -218,8 +218,8 @@ class Pulse:
                     if config[i][str(j)][output] == True:
                         vi = config[i][str(j)]['name']
 
-                        if i == 'hi' and config[i][str(j)]['use_noisetorch'] == True:
-                            vi = config[i][str(j)]['noisetorch_name'] + '.monitor'
+                        if i == 'hi' and config[i][str(j)]['use_rnnoise'] == True:
+                            vi = config[i][str(j)]['rnnoise_name'] + '.monitor'
 
                         command = command + f'pmctl disconnect {vi} {master}\n'
 
@@ -238,8 +238,8 @@ class Pulse:
             for j in range (1, 4):
                 if config[i][str(j)][output] == True:
                     vi = config[i][str(j)]['name']
-                    if i == 'hi' and config[i][str(j)]['use_noisetorch'] == True:
-                        vi = config[i][str(j)]['noisetorch_name'] + '.monitor'
+                    if i == 'hi' and config[i][str(j)]['use_rnnoise'] == True:
+                        vi = config[i][str(j)]['rnnoise_name'] + '.monitor'
 
                     if i == 'vi':
                         vi = vi + '.monitor'
@@ -303,22 +303,22 @@ class Noisetorch_Popup():
         self.Noisetorch_Popover.set_relative_to(button)
 
         self.Noisetorch_Latency_Adjust = self.builder.get_object('Noisetorch_Latency_Adjust')
-        self.Noisetorch_Latency_Adjust.set_value(self.config[index[0]][index[1]]['noisetorch_latency'])
+        self.Noisetorch_Latency_Adjust.set_value(self.config[index[0]][index[1]]['rnnoise_latency'])
         self.Noisetorch_Latency_Adjust.connect('value_changed', self.latency_adjust, [index[0], index[1]])
 
         self.Noisetorch_Threshold_Adjust = self.builder.get_object('Noisetorch_Threshold_Adjust')
-        self.Noisetorch_Threshold_Adjust.set_value(self.config[index[0]][index[1]]['noisetorch_control'])
+        self.Noisetorch_Threshold_Adjust.set_value(self.config[index[0]][index[1]]['rnnoise_control'])
         self.Noisetorch_Threshold_Adjust.connect('value_changed', self.threshold_adjust, [index[0], index[1]])
 
         self.Noisetorch_Popover.popup()
 
     def latency_adjust(self, widget, index):
         val = int(widget.get_value())
-        self.config[index[0]][index[1]]['noisetorch_latency'] = val
+        self.config[index[0]][index[1]]['rnnoise_latency'] = val
 
     def threshold_adjust(self, widget, index):
         val = int(widget.get_value())
-        self.config[index[0]][index[1]]['noisetorch_control'] = val
+        self.config[index[0]][index[1]]['rnnoise_control'] = val
 
 
 class EqPopover():
@@ -613,17 +613,17 @@ class MainWindow(Gtk.Window):
         self.Hardware_Input_2_Noisetorch = self.builder.get_object('Hardware_Input_2_Noisetorch')
         self.Hardware_Input_3_Noisetorch = self.builder.get_object('Hardware_Input_3_Noisetorch')
 
-        self.Hardware_Input_1_Noisetorch.set_active(self.config['hi']['1']['use_noisetorch'])
-        self.Hardware_Input_2_Noisetorch.set_active(self.config['hi']['2']['use_noisetorch'])
-        self.Hardware_Input_3_Noisetorch.set_active(self.config['hi']['3']['use_noisetorch'])
+        self.Hardware_Input_1_Noisetorch.set_active(self.config['hi']['1']['use_rnnoise'])
+        self.Hardware_Input_2_Noisetorch.set_active(self.config['hi']['2']['use_rnnoise'])
+        self.Hardware_Input_3_Noisetorch.set_active(self.config['hi']['3']['use_rnnoise'])
 
-        self.Hardware_Input_1_Noisetorch.connect('toggled', self.noisetorch_toggle, ['hi', '1'], 'hi1_noisetorch')
-        self.Hardware_Input_2_Noisetorch.connect('toggled', self.noisetorch_toggle, ['hi', '2'], 'hi2_noisetorch')
-        self.Hardware_Input_3_Noisetorch.connect('toggled', self.noisetorch_toggle, ['hi', '3'], 'hi3_noisetorch')
+        self.Hardware_Input_1_Noisetorch.connect('toggled', self.rnnoise_toggle, ['hi', '1'], 'hi1_rnnoise')
+        self.Hardware_Input_2_Noisetorch.connect('toggled', self.rnnoise_toggle, ['hi', '2'], 'hi2_rnnoise')
+        self.Hardware_Input_3_Noisetorch.connect('toggled', self.rnnoise_toggle, ['hi', '3'], 'hi3_rnnoise')
 
-        self.Hardware_Input_1_Noisetorch.connect("button_press_event", self.noisetorch_popop, ['hi', '1'])
-        self.Hardware_Input_2_Noisetorch.connect("button_press_event", self.noisetorch_popop, ['hi', '2'])
-        self.Hardware_Input_3_Noisetorch.connect("button_press_event", self.noisetorch_popop, ['hi', '3'])
+        self.Hardware_Input_1_Noisetorch.connect("button_press_event", self.rnnoise_popop, ['hi', '1'])
+        self.Hardware_Input_2_Noisetorch.connect("button_press_event", self.rnnoise_popop, ['hi', '2'])
+        self.Hardware_Input_3_Noisetorch.connect("button_press_event", self.rnnoise_popop, ['hi', '3'])
 
         self.Hardware_Input_1_A1 = self.builder.get_object('Hardware_Input_1_A1')
         self.Hardware_Input_1_A2 = self.builder.get_object('Hardware_Input_1_A2')
@@ -917,9 +917,9 @@ class MainWindow(Gtk.Window):
             master = self.config[index[0]][index[1]]['name']
             self.pulse.remove_eq(self.config, master, name, index[0] + index[1], index)
 
-    def noisetorch_toggle(self, widget, source_index, sink_name):
+    def rnnoise_toggle(self, widget, source_index, sink_name):
         stat = 'connect' if widget.get_active() == True else 'disconnect'
-        self.pulse.noisetorch(self.config, source_index, sink_name, stat)
+        self.pulse.rnnoise(self.config, source_index, sink_name, stat)
 
     def mute_toggle(self, button, index, device):
         state = 1 if button.get_active() else 0
@@ -933,7 +933,7 @@ class MainWindow(Gtk.Window):
         if event.button == 3:
             Latency_Popup(widget, self.config, self.gladefile, index)
 
-    def noisetorch_popop(self, widget, event, index):
+    def rnnoise_popop(self, widget, event, index):
         if event.button == 3:
             Noisetorch_Popup(widget, self.config, self.gladefile, index)
 
@@ -1016,7 +1016,7 @@ def is_running():
         return False
 
 def main():
-    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_noisetorch": false, "noisetorch_name": "", "noisetorch_control": 95, "noisetorch_latency": 200}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_noisetorch": false, "noisetorch_name": "", "noisetorch_control": 95, "noisetorch_latency": 200}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_noisetorch": false, "noisetorch_name": "", "noisetorch_control": 95, "noisetorch_latency": 200}}}'
+    config_orig='{"a": {"1": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "b": {"1": {"name": "Mic", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "Mic_Aux", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "Mic_Aux_2", "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "vi": {"1": {"name": "Virtual_Sink", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "2": {"name": "Virtual_Sink_Aux", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}, "3": {"name": "Virtual_Sink_Aux_2", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false}}, "hi": {"1": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_rnnoise": false, "rnnoise_name": "", "rnnoise_control": 95, "rnnoise_latency": 200}, "2": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_rnnoise": false, "rnnoise_name": "", "rnnoise_control": 95, "rnnoise_latency": 200}, "3": {"name": "", "a1": false, "a2": false, "a3": false, "b1": false, "b2": false, "b3": false, "a1_latency": 200, "a2_latency": 200, "a3_latency": 200, "b1_latency": 200, "b2_latency": 200, "b3_latency": 200, "vol": 100, "mute": false, "eq_control": "", "eq_name": "", "use_eq": false, "use_rnnoise": false, "rnnoise_name": "", "rnnoise_control": 95, "rnnoise_latency": 200}}}'
     config_orig = json.loads(config_orig)
     config_file = get_config_path()
     config = None

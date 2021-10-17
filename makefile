@@ -2,18 +2,7 @@
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
-ifeq (${NOISETORCH}, false)
 install: 
-endif
-
-noisetorch:
-	[ -d "NoiseTorch" ] || git clone https://github.com/lawl/NoiseTorch
-	make -C NoiseTorch/c/ladspa
-
-noisetorch_install: noisetorch
-	install -Dm755 NoiseTorch/c/ladspa/rnnoise_ladspa.so ${DESTDIR}${PREFIX}/lib/ladspa/rnnoise_ladspa.so
-
-install: noisetorch_install
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	install -Dm755 pulsemeeter pmctl ${DESTDIR}${PREFIX}/bin
 	install -Dm644 Interface.glade ${DESTDIR}${PREFIX}/share/doc/pulsemeeter/Interface.glade
