@@ -12,6 +12,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 ## Dependencies
  - python-gobject
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
+ - [swh-plugins](https://github.com/swh/ladspa)
 
 ## Installation
 ### Arch/Manjaro
