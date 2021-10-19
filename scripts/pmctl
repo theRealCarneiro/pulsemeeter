@@ -113,6 +113,16 @@ list (){
 	echo "$list"
 }
 
+move_sink_input_master (){
+	sink_name=$1
+	master=$2
+	index=$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m" | grep Module | sed 's/.*#//g')
+	[ -z "$index" ] && exit
+	id=$(LC_ALL=C pactl list sink-inputs | grep -B 2 $index | grep '#' | sed 's/.*#//g')
+	[ -z "$id" ] && exit
+	pactl move-sink-input $id $master
+}
+
 eq (){
 	sink_name=$1
 	master=$2
@@ -130,6 +140,26 @@ eq (){
 		master=$master			\
 		plugin=mbeq_1197		\
 		label=mbeq				\
+		control=$control
+}
+
+compressor (){
+	sink_name=$1
+	master=$2
+	control=$3
+
+	#LC_ALL=C pactl list modules | grep "$sink_name" >/dev/null || \
+	index=$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m" | grep Module | sed 's/.*#//g')
+	[ -z "$index" ] || pactl unload-module $index
+
+	[ "$master" = "remove" ] && exit
+
+	pactl load-module module-ladspa-sink \
+		sink_properties=device.description=$sink_name \
+		sink_name=$sink_name	\
+		master=$master			\
+		plugin=sc4m_1916		\
+		label=sc4m				\
 		control=$control
 }
 
@@ -185,8 +215,14 @@ case $1 in
 	"mute")
 		mute $2 $3 $4
 	;;
+	"move_sink_input_master")
+		move_sink_input_master $2 $3
+	;;
 	"eq")
 		eq $2 $3 $4
+	;;
+	"compressor")
+		compressor $2 $3 $4
 	;;
 	"rnnoise")
 		rnnoise $2 $3 $4 $5 $6

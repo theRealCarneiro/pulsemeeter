@@ -1,0 +1,4 @@
+include pulsemeeter/Interface.glade
+recursive-include share/*
+include LICENSE
+include MANIFEST.in
