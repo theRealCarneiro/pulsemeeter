@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import json
 from pathlib import Path
@@ -16,16 +17,16 @@ class MainWindow(Gtk.Window):
         
         gladefile = ''
         # gladefile = get_config_path(True)
+        # if not os.path.exists(gladefile):
+        gladefile = '/usr/local/lib/python3.9/site-packages/pulsemeeter/Interface.glade'
         if not os.path.exists(gladefile):
-            gladefile = '/usr/local/lib/python3.9/site-packages/pulsemeeter/Interface.glade'
+            gladefile = '/usr/lib/python3.9/site-packages/pulsemeeter/Interface.glade'
             if not os.path.exists(gladefile):
-                gladefile = '/usr/lib/python3.9/site-packages/pulsemeeter/Interface.glade'
-                if not os.path.exists(gladefile):
-                    gladefile = get_config_path(True)
-                else:
-                    shutil.copy(gladefile, get_config_path(True))
-            else:
-                shutil.copy(gladefile, get_config_path(True))
+                gladefile = get_config_path(True)
+                # else:
+                    # shutil.copy(gladefile, get_config_path(True))
+            # else:
+                # shutil.copy(gladefile, get_config_path(True))
         self.gladefile = gladefile
 
         try:
