@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 from pathlib import Path
 from EqPopover import EqPopover
@@ -19,9 +20,9 @@ class MainWindow(Gtk.Window):
         gladefile = ''
         # gladefile = get_config_path(True)
         if not os.path.exists(gladefile):
-            gladefile = '/usr/local/share/doc/pulsemeeter/Interface.glade'
+            gladefile = '/usr/local/lib/python3.9/site-packages/pulsemeeter/Interface.glade'
             if not os.path.exists(gladefile):
-                gladefile = '/usr/share/doc/pulsemeeter/Interface.glade'
+                gladefile = '/usr/lib/python3.9/site-packages/pulsemeeter/Interface.glade'
                 if not os.path.exists(gladefile):
                     gladefile = get_config_path(True)
                 else:
