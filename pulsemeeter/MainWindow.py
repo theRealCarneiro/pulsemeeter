@@ -2,9 +2,6 @@ import os
 import sys
 import json
 from pathlib import Path
-from EqPopover import EqPopover
-from RnnoisePopover import Rnnoise_Popup
-from LatencyPopover import Latency_Popup
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 

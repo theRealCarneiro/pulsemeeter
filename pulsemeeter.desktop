@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Pulsemeeter
+GenericName=Audio Mixer
+Icon=Pulsemeeter
+Exec=pulsemeeter
+Categories=Audio;AudioVideo;Midi;X-Alsa;X-Jack;X-AudioEditing;

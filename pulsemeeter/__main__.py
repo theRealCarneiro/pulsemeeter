@@ -7,11 +7,11 @@ import sys
 import subprocess
 from pathlib import Path
 
-from MainWindow import MainWindow
-from EqPopover import EqPopover
-from RnnoisePopover import Rnnoise_Popup
-from LatencyPopover import Latency_Popup
-from Pulse import Pulse
+from . import MainWindow
+from . import EqPopover
+from . import RnnoisePopover
+from . import LatencyPopover
+from . import Pulse
 
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
