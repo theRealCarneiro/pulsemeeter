@@ -671,21 +671,21 @@ KHz</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Noisetorch_Latency_Adjust">
+  <object class="GtkAdjustment" id="Rnnoise_Latency_Adjust">
     <property name="lower">1</property>
     <property name="upper">500</property>
     <property name="value">200</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Noisetorch_Threshold_Adjust">
+  <object class="GtkAdjustment" id="Rnnoise_Threshold_Adjust">
     <property name="lower">1</property>
     <property name="upper">100</property>
     <property name="value">95</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkPopover" id="Noisetorch_Popover">
+  <object class="GtkPopover" id="Rnnoise_Popover">
     <property name="can-focus">False</property>
     <child>
       <!-- n-columns=2 n-rows=4 -->
@@ -700,7 +700,7 @@ KHz</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="hexpand">True</property>
-            <property name="adjustment">Noisetorch_Latency_Adjust</property>
+            <property name="adjustment">Rnnoise_Latency_Adjust</property>
             <property name="round-digits">1</property>
             <property name="digits">0</property>
             <property name="value-pos">left</property>
@@ -711,11 +711,11 @@ KHz</property>
           </packing>
         </child>
         <child>
-          <object class="GtkScale" id="Noisetorch_Threshold">
+          <object class="GtkScale">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="hexpand">True</property>
-            <property name="adjustment">Noisetorch_Threshold_Adjust</property>
+            <property name="adjustment">Rnnoise_Threshold_Adjust</property>
             <property name="round-digits">1</property>
             <property name="digits">0</property>
             <property name="value-pos">left</property>
@@ -754,7 +754,7 @@ KHz</property>
             <property name="can-focus">False</property>
             <property name="valign">end</property>
             <child>
-              <object class="GtkButton" id="Apply_Noisetorch_Button">
+              <object class="GtkButton" id="Apply_Rnnoise_Button">
                 <property name="label" translatable="yes">Apply</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -2046,7 +2046,7 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="Hardware_Input_3_Noisetorch">
+                          <object class="GtkToggleButton" id="Hardware_Input_3_Rnnoise">
                             <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -2328,7 +2328,7 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="Hardware_Input_2_Noisetorch">
+                          <object class="GtkToggleButton" id="Hardware_Input_2_Rnnoise">
                             <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -2610,7 +2610,7 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="Hardware_Input_1_Noisetorch">
+                          <object class="GtkToggleButton" id="Hardware_Input_1_Rnnoise">
                             <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>

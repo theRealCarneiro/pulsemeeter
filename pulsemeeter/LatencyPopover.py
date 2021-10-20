@@ -1,12 +1,13 @@
+import os
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk,Gdk
 
-class Latency_Popup():
-    def __init__(self, button, pulse, config, gladefile, index):
+class LatencyPopover():
+    def __init__(self, button, pulse, gladefile, index):
 
-        self.config = config
+        self.config = pulse.config
         self.builder = Gtk.Builder()
 
         try:
@@ -27,16 +28,11 @@ class Latency_Popup():
 
         self.Latency_Adjust = self.builder.get_object('Latency_Adjust')
         self.Latency_Adjust.set_value(self.config[index[0]][index[1]][index[2] + '_latency'])
-        # self.Latency_Adjust.connect('value_changed', self.latency_adjust, [index[0], index[1], index[2] + '_latency'])
         self.Apply_Latency_Button = self.builder.get_object('Apply_Latency_Button')
         self.Apply_Latency_Button.connect('pressed', self.apply_latency, index, pulse)
 
 
         self.Latency_Popover.popup()
-
-    # def latency_adjust(self, widget, index):
-        # val = int(widget.get_value())
-        # self.config[index[0]][index[1]][index[2]] = val
 
     def apply_latency(self, widget, index, pulse):
         val = int(self.Latency_Adjust.get_value())
@@ -45,8 +41,8 @@ class Latency_Popup():
             return
         dev = list(index[2])
         command = ''
-        command = command + pulse.connect(self.config, 'disconnect', [index[0], index[1]], dev, 'init')
-        command = command + pulse.connect(self.config, 'connect', [index[0], index[1]], dev, 'init')
+        command = command + pulse.connect('disconnect', [index[0], index[1]], dev, 'init')
+        command = command + pulse.connect('connect', [index[0], index[1]], dev, 'init')
         # print(command)
         os.popen(command)
 

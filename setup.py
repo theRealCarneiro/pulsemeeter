@@ -6,6 +6,8 @@ data_files = [
     ('share/licenses/pulsemeeter/', ['LICENSE']),
 ]
 
+VERSION = pulsemeeter.__version__
+
 for directory, _, filenames in os.walk(u'share'):
     dest = directory[6:]
     if filenames:
@@ -14,7 +16,7 @@ for directory, _, filenames in os.walk(u'share'):
 
 setup(
     name='pulsemeeter',
-    version='1.1',
+    version=VERSION,
     description='A pulseaudio audio routing application',
     author='Gabriel Carneiro',
     author_email='therealcarneiro@gmail.com',

@@ -1,3 +1,4 @@
+import os
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
@@ -5,9 +6,8 @@ from gi.repository import Gtk,Gdk
 
 class EqPopover():
 
-    def __init__(self, button, config, pulse, gladefile, index, name):
+    def __init__(self, button, pulse, gladefile, index, name):
 
-        self.config = config
         self.builder = Gtk.Builder()
         self.pulse = pulse
 
@@ -59,7 +59,7 @@ class EqPopover():
         self.Apply_EQ_Button = self.builder.get_object('Apply_EQ_Button')
         self.Reset_EQ_Button = self.builder.get_object('Reset_EQ_Button')
 
-        control = self.config[index[0]][index[1]]['eq_control'] 
+        control = self.pulse.config[index[0]][index[1]]['eq_control'] 
         j = 0
         if control != '':
             for i in control.split(','):
@@ -81,17 +81,16 @@ class EqPopover():
         for i in self.eq:
             control = control + ',' + str(i.get_value())
         control = control[1:]
-        if self.config[index[0]][index[1]]['use_eq'] == False:
+        if self.pulse.config[index[0]][index[1]]['use_eq'] == False:
             return
-        self.pulse.apply_eq(self.config, index, name, control)
+        self.pulse.apply_eq(self.pulse.config, index, name, control)
 
     def disable_eq(self, widget, index, name):
-        # self.config[index[0]][index[1]]['eq_control'] = ''
-        self.config[index[0]][index[1]]['use_eq'] = False
-        master = self.config[index[0]][index[1]]['name']
+        self.pulse.config[index[0]][index[1]]['use_eq'] = False
+        master = self.pulse.config[index[0]][index[1]]['name']
         output = index[0] + index[1]
 
-        self.pulse.remove_eq(self.config, master, name, output, index)
+        self.pulse.remove_eq(master, name, output, index)
 
     def reset_eq(self, widget):
         for i in self.eq:
@@ -100,7 +99,4 @@ class EqPopover():
     def reset_value(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             widget.set_value(0)
-
-    def delete_event(self, widget, event, donnees=None):
-        pass
 
