@@ -1,6 +1,11 @@
 import os
 import sys
 from setuptools import setup
+try:
+    import pulsemeeter
+except ImportError:
+    print("error: pulsemeeter requires Python 3.5 or greater")
+    sys.exit(1)
 
 data_files = [
     ('share/licenses/pulsemeeter/', ['LICENSE']),
