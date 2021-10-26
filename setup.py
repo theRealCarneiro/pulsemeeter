@@ -7,11 +7,11 @@ except ImportError:
     print("error: pulsemeeter requires Python 3.5 or greater")
     sys.exit(1)
 
+VERSION = pulsemeeter.__version__
+
 data_files = [
     ('share/licenses/pulsemeeter/', ['LICENSE']),
 ]
-
-VERSION = pulsemeeter.__version__
 
 for directory, _, filenames in os.walk(u'share'):
     dest = directory[6:]

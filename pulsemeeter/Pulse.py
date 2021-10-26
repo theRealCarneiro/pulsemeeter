@@ -4,10 +4,13 @@ import re
 import sys
 import subprocess
 
+from .settings import CONFIG_PATH, ORIG_CONFIG_PATH, HOME, __version__
+
 class Pulse:
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, init=None):
+        self.read_config()
+        if init == 'cmd': return
         command = ''
         command = command + self.start_sinks()
         command = command + self.start_sources()
@@ -80,7 +83,7 @@ class Pulse:
         for i in ['a','b']:
             for j in range(1, 4):
                 if self.config[i][str(j)]['use_eq'] == True:
-                    command = command + self.apply_eq( [i, str(j)], self.config[i][str(j)]['eq_name'], self.config[i][str(j)]['eq_control'], 'init')
+                    command = command + self.apply_eq( [i, str(j)], status='init')
 
         return command
 
@@ -114,19 +117,22 @@ class Pulse:
         for i in ['a', 'b']:
             for j in ['1', '2', '3']:
                 if self.config[i][j]['mute'] == True:
-                    device = 'sink' if i == 'a' else 'source'
-                    command = command + self.mute( [i, j], device, 1, 'init')
+                    command = command + self.mute([i, j], 1, 'init')
 
         return command
 
-    def rnnoise(self, source_index, sink_name, stat, init=''):
+    def rnnoise(self, source_index, sink_name, stat, init=None):
+
         source = self.config[source_index[0]][source_index[1]]['name']
         control = self.config[source_index[0]][source_index[1]]['rnnoise_control']
         latency = self.config[source_index[0]][source_index[1]]['rnnoise_latency']
+
         self.config[source_index[0]][source_index[1]]['use_rnnoise'] = True if stat == 'connect' else False
         self.config[source_index[0]][source_index[1]]['rnnoise_name'] = sink_name
+
         command = f'pmctl rnnoise {sink_name} {source} {control} {stat} {latency}\n'
 
+        # if != init it wont try to load the connections
         if init != 'init':
             for i in ['a1','a2','a3','b1','b2','b3']:
                 if self.config[source_index[0]][source_index[1]][i] == True:
@@ -144,7 +150,7 @@ class Pulse:
         # print(command)
         return command
         
-    def reconnect(self, device, number, init=''):
+    def reconnect(self, device, number, init=None):
         sink_sufix = '' if device == 'hi' else '.monitor'
         command = ''
         for output in ['a1','a2','a3','b1','b3','b3']:
@@ -166,7 +172,8 @@ class Pulse:
             os.popen(command)
         return command
 
-    def volume(self, device_type, index, val):
+    def volume(self, index, val):
+        device_type = 'sink' if index[0] == 'a' or index[0] == 'vi' else 'source'
         self.config[index[0]][index[1]]['vol'] = val
         name = self.config[index[0]][index[1]]['name']
 
@@ -183,18 +190,15 @@ class Pulse:
 
         if old_name != '':
             command = f'pmctl remove {old_name}'
-            # print(command)
             os.popen(command)
 
+        self.config[device_index[0]][device_index[1]]['name'] = new_name
         if new_name != '':
-            self.config[device_index[0]][device_index[1]]['name'] = new_name
             command = f'pmctl init sink {new_name}\n'
             command = command + self.reconnect( device_index[0], device_index[1], 'init')
-            # print(command)
             os.popen(command)
 
         return True
-
 
     def get_hardware_devices(self, kind):
         command = f"pmctl list {kind}"
@@ -204,42 +208,44 @@ class Pulse:
             devices_concat.append([devices[i], devices[i + 1]])
         return devices_concat
 
-    def mute(self, index, device, state, init=''):
+    def mute(self, index, state=None, init=None):
         name = self.config[index[0]][index[1]]['name']
+        if name == '': return
+
+        device = 'sink' if index[0] == 'a' else 'source'
+
+        if state == None:
+            state = 1 if self.config[index[0]][index[1]]['mute'] == False else 0
         self.config[index[0]][index[1]]['mute'] = True if state == 1 else False
-        if name == '':
-            return
+            
 
         command = f"pmctl mute {device} {name} {state}\n"
-        if init != 'init':
+        if init == None:
             os.popen(command)
+
         # print(command)
         return command
 
-    def apply_eq(self, index, name, control, status=''):
-        master = self.config[index[0]][index[1]]['name']
-
-        self.config[index[0]][index[1]]['eq_control'] = control
+    def apply_eq(self, index, name=None, control=None, status=None):
+        master = self.get_correct_device([index[0], index[1]], 'sink')
+        name = index[0].upper() + index[1] + '_EQ' if name == None else name
         self.config[index[0]][index[1]]['use_eq'] = True
         self.config[index[0]][index[1]]['eq_name'] = name
 
-        if index[0] == 'b':
-            master = master + "_sink"
+        if control == None:
+            control = self.config[index[0]][index[1]]['eq_control']
+            control = '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0' if control == '' else control
+
+        self.config[index[0]][index[1]]['eq_control'] = control
 
         command = f'pmctl eq {name} {master} {control}\n'
         if status != 'init':
             output = index[0] + index[1]
             for i in ['hi', 'vi']:
-                for j in range (1, 4):
-                    if self.config[i][str(j)][output] == True:
-                        vi = self.config[i][str(j)]['name']
-
-                        if i == 'hi' and self.config[i][str(j)]['use_rnnoise'] == True:
-                            vi = self.config[i][str(j)]['rnnoise_name'] + '.monitor'
-
+                for j in ['1', '2', '3']:
+                    if self.config[i][j][output] == True:
+                        vi = self.get_correct_device([i, j], 'source')
                         command = command + f'pmctl disconnect {vi} {master}\n'
-
-                        vi = vi + '.monitor' if i == 'vi' else vi
                         command = command + f'pmctl connect {vi} {name}\n'
 
             os.popen(command)
@@ -247,24 +253,53 @@ class Pulse:
         # print(command)
         return command
 
-    def remove_eq(self, master, name, output, index):
+    def remove_eq(self, index, name=None):
+        output = index[0] + index[1]
+        name = output.upper() + '_EQ' if name == None else name
+        master = self.config[index[0]][index[1]]['name']
         self.config[index[0]][index[1]]['use_eq'] = False
         command = f'pmctl eq {name} remove\n'
 
         for i in ['hi', 'vi']:
-            for j in range (1, 4):
-                if self.config[i][str(j)][output] == True:
-                    vi = self.config[i][str(j)]['name']
-                    if i == 'hi' and self.config[i][str(j)]['use_rnnoise'] == True:
-                        vi = self.config[i][str(j)]['rnnoise_name'] + '.monitor'
-
-                    if i == 'vi':
-                        vi = vi + '.monitor'
-                    elif list(output)[0] == 'b':
-                        master = master + '_sink'
+            for j in ['1', '2', '3']:
+                if self.config[i][j][output] == True:
+                    vi = self.get_correct_device([i, j], 'source')
                     command = command + f'pmctl connect {vi} {master}\n'
 
+        # print(command)
         os.popen(command)
+
+    def read_config(self):
+
+        # search for the original config
+        for i in ['/usr', '/usr/local', os.path.join(HOME, '.local')]:
+            config_orig = os.path.join(i, ORIG_CONFIG_PATH)
+            if os.path.exists(config_orig):
+                break
+
+        # if there is no config file in XDG_CONFIG_HOME 
+        if not os.path.isfile(CONFIG_PATH):
+            config_orig = json.load(open(config_orig))
+            config = config_orig
+            with open(CONFIG_PATH, 'w') as outfile:
+                json.dump(config, outfile, indent='\t', separators=(',', ': '))
+        else:
+            self.config = json.load(open(CONFIG_PATH))
+
+            # if config is outdated
+            if not 'version' in self.config or self.config['version'] != __version__:
+                config_orig = json.load(open(config_orig))
+                self.config['version'] = __version__
+                for i in ['a', 'b', 'vi', 'hi']:
+                    for j in ['1', '2', '3']:
+                        for k in config_orig[i][j]:
+                            if not k in self.config[i][j]:
+                                self.config[i][j][k] = self.config_orig[i][j][k]
+                self.save_config()
+
+    def save_config(self):
+        with open(CONFIG_PATH, 'w') as outfile:
+            json.dump(self.config, outfile, indent='\t', separators=(',', ': '))
 
 def cmd(command):
     sys.stdout.flush()

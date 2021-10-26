@@ -6,7 +6,7 @@ from gi.repository import Gtk,Gdk
 
 class EqPopover():
 
-    def __init__(self, button, pulse, gladefile, index, name):
+    def __init__(self, button, pulse, gladefile, index):
 
         self.builder = Gtk.Builder()
         self.pulse = pulse
@@ -66,7 +66,7 @@ class EqPopover():
                 self.eq[j].set_value(float(i))
                 j = j + 1
 
-        self.Apply_EQ_Button.connect('pressed', self.apply_eq, index, name)
+        self.Apply_EQ_Button.connect('pressed', self.apply_eq, index)
         self.Reset_EQ_Button.connect('pressed', self.reset_eq)
 
         self.EQ_Popup = self.builder.get_object('EQ_Popup')
@@ -76,21 +76,17 @@ class EqPopover():
 
         self.builder.connect_signals(self)
 
-    def apply_eq(self, widget, index, name):
+    def apply_eq(self, widget, index):
         control=''
         for i in self.eq:
             control = control + ',' + str(i.get_value())
         control = control[1:]
         if self.pulse.config[index[0]][index[1]]['use_eq'] == False:
             return
-        self.pulse.apply_eq(self.pulse.config, index, name, control)
+        self.pulse.apply_eq(index, control=control)
 
-    def disable_eq(self, widget, index, name):
-        self.pulse.config[index[0]][index[1]]['use_eq'] = False
-        master = self.pulse.config[index[0]][index[1]]['name']
-        output = index[0] + index[1]
-
-        self.pulse.remove_eq(master, name, output, index)
+    def disable_eq(self, widget, index):
+        self.pulse.remove_eq(index)
 
     def reset_eq(self, widget):
         for i in self.eq:
