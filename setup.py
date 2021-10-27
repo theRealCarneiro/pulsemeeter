@@ -29,7 +29,7 @@ setup(
     license_files='LICENSE',
     url='https://github.com/theRealCarneiro/pulsemeeter',
     packages=['pulsemeeter'],
-    install_requires=['gobject'],
+    install_requires=['pygobject'],
     data_files=data_files,
     entry_points={
         "console_scripts": [
