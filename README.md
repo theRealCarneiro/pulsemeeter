@@ -13,7 +13,8 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 ## Dependencies
  - pip
- - python-gobject
+ - [setuptools](https://pypi.org/project/setuptools/) (installed automatically when installing app with pip)
+ - [pygobject](https://pypi.org/project/PyGObject/) (installed automatically when installing app with pip)
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
  - [swh-plugins](https://github.com/swh/ladspa)
 
@@ -58,3 +59,4 @@ If you want to get updates about new features, patches or leave some sugestions,
 
 * [xiph.org](https://xiph.org)/[Mozilla's](https://mozilla.org) excellent [RNNoise](https://jmvalin.ca/demo/rnnoise/).
 * [@werman](https://github.com/werman/)'s [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
+* [@swh](https://github.com/swh)'s [swh-plugins](https://github.com/swh/ladspa)
