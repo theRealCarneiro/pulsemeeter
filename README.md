@@ -12,15 +12,15 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
  - Rnnoise noise reduction (same algorithm as [noisetorch](https://github.com/lawl/NoiseTorch)) for hardware inputs
 
 ## Installation
-Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to do it
 
 ### Dependencies
  - pip
  - [setuptools](https://pypi.org/project/setuptools/) (installed automatically when installing app with pip)
  - [pygobject](https://pypi.org/project/PyGObject/) (installed automatically when installing app with pip)
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
- - [swh-plugins](https://github.com/swh/ladspa)
+ - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/pacman packages available)
 
+Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
 
 ### Arch/Manjaro
 A package is available in the AUR [pulsemeeter-git](https://aur.archlinux.org/packages/pulsemeeter-git/). If you use an AUR helper:
