@@ -9,16 +9,19 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
  - Route audio from one device to another
  - Volume control
  - Equalizer for hardware and virtual outputs
- - Rnnoise noise reduction (same algorithm as noisetorch) for hardware inputs
+ - Rnnoise noise reduction (same algorithm as [noisetorch](https://github.com/lawl/NoiseTorch)) for hardware inputs
 
-## Dependencies
+## Installation
+Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to do it
+
+### Dependencies
  - pip
  - [setuptools](https://pypi.org/project/setuptools/) (installed automatically when installing app with pip)
  - [pygobject](https://pypi.org/project/PyGObject/) (installed automatically when installing app with pip)
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
  - [swh-plugins](https://github.com/swh/ladspa)
 
-## Installation
+
 ### Arch/Manjaro
 A package is available in the AUR [pulsemeeter-git](https://aur.archlinux.org/packages/pulsemeeter-git/). If you use an AUR helper:
 ```sh
@@ -30,24 +33,11 @@ Clone the repo and cd into it:
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-```
-
-Install for the local user:
-```sh
-pip install .
-```
-
-Install globaly:
-```sh
 sudo pip install .
 ```
-#### Uninstall
-Uninstall for the local user:
-```sh
-pip uninstall pulsemeeter
-```
 
-Uninstall globaly:
+### Uninstall
+
 ```sh
 sudo pip uninstall pulsemeeter
 ```
