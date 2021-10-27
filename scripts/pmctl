@@ -181,7 +181,7 @@ rnnoise() {
 		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
 		pactl load-module module-null-sink sink_name=$sink_name
 
-		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noisetorch plugin=rnnoise_ladspa control=$control
+		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noise_suppressor_mono plugin=librnnoise_ladspa control=$control
 		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
 	else
 		index=$(LC_ALL=C pactl list modules | grep -B 2 noise | grep -B 2 -A 1 ladspa | grep Module | sed 's/.*#//g')
