@@ -18,7 +18,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
  - [setuptools](https://pypi.org/project/setuptools/) (installed automatically when installing app with pip)
  - [pygobject](https://pypi.org/project/PyGObject/) (installed automatically when installing app with pip)
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
- - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/aur packages available)
+ - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/pacman packages available)
 
 Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
 
