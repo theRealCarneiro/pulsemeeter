@@ -17,6 +17,9 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
  - pip
  - [setuptools](https://pypi.org/project/setuptools/) (installed automatically when installing app with pip)
  - [pygobject](https://pypi.org/project/PyGObject/) (installed automatically when installing app with pip)
+ 
+ #### Optional Dependencies
+ You don't actually need those to use routing, but the app will likely break if you try to activate these options without those apps installed
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
  - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/pacman packages available)
 
