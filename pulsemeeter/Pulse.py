@@ -4,7 +4,7 @@ import re
 import sys
 import subprocess
 
-from .settings import CONFIG_PATH, ORIG_CONFIG_PATH, HOME, __version__
+from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, HOME, __version__
 
 class Pulse:
 
@@ -273,18 +273,14 @@ class Pulse:
 
         # search for the original config
         for i in ['/usr', '/usr/local', os.path.join(HOME, '.local')]:
-            config_orig = os.path.join(i, ORIG_CONFIG_PATH)
+            config_orig = os.path.join(i, ORIG_CONFIG_FILE)
             if os.path.exists(config_orig):
                 break
 
-        # if there is no config file in XDG_CONFIG_HOME 
-        if not os.path.isfile(CONFIG_PATH):
-            config_orig = json.load(open(config_orig))
-            config = config_orig
-            with open(CONFIG_PATH, 'w') as outfile:
-                json.dump(config, outfile, indent='\t', separators=(',', ': '))
-        else:
-            self.config = json.load(open(CONFIG_PATH))
+
+        # if config exists XDG_CONFIG_HOME 
+        if os.path.isfile(CONFIG_FILE):
+            self.config = json.load(open(CONFIG_FILE))
 
             # if config is outdated
             if not 'version' in self.config or self.config['version'] != __version__:
@@ -296,9 +292,18 @@ class Pulse:
                             if not k in self.config[i][j]:
                                 self.config[i][j][k] = self.config_orig[i][j][k]
                 self.save_config()
+        else:
+            self.config = json.load(open(config_orig))
+             
+            self.config['version'] = __version__
+
+            self.save_config()
+
 
     def save_config(self):
-        with open(CONFIG_PATH, 'w') as outfile:
+        if not os.path.isdir(CONFIG_DIR):
+            os.mkdir(CONFIG_DIR)
+        with open(CONFIG_FILE, 'w') as outfile:
             json.dump(self.config, outfile, indent='\t', separators=(',', ': '))
 
 def cmd(command):

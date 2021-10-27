@@ -54,8 +54,11 @@ def arg_interpreter(argv, pulse):
     sys.exit(0)
 
 def main():
-    is_running()
-    pulse = Pulse() if len(sys.argv) == 1 or sys.argv[1] == 'init' else Pulse('cmd')
+    if len(sys.argv) == 1 or sys.argv[1] == 'init':
+        is_running()
+        pulse = Pulse()
+    else:
+        pulse = Pulse('cmd')
     arg_interpreter(sys.argv, pulse)
     app = MainWindow(pulse)
     return Gtk.main()

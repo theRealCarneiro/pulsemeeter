@@ -6,7 +6,7 @@ from pathlib import Path
 from .EqPopover import EqPopover
 from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
-from .settings import HOME, CONFIG_HOME, CONFIG_PATH, GLADEFILE
+from .settings import HOME, GLADEFILE
 
 from gi.repository import Gtk,Gdk
 
