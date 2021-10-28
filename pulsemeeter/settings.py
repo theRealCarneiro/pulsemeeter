@@ -1,7 +1,7 @@
 import os
 import platform
 import appdirs
-
+ 
 
 __version__ = '1.2.2'
 

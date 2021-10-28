@@ -216,3 +216,4 @@ class MainWindow(Gtk.Window):
         self.pulse.save_config()
         Gtk.main_quit()
         return False
+

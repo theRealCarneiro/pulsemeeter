@@ -3,7 +3,7 @@ import json
 import re
 import sys
 import subprocess
-
+ 
 from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, __version__
 
 class Pulse:
