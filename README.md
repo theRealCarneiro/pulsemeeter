@@ -14,9 +14,11 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 ## Installation
 
 ### Dependencies
+Installed automatically when installing app with pip
  - pip
- - [setuptools](https://pypi.org/project/setuptools/) (installed automatically when installing app with pip)
- - [pygobject](https://pypi.org/project/PyGObject/) (installed automatically when installing app with pip)
+ - [appdirs](https://pypi.org/project/appdirs/)
+ - [setuptools](https://pypi.org/project/setuptools/)
+ - [pygobject](https://pypi.org/project/PyGObject/)
  
  #### Optional Dependencies
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
