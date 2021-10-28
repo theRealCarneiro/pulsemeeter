@@ -31,7 +31,13 @@ paru -S pulsemeeter-git
 ```
 
 ### Any distro
-Clone the repo and cd into it:
+Install using pip:
+```sh
+sudo pip install pulsemeeter
+```
+
+
+Build from source:
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
