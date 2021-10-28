@@ -6,7 +6,7 @@ from pathlib import Path
 from .EqPopover import EqPopover
 from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
-from .settings import HOME, GLADEFILE
+from .settings import GLADEFILE
 
 from gi.repository import Gtk,Gdk
 
@@ -17,13 +17,6 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
         self.pulse = pulse
-
-        for i in ['/usr', '/usr/local', os.path.join(HOME, '.local')]:
-            gladefile = os.path.join(i, GLADEFILE)
-            if os.path.exists(gladefile):
-                break
-        
-        self.gladefile = gladefile
 
         component_list = [
                     'Window',
@@ -57,7 +50,7 @@ class MainWindow(Gtk.Window):
 
         try:
             self.builder.add_objects_from_file(
-                gladefile,
+                GLADEFILE,
                 component_list
             )
         except Exception as ex:
@@ -129,6 +122,16 @@ class MainWindow(Gtk.Window):
                     rnnoise.connect('toggled', self.toggle_rnnoise, ['hi', i], f'hi{i}_rnnoise')
                     rnnoise.connect('button_press_event', self.open_popover, RnnoisePopover, ['hi', i])
 
+                    found = 0
+                    for path in ['/usr/lib/ladspa', '/usr/local/lib/ladspa']:
+                        if os.path.isfile(os.path.join(path, 'librnnoise_ladspa.so', path, 'rnnoise_ladspa.so')):
+                            found = 1
+                            break
+                    if found == 0:
+                        print('aaa')
+                        rnnoise.set_visible(False)
+                        rnnoise.set_no_show_all(True)
+
         # start outputs
         for i in ['1', '2', '3']:
             for j in ['a', 'b']:
@@ -136,14 +139,22 @@ class MainWindow(Gtk.Window):
                 master.set_value(self.pulse.config[j][i]['vol'])
                 master.connect('value-changed', self.volume_change, [j, i])
 
+                mute = self.builder.get_object(f'Mute_{j.upper()}{i}')
+                mute.set_active(self.pulse.config[j][i]['mute'])
+                mute.connect('toggled', self.toggle_mute, [j, i])
+
                 eq = self.builder.get_object(f'EQ_{j.upper()}{i}')
                 eq.set_active(self.pulse.config[j][i]['use_eq'])
                 eq.connect('toggled', self.toggle_eq, [j, i])
                 eq.connect('button_press_event', self.open_popover, EqPopover, [j, i])
 
-                mute = self.builder.get_object(f'Mute_{j.upper()}{i}')
-                mute.set_active(self.pulse.config[j][i]['mute'])
-                mute.connect('toggled', self.toggle_mute, [j, i])
+                found = 0
+                for path in ['/usr/lib/ladspa', '/usr/local/lib/ladspa']:
+                    if os.path.isfile(os.path.join(path, 'mbeq_1197.so')):
+                        found = 1
+                if found == 0:
+                    eq.set_visible(False)
+                    eq.set_no_show_all(True)
 
         self.Window = self.builder.get_object('Window')
 
@@ -179,7 +190,7 @@ class MainWindow(Gtk.Window):
     def open_popover(self, button, event, popover, index):
         if event.button == 3:
             if self.pulse.config[index[0]][index[1]]['name'] != '':
-                popover(button, self.pulse, self.gladefile, index)
+                popover(button, self.pulse, index)
 
     def label_rename_entry(self, widget):
         name = widget.get_text()

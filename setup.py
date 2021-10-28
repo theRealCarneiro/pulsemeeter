@@ -8,9 +8,11 @@ except ImportError:
     sys.exit(1)
 
 VERSION = pulsemeeter.__version__
+ORIG_CONFIG_DIR = pulsemeeter.ORIG_CONFIG_DIR
 
 data_files = [
     ('share/licenses/pulsemeeter/', ['LICENSE']),
+    (ORIG_CONFIG_DIR[1:], ['pulsemeeter/config.json']),
 ]
 
 for directory, _, filenames in os.walk(u'share'):
@@ -29,7 +31,7 @@ setup(
     license_files='LICENSE',
     url='https://github.com/theRealCarneiro/pulsemeeter',
     packages=['pulsemeeter'],
-    install_requires=['pygobject'],
+    install_requires=['pygobject', 'appdirs'],
     data_files=data_files,
     entry_points={
         "console_scripts": [

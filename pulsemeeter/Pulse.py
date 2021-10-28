@@ -4,7 +4,7 @@ import re
 import sys
 import subprocess
 
-from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, HOME, __version__
+from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, __version__
 
 class Pulse:
 
@@ -161,7 +161,7 @@ class Pulse:
                 command = command + self.connect( "connect", source_index, sink_index, init)
         return command
 
-    def connect(self, state, source_index, sink_index, init=''):
+    def connect(self, state, source_index, sink_index, init=None):
         self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1]] = True if state == "connect" else False
         source = self.get_correct_device( source_index, 'source')
         sink = self.get_correct_device( sink_index, 'sink')
@@ -271,20 +271,13 @@ class Pulse:
 
     def read_config(self):
 
-        # search for the original config
-        for i in ['/usr', '/usr/local', os.path.join(HOME, '.local')]:
-            config_orig = os.path.join(i, ORIG_CONFIG_FILE)
-            if os.path.exists(config_orig):
-                break
-
-
         # if config exists XDG_CONFIG_HOME 
         if os.path.isfile(CONFIG_FILE):
             self.config = json.load(open(CONFIG_FILE))
 
             # if config is outdated
             if not 'version' in self.config or self.config['version'] != __version__:
-                config_orig = json.load(open(config_orig))
+                config_orig = json.load(open(ORIG_CONFIG_FILE))
                 self.config['version'] = __version__
                 for i in ['a', 'b', 'vi', 'hi']:
                     for j in ['1', '2', '3']:
@@ -293,7 +286,7 @@ class Pulse:
                                 self.config[i][j][k] = self.config_orig[i][j][k]
                 self.save_config()
         else:
-            self.config = json.load(open(config_orig))
+            self.config = json.load(open(ORIG_CONFIG_FILE))
              
             self.config['version'] = __version__
 

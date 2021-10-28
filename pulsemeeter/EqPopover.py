@@ -1,4 +1,5 @@
 import os
+from .settings import GLADEFILE
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
@@ -6,14 +7,14 @@ from gi.repository import Gtk,Gdk
 
 class EqPopover():
 
-    def __init__(self, button, pulse, gladefile, index):
+    def __init__(self, button, pulse, index):
 
         self.builder = Gtk.Builder()
         self.pulse = pulse
 
         try:
             self.builder.add_objects_from_file(
-                gladefile,
+                GLADEFILE,
                 [
                     'EQ_Popup',
                     'EQ_50_hz_Adjust',

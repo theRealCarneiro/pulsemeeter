@@ -1,18 +1,19 @@
 import os
+from .settings import GLADEFILE
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk,Gdk
 
 class LatencyPopover():
-    def __init__(self, button, pulse, gladefile, index):
+    def __init__(self, button, pulse, index):
 
         self.config = pulse.config
         self.builder = Gtk.Builder()
 
         try:
             self.builder.add_objects_from_file(
-                gladefile,
+                GLADEFILE,
                 [
                     'Latency_Popover',
                     'Latency_Adjust',
