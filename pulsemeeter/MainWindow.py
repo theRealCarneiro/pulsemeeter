@@ -202,7 +202,7 @@ class MainWindow(Gtk.Window):
     def label_click(self, widget, event, label, index):
         self.Label_Index = index
         self.Popover.set_relative_to(widget)
-        self.Popover.popover()
+        self.Popover.popup()
         self.PopActive = label
 
     def on_combo_changed(self, widget, index, device):
