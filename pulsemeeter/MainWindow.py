@@ -128,7 +128,6 @@ class MainWindow(Gtk.Window):
                             found = 1
                             break
                     if found == 0:
-                        print('aaa')
                         rnnoise.set_visible(False)
                         rnnoise.set_no_show_all(True)
 
