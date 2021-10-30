@@ -1,4 +1,6 @@
 import os
+import subprocess
+import threading
 import sys
 import json
 from pathlib import Path
@@ -8,7 +10,7 @@ from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
 from .settings import GLADEFILE
 
-from gi.repository import Gtk,Gdk
+from gi.repository import Gtk,Gdk,Gio
 
 class MainWindow(Gtk.Window):
 
@@ -27,6 +29,10 @@ class MainWindow(Gtk.Window):
                     'Rnnoise_Popover',
                     'Rnnoise_Latency_Adjust',
                     'Rnnoise_Threshold_Adjust',
+                    'Sink_Input_List',
+                    'Sink_Output_List',
+                    'adjustment1',
+                    'adjustment2',
                 ]
         for i in range(1, 4):
             component_list.append(f'Hardware_Input_{i}_Adjust')
@@ -56,6 +62,19 @@ class MainWindow(Gtk.Window):
         except Exception as ex:
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
+
+
+
+        self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
+        self.subscribe_thread.start()
+
+        self.Sink_Input_List = self.builder.get_object('Sink_Input_List')
+        self.Source_Output_List = self.builder.get_object('Sink_Output_List')
+        self.sink_input_box_list = []
+        self.source_output_box_list = []
+
+        self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List)
+        self.load_application_list('source', self.source_output_box_list, self.Source_Output_List)
 
         self.Popover = self.builder.get_object('Popover')
         self.Popover_Entry = self.builder.get_object('Popover_Entry')
@@ -124,9 +143,13 @@ class MainWindow(Gtk.Window):
 
                     found = 0
                     for path in ['/usr/lib/ladspa', '/usr/local/lib/ladspa']:
-                        if os.path.isfile(os.path.join(path, 'librnnoise_ladspa.so', path, 'rnnoise_ladspa.so')):
+                        if os.path.isfile(os.path.join(path, 'librnnoise_ladspa.so')): 
                             found = 1
                             break
+                        elif os.path.isfile(os.path.join(path, 'rnnoise_ladspa.so')):
+                            found = 1
+                            break
+
                     if found == 0:
                         rnnoise.set_visible(False)
                         rnnoise.set_no_show_all(True)
@@ -194,7 +217,10 @@ class MainWindow(Gtk.Window):
     def label_rename_entry(self, widget):
         name = widget.get_text()
         if self.pulse.rename(self.Label_Index, name) == True:
-            self.PopActive.set_text(name)
+            if not ' ' in name:
+                self.PopActive.set_text(name)
+            else:
+                return
 
         self.Popover.popdown()
 
@@ -211,8 +237,84 @@ class MainWindow(Gtk.Window):
         else:
             self.pulse.config[index[0]][index[1]]['name'] = ''
 
+    def app_combo_change(self, combobox, dev_type, app):
+        name = combobox.get_active_text()
+        if dev_type == 'sink':
+            self.pulse.move_sink_input(app, name)
+        if dev_type == 'source':
+            self.pulse.move_source_output(app, name)
+
+    def load_application_list(self, dev_type, box_list, widget, id=None):
+        if dev_type == 'source':
+            self.app_list = self.pulse.get_source_outputs()
+        else:
+            self.app_list = self.pulse.get_sink_inputs()
+
+        if len(self.app_list) == 0: 
+            return
+        dev_list = []
+        for i in ['1','2','3']:
+            name_vi = self.pulse.config['vi'][i]['name']
+            name_b = self.pulse.config['b'][i]['name']
+            
+            if name_vi != '':
+                if dev_type == 'source':
+                    dev_list.append(name_vi+'.monitor')
+                else:
+                    dev_list.append(name_vi)
+            if dev_type == 'source' and name_b != '':
+                dev_list.append(name_b)
+
+        for i in self.app_list:
+            if id != None:
+                if str(id) != str(i['id']):
+                    continue
+            icon = Gio.ThemedIcon(name=i['icon'])
+            image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
+            label = Gtk.Label(i['name'])
+            label.props.halign = Gtk.Align.START
+            combobox = Gtk.ComboBoxText()
+            for j in range(len(dev_list)):
+                combobox.append_text(dev_list[j])
+                combobox.set_active(dev_list.index(i['Device']))
+            combobox.connect('changed', self.app_combo_change, dev_type, i['id'])
+            combobox.props.halign = Gtk.Align.END
+            combobox.set_hexpand(True)
+
+            box = Gtk.Box(spacing=5)
+            box.pack_start(image, expand = False, fill = False, padding = 0)
+            box.pack_start(label, expand = False, fill = False, padding = 0)
+            box.pack_start(combobox, expand = False, fill = True, padding = 0)
+            box_list.append([box, i['id']])
+            widget.pack_start(box, expand = True, fill = True, padding = 0)
+
+            widget.show_all()
+
+    def remove_app_dev(self, box_list, widget, id):
+        for i in box_list:
+            if str(id) == str(i[1]):
+                box_list.remove(i)
+                widget.remove(i[0])
+
+    def listen_subscribe(self):
+        for i in self.pulse.subscribe():
+            if 'remove' in i:
+                id = i.split('#')[1].strip('\n')
+                if 'sink-input' in i:
+                    self.remove_app_dev(self.sink_input_box_list, self.Sink_Input_List, id)
+                elif 'source-output' in i:
+                    self.remove_app_dev(self.source_output_box_list, self.Source_Output_List, id)
+            elif 'new' in i:
+                id = i.split('#')[1].strip('\n')
+                if 'sink-input' in i:
+                    self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List, id)
+                elif 'source-output' in i:
+                    self.load_application_list('source', self.source_output_box_list, self.Source_Output_List, id)
+
     def delete_event(self, widget, event):
         self.pulse.save_config()
+        self.pulse.end_subscribe()
+        self.subscribe_thread.join()
         Gtk.main_quit()
         return False
 

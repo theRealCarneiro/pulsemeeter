@@ -10,7 +10,7 @@ init (){
 		"source")
 			source=$2
 			pactl list sources short | grep $source && exit
-			pactl load-module module-null-sink sink_name=$source"_sink" sink_properties=device.description=$source"_sink"
+			pactl load-module module-null-sink sink_name=$source"_sink" # sink_properties=device.description=$source"_sink"
 			pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$source 
 		;;
 	esac
@@ -123,10 +123,52 @@ move_sink_input_master (){
 	pactl move-sink-input $id $master
 }
 
+move_app_output (){
+	app=$1
+	master=$2
+	pactl move-sink-input $app $master
+}
+
+move_source_output () {
+	app=$1
+	master=$2
+	pactl move-source-output $app $master
+}
+
+list_source_outputs (){
+	source_outputs="$(LC_ALL=C pactl list source-outputs)"
+	apps=$(echo "$source_outputs" | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /Driver/{print$2} /process.binary/{print $0} /application.name = /{print $0} /media.name /{print $0}' | tac | sed -e '/pavucontrol/,+6d; /Remapped Stream/,+3d' | tac | sed ':a $!N;s/\nmodule-loopback/ module-loopback/;ta P;D;' | sed -e '/loopback/,+3d; /protocol-native/d; /media.name/d; /process.binary/d' ) # | sed 's/.* = //g; s/"//g')
+	sources=$(echo "$apps" | grep Source:)
+	for source in $sources; do
+		name=$(LC_ALL=C pactl list sources | grep -A 2 \#$(echo $source | sed "s/Source://g") | awk '/Name/ {print $2}')
+		apps=$(echo "$apps" | sed "s/$source/Device:\"$name\"/")
+	done
+	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' | sed ':a $!N;s/#/\n{"id":/;ta P;D;' | sed 's/application.name = /name:/g; s/application.icon_name = /"icon":/g; s/$/}/; s/, }/}/' | sed 's/ 		/ /g; /^$/d; s/Device/"Device"/g; s/name/"name"/g')
+	echo "$apps"
+}
+
+list_sink_inputs (){
+	apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /Driver/{print $2} /icon_name/{print $0} /application.name = /{print $0}' | grep -A 3 -B 1 protocol-native.c | sed -e '/protocol/d')
+	sinks=$(echo "$apps" | grep Sink:)
+	for sink in $sinks; do
+		name=$(LC_ALL=C pactl list sinks | grep -A 2 \#$(echo $sink | sed "s/Sink://g") | awk '/Name/ {print $2}')
+		apps=$(echo "$apps" | sed "s/$sink/\"Device\":\"$name\"/")
+	done
+	echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' | sed ':a $!N;s/#/\n{"id":/;ta P;D;' | sed 's/application.icon_name = /"icon":/g; s/application.name = /"name":/g' | sed 's/ 		/ /g' | sed 's/, $//; s/$/}/'
+}
+
 eq (){
 	sink_name=$1
 	master=$2
 	control=$3
+	label=mbeq
+	plugin=mbeq_1197
+
+	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
+		[ -f "$i/$plugin.so" ] && found=1
+	done
+
+	[ -z "$found" ] && exit
 
 	info="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m")"
 	if ! [ -z "$info" ]; then
@@ -141,12 +183,12 @@ eq (){
 	[ "$master" = "remove" ] && exit
 
 	pactl load-module module-ladspa-sink \
-		sink_properties=device.description=$sink_name \
 		sink_name=$sink_name	\
 		master=$master			\
 		plugin=mbeq_1197		\
 		label=mbeq				\
-		control=$control
+		control=$control		#\
+		#sink_properties=device.description=$sink_name 
 }
 
 compressor (){
@@ -169,6 +211,37 @@ compressor (){
 		control=$control
 }
 
+ladspa() {
+	master=$1
+	sink_name=$2
+	control=$3
+	status=$4
+	latency=${5:-200}
+	label=$6
+	plugin=$7
+
+	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
+		[ -f "$i/$plugin.so" ] && found=1
+	done
+
+	[ -z "$found" ] && exit 1
+
+	if [ "$status" = "connect" ]; then
+		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
+		pactl load-module module-null-sink sink_name=$sink_name
+
+		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=$label plugin=$plugin control=$control
+		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
+	else
+		index=$(LC_ALL=C pactl list modules | grep -B 2 $label | grep -B 2 -A 1 ladspa | grep Module | sed 's/.*#//g')
+		[ -z "$index" ] || pactl unload-module $index
+
+		#index=$(LC_ALL=C pactl list modules | awk '/Module/{print $0} /Name:/ {print $0} /Argument/' | grep -B 2 $sink_name | grep -B 1 null | grep Module | sed 's/.*#//g')
+		#[ -z "$index" ] || pactl unload-module $index
+	fi
+
+}
+
 rnnoise() {
 	sink_name=$1
 	master=$2
@@ -176,11 +249,20 @@ rnnoise() {
 	status=$4
 	latency=${5:-200}
 
+	label=noisetorch
+	plugin=rnnoise_ladspa
+ 
+	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
+		[ -f "$i/$plugin.so" ] && found=1
+	done
+
+	[ -z "$found" ] && exit 1
 
 	if [ "$status" = "connect" ]; then
 		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
 		pactl load-module module-null-sink sink_name=$sink_name
 
+		#pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noisetorch plugin=rnnoise_ladspa control=$control
 		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noise_suppressor_mono plugin=librnnoise_ladspa control=$control
 		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
 	else
@@ -232,6 +314,23 @@ case $1 in
 	;;
 	"rnnoise")
 		rnnoise $2 $3 $4 $5 $6
+	;;
+	"ladspa")
+		ladspa $2 $3 $4 $5 $6 $7 $8
+	;;
+	"list-sink-inputs")
+		list_sink_inputs
+	;;
+
+	"list-source-outputs")
+		list_source_outputs
+	;;
+	"move-app-output")
+		move_app_output $2 $3
+	;;
+
+	"move-source-output")
+		move_source_output $2 $3
 	;;
 	"*") echo "command not found";;
 esac

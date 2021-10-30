@@ -269,6 +269,64 @@ class Pulse:
         # print(command)
         os.popen(command)
 
+    def get_sink_inputs(self):
+        command = "pmctl list-sink-inputs"
+        devices = cmd(command).split('\n')
+        del devices[-1]
+        del devices[0]
+        # print(devices)
+        apps = []
+        for i in devices:
+            jason = json.loads(i)
+            if 'icon' not in jason:
+                jason['icon'] = 'audio-card'
+            apps.append(jason)
+        return apps
+
+    def get_source_outputs(self):
+        command = "pmctl list-source-outputs"
+        devices = cmd(command).split('\n')
+        del devices[-1]
+        del devices[0]
+        apps = []
+        for i in devices:
+            jason = json.loads(i)
+            if 'icon' not in jason:
+                jason['icon'] = 'audio-card'
+            apps.append(jason)
+
+        return apps
+
+    def move_source_output(self, app, name):
+        command = f'pmctl move-source-output {app} {name}'
+        os.popen(command)
+
+    def move_sink_input(self, app, name):
+        command = f'pmctl move-app-output {app} {name}'
+        os.popen(command)
+
+    def subscribe(self):
+        command = ['pactl', 'subscribe']
+        sys.stdout.flush()
+        env = os.environ
+        env['LC_ALL'] = 'C'
+        self.MyOut = subprocess.Popen(command, env=env, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.STDOUT,
+            universal_newlines=True)
+
+        for stdout_line in iter(self.MyOut.stdout.readline, ""):
+            yield stdout_line 
+            
+        self.MyOut.stdout.close()
+        return_code = self.MyOut.wait()
+        if return_code:
+            raise subprocess.CalledProcessError(return_code, command)
+
+    def end_subscribe(self):
+        self.MyOut.terminate()
+
+
     def read_config(self):
 
         # if config exists XDG_CONFIG_HOME 
