@@ -52,6 +52,9 @@ sudo pip install .
 sudo pip uninstall pulsemeeter
 ```
 
+## Start devices on startup
+All connections and devices will be restored with the command `pulsemeeter init`
+
 ## Discord Server
 If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)
 
