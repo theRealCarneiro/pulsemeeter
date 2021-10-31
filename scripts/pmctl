@@ -137,7 +137,11 @@ move_source_output () {
 
 list_source_outputs (){
 	source_outputs="$(LC_ALL=C pactl list source-outputs)"
-	apps=$(echo "$source_outputs" | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /Driver/{print$2} /process.binary/{print $0} /application.name = /{print $0} /media.name /{print $0}' | tac | sed -e '/pavucontrol/,+6d; /Remapped Stream/,+3d' | tac | sed ':a $!N;s/\nmodule-loopback/ module-loopback/;ta P;D;' | sed -e '/loopback/,+3d; /protocol-native/d; /media.name/d; /process.binary/d' ) # | sed 's/.* = //g; s/"//g')
+	if which pipewire > /dev/null 2>&1; then
+		apps=$(echo "$source_outputs" | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /process.binary/{print $0} /application.name = /{print $0} /media.name /{print $0}' | tac | sed -e '/pavucontrol/,+4d; /Remapped Stream/,+3d' | tac | sed ':a $!N;s/\nmodule-loopback/ module-loopback/;ta P;D;' | sed -e '/loopback/,+3d; /protocol-native/d; /media.name/d; /process.binary/d' ) # | sed 's/.* = //g; s/"//g')
+	else
+		apps=$(echo "$source_outputs" | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /Driver/{print$2} /process.binary/{print $0} /application.name = /{print $0} /media.name /{print $0}' | tac | sed -e '/pavucontrol/,+6d; /Remapped Stream/,+3d' | tac | sed ':a $!N;s/\nmodule-loopback/ module-loopback/;ta P;D;' | sed -e '/loopback/,+3d; /protocol-native/d; /media.name/d; /process.binary/d' ) # | sed 's/.* = //g; s/"//g')
+	fi
 	sources=$(echo "$apps" | grep Source:)
 	for source in $sources; do
 		name=$(LC_ALL=C pactl list sources | grep -A 2 \#$(echo $source | sed "s/Source://g") | awk '/Name/ {print $2}')
@@ -148,7 +152,11 @@ list_source_outputs (){
 }
 
 list_sink_inputs (){
-	apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /Driver/{print $2} /icon_name/{print $0} /application.name = /{print $0}' | grep -A 3 -B 1 protocol-native.c | sed -e '/protocol/d')
+	if which pipewire > /dev/null 2>&1; then
+		apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /icon_name/{print $0} /application.name = /{print $0}')
+	else
+		apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /Driver/{print $2} /icon_name/{print $0} /application.name = /{print $0}' | grep -A 3 -B 1 protocol-native.c | sed -e '/protocol/d')
+	fi
 	sinks=$(echo "$apps" | grep Sink:)
 	for sink in $sinks; do
 		name=$(LC_ALL=C pactl list sinks | grep -A 2 \#$(echo $sink | sed "s/Sink://g") | awk '/Name/ {print $2}')
