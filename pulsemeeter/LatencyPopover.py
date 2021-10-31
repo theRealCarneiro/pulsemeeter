@@ -15,21 +15,21 @@ class LatencyPopover():
             self.builder.add_objects_from_file(
                 GLADEFILE,
                 [
-                    'Latency_Popover',
-                    'Latency_Adjust',
-                    'Apply_Latency_Button',
+                    'latency_popover',
+                    'latency_adjust',
+                    'apply_latency_button',
                 ]
             )
         except Exception as ex:
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
-        self.Latency_Popover = self.builder.get_object('Latency_Popover')
+        self.Latency_Popover = self.builder.get_object('latency_popover')
         self.Latency_Popover.set_relative_to(button)
 
-        self.Latency_Adjust = self.builder.get_object('Latency_Adjust')
+        self.Latency_Adjust = self.builder.get_object('latency_adjust')
         self.Latency_Adjust.set_value(self.config[index[0]][index[1]][index[2] + '_latency'])
-        self.Apply_Latency_Button = self.builder.get_object('Apply_Latency_Button')
+        self.Apply_Latency_Button = self.builder.get_object('apply_latency_button')
         self.Apply_Latency_Button.connect('pressed', self.apply_latency, index, pulse)
 
 

@@ -16,49 +16,52 @@ class EqPopover():
             self.builder.add_objects_from_file(
                 GLADEFILE,
                 [
-                    'EQ_Popup',
-                    'EQ_50_hz_Adjust',
-                    'EQ_100_hz_Adjust',
-                    'EQ_156_hz_Adjust',
-                    'EQ_220_hz_Adjust',
-                    'EQ_311_hz_Adjust',
-                    'EQ_440_hz_Adjust',
-                    'EQ_622_hz_Adjust',
-                    'EQ_880_hz_Adjust',
-                    'EQ_1_25_khz_Adjust',
-                    'EQ_1_75_khz_Adjust',
-                    'EQ_2_5_khz_Adjust',
-                    'EQ_3_5_khz_Adjust',
-                    'EQ_5_khz_Adjust',
-                    'EQ_10_khz_Adjust',
-                    'EQ_20_khz_Adjust',
-                    'Apply_EQ_Button',
-                    'Reset_EQ_Button',
+                    'eq_popup',
+                    'eq_50_hz_adjust',
+                    'eq_100_hz_adjust',
+                    'eq_156_hz_adjust',
+                    'eq_220_hz_adjust',
+                    'eq_311_hz_adjust',
+                    'eq_440_hz_adjust',
+                    'eq_622_hz_adjust',
+                    'eq_880_hz_adjust',
+                    'eq_1_25_khz_adjust',
+                    'eq_1_75_khz_adjust',
+                    'eq_2_5_khz_adjust',
+                    'eq_3_5_khz_adjust',
+                    'eq_5_khz_adjust',
+                    'eq_10_khz_adjust',
+                    'eq_20_khz_adjust',
+                    'apply_eq_button',
+                    'reset_eq_button',
                 ]
             )
         except Exception as ex:
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
+        for i in range(1, 16):
+            mark = self.builder.get_object(f'eq_{i}')
+            mark.add_mark(0, Gtk.PositionType.TOP, '')
 
         self.eq = []
-        self.eq.append(self.builder.get_object('EQ_50_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_100_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_156_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_220_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_311_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_440_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_622_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_880_hz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_1_25_khz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_1_75_khz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_2_5_khz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_3_5_khz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_5_khz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_10_khz_Adjust'))
-        self.eq.append(self.builder.get_object('EQ_20_khz_Adjust'))
-        self.Apply_EQ_Button = self.builder.get_object('Apply_EQ_Button')
-        self.Reset_EQ_Button = self.builder.get_object('Reset_EQ_Button')
+        self.eq.append(self.builder.get_object('eq_50_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_100_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_156_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_220_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_311_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_440_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_622_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_880_hz_adjust'))
+        self.eq.append(self.builder.get_object('eq_1_25_khz_adjust'))
+        self.eq.append(self.builder.get_object('eq_1_75_khz_adjust'))
+        self.eq.append(self.builder.get_object('eq_2_5_khz_adjust'))
+        self.eq.append(self.builder.get_object('eq_3_5_khz_adjust'))
+        self.eq.append(self.builder.get_object('eq_5_khz_adjust'))
+        self.eq.append(self.builder.get_object('eq_10_khz_adjust'))
+        self.eq.append(self.builder.get_object('eq_20_khz_adjust'))
+        self.Apply_EQ_Button = self.builder.get_object('apply_eq_button')
+        self.Reset_EQ_Button = self.builder.get_object('reset_eq_button')
 
         control = self.pulse.config[index[0]][index[1]]['eq_control'] 
         j = 0
@@ -70,7 +73,7 @@ class EqPopover():
         self.Apply_EQ_Button.connect('pressed', self.apply_eq, index)
         self.Reset_EQ_Button.connect('pressed', self.reset_eq)
 
-        self.EQ_Popup = self.builder.get_object('EQ_Popup')
+        self.EQ_Popup = self.builder.get_object('eq_popup')
 
         self.EQ_Popup.set_relative_to(button)
         self.EQ_Popup.popup()

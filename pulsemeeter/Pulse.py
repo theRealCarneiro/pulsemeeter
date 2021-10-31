@@ -16,7 +16,7 @@ class Pulse:
         command = command + self.start_sources()
         command = command + self.start_eqs()
         command = command + self.start_rnnoise()
-        command = command + self.start_mute()
+        # command = command + self.start_mute()
         command = command + self.start_conections()
         # print(command)
         os.popen(command)
@@ -31,7 +31,7 @@ class Pulse:
 
         if index[0] == 'hi':
             if self.config[index[0]][index[1]]['use_rnnoise'] == True:
-                name = self.config[index[0]][index[1]]['rnnoise_name']
+                name = f'{index[0]}{index[1]}_rnnoise'
                 return name + ".monitor"
             else:
                 name = self.config[index[0]][index[1]]['name']
@@ -39,7 +39,7 @@ class Pulse:
 
         if index[0] == 'a':
             if self.config[index[0]][index[1]]['use_eq'] == True:
-                name = self.config[index[0]][index[1]]['eq_name']
+                name = f'{index[0]}{index[1]}_eq'
                 return name
             else:
                 name = self.config[index[0]][index[1]]['name']
@@ -47,7 +47,7 @@ class Pulse:
 
         if index[0] == 'b':
             if self.config[index[0]][index[1]]['use_eq'] == True:
-                name = self.config[index[0]][index[1]]['eq_name']
+                name = f'{index[0]}{index[1]}_eq'
                 if conn_type == 'source':
                     name = name + ".monitor"
                 return name
@@ -83,7 +83,7 @@ class Pulse:
         for i in ['a','b']:
             for j in range(1, 4):
                 if self.config[i][str(j)]['use_eq'] == True:
-                    command = command + self.apply_eq( [i, str(j)], status='init')
+                    command = command + self.apply_eq([i, str(j)], status='init')
 
         return command
 
@@ -92,7 +92,7 @@ class Pulse:
         for j in range(1, 4):
             if self.config['hi'][str(j)]['use_rnnoise'] == True:
                 source_index = ['hi', str(j)]
-                sink_name = self.config['hi'][str(j)]['rnnoise_name']
+                sink_name = f'hi{j}_rnnoise'
                 command = command + self.rnnoise( source_index, sink_name, "connect", 'init')
         return command
 
@@ -112,14 +112,14 @@ class Pulse:
                         command = command +  f"pmctl connect {source} {sink} {latency}\n"
         return command
 
-    def start_mute(self):
-        command = ''
-        for i in ['a', 'b']:
-            for j in ['1', '2', '3']:
-                if self.config[i][j]['mute'] == True:
-                    command = command + self.mute([i, j], 1, 'init')
+    # def start_mute(self):
+        # command = ''
+        # for i in ['a', 'b']:
+            # for j in ['1', '2', '3']:
+                # if self.config[i][j]['mute'] == True:
+                    # command = command + self.mute([i, j], 1, 'init')
 
-        return command
+        # return command
 
     def rnnoise(self, source_index, sink_name, stat, init=None):
 
@@ -128,7 +128,6 @@ class Pulse:
         latency = self.config[source_index[0]][source_index[1]]['rnnoise_latency']
 
         self.config[source_index[0]][source_index[1]]['use_rnnoise'] = True if stat == 'connect' else False
-        self.config[source_index[0]][source_index[1]]['rnnoise_name'] = sink_name
 
         command = f'pmctl rnnoise {sink_name} {source} {control} {stat} {latency}\n'
 
@@ -163,8 +162,8 @@ class Pulse:
 
     def connect(self, state, source_index, sink_index, init=None):
         self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1]] = True if state == "connect" else False
-        source = self.get_correct_device( source_index, 'source')
-        sink = self.get_correct_device( sink_index, 'sink')
+        source = self.get_correct_device(source_index, 'source')
+        sink = self.get_correct_device(sink_index, 'sink')
         latency = self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1] + "_latency"]
         command = f"pmctl {state} {source} {sink} {latency}\n"
         # print(command)
@@ -212,7 +211,7 @@ class Pulse:
         name = self.config[index[0]][index[1]]['name']
         if name == '': return
 
-        device = 'sink' if index[0] == 'a' else 'source'
+        device = 'sink' if index[0] == 'a' or index[0] == 'vi' else 'source'
 
         if state == None:
             state = 1 if self.config[index[0]][index[1]]['mute'] == False else 0
@@ -227,10 +226,9 @@ class Pulse:
         return command
 
     def apply_eq(self, index, name=None, control=None, status=None):
-        master = self.get_correct_device([index[0], index[1]], 'sink')
-        name = index[0].upper() + index[1] + '_EQ' if name == None else name
+        master = self.config[index[0]][index[1]]['name']
+        name = index[0] + index[1] + '_eq' if name == None else name
         self.config[index[0]][index[1]]['use_eq'] = True
-        self.config[index[0]][index[1]]['eq_name'] = name
 
         if control == None:
             control = self.config[index[0]][index[1]]['eq_control']
@@ -255,7 +253,7 @@ class Pulse:
 
     def remove_eq(self, index, name=None):
         output = index[0] + index[1]
-        name = output.upper() + '_EQ' if name == None else name
+        name = output + '_eq' if name == None else name
         master = self.config[index[0]][index[1]]['name']
         self.config[index[0]][index[1]]['use_eq'] = False
         command = f'pmctl eq {name} remove\n'
@@ -266,8 +264,15 @@ class Pulse:
                     vi = self.get_correct_device([i, j], 'source')
                     command = command + f'pmctl connect {vi} {master}\n'
 
-        # print(command)
+        print(command)
         os.popen(command)
+
+    def set_primary(self, index):
+        name = self.config[index[0]][index[1]]['name']
+        for i in ['1', '2', '3']:
+            self.config[index[0]][i]['primary'] = False if i != index[1] else True
+        device = 'sink' if index[0] == 'vi' else 'source'
+        os.popen(f'pactl set-default-{device} {name}')
 
     def get_sink_inputs(self):
         command = "pmctl list-sink-inputs"
@@ -341,7 +346,7 @@ class Pulse:
                     for j in ['1', '2', '3']:
                         for k in config_orig[i][j]:
                             if not k in self.config[i][j]:
-                                self.config[i][j][k] = self.config_orig[i][j][k]
+                                self.config[i][j][k] = config_orig[i][j][k]
                 self.save_config()
         else:
             self.config = json.load(open(ORIG_CONFIG_FILE))

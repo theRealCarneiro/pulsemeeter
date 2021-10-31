@@ -141,9 +141,9 @@ list_source_outputs (){
 	sources=$(echo "$apps" | grep Source:)
 	for source in $sources; do
 		name=$(LC_ALL=C pactl list sources | grep -A 2 \#$(echo $source | sed "s/Source://g") | awk '/Name/ {print $2}')
-		apps=$(echo "$apps" | sed "s/$source/Device:\"$name\"/")
+		apps=$(echo "$apps" | sed "s/$source/device:\"$name\"/")
 	done
-	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' | sed ':a $!N;s/#/\n{"id":/;ta P;D;' | sed 's/application.name = /name:/g; s/application.icon_name = /"icon":/g; s/$/}/; s/, }/}/' | sed 's/ 		/ /g; /^$/d; s/Device/"Device"/g; s/name/"name"/g')
+	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' | sed ':a $!N;s/#/\n{"id":/;ta P;D;' | sed 's/application.name = /name:/g; s/application.icon_name = /"icon":/g; s/$/}/; s/, }/}/' | sed 's/ 		/ /g; /^$/d; s/device/"device"/g; s/name/"name"/g')
 	echo "$apps"
 }
 
@@ -152,7 +152,7 @@ list_sink_inputs (){
 	sinks=$(echo "$apps" | grep Sink:)
 	for sink in $sinks; do
 		name=$(LC_ALL=C pactl list sinks | grep -A 2 \#$(echo $sink | sed "s/Sink://g") | awk '/Name/ {print $2}')
-		apps=$(echo "$apps" | sed "s/$sink/\"Device\":\"$name\"/")
+		apps=$(echo "$apps" | sed "s/$sink/\"device\":\"$name\"/")
 	done
 	echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' | sed ':a $!N;s/#/\n{"id":/;ta P;D;' | sed 's/application.icon_name = /"icon":/g; s/application.name = /"name":/g' | sed 's/ 		/ /g' | sed 's/, $//; s/$/}/'
 }
@@ -175,7 +175,7 @@ eq (){
 		index=$(echo "$info" | grep Module | sed 's/.*#//g')
 		if ! [ -z "$index" ]; then
 			old_control=$(echo "$info" | grep control | sed 's/.*control=//g')
-			[ "$control" = "$old_control" ] && exit
+			[ "$control" = "$old_control" ] && [ "$master" != 'remove' ] && exit
 			pactl unload-module $index
 		fi
 	fi

@@ -28,6 +28,7 @@
 	"b": {
 		"1": {
 			"name": "Mic",
+			"primary": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -36,6 +37,7 @@
 		},
 		"2": {
 			"name": "Mic_Aux",
+			"primary": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -44,6 +46,7 @@
 		},
 		"3": {
 			"name": "Mic_Aux_2",
+			"primary": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -53,7 +56,8 @@
 	},
 	"vi": {
 		"1": {
-			"name": "Virtual_Sink",
+			"name": "Virtual_Input_1",
+			"primary": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -66,6 +70,7 @@
 			"b1_latency": 200,
 			"b2_latency": 200,
 			"b3_latency": 200,
+			"mute": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -73,7 +78,8 @@
 			"use_eq": false
 		},
 		"2": {
-			"name": "Virtual_Sink_Aux",
+			"name": "Virtual_Input_2",
+			"primary": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -86,6 +92,7 @@
 			"b1_latency": 200,
 			"b2_latency": 200,
 			"b3_latency": 200,
+			"mute": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -93,7 +100,8 @@
 			"use_eq": false
 		},
 		"3": {
-			"name": "Virtual_Sink_Aux_2",
+			"name": "Virtual_Input_3",
+			"primary": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -106,6 +114,7 @@
 			"b1_latency": 200,
 			"b2_latency": 200,
 			"b3_latency": 200,
+			"mute": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -128,6 +137,7 @@
 			"b1_latency": 200,
 			"b2_latency": 200,
 			"b3_latency": 200,
+			"mute": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -152,6 +162,7 @@
 			"b1_latency": 200,
 			"b2_latency": 200,
 			"b3_latency": 200,
+			"mute": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -176,6 +187,7 @@
 			"b1_latency": 200,
 			"b2_latency": 200,
 			"b3_latency": 200,
+			"mute": false,
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",

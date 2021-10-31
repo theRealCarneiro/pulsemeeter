@@ -2,97 +2,127 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkAdjustment" id="EQ_100_hz_Adjust">
+  <object class="GtkAdjustment" id="a_1_adjust">
+    <property name="upper">153</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="a_2_adjust">
+    <property name="upper">153</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="a_3_adjust">
+    <property name="upper">153</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="b_1_adjust">
+    <property name="upper">153</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="b_2_adjust">
+    <property name="upper">153</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="b_3_adjust">
+    <property name="upper">153</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="eq_100_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_10_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_10_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_156_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_156_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_1_25_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_1_25_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_1_75_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_1_75_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_20_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_20_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_220_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_220_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_2_5_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_2_5_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_311_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_311_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_3_5_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_3_5_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_440_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_440_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_50_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_50_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_5_khz_Adjust">
+  <object class="GtkAdjustment" id="eq_5_khz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_622_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_622_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="EQ_880_hz_Adjust">
+  <object class="GtkAdjustment" id="eq_880_hz_adjust">
     <property name="lower">-30</property>
     <property name="upper">30</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkPopover" id="EQ_Popup">
+  <object class="GtkPopover" id="eq_popup">
     <property name="can-focus">False</property>
     <child>
       <!-- n-columns=16 n-rows=2 -->
@@ -100,12 +130,12 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_1">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="vexpand">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_50_hz_Adjust</property>
+            <property name="adjustment">eq_50_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -116,11 +146,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_2">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_100_hz_Adjust</property>
+            <property name="adjustment">eq_100_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -131,11 +161,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_3">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_156_hz_Adjust</property>
+            <property name="adjustment">eq_156_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -146,11 +176,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_5">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_311_hz_Adjust</property>
+            <property name="adjustment">eq_311_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -161,11 +191,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_4">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_220_hz_Adjust</property>
+            <property name="adjustment">eq_220_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -176,11 +206,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_7">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_622_hz_Adjust</property>
+            <property name="adjustment">eq_622_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -191,11 +221,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_6">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_440_hz_Adjust</property>
+            <property name="adjustment">eq_440_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -206,11 +236,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_8">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_880_hz_Adjust</property>
+            <property name="adjustment">eq_880_hz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -221,11 +251,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_9">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_1_25_khz_Adjust</property>
+            <property name="adjustment">eq_1_25_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -236,11 +266,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_11">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_2_5_khz_Adjust</property>
+            <property name="adjustment">eq_2_5_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -251,11 +281,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_10">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_1_75_khz_Adjust</property>
+            <property name="adjustment">eq_1_75_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -266,11 +296,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_12">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_3_5_khz_Adjust</property>
+            <property name="adjustment">eq_3_5_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -281,11 +311,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_13">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_5_khz_Adjust</property>
+            <property name="adjustment">eq_5_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -296,12 +326,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_15">
             <property name="height-request">150</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_20_khz_Adjust</property>
+            <property name="adjustment">eq_20_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -312,11 +342,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScale">
+          <object class="GtkScale" id="eq_14">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
-            <property name="adjustment">EQ_10_khz_Adjust</property>
+            <property name="adjustment">eq_10_khz_adjust</property>
             <property name="inverted">True</property>
             <property name="round-digits">1</property>
             <property name="value-pos">bottom</property>
@@ -513,7 +543,7 @@ KHz</property>
             <property name="can-focus">False</property>
             <property name="valign">end</property>
             <child>
-              <object class="GtkButton" id="Apply_EQ_Button">
+              <object class="GtkButton" id="apply_eq_button">
                 <property name="label" translatable="yes">Apply</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -529,7 +559,7 @@ KHz</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="Reset_EQ_Button">
+              <object class="GtkButton" id="reset_eq_button">
                 <property name="label" translatable="yes">Reset</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -554,29 +584,29 @@ KHz</property>
       </object>
     </child>
   </object>
-  <object class="GtkAdjustment" id="Hardware_Input_1_Adjust">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="hi_1_adjust">
+    <property name="upper">153</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Hardware_Input_2_Adjust">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="hi_2_adjust">
+    <property name="upper">153</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Hardware_Input_3_Adjust">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="hi_3_adjust">
+    <property name="upper">153</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Latency_Adjust">
+  <object class="GtkAdjustment" id="latency_adjust">
     <property name="lower">1</property>
     <property name="upper">500</property>
     <property name="value">200</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkPopover" id="Latency_Popover">
+  <object class="GtkPopover" id="latency_popover">
     <property name="can-focus">False</property>
     <child>
       <!-- n-columns=2 n-rows=2 -->
@@ -588,7 +618,7 @@ KHz</property>
             <property name="width-request">150</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Latency</property>
+            <property name="label" translatable="yes">latency</property>
           </object>
           <packing>
             <property name="left-attach">0</property>
@@ -596,10 +626,10 @@ KHz</property>
           </packing>
         </child>
         <child>
-          <object class="GtkScale" id="Lantency_Adjust">
+          <object class="GtkScale" id="Lantency_adjust">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
-            <property name="adjustment">Latency_Adjust</property>
+            <property name="adjustment">latency_adjust</property>
             <property name="round-digits">1</property>
             <property name="digits">0</property>
             <property name="value-pos">left</property>
@@ -616,7 +646,7 @@ KHz</property>
             <property name="can-focus">False</property>
             <property name="valign">end</property>
             <child>
-              <object class="GtkButton" id="Apply_Latency_Button">
+              <object class="GtkButton" id="apply_latency_button">
                 <property name="label" translatable="yes">Apply</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -641,51 +671,21 @@ KHz</property>
       </object>
     </child>
   </object>
-  <object class="GtkAdjustment" id="Master_A1_Adjust">
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="Master_A2_Adjust">
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="Master_A3_Adjust">
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="Master_B1_Adjust">
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="Master_B2_Adjust">
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="Master_B3_Adjust">
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="Rnnoise_Latency_Adjust">
+  <object class="GtkAdjustment" id="rnnoise_latency_adjust">
     <property name="lower">1</property>
     <property name="upper">500</property>
     <property name="value">200</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Rnnoise_Threshold_Adjust">
+  <object class="GtkAdjustment" id="rnnoise_threshold_adjust">
     <property name="lower">1</property>
     <property name="upper">100</property>
     <property name="value">95</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkPopover" id="Rnnoise_Popover">
+  <object class="GtkPopover" id="rnnoise_popover">
     <property name="can-focus">False</property>
     <child>
       <!-- n-columns=2 n-rows=4 -->
@@ -700,7 +700,7 @@ KHz</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="hexpand">True</property>
-            <property name="adjustment">Rnnoise_Latency_Adjust</property>
+            <property name="adjustment">rnnoise_latency_adjust</property>
             <property name="round-digits">1</property>
             <property name="digits">0</property>
             <property name="value-pos">left</property>
@@ -715,7 +715,7 @@ KHz</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="hexpand">True</property>
-            <property name="adjustment">Rnnoise_Threshold_Adjust</property>
+            <property name="adjustment">rnnoise_threshold_adjust</property>
             <property name="round-digits">1</property>
             <property name="digits">0</property>
             <property name="value-pos">left</property>
@@ -729,7 +729,7 @@ KHz</property>
           <object class="GtkLabel">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Latency</property>
+            <property name="label" translatable="yes">latency</property>
           </object>
           <packing>
             <property name="left-attach">0</property>
@@ -754,7 +754,7 @@ KHz</property>
             <property name="can-focus">False</property>
             <property name="valign">end</property>
             <child>
-              <object class="GtkButton" id="Apply_Rnnoise_Button">
+              <object class="GtkButton" id="apply_rnnoise_button">
                 <property name="label" translatable="yes">Apply</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -787,98 +787,32 @@ KHz</property>
       </object>
     </child>
   </object>
-  <object class="GtkAdjustment" id="Virtual_Input_1_Adjust">
+  <object class="GtkAdjustment" id="sink_input_scroll">
     <property name="upper">100</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Virtual_Input_2_Adjust">
+  <object class="GtkAdjustment" id="source_output_scroll">
     <property name="upper">100</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="Virtual_Input_3_Adjust">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="vi_1_adjust">
+    <property name="upper">153</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkOffscreenWindow">
-    <property name="can-focus">False</property>
-    <child>
-      <!-- n-columns=2 n-rows=4 -->
-      <object class="GtkGrid">
-        <property name="visible">True</property>
-        <property name="can-focus">False</property>
-        <property name="margin-top">5</property>
-        <property name="margin-bottom">5</property>
-        <property name="hexpand">True</property>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="margin-end">5</property>
-            <property name="hexpand">True</property>
-            <property name="label" translatable="yes">teste</property>
-          </object>
-          <packing>
-            <property name="left-attach">1</property>
-            <property name="top-attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkSeparator">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="margin-bottom">5</property>
-          </object>
-          <packing>
-            <property name="left-attach">0</property>
-            <property name="top-attach">0</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkSeparator">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="margin-top">5</property>
-          </object>
-          <packing>
-            <property name="left-attach">0</property>
-            <property name="top-attach">3</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkComboBoxText">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="margin-start">5</property>
-            <property name="margin-end">5</property>
-          </object>
-          <packing>
-            <property name="left-attach">0</property>
-            <property name="top-attach">2</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkAdjustment" id="adjustment1">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="vi_2_adjust">
+    <property name="upper">153</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment2">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="vi_3_adjust">
+    <property name="upper">153</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkWindow" id="Window">
+  <object class="GtkWindow" id="window">
     <property name="can-focus">False</property>
     <property name="vexpand">True</property>
     <property name="title" translatable="yes">Pulsemeeter</property>
@@ -939,7 +873,7 @@ KHz</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBoxText" id="A3_Combobox">
+                  <object class="GtkComboBoxText" id="a_3_combobox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="margin-end">10</property>
@@ -951,7 +885,7 @@ KHz</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBoxText" id="A2_Combobox">
+                  <object class="GtkComboBoxText" id="a_2_combobox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="hexpand">True</property>
@@ -962,7 +896,7 @@ KHz</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBoxText" id="A1_Combobox">
+                  <object class="GtkComboBoxText" id="a_1_combobox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="hexpand">True</property>
@@ -1018,13 +952,13 @@ KHz</property>
                   <object class="GtkGrid" id="Virtual_Output_Grid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="hexpand">True</property>
+                    <property name="hexpand">False</property>
                     <property name="vexpand">True</property>
                     <property name="column-spacing">15</property>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
-                      <object class="GtkGrid" id="Virtual_Input_1_Grid">
-                        <property name="name">Virtual_Input_1_Grid</property>
+                      <object class="GtkGrid" id="vi_1_Grid">
+                        <property name="name">vi_1_Grid</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
@@ -1038,19 +972,20 @@ KHz</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <child>
-                              <!-- n-columns=1 n-rows=1 -->
+                              <!-- n-columns=1 n-rows=2 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale">
+                                  <object class="GtkScale" id="vi_1_vol">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                     <property name="orientation">vertical</property>
-                                    <property name="adjustment">Virtual_Input_1_Adjust</property>
+                                    <property name="adjustment">vi_1_adjust</property>
                                     <property name="inverted">True</property>
                                     <property name="round-digits">0</property>
                                     <property name="digits">0</property>
@@ -1058,6 +993,66 @@ KHz</property>
                                   <packing>
                                     <property name="left-attach">0</property>
                                     <property name="top-attach">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <!-- n-columns=1 n-rows=1 -->
+                                  <object class="GtkGrid">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <child>
+                                      <!-- n-columns=2 n-rows=1 -->
+                                      <object class="GtkGrid">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <child>
+                                          <object class="GtkToggleButton" id="vi_1_mute">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">True</property>
+                                            <property name="receives-default">True</property>
+                                            <property name="hexpand">False</property>
+                                            <child>
+                                              <object class="GtkImage">
+                                                <property name="visible">True</property>
+                                                <property name="can-focus">False</property>
+                                                <property name="icon-name">audio-volume-muted</property>
+                                              </object>
+                                            </child>
+                                          </object>
+                                          <packing>
+                                            <property name="left-attach">0</property>
+                                            <property name="top-attach">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkToggleButton" id="vi_1_primary">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">True</property>
+                                            <property name="receives-default">True</property>
+                                            <property name="hexpand">False</property>
+                                            <child>
+                                              <object class="GtkImage">
+                                                <property name="visible">True</property>
+                                                <property name="can-focus">False</property>
+                                                <property name="icon-name">emblem-default</property>
+                                              </object>
+                                            </child>
+                                          </object>
+                                          <packing>
+                                            <property name="left-attach">1</property>
+                                            <property name="top-attach">0</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1068,16 +1063,17 @@ KHz</property>
                             </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
-                              <object class="GtkGrid" id="Virtual_Input_1_Button_Grid">
+                              <object class="GtkGrid" id="vi_1_button_Grid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
+                                <property name="margin-start">2</property>
+                                <property name="hexpand">False</property>
+                                <property name="vexpand">False</property>
                                 <property name="row-spacing">2</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_1_A1">
+                                  <object class="GtkToggleButton" id="vi_1_a1">
                                     <property name="label" translatable="yes">A1</property>
-                                    <property name="name">Virtual_Input_1_A1</property>
+                                    <property name="name">vi_1_a1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
@@ -1091,9 +1087,9 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_1_A2">
+                                  <object class="GtkToggleButton" id="vi_1_a2">
                                     <property name="label" translatable="yes">A2</property>
-                                    <property name="name">Virtual_Input_1_A2</property>
+                                    <property name="name">vi_1_a2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
@@ -1107,9 +1103,9 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_1_A3">
+                                  <object class="GtkToggleButton" id="vi_1_a3">
                                     <property name="label" translatable="yes">A3</property>
-                                    <property name="name">Virtual_Input_1_A3</property>
+                                    <property name="name">vi_1_a3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
@@ -1123,7 +1119,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_1_B1">
+                                  <object class="GtkToggleButton" id="vi_1_b1">
                                     <property name="label" translatable="yes">B1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1138,7 +1134,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_1_B2">
+                                  <object class="GtkToggleButton" id="vi_1_b2">
                                     <property name="label" translatable="yes">B2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1153,7 +1149,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_1_B3">
+                                  <object class="GtkToggleButton" id="vi_1_b3">
                                     <property name="label" translatable="yes">B3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1200,28 +1196,6 @@ KHz</property>
                             <property name="left-attach">0</property>
                             <property name="top-attach">0</property>
                             <property name="height">5</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEventBox" id="Virtual_Input_1_Label_Event_Box">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="vexpand">True</property>
-                            <property name="visible-window">False</property>
-                            <child>
-                              <object class="GtkLabel" id="Virtual_Input_1_Label">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="tooltip-text" translatable="yes">Click to change device name</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="label" translatable="yes"> Virtual Input 1 </property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
@@ -1242,9 +1216,9 @@ KHz</property>
                             <property name="margin-top">10</property>
                           </object>
                           <packing>
-                            <property name="left-attach">1</property>
+                            <property name="left-attach">0</property>
                             <property name="top-attach">4</property>
-                            <property name="width">2</property>
+                            <property name="width">3</property>
                           </packing>
                         </child>
                         <child>
@@ -1262,6 +1236,28 @@ KHz</property>
                             <property name="top-attach">2</property>
                           </packing>
                         </child>
+                        <child>
+                          <object class="GtkEventBox" id="vi_1_label_event_box">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="vexpand">True</property>
+                            <property name="visible-window">False</property>
+                            <child>
+                              <object class="GtkLabel" id="vi_1_label">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Click to change device name</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="label" translatable="yes"> Virtual Input 1 </property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">1</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -1270,8 +1266,8 @@ KHz</property>
                     </child>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
-                      <object class="GtkGrid" id="Virtual_Input_2_Grid">
-                        <property name="name">Virtual_Input_2_Grid</property>
+                      <object class="GtkGrid" id="vi_2_Grid">
+                        <property name="name">vi_2_Grid</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
@@ -1282,20 +1278,20 @@ KHz</property>
                             <property name="name">Vi2_Control_Grid</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="hexpand">True</property>
+                            <property name="hexpand">False</property>
                             <property name="vexpand">True</property>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
-                              <object class="GtkGrid" id="Virtual_Input_2_Button_Grid">
+                              <object class="GtkGrid" id="vi_2_button_Grid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
+                                <property name="hexpand">False</property>
                                 <property name="vexpand">True</property>
                                 <property name="row-spacing">2</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_2_A1">
+                                  <object class="GtkToggleButton" id="vi_2_a1">
                                     <property name="label" translatable="yes">A1</property>
-                                    <property name="name">Virtual_Input_2_A1</property>
+                                    <property name="name">vi_2_a1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
@@ -1309,9 +1305,9 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_2_A2">
+                                  <object class="GtkToggleButton" id="vi_2_a2">
                                     <property name="label" translatable="yes">A2</property>
-                                    <property name="name">Virtual_Input_2_A2</property>
+                                    <property name="name">vi_2_a2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
@@ -1325,9 +1321,9 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_2_A3">
+                                  <object class="GtkToggleButton" id="vi_2_a3">
                                     <property name="label" translatable="yes">A3</property>
-                                    <property name="name">Virtual_Input_2_A3</property>
+                                    <property name="name">vi_2_a3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
@@ -1341,7 +1337,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_2_B1">
+                                  <object class="GtkToggleButton" id="vi_2_b1">
                                     <property name="label" translatable="yes">B1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1356,7 +1352,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_2_B2">
+                                  <object class="GtkToggleButton" id="vi_2_b2">
                                     <property name="label" translatable="yes">B2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1371,7 +1367,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_2_B3">
+                                  <object class="GtkToggleButton" id="vi_2_b3">
                                     <property name="label" translatable="yes">B3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1392,19 +1388,20 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <!-- n-columns=1 n-rows=1 -->
+                              <!-- n-columns=1 n-rows=2 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale">
+                                  <object class="GtkScale" id="vi_2_vol">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
-                                    <property name="hexpand">True</property>
+                                    <property name="hexpand">False</property>
                                     <property name="vexpand">True</property>
                                     <property name="orientation">vertical</property>
-                                    <property name="adjustment">Virtual_Input_2_Adjust</property>
+                                    <property name="adjustment">vi_2_adjust</property>
                                     <property name="inverted">True</property>
                                     <property name="round-digits">0</property>
                                     <property name="digits">0</property>
@@ -1412,6 +1409,55 @@ KHz</property>
                                   <packing>
                                     <property name="left-attach">0</property>
                                     <property name="top-attach">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <!-- n-columns=2 n-rows=1 -->
+                                  <object class="GtkGrid">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <child>
+                                      <object class="GtkToggleButton" id="vi_2_mute">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="hexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">audio-volume-muted</property>
+                                          </object>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkToggleButton" id="vi_2_primary">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="hexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">emblem-default</property>
+                                          </object>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">1</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1451,14 +1497,14 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEventBox" id="Virtual_Input_2_Label_Event_Box">
+                          <object class="GtkEventBox" id="vi_2_label_event_box">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="hexpand">True</property>
+                            <property name="hexpand">False</property>
                             <property name="vexpand">True</property>
                             <property name="visible-window">False</property>
                             <child>
-                              <object class="GtkLabel" id="Virtual_Input_2_Label">
+                              <object class="GtkLabel" id="vi_2_label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="tooltip-text" translatable="yes">Click to change device name</property>
@@ -1519,7 +1565,7 @@ KHz</property>
                     </child>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
-                      <object class="GtkGrid" id="Virtual_Input_3_Grid">
+                      <object class="GtkGrid" id="vi_3_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
@@ -1553,22 +1599,23 @@ KHz</property>
                             <property name="name">Vi2_Control_Grid</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="hexpand">True</property>
+                            <property name="hexpand">False</property>
                             <property name="vexpand">True</property>
                             <child>
-                              <!-- n-columns=1 n-rows=1 -->
+                              <!-- n-columns=1 n-rows=2 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale">
+                                  <object class="GtkScale" id="vi_3_vol">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
                                     <property name="orientation">vertical</property>
-                                    <property name="adjustment">Virtual_Input_3_Adjust</property>
+                                    <property name="adjustment">vi_3_adjust</property>
                                     <property name="inverted">True</property>
                                     <property name="round-digits">1</property>
                                     <property name="digits">0</property>
@@ -1576,6 +1623,55 @@ KHz</property>
                                   <packing>
                                     <property name="left-attach">0</property>
                                     <property name="top-attach">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <!-- n-columns=2 n-rows=1 -->
+                                  <object class="GtkGrid">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <child>
+                                      <object class="GtkToggleButton" id="vi_3_mute">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="hexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">audio-volume-muted</property>
+                                          </object>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkToggleButton" id="vi_3_primary">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="hexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">emblem-default</property>
+                                          </object>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">1</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1586,14 +1682,14 @@ KHz</property>
                             </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
-                              <object class="GtkGrid" id="Virtual_Input_3_Button_Grid">
+                              <object class="GtkGrid" id="vi_3_button_Grid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
+                                <property name="hexpand">False</property>
+                                <property name="vexpand">False</property>
                                 <property name="row-spacing">2</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_3_B2">
+                                  <object class="GtkToggleButton" id="vi_3_b2">
                                     <property name="label" translatable="yes">B2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1608,7 +1704,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_3_B3">
+                                  <object class="GtkToggleButton" id="vi_3_b3">
                                     <property name="label" translatable="yes">B3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1623,7 +1719,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_3_B1">
+                                  <object class="GtkToggleButton" id="vi_3_b1">
                                     <property name="label" translatable="yes">B1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1638,7 +1734,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_3_A3">
+                                  <object class="GtkToggleButton" id="vi_3_a3">
                                     <property name="label" translatable="yes">A3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1653,7 +1749,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_3_A2">
+                                  <object class="GtkToggleButton" id="vi_3_a2">
                                     <property name="label" translatable="yes">A2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1668,7 +1764,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Virtual_Input_3_A1">
+                                  <object class="GtkToggleButton" id="vi_3_a1">
                                     <property name="label" translatable="yes">A1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1734,18 +1830,18 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEventBox" id="Virtual_Input_3_Label_Event_Box">
+                          <object class="GtkEventBox" id="vi_3_label_event_box">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="visible-window">False</property>
                             <child>
-                              <object class="GtkLabel" id="Virtual_Input_3_Label">
+                              <object class="GtkLabel" id="vi_3_label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="tooltip-text" translatable="yes">Click to change device name</property>
-                                <property name="hexpand">True</property>
+                                <property name="hexpand">False</property>
                                 <property name="vexpand">True</property>
                                 <property name="label" translatable="yes">Virtual Input 3</property>
                               </object>
@@ -1854,7 +1950,7 @@ KHz</property>
                 </child>
                 <child>
                   <!-- n-columns=5 n-rows=4 -->
-                  <object class="GtkGrid" id="Hardware_Input_Grid">
+                  <object class="GtkGrid" id="hi_Grid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="hexpand">False</property>
@@ -1862,10 +1958,10 @@ KHz</property>
                     <property name="column-spacing">15</property>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
-                      <object class="GtkGrid" id="Hardware_Input_3_Grid">
+                      <object class="GtkGrid" id="hi_3_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="hexpand">True</property>
+                        <property name="hexpand">False</property>
                         <child>
                           <!-- n-columns=1 n-rows=2 -->
                           <object class="GtkGrid">
@@ -1873,7 +1969,7 @@ KHz</property>
                             <property name="can-focus">False</property>
                             <property name="vexpand">True</property>
                             <child>
-                              <object class="GtkComboBoxText" id="Hardware_Input_3_Combobox">
+                              <object class="GtkComboBoxText" id="hi_3_combobox">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -1947,14 +2043,14 @@ KHz</property>
                             </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
-                              <object class="GtkGrid" id="Virtual_Input_1_Button_Grid2">
+                              <object class="GtkGrid" id="vi_1_button_Grid2">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
+                                <property name="vexpand">False</property>
                                 <property name="row-spacing">2</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_3_A1">
+                                  <object class="GtkToggleButton" id="hi_3_a1">
                                     <property name="label" translatable="yes">A1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1970,7 +2066,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_3_A2">
+                                  <object class="GtkToggleButton" id="hi_3_a2">
                                     <property name="label" translatable="yes">A2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -1985,7 +2081,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_3_A3">
+                                  <object class="GtkToggleButton" id="hi_3_a3">
                                     <property name="label" translatable="yes">A3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2000,7 +2096,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_3_B1">
+                                  <object class="GtkToggleButton" id="hi_3_b1">
                                     <property name="label" translatable="yes">B1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2015,7 +2111,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_3_B2">
+                                  <object class="GtkToggleButton" id="hi_3_b2">
                                     <property name="label" translatable="yes">B2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2030,7 +2126,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_3_B3">
+                                  <object class="GtkToggleButton" id="hi_3_b3">
                                     <property name="label" translatable="yes">B3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2051,16 +2147,48 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkScale">
+                              <!-- n-columns=1 n-rows=2 -->
+                              <object class="GtkGrid">
                                 <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">Hardware_Input_3_Adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
+                                <property name="can-focus">False</property>
+                                <child>
+                                  <object class="GtkScale" id="hi_3_vol">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="orientation">vertical</property>
+                                    <property name="adjustment">hi_3_adjust</property>
+                                    <property name="inverted">True</property>
+                                    <property name="round-digits">0</property>
+                                    <property name="digits">0</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkToggleButton" id="hi_3_mute">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="receives-default">True</property>
+                                    <property name="margin-end">2</property>
+                                    <property name="hexpand">False</property>
+                                    <property name="vexpand">False</property>
+                                    <child>
+                                      <object class="GtkImage">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="icon-name">audio-volume-muted</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">1</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -2122,14 +2250,25 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="Hardware_Input_3_Rnnoise">
-                            <property name="label" translatable="yes">Noise Reduction</property>
+                          <!-- n-columns=1 n-rows=1 -->
+                          <object class="GtkGrid">
                             <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                            <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
-                            <property name="margin-top">2</property>
-                            <property name="hexpand">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkToggleButton" id="hi_3_rnnoise">
+                                <property name="label" translatable="yes">Noise Reduction</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
+                                <property name="margin-top">2</property>
+                                <property name="hexpand">True</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
@@ -2144,7 +2283,7 @@ KHz</property>
                     </child>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
-                      <object class="GtkGrid" id="Hardware_Input_2_Grid">
+                      <object class="GtkGrid" id="hi_2_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
@@ -2155,7 +2294,7 @@ KHz</property>
                             <property name="can-focus">False</property>
                             <property name="vexpand">True</property>
                             <child>
-                              <object class="GtkComboBoxText" id="Hardware_Input_2_Combobox">
+                              <object class="GtkComboBoxText" id="hi_2_combobox">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -2229,14 +2368,14 @@ KHz</property>
                             </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
-                              <object class="GtkGrid" id="Virtual_Input__Button_Grid">
+                              <object class="GtkGrid" id="vi__button_Grid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <property name="row-spacing">2</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_2_A1">
+                                  <object class="GtkToggleButton" id="hi_2_a1">
                                     <property name="label" translatable="yes">A1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2252,7 +2391,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_2_A2">
+                                  <object class="GtkToggleButton" id="hi_2_a2">
                                     <property name="label" translatable="yes">A2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2267,7 +2406,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_2_A3">
+                                  <object class="GtkToggleButton" id="hi_2_a3">
                                     <property name="label" translatable="yes">A3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2282,7 +2421,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_2_B1">
+                                  <object class="GtkToggleButton" id="hi_2_b1">
                                     <property name="label" translatable="yes">B1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2297,7 +2436,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_2_B2">
+                                  <object class="GtkToggleButton" id="hi_2_b2">
                                     <property name="label" translatable="yes">B2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2312,7 +2451,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_2_B3">
+                                  <object class="GtkToggleButton" id="hi_2_b3">
                                     <property name="label" translatable="yes">B3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2333,16 +2472,48 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkScale">
+                              <!-- n-columns=1 n-rows=2 -->
+                              <object class="GtkGrid">
                                 <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">Hardware_Input_2_Adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
+                                <property name="can-focus">False</property>
+                                <child>
+                                  <object class="GtkToggleButton" id="hi_2_mute">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="receives-default">True</property>
+                                    <property name="margin-end">2</property>
+                                    <property name="hexpand">False</property>
+                                    <property name="vexpand">False</property>
+                                    <child>
+                                      <object class="GtkImage">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="icon-name">audio-volume-muted</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkScale" id="hi_2_vol">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="orientation">vertical</property>
+                                    <property name="adjustment">hi_2_adjust</property>
+                                    <property name="inverted">True</property>
+                                    <property name="round-digits">0</property>
+                                    <property name="digits">0</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">0</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -2404,7 +2575,7 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="Hardware_Input_2_Rnnoise">
+                          <object class="GtkToggleButton" id="hi_2_rnnoise">
                             <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -2426,7 +2597,7 @@ KHz</property>
                     </child>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
-                      <object class="GtkGrid" id="Hardware_Input_1_Grid">
+                      <object class="GtkGrid" id="hi_1_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
@@ -2439,7 +2610,7 @@ KHz</property>
                             <property name="can-focus">False</property>
                             <property name="vexpand">True</property>
                             <child>
-                              <object class="GtkComboBoxText" id="Hardware_Input_1_Combobox">
+                              <object class="GtkComboBoxText" id="hi_1_combobox">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -2513,14 +2684,14 @@ KHz</property>
                             </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
-                              <object class="GtkGrid" id="Virtual_Input_1_Button_Grid4">
+                              <object class="GtkGrid" id="vi_1_button_Grid4">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <property name="row-spacing">2</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_1_A1">
+                                  <object class="GtkToggleButton" id="hi_1_a1">
                                     <property name="label" translatable="yes">A1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2536,7 +2707,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_1_A2">
+                                  <object class="GtkToggleButton" id="hi_1_a2">
                                     <property name="label" translatable="yes">A2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2551,7 +2722,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_1_A3">
+                                  <object class="GtkToggleButton" id="hi_1_a3">
                                     <property name="label" translatable="yes">A3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2566,7 +2737,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_1_B1">
+                                  <object class="GtkToggleButton" id="hi_1_b1">
                                     <property name="label" translatable="yes">B1</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2581,7 +2752,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_1_B2">
+                                  <object class="GtkToggleButton" id="hi_1_b2">
                                     <property name="label" translatable="yes">B2</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2596,7 +2767,7 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="Hardware_Input_1_B3">
+                                  <object class="GtkToggleButton" id="hi_1_b3">
                                     <property name="label" translatable="yes">B3</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
@@ -2617,16 +2788,48 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkScale">
+                              <!-- n-columns=1 n-rows=2 -->
+                              <object class="GtkGrid">
                                 <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">Hardware_Input_1_Adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
+                                <property name="can-focus">False</property>
+                                <child>
+                                  <object class="GtkToggleButton" id="hi_1_mute">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="receives-default">True</property>
+                                    <property name="margin-end">2</property>
+                                    <property name="hexpand">False</property>
+                                    <property name="vexpand">False</property>
+                                    <child>
+                                      <object class="GtkImage">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="icon-name">audio-volume-muted</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkScale" id="hi_1_vol">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="orientation">vertical</property>
+                                    <property name="adjustment">hi_1_adjust</property>
+                                    <property name="inverted">True</property>
+                                    <property name="round-digits">0</property>
+                                    <property name="digits">0</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">0</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -2686,7 +2889,7 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="Hardware_Input_1_Rnnoise">
+                          <object class="GtkToggleButton" id="hi_1_rnnoise">
                             <property name="label" translatable="yes">Noise Reduction</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -2796,7 +2999,7 @@ KHz</property>
             <property name="vexpand">True</property>
             <child>
               <!-- n-columns=4 n-rows=4 -->
-              <object class="GtkGrid" id="Master_Grid">
+              <object class="GtkGrid" id="Grid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="hexpand">False</property>
@@ -2821,20 +3024,26 @@ KHz</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <child>
-                              <object class="GtkToggleButton" id="Mute_A2">
-                                <property name="label" translatable="yes">Mute</property>
+                              <object class="GtkToggleButton" id="a_2_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="hexpand">True</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="EQ_A2">
+                              <object class="GtkToggleButton" id="a_2_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -2843,7 +3052,7 @@ KHz</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                           </object>
@@ -2853,13 +3062,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="a_2_vol">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="adjustment">Master_A2_Adjust</property>
+                            <property name="adjustment">a_2_adjust</property>
                             <property name="inverted">True</property>
                             <property name="round-digits">0</property>
                             <property name="digits">0</property>
@@ -2899,20 +3108,26 @@ KHz</property>
                             <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
                             <child>
-                              <object class="GtkToggleButton" id="Mute_A1">
-                                <property name="label" translatable="yes">Mute</property>
+                              <object class="GtkToggleButton" id="a_1_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="hexpand">True</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="EQ_A1">
+                              <object class="GtkToggleButton" id="a_1_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -2921,7 +3136,7 @@ KHz</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                           </object>
@@ -2931,14 +3146,14 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="a_1_vol">
                             <property name="height-request">120</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="adjustment">Master_A1_Adjust</property>
+                            <property name="adjustment">a_1_adjust</property>
                             <property name="inverted">True</property>
                             <property name="round-digits">0</property>
                             <property name="digits">0</property>
@@ -2977,20 +3192,26 @@ KHz</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <child>
-                              <object class="GtkToggleButton" id="Mute_A3">
-                                <property name="label" translatable="yes">Mute</property>
+                              <object class="GtkToggleButton" id="a_3_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="hexpand">True</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="EQ_A3">
+                              <object class="GtkToggleButton" id="a_3_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -2999,7 +3220,7 @@ KHz</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                           </object>
@@ -3009,13 +3230,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="a_3_vol">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="adjustment">Master_A3_Adjust</property>
+                            <property name="adjustment">a_3_adjust</property>
                             <property name="inverted">True</property>
                             <property name="round-digits">0</property>
                             <property name="digits">0</property>
@@ -3138,28 +3359,36 @@ KHz</property>
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-start">3</property>
+                        <property name="margin-end">3</property>
                         <property name="hexpand">False</property>
                         <property name="vexpand">True</property>
                         <child>
-                          <!-- n-columns=1 n-rows=2 -->
+                          <!-- n-columns=2 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <child>
-                              <object class="GtkToggleButton" id="Mute_B1">
-                                <property name="label" translatable="yes">Mute</property>
+                              <object class="GtkToggleButton" id="b_1_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="EQ_B1">
+                              <object class="GtkToggleButton" id="b_1_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -3168,6 +3397,26 @@ KHz</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                                <property name="width">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="b_1_primary">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">emblem-default</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">1</property>
                               </packing>
                             </child>
@@ -3178,13 +3427,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="b_1_vol">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="adjustment">Master_B1_Adjust</property>
+                            <property name="adjustment">b_1_adjust</property>
                             <property name="inverted">True</property>
                             <property name="round-digits">0</property>
                             <property name="digits">0</property>
@@ -3216,28 +3465,35 @@ KHz</property>
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-end">3</property>
                         <property name="hexpand">False</property>
                         <property name="vexpand">True</property>
                         <child>
-                          <!-- n-columns=1 n-rows=2 -->
+                          <!-- n-columns=2 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <child>
-                              <object class="GtkToggleButton" id="Mute_B3">
-                                <property name="label" translatable="yes">Mute</property>
+                              <object class="GtkToggleButton" id="b_3_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="EQ_B3">
+                              <object class="GtkToggleButton" id="b_3_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -3246,6 +3502,26 @@ KHz</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                                <property name="width">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="b_3_primary">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">emblem-default</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">1</property>
                               </packing>
                             </child>
@@ -3256,13 +3532,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="b_3_vol">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="adjustment">Master_B3_Adjust</property>
+                            <property name="adjustment">b_3_adjust</property>
                             <property name="inverted">True</property>
                             <property name="round-digits">0</property>
                             <property name="digits">0</property>
@@ -3294,28 +3570,35 @@ KHz</property>
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-end">3</property>
                         <property name="hexpand">False</property>
                         <property name="vexpand">True</property>
                         <child>
-                          <!-- n-columns=1 n-rows=2 -->
+                          <!-- n-columns=2 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <child>
-                              <object class="GtkToggleButton" id="Mute_B2">
-                                <property name="label" translatable="yes">Mute</property>
+                              <object class="GtkToggleButton" id="b_2_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="EQ_B2">
+                              <object class="GtkToggleButton" id="b_2_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -3324,6 +3607,26 @@ KHz</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                                <property name="width">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="b_2_primary">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">emblem-default</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">1</property>
                               </packing>
                             </child>
@@ -3334,13 +3637,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="b_2_vol">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="adjustment">Master_B2_Adjust</property>
+                            <property name="adjustment">b_2_adjust</property>
                             <property name="inverted">True</property>
                             <property name="round-digits">0</property>
                             <property name="digits">0</property>
@@ -3582,10 +3885,10 @@ KHz</property>
                               <object class="GtkViewport">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="vadjustment">adjustment2</property>
+                                <property name="vadjustment">source_output_scroll</property>
                                 <property name="vscroll-policy">natural</property>
                                 <child>
-                                  <object class="GtkBox" id="Sink_Input_List">
+                                  <object class="GtkBox" id="sink_input_list">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <property name="valign">start</property>
@@ -3700,10 +4003,10 @@ KHz</property>
                               <object class="GtkViewport">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="vadjustment">adjustment1</property>
+                                <property name="vadjustment">sink_input_scroll</property>
                                 <property name="vscroll-policy">natural</property>
                                 <child>
-                                  <object class="GtkBox" id="Sink_Output_List">
+                                  <object class="GtkBox" id="source_output_list">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <property name="valign">start</property>
@@ -3805,11 +4108,11 @@ KHz</property>
       </object>
     </child>
   </object>
-  <object class="GtkPopover" id="Popover">
+  <object class="GtkPopover" id="popover">
     <property name="can-focus">False</property>
-    <property name="relative-to">Virtual_Input_1_Label_Event_Box</property>
+    <property name="relative-to">vi_1_label_event_box</property>
     <child>
-      <object class="GtkEntry" id="Popover_Entry">
+      <object class="GtkEntry" id="popover_entry">
         <property name="visible">True</property>
         <property name="can-focus">True</property>
       </object>
