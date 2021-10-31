@@ -304,6 +304,7 @@ class MainWindow(Gtk.Window):
         else:
             dev_list = name_vi
 
+        print(dev_list)
         for i in self.app_list:
             if id != None:
                 if str(id) != str(i['id']):
@@ -316,7 +317,8 @@ class MainWindow(Gtk.Window):
             combobox = Gtk.ComboBoxText()
             for j in range(len(dev_list)):
                 combobox.append_text(dev_list[j])
-                combobox.set_active(dev_list.index(i['device']))
+                index = dev_list.index(i['device']) if i['device'] in dev_list else 0
+                combobox.set_active(index)
             combobox.connect('changed', self.app_combo_change, dev_type, i['id'])
             combobox.props.halign = Gtk.Align.END
             combobox.set_hexpand(True)

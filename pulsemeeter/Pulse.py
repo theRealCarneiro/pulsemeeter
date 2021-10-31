@@ -279,9 +279,10 @@ class Pulse:
         devices = cmd(command).split('\n')
         del devices[-1]
         del devices[0]
-        # print(devices)
         apps = []
         for i in devices:
+            if 'name' not in i:
+                continue
             jason = json.loads(i)
             if 'icon' not in jason:
                 jason['icon'] = 'audio-card'
@@ -295,6 +296,8 @@ class Pulse:
         del devices[0]
         apps = []
         for i in devices:
+            if 'name' not in i:
+                continue
             jason = json.loads(i)
             if 'icon' not in jason:
                 jason['icon'] = 'audio-card'
