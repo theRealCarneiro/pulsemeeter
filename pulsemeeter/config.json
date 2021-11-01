@@ -36,7 +36,7 @@
 			"use_eq": false
 		},
 		"2": {
-			"name": "Mic_Aux",
+			"name": "Mic_2",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -45,7 +45,7 @@
 			"use_eq": false
 		},
 		"3": {
-			"name": "Mic_Aux_2",
+			"name": "Mic_3",
 			"primary": false,
 			"vol": 100,
 			"mute": false,

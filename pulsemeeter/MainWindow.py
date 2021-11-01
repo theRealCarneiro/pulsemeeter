@@ -20,7 +20,7 @@ class MainWindow(Gtk.Window):
 
         component_list = [
                     'window',
-                    'popover',
+                    'rename_popover',
                     'popover_entry',
                     'latency_popover',
                     'latency_adjust',
@@ -47,23 +47,7 @@ class MainWindow(Gtk.Window):
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
-
-
-        self.Sink_Input_List = self.builder.get_object('sink_input_list')
-        self.Source_Output_List = self.builder.get_object('source_output_list')
-        self.sink_input_box_list = []
-        self.source_output_box_list = []
-
-        self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List)
-        self.load_application_list('source', self.source_output_box_list, self.Source_Output_List)
-
-        self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
-        self.subscribe_thread.start()
-
-        self.Popover = self.builder.get_object('popover')
-        self.Popover_Entry = self.builder.get_object('popover_entry')
-        self.Popover_Entry.connect('activate', self.label_rename_entry)
-
+        self.start_app_list()
         self.start_hardware_comboboxes()
         self.start_inputs()
         self.start_outputs()
@@ -77,6 +61,19 @@ class MainWindow(Gtk.Window):
         self.builder.connect_signals(self)
 
         self.Window.show_all()
+
+    def start_app_list(self):
+        self.Sink_Input_List = self.builder.get_object('sink_input_list')
+        self.Source_Output_List = self.builder.get_object('source_output_list')
+
+        self.sink_input_box_list = []
+        self.source_output_box_list = []
+
+        self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List)
+        self.load_application_list('source', self.source_output_box_list, self.Source_Output_List)
+
+        self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
+        self.subscribe_thread.start()
 
     def start_hardware_comboboxes(self):
         self.sink_list = self.pulse.get_hardware_devices('sinks')
@@ -100,6 +97,10 @@ class MainWindow(Gtk.Window):
                 combobox.connect('changed', self.on_combo_changed, [device, str(j)], devices)
 
     def start_inputs(self):
+        self.Rename_Popover = self.builder.get_object('rename_popover')
+        self.Popover_Entry = self.builder.get_object('popover_entry')
+        self.Popover_Entry.connect('activate', self.label_rename_entry)
+
         self.vi_primary_buttons = []
         # for each input device
         for i in ['1', '2', '3']:
@@ -217,20 +218,21 @@ class MainWindow(Gtk.Window):
 
     def label_rename_entry(self, widget):
         name = widget.get_text()
-        if self.pulse.rename(self.Label_Index, name) == True:
-            if not ' ' in name:
+        if not ' ' in name:
+            if self.pulse.rename(self.Label_Index, name) == True:
                 self.PopActive.set_text(name)
                 self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List)
+                self.load_application_list('source', self.source_output_box_list, self.Source_Output_List)
 
-            else:
-                return
+        else:
+            return
 
-        self.Popover.popdown()
+        self.Rename_Popover.popdown()
 
     def label_click(self, widget, event, label, index):
         self.Label_Index = index
-        self.Popover.set_relative_to(widget)
-        self.Popover.popup()
+        self.Rename_Popover.set_relative_to(widget)
+        self.Rename_Popover.popup()
         self.PopActive = label
 
     def on_combo_changed(self, widget, index, device):

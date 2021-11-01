@@ -4108,7 +4108,7 @@ KHz</property>
       </object>
     </child>
   </object>
-  <object class="GtkPopover" id="popover">
+  <object class="GtkPopover" id="rename_popover">
     <property name="can-focus">False</property>
     <property name="relative-to">vi_1_label_event_box</property>
     <child>

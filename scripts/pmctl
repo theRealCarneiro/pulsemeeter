@@ -101,9 +101,10 @@ list_source_outputs (){
 	# turn source number into name
 	sources=$(echo "$apps" | grep Source:)
 	for source in $sources; do
-		name=$(LC_ALL=C pactl list sources | grep -A 2 "\#$(echo $source | sed "s/Source://g")$" | awk '/Name/ {print $2}')
-		apps=$(echo "$apps" | sed "s/$source/device:\"$name\"/")
+		name=$(LC_ALL=C pactl list sources | grep -A 2 "#$(echo $source | sed "s/Source://g")$" | awk '/Name/ {print $2}')
+		apps=$(echo "$apps" | sed "s/$source$/device:\"$name\"/")
 	done
+
 
 	# sed hell to transform into json
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
@@ -120,8 +121,8 @@ list_sink_inputs (){
 	# turn sink number into name
 	sinks=$(echo "$apps" | grep Sink:)
 	for sink in $sinks; do
-		name=$(LC_ALL=C pactl list sinks | grep -A 2 \#$(echo $sink | sed "s/Sink://g") | awk '/Name/ {print $2}')
-		apps=$(echo "$apps" | sed "s/$sink/\"device\":\"$name\"/")
+		name=$(LC_ALL=C pactl list sinks | grep -A 2 "\#$(echo $sink | sed "s/Sink://g")$" | awk '/Name/ {print $2}')
+		apps=$(echo "$apps" | sed "s/$sink$/\"device\":\"$name\"/")
 	done
 
 	# sed hell to transform into json
