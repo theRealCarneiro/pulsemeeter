@@ -278,7 +278,6 @@ class Pulse:
         command = "pmctl list-sink-inputs"
         devices = cmd(command).split('\n')
         del devices[-1]
-        del devices[0]
         apps = []
         for i in devices:
             if 'name' not in i:
@@ -293,7 +292,6 @@ class Pulse:
         command = "pmctl list-source-outputs"
         devices = cmd(command).split('\n')
         del devices[-1]
-        del devices[0]
         apps = []
         for i in devices:
             if 'name' not in i:

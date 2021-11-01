@@ -304,7 +304,6 @@ class MainWindow(Gtk.Window):
         else:
             dev_list = name_vi
 
-        print(dev_list)
         for i in self.app_list:
             if id != None:
                 if str(id) != str(i['id']):
