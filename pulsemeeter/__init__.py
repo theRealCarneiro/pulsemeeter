@@ -6,7 +6,6 @@ from .LatencyPopover import LatencyPopover
 from .Pulse import Pulse
 
 __all__ = [
-    "ORIG_CONFIG_DIR",
     "__version__",
     "MainWindow",
     "EqPopover",

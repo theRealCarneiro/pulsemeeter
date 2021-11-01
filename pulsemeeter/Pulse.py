@@ -194,7 +194,8 @@ class Pulse:
         self.config[device_index[0]][device_index[1]]['name'] = new_name
         if new_name != '':
             command = f'pmctl init sink {new_name}\n'
-            command = command + self.reconnect( device_index[0], device_index[1], 'init')
+            command = command + self.reconnect(device_index[0], device_index[1], 'init')
+            command = command + self.set_primary(device_index, 'init')
             os.popen(command)
 
         return True
@@ -202,9 +203,13 @@ class Pulse:
     def get_hardware_devices(self, kind):
         command = f"pmctl list {kind}"
         devices = cmd(command).split('\n')
+        del devices[-1]
+        # print(devices)
+        # exit()
         devices_concat = []
-        for i in range(0, len(devices)-1, 2):
-            devices_concat.append([devices[i], devices[i + 1]])
+        for i in devices:
+            jason = json.loads(i)
+            devices_concat.append(jason)
         return devices_concat
 
     def mute(self, index, state=None, init=None):
@@ -264,15 +269,18 @@ class Pulse:
                     vi = self.get_correct_device([i, j], 'source')
                     command = command + f'pmctl connect {vi} {master}\n'
 
-        print(command)
+        # print(command)
         os.popen(command)
 
-    def set_primary(self, index):
+    def set_primary(self, index, init=None):
         name = self.config[index[0]][index[1]]['name']
         for i in ['1', '2', '3']:
             self.config[index[0]][i]['primary'] = False if i != index[1] else True
         device = 'sink' if index[0] == 'vi' else 'source'
-        os.popen(f'pactl set-default-{device} {name}')
+        command = f'pactl set-default-{device} {name}'
+        if init == None:
+            os.popen(command)
+        return command
 
     def get_sink_inputs(self):
         command = "pmctl list-sink-inputs"
@@ -308,7 +316,7 @@ class Pulse:
         os.popen(command)
 
     def move_sink_input(self, app, name):
-        command = f'pmctl move-app-output {app} {name}'
+        command = f'pmctl move-sink-input {app} {name}'
         os.popen(command)
 
     def subscribe(self):
@@ -331,7 +339,6 @@ class Pulse:
 
     def end_subscribe(self):
         self.MyOut.terminate()
-
 
     def read_config(self):
 

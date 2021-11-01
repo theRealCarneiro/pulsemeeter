@@ -2,11 +2,11 @@ import os
 import sys
 import pathlib
 from setuptools import setup
-# try:
-import pulsemeeter
-# except ImportError:
-    # print("error: pulsemeeter requires Python 3.5 or greater")
-    # sys.exit(1)
+try:
+    import pulsemeeter
+except ImportError:
+    print("error: pulsemeeter requires Python 3.5 or greater")
+    sys.exit(1)
 
 VERSION = pulsemeeter.__version__
 README = (pathlib.Path(__file__).parent / "README.md").read_text()

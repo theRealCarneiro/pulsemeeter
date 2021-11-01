@@ -14,7 +14,6 @@ init (){
 			pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$source 
 		;;
 	esac
-	
 }
 
 connect (){
@@ -39,7 +38,6 @@ disconnect (){
 remove (){
 	vi=$1
 
-	#index="$(pacmd list-modules | grep -B 2 "$vi>" | grep index | sed 's/[^0-9]*//g')"
 	index="$(LC_ALL=C pactl list modules | grep -B 2 "$vi " | grep Module | sed 's/.*#//g')"
 	[ -z "$index" ] || pactl unload-module $index
 }
@@ -63,53 +61,15 @@ rename () {
 
 }
 
-get (){
-		eval "j="\$$2""
-		[ "$1" = "vol" ] && [ -z $j ] && echo 0
-		[ -z $j ] &&  return
-		case $1 in
-			"sink")
-				aux=$(pacmd list-sinks | grep -A 50 $j | grep alsa.card.name | sed 's/.*= //g; s/"//g')
-			;;
-			"virtual_sink")
-				aux=$(pacmd list-sinks | grep $j >/dev/null && echo $j)
-			;;
-			"src")
-				aux=$(pacmd list-sources | grep -A 37 $j | grep alsa.card_name | sed 's/.*= //g; s/"//g')
-			;;
-			"virtual_src")
-				aux=$(pacmd list-sources | grep $j >/dev/null && echo $j)
-			;;
-			"vol")
-				aux=$(pactl list $3 | grep -A 7 $j | tr ' ' '\n' | grep -m1 '%' | tr -d '%')
-				[ -z $aux ]
-				echo $aux
-				exit
-			;;
-		esac
-
-		if [ -z "$aux" ]; then 
-			[ -z $3 ] && eval "echo "\$$2""
-		else
-			echo $aux
-		fi
-
-}
 
 list (){
-	if which pulseaudio > /dev/null 2>&1; then
-		if [ "$1" = 'sinks' ]; then
-			list=$(LC_ALL=C pactl list sinks | awk '/Name:/ {print $0} /Driver:/ {print $0} /Description/ {print $0};' | tac | sed -e '/null/,+2d; /ladspa/,+2d; /module/d; s/.*: //g' | tac)
-		else
-			list=$(LC_ALL=C pactl list sources | awk '/Name:/ {print $0} /Driver:/ {print $0} /Description/ {print $0};' | tac | sed -e '/null/,+2d; /remap/,+2d' | tac | sed '/.monitor/,+2d; /module/d; s/.*: //g')
-		fi
-	else
-		if [ "$1" = 'sinks' ]; then
-			list=$(LC_ALL=C pactl list sinks | awk '/Name:/ {print $0} /device.description/ {print $0} /factory.name = / {print $0} ;' | sed 's/.*<//g; s/>//; s/.*= //g; s/"//g' | tac | sed -e '/null/,+2d' | tac | sed 's/.*: //g; /sink/d')
-		else
-			list=$(LC_ALL=C pactl list sources | awk '/Name:/ {print $0} /Description/ {print $0} /node.group = / {print $0} ;' | sed -e '/monitor/,+1d' | tac | sed -e '/node.group/,+2d; s/.*: //g' | tac)
-		fi
-	fi
+	list=$(LC_ALL=C pactl list $1 | awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} /Description/ {print $0} /remap-source/ {print $0} /module-null-sink/ {print $0} /null-audio-sink/ {print $0}' | sed '/id/!s/: /:"/g; /#/!s/$/"/g')
+	# turn into json
+	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
+		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
+		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
+		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source)
+
 	echo "$list"
 }
 
@@ -123,7 +83,7 @@ move_sink_input_master (){
 	pactl move-sink-input $id $master
 }
 
-move_app_output (){
+move_sink_input (){
 	app=$1
 	master=$2
 	pactl move-sink-input $app $master
@@ -136,36 +96,26 @@ move_source_output () {
 }
 
 list_source_outputs (){
-	source_outputs="$(LC_ALL=C pactl list source-outputs)"
-	if which pulseaudio > /dev/null 2>&1; then
-		apps=$(echo "$source_outputs" | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /Driver/{print$2} /process.binary/{print $0} /application.name = /{print $0} /media.name /{print $0}' | tac | sed -e '/pavucontrol/,+6d; /Remapped Stream/,+3d' | tac | sed ':a $!N;s/\nmodule-loopback/ module-loopback/;ta P;D;' | sed -e '/loopback/,+3d; /protocol-native/d; /media.name/d; /process.binary/d' ) # | sed 's/.* = //g; s/"//g')
-	else
-		apps=$(echo "$source_outputs" | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /binary/{print $0} /application.name = /{print $0}')
-	fi
+	apps=$(LC_ALL=C pactl list source-outputs | awk '/Source Output #/{print $3} /Source: /{print $1 $2} /icon.name =/{print $0} /binary/{print $0} /application.name = /{print $0}')
 
 	# turn source number into name
 	sources=$(echo "$apps" | grep Source:)
 	for source in $sources; do
-		name=$(LC_ALL=C pactl list sources | grep -A 2 \#$(echo $source | sed "s/Source://g") | awk '/Name/ {print $2}')
+		name=$(LC_ALL=C pactl list sources | grep -A 2 "\#$(echo $source | sed "s/Source://g")$" | awk '/Name/ {print $2}')
 		apps=$(echo "$apps" | sed "s/$source/device:\"$name\"/")
 	done
 
 	# sed hell to transform into json
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/application\.name = /name:/g; s/application\.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
+		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
 		grep -vwE pavucontrol | grep name |\
 		sed 's/ 		/ /g; s/device/"device"/g; s/name/"name"/g')
 	echo "$apps"
 }
 
 list_sink_inputs (){
-
-	if which pulseaudio > /dev/null 2>&1; then
-		apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /Driver/{print $2} /icon_name/{print $0} /application.name = /{print $0}' | grep -A 3 -B 1 protocol-native.c | sed -e '/protocol/d')
-	else
-		apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /icon_name/{print $0} /application.name = /{print $0}')
-	fi
+	apps=$(LC_ALL=C pactl list sink-inputs | awk '/Sink Input #/{print $3} /Sink: /{print $1$2} /icon_name/{print $0} /application.name = /{print $0}')
 
 	# turn sink number into name
 	sinks=$(echo "$apps" | grep Sink:)
@@ -177,7 +127,7 @@ list_sink_inputs (){
 	# sed hell to transform into json
 	echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/application.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
+		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
 		grep name |\
 		sed 's/ 		/ /g' | sed 's/, $//; s/$/}/'
 }
@@ -274,11 +224,21 @@ rnnoise() {
 	status=$4
 	latency=${5:-200}
 
-	label=noisetorch
-	plugin=rnnoise_ladspa
+
+	label=noise_suppressor_mono
+	plugin=librnnoise_ladspa
  
 	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
-		[ -f "$i/$plugin.so" ] && found=1
+		if [ -f "$i/rnnoise_ladspa.so" ]; then
+			label=noisetorch
+			plugin=rnnoise_ladspa
+			found=1
+			break
+		elif [ -f "$i/$plugin.so" ]; then
+			found=1
+			break
+		fi
+
 	done
 
 	[ -z "$found" ] && exit 1
@@ -287,7 +247,8 @@ rnnoise() {
 		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
 		pactl load-module module-null-sink sink_name=$sink_name
 
-		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noisetorch plugin=rnnoise_ladspa control=$control
+		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=$label plugin=$plugin control=$control
+		#pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noisetorch plugin=rnnoise_ladspa control=$control
 		#pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noise_suppressor_mono plugin=librnnoise_ladspa control=$control
 		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
 	else
@@ -350,8 +311,9 @@ case $1 in
 	"list-source-outputs")
 		list_source_outputs
 	;;
-	"move-app-output")
-		move_app_output $2 $3
+
+	"move-sink-input")
+		move_sink_input $2 $3
 	;;
 
 	"move-source-output")
