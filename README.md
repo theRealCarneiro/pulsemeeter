@@ -1,7 +1,7 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
-![](https://i.imgur.com/qK15AJP.png)
+![](https://i.imgur.com/FGJXYKn.png)
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
 
 ## Features
