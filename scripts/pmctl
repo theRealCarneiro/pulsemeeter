@@ -63,14 +63,15 @@ rename () {
 
 
 list (){
-	list=$(LC_ALL=C pactl list $1 | awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} /Description/ {print $0} /remap-source/ {print $0} /module-null-sink/ {print $0} /null-audio-sink/ {print $0}' | sed '/id/!s/: /:"/g; /#/!s/$/"/g')
+	list=$(LC_ALL=C pactl list $1 | awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} /Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0} /module-null-sink/ {print $0} /null-audio-sink/ {print $0}' | sed '/id/!s/: /:"/g; /#/!s/$/"/g')
+
 	# turn into json
 	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
 		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
-		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source)
+		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
-	echo "$list"
+	printf "%s" "$list"
 }
 
 move_sink_input_master (){
@@ -112,7 +113,7 @@ list_source_outputs (){
 		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
 		grep -vwE pavucontrol | grep name |\
 		sed 's/ 		/ /g; s/device/"device"/g; s/name/"name"/g')
-	echo "$apps"
+	printf "%s" "$apps"
 }
 
 list_sink_inputs (){
@@ -126,11 +127,12 @@ list_sink_inputs (){
 	done
 
 	# sed hell to transform into json
-	echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
+	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
 		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
 		grep name |\
-		sed 's/ 		/ /g' | sed 's/, $//; s/$/}/'
+		sed 's/ 		/ /g' | sed 's/, $//; s/$/}/')
+	printf "%s" "$apps"
 }
 
 eq (){

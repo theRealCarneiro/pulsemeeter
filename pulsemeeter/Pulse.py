@@ -203,13 +203,11 @@ class Pulse:
     def get_hardware_devices(self, kind):
         command = f"pmctl list {kind}"
         devices = cmd(command).split('\n')
-        del devices[-1]
-        # print(devices)
-        # exit()
         devices_concat = []
-        for i in devices:
-            jason = json.loads(i)
-            devices_concat.append(jason)
+        if devices[0] != '':
+            for i in devices:
+                jason = json.loads(i)
+                devices_concat.append(jason)
         return devices_concat
 
     def mute(self, index, state=None, init=None):
@@ -285,29 +283,29 @@ class Pulse:
     def get_sink_inputs(self):
         command = "pmctl list-sink-inputs"
         devices = cmd(command).split('\n')
-        del devices[-1]
         apps = []
-        for i in devices:
-            if 'name' not in i:
-                continue
-            jason = json.loads(i)
-            if 'icon' not in jason:
-                jason['icon'] = 'audio-card'
-            apps.append(jason)
+        if devices[0] != '':
+            for i in devices:
+                if 'name' not in i:
+                    continue
+                jason = json.loads(i)
+                if 'icon' not in jason:
+                    jason['icon'] = 'audio-card'
+                apps.append(jason)
         return apps
 
     def get_source_outputs(self):
         command = "pmctl list-source-outputs"
         devices = cmd(command).split('\n')
-        del devices[-1]
         apps = []
-        for i in devices:
-            if 'name' not in i:
-                continue
-            jason = json.loads(i)
-            if 'icon' not in jason:
-                jason['icon'] = 'audio-card'
-            apps.append(jason)
+        if devices[0] != '':
+            for i in devices:
+                if 'name' not in i:
+                    continue
+                jason = json.loads(i)
+                if 'icon' not in jason:
+                    jason['icon'] = 'audio-card'
+                apps.append(jason)
 
         return apps
 

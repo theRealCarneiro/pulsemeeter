@@ -47,10 +47,10 @@ class MainWindow(Gtk.Window):
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
-        self.start_app_list()
         self.start_hardware_comboboxes()
         self.start_inputs()
         self.start_outputs()
+        self.start_app_list()
 
         self.Window = self.builder.get_object('window')
 
