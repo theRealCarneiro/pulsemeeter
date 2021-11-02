@@ -14,7 +14,10 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 ## Installation
 
 ### Dependencies
-Installed automatically when installing app with pip
+You can install python dependencies with pip
+`pip install -r REQUIREMENTS.txt`
+
+
  - pip
  - [appdirs](https://pypi.org/project/appdirs/)
  - [setuptools](https://pypi.org/project/setuptools/)
