@@ -1,7 +1,7 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
-![](https://i.imgur.com/o66F9sG.png)
+![](https://i.imgur.com/hYDE8dh.png)
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
 
 ## Features
@@ -15,17 +15,19 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 ### Dependencies
 You can install python dependencies with pip
-`pip install -r REQUIREMENTS.txt`
+`pip install -r requirements.txt`
 
 
  - pip
- - [appdirs](https://pypi.org/project/appdirs/)
- - [setuptools](https://pypi.org/project/setuptools/)
- - [pygobject](https://pypi.org/project/PyGObject/)
+ - [appdirs](https://pypi.org/project/appdirs)
+ - [setuptools](https://pypi.org/project/setuptools)
+ - [pygobject](https://pypi.org/project/PyGObject)
+ - [pulsectl](https://pypi.org/project/pulsectl)
  
  #### Optional Dependencies
- - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice/)
+ - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice)
  - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/pacman packages available)
+ - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
 Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
 
