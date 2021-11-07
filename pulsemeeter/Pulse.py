@@ -4,12 +4,14 @@ import re
 import sys
 import subprocess
  
+import pulsectl
 from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, __version__
 
 class Pulse:
 
     def __init__(self, init=None):
         self.read_config()
+        self.pulsectl = pulsectl.Pulse('pulsemeeter')
         if init == 'cmd': return
         command = ''
         command = command + self.start_sinks()
@@ -19,6 +21,10 @@ class Pulse:
         # command = command + self.start_mute()
         command = command + self.start_conections()
         # print(command)
+        self.vu_list = {}
+        for i in ['hi', 'vi', 'a', 'b']:
+            # for j in ['1','2','3']:
+            self.vu_list[i] = {}
         os.popen(command)
 
     def get_correct_device(self, index, conn_type):
@@ -171,16 +177,35 @@ class Pulse:
             os.popen(command)
         return command
 
-    def volume(self, index, val):
-        device_type = 'sink' if index[0] == 'a' or index[0] == 'vi' else 'source'
-        self.config[index[0]][index[1]]['vol'] = val
-        name = self.config[index[0]][index[1]]['name']
+    def get_sink_input_volume(self, id):
+        command = f'pmctl get-sink-input-volume {id}'
+        return int(cmd(command))
 
-        if (name == '' or device_type == ''):
-            return
-        command = f"pmctl volume {device_type} {name} {val}"
-        # print(command)
-        os.popen(command)
+    def get_source_output_volume(self, id):
+        command = f'pmctl get-source-output-volume {id}'
+        return int(cmd(command))
+
+    def volume(self, index, val, stream_type=None):
+        if stream_type == None:
+            self.config[index[0]][index[1]]['vol'] = val
+            name = self.config[index[0]][index[1]]['name']
+            if index[0] == 'a' or index[0] == 'vi':
+                device = self.pulsectl.get_sink_by_name(name)
+            else:
+                device = self.pulsectl.get_source_by_name(name)
+
+            volume = device.volume
+            volume.value_flat = val / 100 
+            self.pulsectl.volume_set(device, volume)
+
+        elif stream_type == 'sink-input':
+            chann = int(cmd(f'pmctl get-sink-input-chann {index}'))
+            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+            self.pulsectl.sink_input_volume_set(index, volume)
+        else:
+            chann = int(cmd(f'pmctl get-source-output-chann {index}'))
+            volume = pulsectl.PulseVolumeInfo(val / 100, 2)
+            self.pulsectl.source_output_volume_set(index, volume)
 
     def rename(self, device_index, new_name):
         old_name = self.config[device_index[0]][device_index[1]]['name']
@@ -208,6 +233,10 @@ class Pulse:
             for i in devices:
                 jason = json.loads(i)
                 devices_concat.append(jason)
+        if kind == 'sources':
+            self.source_list = devices_concat
+        else:
+            self.sink_list = devices_concat
         return devices_concat
 
     def mute(self, index, state=None, init=None):
@@ -239,7 +268,7 @@ class Pulse:
 
         self.config[index[0]][index[1]]['eq_control'] = control
 
-        command = f'pmctl eq {name} {master} {control}\n'
+        command = f'pmctl eq init {name} {master} {control}\n'
         if status != 'init':
             output = index[0] + index[1]
             for i in ['hi', 'vi']:
@@ -259,7 +288,7 @@ class Pulse:
         name = output + '_eq' if name == None else name
         master = self.config[index[0]][index[1]]['name']
         self.config[index[0]][index[1]]['use_eq'] = False
-        command = f'pmctl eq {name} remove\n'
+        command = f'pmctl eq remove {name}\n'
 
         for i in ['hi', 'vi']:
             for j in ['1', '2', '3']:
@@ -337,6 +366,32 @@ class Pulse:
 
     def end_subscribe(self):
         self.MyOut.terminate()
+
+    def vumeter(self, index):
+        name = self.config[index[0]][index[1]]['name']
+        dev_type = '0' if index[0] == 'vi' or index[0] == 'a' else '1'
+        command = ['pulse-vumeter', name, dev_type]
+        sys.stdout.flush()
+        self.vu_list[index[0]][index[1]] = subprocess.Popen(command,
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.STDOUT,
+            shell=False,
+            encoding='utf-8',
+            universal_newlines=False)
+
+        for stdout_line in iter(self.vu_list[index[0]][index[1]].stdout.readline, ""):
+            yield stdout_line 
+            
+        self.vu_list[index[0]][index[1]].stdout.close()
+        return_code = self.vu_list[index[0]][index[1]].wait()
+        # if return_code:
+            # raise subprocess.CalledProcessError(return_code, command)
+
+    def end_vumeter(self):
+        for i in ['hi', 'vi', 'a', 'b']:
+            for j in ['1','2','3']:
+                if j in self.vu_list[i]:
+                    self.vu_list[i][j].terminate()
 
     def read_config(self):
 

@@ -979,23 +979,6 @@ KHz</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale" id="vi_1_vol">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="hexpand">True</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="adjustment">vi_1_adjust</property>
-                                    <property name="inverted">True</property>
-                                    <property name="round-digits">0</property>
-                                    <property name="digits">0</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">0</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <!-- n-columns=1 n-rows=1 -->
                                   <object class="GtkGrid">
                                     <property name="visible">True</property>
@@ -1053,6 +1036,52 @@ KHz</property>
                                   <packing>
                                     <property name="left-attach">0</property>
                                     <property name="top-attach">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <!-- n-columns=2 n-rows=1 -->
+                                  <object class="GtkGrid" id="vo">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="vexpand">True</property>
+                                    <child>
+                                      <object class="GtkScale" id="vi_1_vol">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="orientation">vertical</property>
+                                        <property name="adjustment">vi_1_adjust</property>
+                                        <property name="inverted">True</property>
+                                        <property name="round-digits">0</property>
+                                        <property name="digits">0</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">1</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <!-- n-columns=1 n-rows=1 -->
+                                      <object class="GtkGrid" id="vi_1_vumeter">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">0</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1395,23 +1424,6 @@ KHz</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale" id="vi_2_vol">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="adjustment">vi_2_adjust</property>
-                                    <property name="inverted">True</property>
-                                    <property name="round-digits">0</property>
-                                    <property name="digits">0</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">0</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <!-- n-columns=2 n-rows=1 -->
                                   <object class="GtkGrid">
                                     <property name="visible">True</property>
@@ -1458,6 +1470,51 @@ KHz</property>
                                   <packing>
                                     <property name="left-attach">0</property>
                                     <property name="top-attach">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <!-- n-columns=2 n-rows=1 -->
+                                  <object class="GtkGrid">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="vexpand">True</property>
+                                    <child>
+                                      <object class="GtkScale" id="vi_2_vol">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="orientation">vertical</property>
+                                        <property name="adjustment">vi_2_adjust</property>
+                                        <property name="inverted">True</property>
+                                        <property name="round-digits">0</property>
+                                        <property name="digits">0</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">1</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <!-- n-columns=1 n-rows=1 -->
+                                      <object class="GtkGrid" id="vi_2_vumeter">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">0</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1609,23 +1666,6 @@ KHz</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale" id="vi_3_vol">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="hexpand">True</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="adjustment">vi_3_adjust</property>
-                                    <property name="inverted">True</property>
-                                    <property name="round-digits">1</property>
-                                    <property name="digits">0</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">0</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <!-- n-columns=2 n-rows=1 -->
                                   <object class="GtkGrid">
                                     <property name="visible">True</property>
@@ -1672,6 +1712,51 @@ KHz</property>
                                   <packing>
                                     <property name="left-attach">0</property>
                                     <property name="top-attach">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <!-- n-columns=2 n-rows=1 -->
+                                  <object class="GtkGrid">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="vexpand">True</property>
+                                    <child>
+                                      <object class="GtkScale" id="vi_3_vol">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="orientation">vertical</property>
+                                        <property name="adjustment">vi_3_adjust</property>
+                                        <property name="inverted">True</property>
+                                        <property name="round-digits">1</property>
+                                        <property name="digits">0</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">1</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <!-- n-columns=1 n-rows=1 -->
+                                      <object class="GtkGrid" id="vi_3_vumeter">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">0</property>
                                   </packing>
                                 </child>
                               </object>
@@ -2003,44 +2088,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=3 n-rows=1 -->
+                          <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
                             <property name="name">Vi1_Control_Grid</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
-                            <child>
-                              <!-- n-columns=1 n-rows=1 -->
-                              <object class="GtkGrid">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="hexpand">False</property>
-                                <child>
-                                  <object class="GtkScale">
-                                    <property name="can-focus">True</property>
-                                    <property name="no-show-all">True</property>
-                                    <property name="margin-top">18</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="inverted">True</property>
-                                    <property name="show-fill-level">True</property>
-                                    <property name="round-digits">0</property>
-                                    <property name="digits">0</property>
-                                    <property name="draw-value">False</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">0</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
                               <object class="GtkGrid" id="vi_1_button_Grid2">
@@ -2142,26 +2196,28 @@ KHz</property>
                                 </child>
                               </object>
                               <packing>
-                                <property name="left-attach">2</property>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
-                              <!-- n-columns=1 n-rows=2 -->
+                              <!-- n-columns=2 n-rows=1 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkScale" id="hi_3_vol">
+                                  <!-- n-columns=1 n-rows=1 -->
+                                  <object class="GtkGrid" id="hi_3_vumeter">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
+                                    <property name="can-focus">False</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="adjustment">hi_3_adjust</property>
-                                    <property name="inverted">True</property>
-                                    <property name="round-digits">0</property>
-                                    <property name="digits">0</property>
+                                    <property name="column-homogeneous">True</property>
+                                    <child>
+                                      <placeholder/>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="left-attach">0</property>
@@ -2169,29 +2225,57 @@ KHz</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="hi_3_mute">
+                                  <!-- n-columns=1 n-rows=2 -->
+                                  <object class="GtkGrid">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="receives-default">True</property>
-                                    <property name="margin-end">2</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">False</property>
+                                    <property name="can-focus">False</property>
                                     <child>
-                                      <object class="GtkImage">
+                                      <object class="GtkScale" id="hi_3_vol">
                                         <property name="visible">True</property>
-                                        <property name="can-focus">False</property>
-                                        <property name="icon-name">audio-volume-muted</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="orientation">vertical</property>
+                                        <property name="adjustment">hi_3_adjust</property>
+                                        <property name="inverted">True</property>
+                                        <property name="round-digits">0</property>
+                                        <property name="digits">0</property>
                                       </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkToggleButton" id="hi_3_mute">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="margin-end">2</property>
+                                        <property name="hexpand">False</property>
+                                        <property name="vexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">audio-volume-muted</property>
+                                          </object>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">1</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">1</property>
+                                    <property name="left-attach">1</property>
+                                    <property name="top-attach">0</property>
                                   </packing>
                                 </child>
                               </object>
                               <packing>
-                                <property name="left-attach">1</property>
+                                <property name="left-attach">0</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
@@ -2329,43 +2413,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=3 n-rows=1 -->
+                          <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
                             <property name="name">Vi1_Control_Grid</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
-                            <child>
-                              <!-- n-columns=1 n-rows=1 -->
-                              <object class="GtkGrid">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="hexpand">False</property>
-                                <child>
-                                  <object class="GtkScale">
-                                    <property name="can-focus">True</property>
-                                    <property name="no-show-all">True</property>
-                                    <property name="margin-top">18</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="inverted">True</property>
-                                    <property name="show-fill-level">True</property>
-                                    <property name="digits">0</property>
-                                    <property name="draw-value">False</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">0</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
                               <object class="GtkGrid" id="vi__button_Grid">
@@ -2467,47 +2521,77 @@ KHz</property>
                                 </child>
                               </object>
                               <packing>
-                                <property name="left-attach">2</property>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
-                              <!-- n-columns=1 n-rows=2 -->
+                              <!-- n-columns=2 n-rows=1 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="column-homogeneous">True</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="hi_2_mute">
+                                  <!-- n-columns=1 n-rows=2 -->
+                                  <object class="GtkGrid">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="receives-default">True</property>
-                                    <property name="margin-end">2</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">False</property>
+                                    <property name="can-focus">False</property>
                                     <child>
-                                      <object class="GtkImage">
+                                      <object class="GtkToggleButton" id="hi_2_mute">
                                         <property name="visible">True</property>
-                                        <property name="can-focus">False</property>
-                                        <property name="icon-name">audio-volume-muted</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="margin-end">2</property>
+                                        <property name="hexpand">False</property>
+                                        <property name="vexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">audio-volume-muted</property>
+                                          </object>
+                                        </child>
                                       </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkScale" id="hi_2_vol">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="orientation">vertical</property>
+                                        <property name="adjustment">hi_2_adjust</property>
+                                        <property name="inverted">True</property>
+                                        <property name="round-digits">0</property>
+                                        <property name="digits">0</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">1</property>
+                                    <property name="left-attach">1</property>
+                                    <property name="top-attach">0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkScale" id="hi_2_vol">
+                                  <!-- n-columns=1 n-rows=1 -->
+                                  <object class="GtkGrid" id="hi_2_vumeter">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
+                                    <property name="can-focus">False</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="adjustment">hi_2_adjust</property>
-                                    <property name="inverted">True</property>
-                                    <property name="round-digits">0</property>
-                                    <property name="digits">0</property>
+                                    <child>
+                                      <placeholder/>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="left-attach">0</property>
@@ -2516,7 +2600,7 @@ KHz</property>
                                 </child>
                               </object>
                               <packing>
-                                <property name="left-attach">1</property>
+                                <property name="left-attach">0</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
@@ -2645,43 +2729,13 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=3 n-rows=1 -->
+                          <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
                             <property name="name">Vi1_Control_Grid</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
-                            <child>
-                              <!-- n-columns=1 n-rows=1 -->
-                              <object class="GtkGrid">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="hexpand">False</property>
-                                <child>
-                                  <object class="GtkScale">
-                                    <property name="can-focus">True</property>
-                                    <property name="no-show-all">True</property>
-                                    <property name="margin-top">18</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="inverted">True</property>
-                                    <property name="show-fill-level">True</property>
-                                    <property name="digits">0</property>
-                                    <property name="draw-value">False</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">0</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
                             <child>
                               <!-- n-columns=1 n-rows=6 -->
                               <object class="GtkGrid" id="vi_1_button_Grid4">
@@ -2783,47 +2837,77 @@ KHz</property>
                                 </child>
                               </object>
                               <packing>
-                                <property name="left-attach">2</property>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
-                              <!-- n-columns=1 n-rows=2 -->
+                              <!-- n-columns=2 n-rows=1 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="column-homogeneous">True</property>
                                 <child>
-                                  <object class="GtkToggleButton" id="hi_1_mute">
+                                  <!-- n-columns=1 n-rows=2 -->
+                                  <object class="GtkGrid">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="receives-default">True</property>
-                                    <property name="margin-end">2</property>
-                                    <property name="hexpand">False</property>
-                                    <property name="vexpand">False</property>
+                                    <property name="can-focus">False</property>
                                     <child>
-                                      <object class="GtkImage">
+                                      <object class="GtkToggleButton" id="hi_1_mute">
                                         <property name="visible">True</property>
-                                        <property name="can-focus">False</property>
-                                        <property name="icon-name">audio-volume-muted</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="margin-end">2</property>
+                                        <property name="hexpand">False</property>
+                                        <property name="vexpand">False</property>
+                                        <child>
+                                          <object class="GtkImage">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="icon-name">audio-volume-muted</property>
+                                          </object>
+                                        </child>
                                       </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkScale" id="hi_1_vol">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="orientation">vertical</property>
+                                        <property name="adjustment">hi_1_adjust</property>
+                                        <property name="inverted">True</property>
+                                        <property name="round-digits">0</property>
+                                        <property name="digits">0</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
-                                    <property name="left-attach">0</property>
-                                    <property name="top-attach">1</property>
+                                    <property name="left-attach">1</property>
+                                    <property name="top-attach">0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkScale" id="hi_1_vol">
+                                  <!-- n-columns=1 n-rows=1 -->
+                                  <object class="GtkGrid" id="hi_1_vumeter">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
+                                    <property name="can-focus">False</property>
                                     <property name="hexpand">True</property>
                                     <property name="vexpand">True</property>
-                                    <property name="orientation">vertical</property>
-                                    <property name="adjustment">hi_1_adjust</property>
-                                    <property name="inverted">True</property>
-                                    <property name="round-digits">0</property>
-                                    <property name="digits">0</property>
+                                    <child>
+                                      <placeholder/>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="left-attach">0</property>
@@ -2832,7 +2916,7 @@ KHz</property>
                                 </child>
                               </object>
                               <packing>
-                                <property name="left-attach">1</property>
+                                <property name="left-attach">0</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
@@ -3062,23 +3146,6 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale" id="a_2_vol">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="orientation">vertical</property>
-                            <property name="adjustment">a_2_adjust</property>
-                            <property name="inverted">True</property>
-                            <property name="round-digits">0</property>
-                            <property name="digits">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -3087,6 +3154,53 @@ KHz</property>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="column-homogeneous">True</property>
+                            <child>
+                              <object class="GtkScale" id="a_2_vol">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="orientation">vertical</property>
+                                <property name="adjustment">a_2_adjust</property>
+                                <property name="inverted">True</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="a_2_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                       </object>
@@ -3146,24 +3260,6 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale" id="a_1_vol">
-                            <property name="height-request">120</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="orientation">vertical</property>
-                            <property name="adjustment">a_1_adjust</property>
-                            <property name="inverted">True</property>
-                            <property name="round-digits">0</property>
-                            <property name="digits">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -3172,6 +3268,54 @@ KHz</property>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="column-homogeneous">True</property>
+                            <child>
+                              <object class="GtkScale" id="a_1_vol">
+                                <property name="height-request">120</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="orientation">vertical</property>
+                                <property name="adjustment">a_1_adjust</property>
+                                <property name="inverted">True</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="a_1_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                       </object>
@@ -3230,23 +3374,6 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale" id="a_3_vol">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="orientation">vertical</property>
-                            <property name="adjustment">a_3_adjust</property>
-                            <property name="inverted">True</property>
-                            <property name="round-digits">0</property>
-                            <property name="digits">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -3255,6 +3382,53 @@ KHz</property>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="column-homogeneous">True</property>
+                            <child>
+                              <object class="GtkScale" id="a_3_vol">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="orientation">vertical</property>
+                                <property name="adjustment">a_3_adjust</property>
+                                <property name="inverted">True</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="a_3_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                       </object>
@@ -3427,23 +3601,6 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale" id="b_1_vol">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="orientation">vertical</property>
-                            <property name="adjustment">b_1_adjust</property>
-                            <property name="inverted">True</property>
-                            <property name="round-digits">0</property>
-                            <property name="digits">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -3452,6 +3609,52 @@ KHz</property>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="column-homogeneous">True</property>
+                            <child>
+                              <object class="GtkScale" id="b_1_vol">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="orientation">vertical</property>
+                                <property name="adjustment">b_1_adjust</property>
+                                <property name="inverted">True</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="b_1_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                       </object>
@@ -3466,7 +3669,7 @@ KHz</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="margin-end">3</property>
-                        <property name="hexpand">False</property>
+                        <property name="hexpand">True</property>
                         <property name="vexpand">True</property>
                         <child>
                           <!-- n-columns=2 n-rows=2 -->
@@ -3532,23 +3735,6 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale" id="b_3_vol">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="orientation">vertical</property>
-                            <property name="adjustment">b_3_adjust</property>
-                            <property name="inverted">True</property>
-                            <property name="round-digits">0</property>
-                            <property name="digits">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -3557,6 +3743,51 @@ KHz</property>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="vexpand">True</property>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="b_3_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScale" id="b_3_vol">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="orientation">vertical</property>
+                                <property name="adjustment">b_3_adjust</property>
+                                <property name="inverted">True</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                       </object>
@@ -3571,7 +3802,7 @@ KHz</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="margin-end">3</property>
-                        <property name="hexpand">False</property>
+                        <property name="hexpand">True</property>
                         <property name="vexpand">True</property>
                         <child>
                           <!-- n-columns=2 n-rows=2 -->
@@ -3637,23 +3868,6 @@ KHz</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale" id="b_2_vol">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="orientation">vertical</property>
-                            <property name="adjustment">b_2_adjust</property>
-                            <property name="inverted">True</property>
-                            <property name="round-digits">0</property>
-                            <property name="digits">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -3662,6 +3876,52 @@ KHz</property>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="vexpand">True</property>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="b_2_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="column-homogeneous">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScale" id="b_2_vol">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="orientation">vertical</property>
+                                <property name="adjustment">b_2_adjust</property>
+                                <property name="inverted">True</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                       </object>
@@ -3887,6 +4147,7 @@ KHz</property>
                                 <property name="can-focus">False</property>
                                 <property name="vadjustment">source_output_scroll</property>
                                 <property name="vscroll-policy">natural</property>
+                                <property name="shadow-type">out</property>
                                 <child>
                                   <object class="GtkBox" id="sink_input_list">
                                     <property name="visible">True</property>

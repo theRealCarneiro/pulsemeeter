@@ -1,4 +1,6 @@
 import os
+import subprocess
+import signal
 import threading
 import sys
 import json
@@ -8,7 +10,7 @@ from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
 from .settings import GLADEFILE
 
-from gi.repository import Gtk,Gdk,Gio
+from gi.repository import Gtk,Gdk,Gio,GLib
 
 class MainWindow(Gtk.Window):
 
@@ -31,6 +33,8 @@ class MainWindow(Gtk.Window):
                     'source_output_list',
                     'sink_input_scroll',
                     'source_output_scroll',
+                    'vi_1_peak',
+
                 ]
         for i in range(1, 4):
             component_list.append(f'hi_{i}_adjust')
@@ -51,6 +55,8 @@ class MainWindow(Gtk.Window):
         self.start_inputs()
         self.start_outputs()
         self.start_app_list()
+        self.start_vumeters()
+
 
         self.Window = self.builder.get_object('window')
 
@@ -61,6 +67,36 @@ class MainWindow(Gtk.Window):
         self.builder.connect_signals(self)
 
         self.Window.show_all()
+
+        self.subscribe_thread.start()
+
+        for i in ['hi', 'vi', 'a', 'b']:
+            if i in self.vu_thread:
+                for j in ['1', '2', '3']:
+                    if j in self.vu_thread[i]:
+                        self.vu_thread[i][j].start() 
+
+    def start_vumeters(self):
+        self.vu_list = {}
+        self.vu_thread = {}
+        for i in ['hi', 'vi', 'a', 'b']:
+            self.vu_list[i] = {}
+            self.vu_thread[i] = {}
+            for j in ['1','2','3']:
+                grid = self.builder.get_object(f'{i}_{j}_vumeter')
+                self.vu_list[i][j] = Gtk.ProgressBar()
+                self.vu_list[i][j].set_orientation(Gtk.Orientation.VERTICAL)
+                self.vu_list[i][j].set_margin_bottom(8)
+                self.vu_list[i][j].set_margin_top(8)
+                self.vu_list[i][j].set_vexpand(True)
+                self.vu_list[i][j].set_hexpand(True)
+                self.vu_list[i][j].set_halign(Gtk.Align.CENTER)
+
+                self.vu_list[i][j].set_inverted(True)
+                grid.add(self.vu_list[i][j])
+                if self.pulse.config[i][j]['name'] != '':
+                    self.vu_thread[i][j] = threading.Thread(target=self.listen_peak, 
+                            args=([i, j],))
 
     def start_app_list(self):
         self.Sink_Input_List = self.builder.get_object('sink_input_list')
@@ -73,7 +109,6 @@ class MainWindow(Gtk.Window):
         self.load_application_list('source', self.source_output_box_list, self.Source_Output_List)
 
         self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
-        self.subscribe_thread.start()
 
     def start_hardware_comboboxes(self):
         self.sink_list = self.pulse.get_hardware_devices('sinks')
@@ -207,9 +242,9 @@ class MainWindow(Gtk.Window):
         state = 'connect' if button.get_active() else 'disconnect'
         self.pulse.connect(state, source_index, sink_index)
 
-    def volume_change(self, slider, index):
+    def volume_change(self, slider, index, stream_type=None):
         val = int(slider.get_value())
-        self.pulse.volume(index, val)
+        self.pulse.volume(index, val, stream_type)
 
     def open_popover(self, button, event, popover, index):
         if event.button == 3:
@@ -315,6 +350,7 @@ class MainWindow(Gtk.Window):
 
             icon = Gio.ThemedIcon(name=i['icon'])
             image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
+            image.set_margin_left(10)
             label = Gtk.Label(i['name'])
             label.props.halign = Gtk.Align.START
             combobox = Gtk.ComboBoxText()
@@ -325,42 +361,88 @@ class MainWindow(Gtk.Window):
             combobox.connect('changed', self.app_combo_change, dev_type, i['id'])
             combobox.props.halign = Gtk.Align.END
             combobox.set_hexpand(True)
+            combobox.set_margin_right(10)
+            adjust = Gtk.Adjustment(lower=0, upper=153, step_increment=1, page_increment=10)
+            if box_list == self.sink_input_box_list:
+                adjust.set_value(self.pulse.get_sink_input_volume(i['id']))
+                adjust.connect('value_changed', self.volume_change, i['id'], 'sink-input')
+            else:
+                adjust.set_value(self.pulse.get_source_output_volume(i['id']))
+                adjust.connect('value_changed', self.volume_change, i['id'], 'source-output')
+            scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adjust)
+            scale.set_hexpand(True)
+            scale.set_value_pos(Gtk.PositionType.RIGHT)
+            scale.set_digits(0)
+            scale.add_mark(100, Gtk.PositionType.BOTTOM, '')
+            scale.set_margin_left(10)
+
+            separator_top = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+            separator_top.set_margin_bottom(5)
+            separator_bottom = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+            separator_bottom.set_margin_top(5)
 
             box = Gtk.Box(spacing=5)
             box.pack_start(image, expand = False, fill = False, padding = 0)
             box.pack_start(label, expand = False, fill = False, padding = 0)
             box.pack_start(combobox, expand = False, fill = True, padding = 0)
-            box_list.append([box, i['id']])
-            widget.pack_start(box, expand = True, fill = True, padding = 0)
+
+            vbox = Gtk.VBox(spacing=0)
+            vbox.pack_start(separator_top, expand = False, fill = False, padding = 0)
+            vbox.pack_start(box, expand = False, fill = False, padding = 0)
+            vbox.pack_start(scale, expand = False, fill = False, padding = 0)
+            vbox.pack_start(separator_bottom, expand = False, fill = False, padding = 0)
+
+            box_list.append([vbox, i['id']])
+            widget.pack_start(vbox, expand = True, fill = True, padding = 0)
 
             widget.show_all()
 
     def listen_subscribe(self):
         for i in self.pulse.subscribe():
+
             if 'remove' in i:
                 id = i.split('#')[1].strip('\n')
                 if 'sink-input' in i:
-                    self.remove_app_dev(self.sink_input_box_list, self.Sink_Input_List, id)
+                    GLib.idle_add(self.remove_app_dev, self.sink_input_box_list, 
+                            self.Sink_Input_List, id)
+
                 elif 'source-output' in i:
-                    self.remove_app_dev(self.source_output_box_list, self.Source_Output_List, id)
+                    GLib.idle_add(self.remove_app_dev, self.source_output_box_list, 
+                            self.Source_Output_List, id)
+
             elif 'new' in i:
                 id = i.split('#')[1].strip('\n')
+
                 if 'sink-input' in i:
-                    self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List, id)
+                    GLib.idle_add(self.load_application_list, 'sink', 
+                            self.sink_input_box_list, self.Sink_Input_List, id)
+
                 elif 'source-output' in i:
-                    self.load_application_list('source', self.source_output_box_list, self.Source_Output_List, id)
-            # elif 'change' in i:
-                # id = i.split('#')[1].strip('\n')
-                # if 'sink-input' in i:
-                    # self.remove_app_dev(self.sink_input_box_list, self.Sink_Input_List, id)
-                    # self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List, id)
-                # elif 'source-output' in i:
-                    # self.remove_app_dev(self.source_output_box_list, self.Source_Output_List, id)
-                    # self.load_application_list('source', self.source_output_box_list, self.Source_Output_List, id)
+                    GLib.idle_add(self.load_application_list, 'source', 
+                            self.source_output_box_list, self.Source_Output_List, id)
 
     def delete_event(self, widget, event):
         self.pulse.save_config()
         self.pulse.end_subscribe()
         self.subscribe_thread.join()
+        self.pulse.end_vumeter()
+        if hasattr(self, 'attr_name'):
+            for i in ['hi', 'vi', 'a', 'b']:
+                for j in ['1','2','3']:
+                    if j in self.vu_thread[i]:
+                        self.vu_thread[i][j].join()
         Gtk.main_quit()
         return False
+
+    def update_peak(self, val):
+        self.test.set_fraction(val)
+
+
+    def listen_peak(self, index):
+        old = 0
+        for i in self.pulse.vumeter(index):
+            val = float(i.strip('\n'))
+            # if old != val:
+            GLib.idle_add(self.vu_list[index[0]][index[1]].set_fraction, val)
+            # old = val
+

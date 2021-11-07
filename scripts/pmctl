@@ -17,28 +17,28 @@ init (){
 }
 
 connect (){
-	vi=$1
-	ho=$2
+	source=$1
+	sink=$2
 	latency=${3:-200}
 
-	[ -z "$vi" -o -z "$ho" ] && exit
-	LC_ALL=C pactl list modules | grep -B 2 "$ho source=$vi" >/dev/null || \
-	pactl load-module module-loopback sink=$ho source=$vi sink_dont_move=true source_dont_move=true latency_msec=$latency
+	[ -z "$source" -o -z "$sink" ] && exit
+	LC_ALL=C pactl list modules | grep -B 2 "$sink source=$source" >/dev/null || \
+	pactl load-module module-loopback sink=$sink source=$source sink_dont_move=true source_dont_move=true latency_msec=$latency
 }
 
 disconnect (){
-	vi=$1
-	ho=$2
+	source=$1
+	sink=$2
 
-	[ -z "$vi" -o -z "$ho" ] && exit
-	index="$(LC_ALL=C pactl list modules | grep -B 2 "$ho source=$vi" | grep Module | sed 's/.*#//g')"
+	[ -z "$source" -o -z "$sink" ] && exit
+	index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink source=$source" | grep Module | sed 's/.*#//g')"
 	[ -z "$index" ] || pactl unload-module $index
 }
 
 remove (){
-	vi=$1
+	device=$1
 
-	index="$(LC_ALL=C pactl list modules | grep -B 2 "$vi " | grep Module | sed 's/.*#//g')"
+	index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
 	[ -z "$index" ] || pactl unload-module $index
 }
 
@@ -58,12 +58,15 @@ volume (){
 
 rename () {
 	pacmd update-sink-proplist $1 device.description=$2
-
 }
 
 
 list (){
-	list=$(LC_ALL=C pactl list $1 | awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} /Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0} /module-null-sink/ {print $0} /null-audio-sink/ {print $0}' | sed '/id/!s/: /:"/g; /#/!s/$/"/g')
+	list=$(LC_ALL=C pactl list $1 | \
+		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
+			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
+			/module-null-sink/ {print $0} /null-audio-sink/ {print $0}' |\
+			sed '/id/!s/: /:"/g; /#/!s/$/"/g')
 
 	# turn into json
 	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
@@ -72,6 +75,11 @@ list (){
 		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
 	printf "%s" "$list"
+}
+
+get_source_by_id() {
+	id=$1
+	LC_ALL=C pactl list sources | grep "Source #$id$" -A 3 | grep 'Name: ' | sed 's/.*: //g'
 }
 
 move_sink_input_master (){
@@ -111,7 +119,7 @@ list_source_outputs (){
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
 		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
-		grep -vwE pavucontrol | grep name |\
+		grep -vwE pavucontrol | grep -vwE pulse-vumeter | grep name | \
 		sed 's/ 		/ /g; s/device/"device"/g; s/name/"name"/g')
 	printf "%s" "$apps"
 }
@@ -136,9 +144,10 @@ list_sink_inputs (){
 }
 
 eq (){
-	sink_name=$1
-	master=$2
-	control=$3
+	status=$1
+	sink_name=$2
+	master=$3
+	control=$4
 	label=mbeq
 	plugin=mbeq_1197
 
@@ -148,6 +157,7 @@ eq (){
 
 	[ -z "$found" ] && exit
 
+	# update module if control is different
 	info="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m")"
 	if ! [ -z "$info" ]; then
 		index=$(echo "$info" | grep Module | sed 's/.*#//g')
@@ -158,7 +168,7 @@ eq (){
 		fi
 	fi
 
-	[ "$master" = "remove" ] && exit
+	[ "$status" = "remove" ] && exit
 
 	pactl load-module module-ladspa-sink \
 		sink_name=$sink_name	\
@@ -263,50 +273,83 @@ rnnoise() {
 	fi
 }
 
+get_sink_input_chann_num (){
+	output=$(LC_ALL=C pactl list sink-inputs | grep -e 'Sink Input #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume)
+	printf "%s" "${output//[^%]}" | wc -m
+}
+
+get_source_output_chann_num (){
+	output=$(LC_ALL=C pactl list source-outputs | grep -e 'Source Output #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume)
+	printf "%s" "${output//[^%]}" | wc -m
+}
+
+get_sink_input_volume(){
+	output=$(LC_ALL=C pactl list sink-inputs | grep -e 'Sink Input #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
+	printf "%d" $output 
+}
+
+get_source_output_volume(){
+	output=$(LC_ALL=C pactl list source-outputs | grep -e 'Source Output #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
+	printf "%d" $output 
+}
 
 case $1 in
 	"init")
 		init $2 $3
 	;;
+
 	"connect") 
 		connect $2 $3 $4
 	;;
+
 	"disconnect")
 		disconnect $2 $3 $4
 	;;
+
 	"remove")
 		remove $2 $3
 	;;
+
 	"volume")
 		volume $2 $3 $4
 	;;
-	"get")
-		get $2 $3 $4
-	;;
+
 	"list")
 		list $2
 	;;
+
 	"rename")
 		rename $2 $3
 	;;
+
 	"mute")
 		mute $2 $3 $4
 	;;
+
 	"move_sink_input_master")
 		move_sink_input_master $2 $3
 	;;
-	"eq")
-		eq $2 $3 $4
+
+	"get-source-by-id")
+		get_source_by_id $2
 	;;
+
+	"eq")
+		eq $2 $3 $4 $5
+	;;
+
 	"compressor")
 		compressor $2 $3 $4
 	;;
+
 	"rnnoise")
 		rnnoise $2 $3 $4 $5 $6
 	;;
+
 	"ladspa")
 		ladspa $2 $3 $4 $5 $6 $7 $8
 	;;
+
 	"list-sink-inputs")
 		list_sink_inputs
 	;;
@@ -321,6 +364,22 @@ case $1 in
 
 	"move-source-output")
 		move_source_output $2 $3
+	;;
+
+	"get-sink-input-chann")
+		get_sink_input_chann_num $2
+	;;
+
+	"get-source-output-chann")
+		get_source_output_chann_num $2
+	;;
+
+	"get-sink-input-volume")
+		get_sink_input_volume $2
+	;;
+
+	"get-source-output-volume")
+		get_source_output_volume $2
 	;;
 	"*") echo "command not found";;
 esac
