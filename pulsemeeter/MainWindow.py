@@ -225,6 +225,20 @@ class MainWindow(Gtk.Window):
                     eq.set_visible(False)
                     eq.set_no_show_all(True)
 
+    def restart_vumeter(self, index, stop_only=None):
+        if stop_only != False:
+            if index[1] in self.pulse.vu_list[index[0]] or stop_only == True:
+                self.pulse.vu_list[index[0]][index[1]].terminate()
+                self.vu_thread[index[0]][index[1]].join()
+                self.vu_list[index[0]][index[1]].set_fraction(0)
+
+        if stop_only == True:
+            return
+
+        self.vu_thread[index[0]][index[1]] = threading.Thread(target=self.listen_peak, 
+                args=(index,))
+        self.vu_thread[index[0]][index[1]].start()
+
 
     def toggle_eq(self, button, index):
         func = self.pulse.apply_eq if button.get_active() == True else self.pulse.remove_eq
@@ -244,7 +258,8 @@ class MainWindow(Gtk.Window):
 
     def volume_change(self, slider, index, stream_type=None):
         val = int(slider.get_value())
-        self.pulse.volume(index, val, stream_type)
+        if self.pulse.config[index[0]][index[1]]['name'] != '':
+            self.pulse.volume(index, val, stream_type)
 
     def open_popover(self, button, event, popover, index):
         if event.button == 3:
@@ -259,6 +274,8 @@ class MainWindow(Gtk.Window):
                 self.load_application_list('sink', self.sink_input_box_list, self.Sink_Input_List)
                 self.load_application_list('source', self.source_output_box_list, self.Source_Output_List)
 
+                self.restart_vumeter(self.Label_Index)
+
         else:
             return
 
@@ -272,10 +289,14 @@ class MainWindow(Gtk.Window):
 
     def on_combo_changed(self, widget, index, device):
         model = widget.get_active()
+
         if model > 0:
             self.pulse.config[index[0]][index[1]]['name'] = device[model - 1]['name']
+            self.restart_vumeter(index)
+
         else:
             self.pulse.config[index[0]][index[1]]['name'] = ''
+            self.restart_vumeter(index, True)
 
     def toggle_primary(self, widget, index):
         if widget.get_active() == False:

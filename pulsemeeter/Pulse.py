@@ -68,7 +68,7 @@ class Pulse:
         command = ''
         sink_list = cmd("pactl list sinks short")
         for i in range(1, len(self.config['vi']) + 1):
-            if(self.config['vi'][str(i)]['name'] != ''):
+            if self.config['vi'][str(i)]['name'] != '':
                 if not re.search(self.config['vi'][str(i)]['name'], sink_list):
                     sink = self.config['vi'][str(i)]['name']
                     command = command + f"pmctl init sink {sink}\n"
@@ -78,7 +78,7 @@ class Pulse:
         command = ''
         source_list = cmd("pactl list sources short")
         for i in range(1, len(self.config['b']) + 1):
-            if(self.config['b'][str(i)]['name'] != ''):
+            if self.config['b'][str(i)]['name'] != '':
                 if not re.search(self.config['b'][str(i)]['name'], source_list):
                     source = self.config['b'][str(i)]['name']
                     command = command + f"pmctl init source {source}\n"
@@ -113,7 +113,7 @@ class Pulse:
 
                     sink = self.get_correct_device( [sink_list[0], sink_list[1]], 'sink') 
 
-                    if self.config[i][j][sink_num] == True:
+                    if self.config[i][j][sink_num] == True and self.config[i][j]['name'] != '':
                         latency = self.config[i][j][sink_num + "_latency"]
                         command = command +  f"pmctl connect {source} {sink} {latency}\n"
         return command
