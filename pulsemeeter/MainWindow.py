@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import signal
 import threading
@@ -70,11 +71,12 @@ class MainWindow(Gtk.Window):
 
         self.subscribe_thread.start()
 
-        for i in ['hi', 'vi', 'a', 'b']:
-            if i in self.vu_thread:
-                for j in ['1', '2', '3']:
-                    if j in self.vu_thread[i]:
-                        self.vu_thread[i][j].start() 
+        if shutil.which('pulse-vumeter'):
+            for i in ['hi', 'vi', 'a', 'b']:
+                if i in self.vu_thread:
+                    for j in ['1', '2', '3']:
+                        if j in self.vu_thread[i]:
+                            self.vu_thread[i][j].start() 
 
     def start_vumeters(self):
         self.vu_list = {}
@@ -97,6 +99,23 @@ class MainWindow(Gtk.Window):
                 if self.pulse.config[i][j]['name'] != '':
                     self.vu_thread[i][j] = threading.Thread(target=self.listen_peak, 
                             args=([i, j],))
+
+    def restart_vumeter(self, index, stop_only=None):
+        if not shutil.which('pulse-vumeter'):
+            return
+        if stop_only != False:
+            if index[1] in self.pulse.vu_list[index[0]] or stop_only == True:
+                self.pulse.vu_list[index[0]][index[1]].terminate()
+                self.vu_thread[index[0]][index[1]].join()
+                self.vu_list[index[0]][index[1]].set_fraction(0)
+
+        if stop_only == True:
+            return
+
+        self.vu_thread[index[0]][index[1]] = threading.Thread(target=self.listen_peak, 
+                args=(index,))
+        self.vu_thread[index[0]][index[1]].start()
+
 
     def start_app_list(self):
         self.Sink_Input_List = self.builder.get_object('sink_input_list')
@@ -137,6 +156,7 @@ class MainWindow(Gtk.Window):
         self.Popover_Entry.connect('activate', self.label_rename_entry)
 
         self.vi_primary_buttons = []
+
         # for each input device
         for i in ['1', '2', '3']:
 
@@ -225,21 +245,6 @@ class MainWindow(Gtk.Window):
                     eq.set_visible(False)
                     eq.set_no_show_all(True)
 
-    def restart_vumeter(self, index, stop_only=None):
-        if stop_only != False:
-            if index[1] in self.pulse.vu_list[index[0]] or stop_only == True:
-                self.pulse.vu_list[index[0]][index[1]].terminate()
-                self.vu_thread[index[0]][index[1]].join()
-                self.vu_list[index[0]][index[1]].set_fraction(0)
-
-        if stop_only == True:
-            return
-
-        self.vu_thread[index[0]][index[1]] = threading.Thread(target=self.listen_peak, 
-                args=(index,))
-        self.vu_thread[index[0]][index[1]].start()
-
-
     def toggle_eq(self, button, index):
         func = self.pulse.apply_eq if button.get_active() == True else self.pulse.remove_eq
         func(index)
@@ -258,7 +263,7 @@ class MainWindow(Gtk.Window):
 
     def volume_change(self, slider, index, stream_type=None):
         val = int(slider.get_value())
-        if self.pulse.config[index[0]][index[1]]['name'] != '':
+        if type(index) == int or self.pulse.config[index[0]][index[1]]['name'] != '':
             self.pulse.volume(index, val, stream_type)
 
     def open_popover(self, button, event, popover, index):
@@ -290,10 +295,23 @@ class MainWindow(Gtk.Window):
     def on_combo_changed(self, widget, index, device):
         model = widget.get_active()
 
+        # if device its not an empty name
+        if self.pulse.config[index[0]][index[1]]['name'] != '':
+            if index[0] == 'hi':
+                self.pulse.disable_source(index[1])
+            else:
+                self.pulse.disable_sink(index[1])
+
+        # if chosen device is not an empty name
         if model > 0:
             self.pulse.config[index[0]][index[1]]['name'] = device[model - 1]['name']
+            if index[0] == 'hi':
+                self.pulse.start_source(index[1])
+            else:
+                self.pulse.start_sink(index[1])
             self.restart_vumeter(index)
 
+        # if its an empty name
         else:
             self.pulse.config[index[0]][index[1]]['name'] = ''
             self.restart_vumeter(index, True)

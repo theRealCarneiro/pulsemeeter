@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 import re
 import sys
@@ -21,11 +22,13 @@ class Pulse:
         # command = command + self.start_mute()
         command = command + self.start_conections()
         # print(command)
+
+        os.popen(command)
+
         self.vu_list = {}
         for i in ['hi', 'vi', 'a', 'b']:
-            # for j in ['1','2','3']:
             self.vu_list[i] = {}
-        os.popen(command)
+
 
     def get_correct_device(self, index, conn_type):
         if index[0] == 'vi':
@@ -113,19 +116,10 @@ class Pulse:
 
                     sink = self.get_correct_device( [sink_list[0], sink_list[1]], 'sink') 
 
-                    if self.config[i][j][sink_num] == True and self.config[i][j]['name'] != '':
+                    if self.config[i][j][sink_num] == True and self.config[i][j]['name'] != '' and  self.config[sink_list[0]][sink_list[1]]['name'] != '':
                         latency = self.config[i][j][sink_num + "_latency"]
                         command = command +  f"pmctl connect {source} {sink} {latency}\n"
         return command
-
-    # def start_mute(self):
-        # command = ''
-        # for i in ['a', 'b']:
-            # for j in ['1', '2', '3']:
-                # if self.config[i][j]['mute'] == True:
-                    # command = command + self.mute([i, j], 1, 'init')
-
-        # return command
 
     def rnnoise(self, source_index, sink_name, stat, init=None):
 
@@ -142,34 +136,118 @@ class Pulse:
             for i in ['a1','a2','a3','b1','b2','b3']:
                 if self.config[source_index[0]][source_index[1]][i] == True:
                     output = list(i)
-                    output_dev = self.get_correct_device( [output[0], output[1]], 'sink') 
+                    output_dev = self.get_correct_device([output[0], output[1]], 'sink') 
                     latency = self.config[source_index[0]][source_index[1]][i + "_latency"]
                     if stat == 'connect':
-                        command = command + f'pmctl disconnect {source} {output_dev}\n'
-                        command = command + f'pmctl connect {sink_name}.monitor {output_dev} {latency}\n'
+                        command += f'pmctl disconnect {source} {output_dev}\n'
+                        command += f'pmctl connect {sink_name}.monitor {output_dev} {latency}\n'
                     else:
-                        command = command + f'pmctl connect {source} {output_dev} {latency}\n'
+                        command += f'pmctl disconnect {sink_name}.monitor {output_dev} {latency}\n'
+                        command += f'pmctl connect {source} {output_dev} {latency}\n'
             if init != 'cmd_only':
                 os.popen(command)
 
         # print(command)
         return command
+
+    def start_sink(self, number):
+
+        command = ''
+        if self.config['a'][number]['use_eq'] == True:
+            name = f'a{number}_eq'
+            master = self.config['a'][number]['name']
+            control = self.config['a'][number]['eq_control']
+            command += f'pmctl eq init {name} {master} {control}\n'
+
+        for i in ['hi', 'vi']:
+            for j in ['1', '2', '3']:
+                if self.config[i][j][f'a{number}'] == True:
+                    vi = self.get_correct_device([i, j], 'source')
+                    master = self.get_correct_device(['a', number], 'sink')
+                    command += f'pmctl connect {vi} {master}\n'
+
+        os.popen(command)
+
+    def disable_sink(self, number):
+
+        command = ''
+        if self.config['a'][number]['use_eq'] == True:
+            name = f'a{number}_eq'
+            master = self.config['a'][number]['name']
+            control = self.config['a'][number]['eq_control']
+            command += f'pmctl eq remove {name} {master} {control}\n'
+
+        for i in ['hi', 'vi']:
+            for j in ['1', '2', '3']:
+                if self.config[i][j][f'a{number}'] == True:
+                    vi = self.get_correct_device([i, j], 'source')
+                    master = self.get_correct_device(['a', number], 'sink')
+                    command += f'pmctl disconnect {vi} {master}\n'
+
+        # print(command)
+        os.popen(command)
+
+    def start_source(self, number):
+
+        command = ''
+        if self.config['hi'][number]['use_rnnoise'] == True:
+            sink_name = f'hi{number}_rnnoise'
+
+            source = self.config['hi'][number]['name']
+            control = self.config['hi'][number]['rnnoise_control']
+            latency = self.config['hi'][number]['rnnoise_latency']
+            command += f'pmctl rnnoise {sink_name} {source} {control} connect {latency}\n'
+
+        for i in ['a', 'b']:
+            for j in ['1', '2', '3']:
+                if self.config['hi'][number][f'{i}{j}'] == True:
+                    vi = self.get_correct_device(['hi', number], 'source')
+                    master = self.get_correct_device([i, j], 'sink')
+                    command += f'pmctl connect {vi} {master}\n'
+
+        os.popen(command)
+
+
+    def disable_source(self, number):
+
+        command = ''
+
+        if self.config['hi'][number]['use_rnnoise'] == True:
+            sink_name = f'hi{number}_rnnoise'
+            source = self.config['hi'][number]['name']
+            command += f'pmctl rnnoise {sink_name} {source} 0 disconnect\n'
+
+        # if not shutil.which('pulseaudio'):
+        for i in ['a', 'b']:
+            for j in ['1', '2', '3']:
+                if self.config['hi'][number][f'{i}{j}'] == True:
+                    vi = self.get_correct_device(['hi', number], 'source')
+                    master = self.get_correct_device([i, j], 'sink')
+                    command += f'pmctl disconnect {vi} {master}\n'
+
+        os.popen(command)
         
     def reconnect(self, device, number, init=None):
         sink_sufix = '' if device == 'hi' else '.monitor'
         command = ''
+
         for output in ['a1','a2','a3','b1','b3','b3']:
+
             dev = list(output)
             source_index = [device, str(number)]
             sink_index = [dev[0], dev[1]]
-            if self.config[device][str(number)][output] == True:
-                command = command + self.connect( "connect", source_index, sink_index, init)
+            if self.config[device][str(number)][output] == True and self.config[dev[0]][dev[1]]['name'] != '' :
+                command = command + self.connect( "connect", source_index, 
+                        sink_index, init)
         return command
 
     def connect(self, state, source_index, sink_index, init=None):
-        self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1]] = True if state == "connect" else False
+        if init != 'disconnect':
+            self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1]] = True if state == "connect" else False
         source = self.get_correct_device(source_index, 'source')
         sink = self.get_correct_device(sink_index, 'sink')
+        if source == '' or sink == '':
+            return ''
         latency = self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1] + "_latency"]
         command = f"pmctl {state} {source} {sink} {latency}\n"
         # print(command)
@@ -283,18 +361,22 @@ class Pulse:
         # print(command)
         return command
 
-    def remove_eq(self, index, name=None):
+    def remove_eq(self, index, name=None, init=None):
         output = index[0] + index[1]
         name = output + '_eq' if name == None else name
         master = self.config[index[0]][index[1]]['name']
-        self.config[index[0]][index[1]]['use_eq'] = False
-        command = f'pmctl eq remove {name}\n'
+        command = ''
 
-        for i in ['hi', 'vi']:
-            for j in ['1', '2', '3']:
-                if self.config[i][j][output] == True:
-                    vi = self.get_correct_device([i, j], 'source')
-                    command = command + f'pmctl connect {vi} {master}\n'
+        command += f'pmctl eq remove {name}\n'
+
+        if init != True:
+            self.config[index[0]][index[1]]['use_eq'] = False
+            for i in ['hi', 'vi']:
+                for j in ['1', '2', '3']:
+                    if self.config[i][j][output] == True:
+                        vi = self.get_correct_device([i, j], 'source')
+                        command += f'pmctl disconnect {vi} {name}\n'
+                        command += f'pmctl connect {vi} {master}\n'
 
         # print(command)
         os.popen(command)

@@ -11,7 +11,11 @@ init (){
 			source=$2
 			pactl list sources short | grep $source && exit
 			pactl load-module module-null-sink sink_name=$source"_sink" # sink_properties=device.description=$source"_sink"
-			pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$source 
+			if which pulseaudio 2>/dev/null 1>&2; then
+				pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$source 
+			else
+				pactl load-module module-remap-source source_name=$source master=$source"_sink" source_properties=device.description=$source 
+			fi
 		;;
 	esac
 }
@@ -157,8 +161,14 @@ eq (){
 
 	[ -z "$found" ] && exit
 
-	# update module if control is different
 	info="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m")"
+	if [ "$status" = "remove" ];then
+		index=$(echo "$info" | grep Module | sed 's/.*#//g')
+		[ -z "$index" ] || pactl unload-module $index
+		exit
+	fi
+
+	# update module if control is different
 	if ! [ -z "$info" ]; then
 		index=$(echo "$info" | grep Module | sed 's/.*#//g')
 		if ! [ -z "$index" ]; then
@@ -168,7 +178,6 @@ eq (){
 		fi
 	fi
 
-	[ "$status" = "remove" ] && exit
 
 	pactl load-module module-ladspa-sink \
 		sink_name=$sink_name	\
@@ -258,18 +267,33 @@ rnnoise() {
 
 	if [ "$status" = "connect" ]; then
 		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
+		
+		# sink that will recive filtered data
 		pactl load-module module-null-sink sink_name=$sink_name
 
-		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=$label plugin=$plugin control=$control
-		#pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noisetorch plugin=rnnoise_ladspa control=$control
-		#pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=noise_suppressor_mono plugin=librnnoise_ladspa control=$control
+		# sink that will filter data
+		pactl load-module module-ladspa-sink sink_name=$sink_name"_in" master=$sink_name label=$label plugin=$plugin control=$control
+
+		# loopback from source to ladspa sink
 		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
+
 	else
-		index=$(LC_ALL=C pactl list modules | grep -B 2 noise | grep -B 2 -A 1 ladspa | grep Module | sed 's/.*#//g')
+		# unload sink that will recive filtered data
+		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name$" | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index
 
-		index=$(LC_ALL=C pactl list modules | awk '/Module/{print $0} /Name:/ {print $0} /Argument/' | grep -B 2 $sink_name | grep -B 1 null | grep Module | sed 's/.*#//g')
-		[ -z "$index" ] || pactl unload-module $index
+		# pipewire doesn't remove devices that depend on others,
+		# so we have to remove them by hand
+		if ! [ which pulseaudio 2>/dev/null 1>&2 ]; then
+			# unload sink that will filter data
+			index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
+			[ -z "$index" ] ||  pactl unload-module $index
+
+			# loopback from source to ladspa sink
+			index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" source=$master" | grep Module | sed 's/.*#//g')"
+			[ -z "$index" ] || pactl unload-module $index
+		fi
+
 	fi
 }
 
