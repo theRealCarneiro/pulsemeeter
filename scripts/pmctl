@@ -266,7 +266,7 @@ rnnoise() {
 	[ -z "$found" ] && exit 1
 
 	if [ "$status" = "connect" ]; then
-		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
+		pactl list sinks short | grep "$sink_name" > /dev/null && exit
 		
 		# sink that will recive filtered data
 		pactl load-module module-null-sink sink_name=$sink_name
