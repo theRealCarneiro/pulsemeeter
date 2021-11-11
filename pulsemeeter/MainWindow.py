@@ -56,6 +56,8 @@ class MainWindow(Gtk.Window):
         except Exception as ex:
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
+        if not 'enable_vumeters' in self.pulse.config:
+            self.pulse.config['enable_vumeters'] = True
 
         self.enable_vumeters = True
         if not shutil.which('pulse-vumeter') or self.pulse.config['enable_vumeters'] == False:

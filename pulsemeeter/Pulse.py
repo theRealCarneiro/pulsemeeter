@@ -494,6 +494,7 @@ class Pulse:
             if not 'version' in self.config or self.config['version'] != __version__:
                 config_orig = json.load(open(ORIG_CONFIG_FILE))
                 self.config['version'] = __version__
+                self.config['enable_vumeters'] = True
                 for i in ['a', 'b', 'vi', 'hi']:
                     for j in ['1', '2', '3']:
                         for k in config_orig[i][j]:
