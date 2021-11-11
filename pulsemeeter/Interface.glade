@@ -4227,7 +4227,7 @@ KHz</property>
                             <property name="can-focus">False</property>
                             <property name="valign">start</property>
                             <property name="margin-bottom">10</property>
-                            <property name="label" translatable="yes">Inputs</property>
+                            <property name="label" translatable="yes">Outputs</property>
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
@@ -4300,7 +4300,7 @@ KHz</property>
                             <property name="can-focus">False</property>
                             <property name="valign">start</property>
                             <property name="margin-bottom">10</property>
-                            <property name="label" translatable="yes">Outputs</property>
+                            <property name="label" translatable="yes">Inputs</property>
                           </object>
                           <packing>
                             <property name="left-attach">1</property>

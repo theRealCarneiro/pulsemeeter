@@ -27,7 +27,7 @@
 	},
 	"b": {
 		"1": {
-			"name": "Virtual_Output_1",
+			"name": "Virtual_Output_B1",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -36,7 +36,7 @@
 			"use_eq": false
 		},
 		"2": {
-			"name": "Virtual_Output_2",
+			"name": "Virtual_Output_B2",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -45,7 +45,7 @@
 			"use_eq": false
 		},
 		"3": {
-			"name": "Virtual_Output_3",
+			"name": "Virtual_Output_B3",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
