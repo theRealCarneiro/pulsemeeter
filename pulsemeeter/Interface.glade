@@ -671,6 +671,48 @@ KHz</property>
       </object>
     </child>
   </object>
+  <object class="GtkPopover" id="menu_popover">
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="margin-end">5</property>
+        <property name="margin-top">5</property>
+        <property name="margin-bottom">5</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Settings</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkCheckButton" id="vumeter_toggle">
+            <property name="label" translatable="yes">Enable volume meters</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">False</property>
+            <property name="draw-indicator">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkAdjustment" id="rnnoise_latency_adjust">
     <property name="lower">1</property>
     <property name="upper">500</property>
@@ -816,6 +858,7 @@ KHz</property>
     <property name="can-focus">False</property>
     <property name="vexpand">True</property>
     <property name="title" translatable="yes">Pulsemeeter</property>
+    <property name="icon-name">Pulsemeeter</property>
     <property name="type-hint">dialog</property>
     <child>
       <object class="GtkBox" id="Frame">
@@ -831,7 +874,7 @@ KHz</property>
             <property name="can-focus">False</property>
             <property name="hexpand">True</property>
             <child>
-              <!-- n-columns=6 n-rows=1 -->
+              <!-- n-columns=7 n-rows=1 -->
               <object class="GtkGrid" id="Hardware_Output_Grid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
@@ -906,6 +949,24 @@ KHz</property>
                     <property name="top-attach">0</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkButton" id="menu_button">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="icon-name">document-properties</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left-attach">6</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="left-attach">0</property>
@@ -937,15 +998,17 @@ KHz</property>
           <object class="GtkGrid" id="Input_Grid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
             <property name="row-spacing">1</property>
             <property name="column-spacing">5</property>
             <child>
               <!-- n-columns=2 n-rows=1 -->
-              <object class="GtkGrid" id="Left_Grid">
+              <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="vexpand">False</property>
                 <property name="column-spacing">15</property>
                 <child>
                   <!-- n-columns=5 n-rows=4 -->
@@ -961,7 +1024,7 @@ KHz</property>
                         <property name="name">vi_1_Grid</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="hexpand">True</property>
+                        <property name="hexpand">False</property>
                         <property name="vexpand">True</property>
                         <child>
                           <!-- n-columns=2 n-rows=1 -->
@@ -969,14 +1032,14 @@ KHz</property>
                             <property name="name">Vi1_Control_Grid</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="hexpand">True</property>
+                            <property name="hexpand">False</property>
                             <property name="vexpand">True</property>
                             <child>
                               <!-- n-columns=1 n-rows=2 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
+                                <property name="hexpand">False</property>
                                 <property name="vexpand">True</property>
                                 <child>
                                   <!-- n-columns=1 n-rows=1 -->
@@ -1040,10 +1103,10 @@ KHz</property>
                                 </child>
                                 <child>
                                   <!-- n-columns=2 n-rows=1 -->
-                                  <object class="GtkGrid" id="vo">
+                                  <object class="GtkGrid">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
-                                    <property name="hexpand">True</property>
+                                    <property name="hexpand">False</property>
                                     <property name="vexpand">True</property>
                                     <child>
                                       <object class="GtkScale" id="vi_1_vol">
@@ -1097,7 +1160,7 @@ KHz</property>
                                 <property name="can-focus">False</property>
                                 <property name="margin-start">2</property>
                                 <property name="hexpand">False</property>
-                                <property name="vexpand">False</property>
+                                <property name="vexpand">True</property>
                                 <property name="row-spacing">2</property>
                                 <child>
                                   <object class="GtkToggleButton" id="vi_1_a1">
@@ -1107,7 +1170,7 @@ KHz</property>
                                     <property name="can-focus">True</property>
                                     <property name="receives-default">True</property>
                                     <property name="tooltip-text" translatable="yes">Right click to edit latency (needs retoggle to take effect)</property>
-                                    <property name="hexpand">True</property>
+                                    <property name="hexpand">False</property>
                                     <property name="vexpand">True</property>
                                   </object>
                                   <packing>
@@ -1625,7 +1688,7 @@ KHz</property>
                       <object class="GtkGrid" id="vi_3_Grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="hexpand">True</property>
+                        <property name="hexpand">False</property>
                         <property name="vexpand">True</property>
                         <child>
                           <!-- n-columns=1 n-rows=1 -->
@@ -1771,7 +1834,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">False</property>
-                                <property name="vexpand">False</property>
+                                <property name="vexpand">True</property>
                                 <property name="row-spacing">2</property>
                                 <child>
                                   <object class="GtkToggleButton" id="vi_3_b2">
@@ -2039,7 +2102,7 @@ KHz</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="hexpand">False</property>
-                    <property name="vexpand">True</property>
+                    <property name="vexpand">False</property>
                     <property name="column-spacing">15</property>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
@@ -3079,7 +3142,7 @@ KHz</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="margin-top">5</property>
-            <property name="hexpand">True</property>
+            <property name="hexpand">False</property>
             <property name="vexpand">True</property>
             <child>
               <!-- n-columns=4 n-rows=4 -->
@@ -3087,15 +3150,15 @@ KHz</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="hexpand">False</property>
-                <property name="vexpand">True</property>
+                <property name="vexpand">False</property>
                 <child>
                   <!-- n-columns=5 n-rows=4 -->
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="margin-end">20</property>
-                    <property name="hexpand">False</property>
-                    <property name="vexpand">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">False</property>
                     <child>
                       <!-- n-columns=1 n-rows=3 -->
                       <object class="GtkGrid">
@@ -3524,10 +3587,9 @@ KHz</property>
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="halign">start</property>
                     <property name="margin-start">20</property>
-                    <property name="hexpand">False</property>
-                    <property name="vexpand">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">False</property>
                     <child>
                       <!-- n-columns=1 n-rows=3 -->
                       <object class="GtkGrid">
@@ -4142,22 +4204,14 @@ KHz</property>
                             <property name="vexpand">True</property>
                             <property name="hscrollbar-policy">never</property>
                             <child>
-                              <object class="GtkViewport">
+                              <object class="GtkViewport" id="sink_input_viewport">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="vadjustment">source_output_scroll</property>
                                 <property name="vscroll-policy">natural</property>
                                 <property name="shadow-type">out</property>
                                 <child>
-                                  <object class="GtkBox" id="sink_input_list">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="valign">start</property>
-                                    <property name="orientation">vertical</property>
-                                    <child>
-                                      <placeholder/>
-                                    </child>
-                                  </object>
+                                  <placeholder/>
                                 </child>
                               </object>
                             </child>
@@ -4261,21 +4315,13 @@ KHz</property>
                             <property name="vexpand">True</property>
                             <property name="hscrollbar-policy">never</property>
                             <child>
-                              <object class="GtkViewport">
+                              <object class="GtkViewport" id="source_output_viewport">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="vadjustment">sink_input_scroll</property>
                                 <property name="vscroll-policy">natural</property>
                                 <child>
-                                  <object class="GtkBox" id="source_output_list">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="valign">start</property>
-                                    <property name="orientation">vertical</property>
-                                    <child>
-                                      <placeholder/>
-                                    </child>
-                                  </object>
+                                  <placeholder/>
                                 </child>
                               </object>
                             </child>

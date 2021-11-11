@@ -27,7 +27,7 @@
 	},
 	"b": {
 		"1": {
-			"name": "Mic",
+			"name": "Virtual_Output_1",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -36,7 +36,7 @@
 			"use_eq": false
 		},
 		"2": {
-			"name": "Mic_2",
+			"name": "Virtual_Output_2",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -45,7 +45,7 @@
 			"use_eq": false
 		},
 		"3": {
-			"name": "Mic_3",
+			"name": "Virtual_Output_3",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -198,5 +198,6 @@
 			"rnnoise_control": 95,
 			"rnnoise_latency": 200
 		}
-	}
+	},
+	"enable_vumeters": true
 }

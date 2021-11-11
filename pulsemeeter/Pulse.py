@@ -255,6 +255,10 @@ class Pulse:
             os.popen(command)
         return command
 
+    def get_app_stream_volume(self, id, stream_type):
+        command = f'pmctl get-{stream_type}-volume {id}'
+        return int(cmd(command))
+
     def get_sink_input_volume(self, id):
         command = f'pmctl get-sink-input-volume {id}'
         return int(cmd(command))
@@ -391,8 +395,28 @@ class Pulse:
             os.popen(command)
         return command
 
-    def get_sink_inputs(self):
-        command = "pmctl list-sink-inputs"
+    def get_virtual_device_name(self, dev_type):
+        name_vi = []
+        name_b = []
+        for i in ['1','2','3']:
+            if dev_type == 'source-output':
+                if self.config['b'][i]['name'] != '':
+                    name_b.append(self.config['b'][i]['name'])
+                if self.config['vi'][i]['name'] != '':
+                    name_vi.append(self.config['vi'][i]['name'] + '.monitor')
+            elif self.config['vi'][i]['name'] != '':
+                    name_vi.append(self.config['vi'][i]['name'])
+
+
+        if dev_type == 'source-output':
+            name_b.extend(name_vi)
+            dev_list = name_b
+        else:
+            dev_list = name_vi
+        return dev_list
+
+    def get_app_streams(self, dev_type):
+        command = f'pmctl list-{dev_type}s'
         devices = cmd(command).split('\n')
         apps = []
         if devices[0] != '':
@@ -403,21 +427,6 @@ class Pulse:
                 if 'icon' not in jason:
                     jason['icon'] = 'audio-card'
                 apps.append(jason)
-        return apps
-
-    def get_source_outputs(self):
-        command = "pmctl list-source-outputs"
-        devices = cmd(command).split('\n')
-        apps = []
-        if devices[0] != '':
-            for i in devices:
-                if 'name' not in i:
-                    continue
-                jason = json.loads(i)
-                if 'icon' not in jason:
-                    jason['icon'] = 'audio-card'
-                apps.append(jason)
-
         return apps
 
     def move_source_output(self, app, name):

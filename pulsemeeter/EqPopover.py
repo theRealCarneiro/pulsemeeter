@@ -99,4 +99,3 @@ class EqPopover():
     def reset_value(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             widget.set_value(0)
-
