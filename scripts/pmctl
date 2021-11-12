@@ -54,6 +54,22 @@ mute (){
 	pactl set-$device_type-mute $device $status
 }
 
+list_virtual_sinks (){
+	list=$(LC_ALL=C pactl list sinks | \
+		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
+			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
+			/module-null-sink/ {print $0} /Base Volume/ {print $0} /null-audio-sink/ {print $0}' |\
+			sed ' s/%.*//g; s/:.*\/ /: /g; /Base Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+
+	# turn into json
+	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
+		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
+		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Base Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
+		grep -vwE Monitor |  grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
+
+	printf "%s" "$list"
+}
+
 volume (){
 	vi=$2
 	[ -z $vi ] && exit
@@ -69,13 +85,13 @@ list (){
 	list=$(LC_ALL=C pactl list $1 | \
 		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
-			/module-null-sink/ {print $0} /null-audio-sink/ {print $0}' |\
-			sed '/id/!s/: /:"/g; /#/!s/$/"/g')
+			/module-null-sink/ {print $0} /Base Volume/ {print $0} /null-audio-sink/ {print $0}' |\
+			sed ' s/%.*//g; s/:.*\/ /: /g; /Base Volume/s/$/%/; /id:/!s/: /:"/g; /#/!s/$/"/g;')
 
 	# turn into json
 	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
+		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Base Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
 		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
 	printf "%s" "$list"
@@ -317,6 +333,11 @@ get_source_output_volume(){
 	printf "%d" $output 
 }
 
+if ! pactl info >/dev/null 2>&1; then
+	echo "ERROR PULSEAUDIO NOT RUNNING" >&2 
+	exit 1
+fi
+
 case $1 in
 	"init")
 		init $2 $3
@@ -400,6 +421,10 @@ case $1 in
 
 	"get-sink-input-volume")
 		get_sink_input_volume $2
+	;;
+
+	"list-virtual-sinks")
+		list_virtual_sinks
 	;;
 
 	"get-source-output-volume")
