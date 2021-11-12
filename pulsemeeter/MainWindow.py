@@ -172,6 +172,7 @@ class MainWindow(Gtk.Window):
             devices = self.sink_list if device == 'a' else self.source_list
 
             # for each combobox
+            found = False
             for j in range(1, 4):
                 combobox = self.builder.get_object(f'{device}_{j}_combobox')
                 combobox.append_text('')
@@ -181,7 +182,11 @@ class MainWindow(Gtk.Window):
                         text = text + '...'
                     combobox.append_text(text)
                     if devices[i]['name'] == self.pulse.config[device][str(j)]['name']:
+                        found = True
                         combobox.set_active(i + 1)
+
+                # if found == False:
+                    # self.pulse.config[device][str(j)]['name'] = ''
 
                 combobox.connect('changed', self.on_combo_changed, [device, str(j)], devices)
 
@@ -389,8 +394,11 @@ class MainWindow(Gtk.Window):
     def listen_peak(self, index):
         old = 0
         for i in self.pulse.vumeter(index):
-            val = float(i.strip('\n'))
-            GLib.idle_add(self.vu_list[index[0]][index[1]].set_fraction, val)
+            try:
+                val = float(i.strip('\n'))
+                GLib.idle_add(self.vu_list[index[0]][index[1]].set_fraction, val)
+            except:
+                return
 
     def delete_event(self, widget, event):
         self.pulse.save_config()

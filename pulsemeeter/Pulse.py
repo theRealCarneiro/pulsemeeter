@@ -11,6 +11,11 @@ from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, __version__
 class Pulse:
 
     def __init__(self, init=None):
+        try:
+            subprocess.check_call('pmctl')
+        except:
+            sys.exit(1)
+
         self.read_config()
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
         if init == 'cmd': return
