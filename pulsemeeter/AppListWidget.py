@@ -44,7 +44,7 @@ class AppList(Gtk.VBox):
             except:
                 index = 0
             combobox.set_active(index)
-            combobox.connect('changed', self.app_combo_change, self.dev_type, i['id'])
+            combobox.connect('changed', self.app_combo_change, i['id'])
             combobox.props.halign = Gtk.Align.END
             combobox.set_hexpand(True)
             combobox.set_margin_right(10)
