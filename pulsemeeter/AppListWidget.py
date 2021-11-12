@@ -15,7 +15,7 @@ class AppList(Gtk.VBox):
 
     def load_application_list(self, id=None):
         if id == None and len(self.box_list) > 0:
-            self.remove_app_dev(self)
+            self.remove_app_dev()
 
         app_list = self.pulse.get_app_streams(self.dev_type)
 
