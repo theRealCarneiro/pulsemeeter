@@ -312,6 +312,21 @@ class Pulse:
 
         return True
 
+    def get_virtual_devices(self, kind):
+        command = f"pmctl list-virtual-{kind}"
+        devices = cmd(command).split('\n')
+        devices_concat = []
+        if devices[0] != '':
+            # print(devices)
+            for i in devices:
+                jason = json.loads(i)
+                devices_concat.append(jason)
+        # if kind == 'sources':
+            # self.source_list = devices_concat
+        # else:
+            # self.sink_list = devices_concat
+        return devices_concat
+
     def get_hardware_devices(self, kind):
         command = f"pmctl list {kind}"
         devices = cmd(command).split('\n')

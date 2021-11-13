@@ -185,8 +185,8 @@ class MainWindow(Gtk.Window):
                         found = True
                         combobox.set_active(i + 1)
 
-                # if found == False:
-                    # self.pulse.config[device][str(j)]['name'] = ''
+                if found == False:
+                    self.pulse.config[device][str(j)]['name'] = ''
 
                 combobox.connect('changed', self.on_combo_changed, [device, str(j)], devices)
 
@@ -196,7 +196,8 @@ class MainWindow(Gtk.Window):
         self.Popover_Entry.connect('activate', self.label_rename_entry)
 
         self.vi_primary_buttons = []
-
+        hardware_inputs = self.pulse.get_hardware_devices('sources')
+        virtual_inputs = self.pulse.get_virtual_devices('sinks')
         # for each input device
         for i in ['1', '2', '3']:
 
@@ -230,6 +231,11 @@ class MainWindow(Gtk.Window):
 
             for device in ['hi', 'vi']:
 
+                dev_type = virtual_inputs if device == 'vi' else hardware_inputs
+                for dev in dev_type:
+                    if dev['name'] == self.pulse.config[device][i]['name']:
+                        self.pulse.config[device][i]['vol'] = dev['volume']
+
                 vol = self.builder.get_object(f'{device}_{i}_adjust')
                 vol.set_value(self.pulse.config[device][i]['vol'])
                 vol.connect('value-changed', self.volume_change, [device, i])
@@ -253,6 +259,8 @@ class MainWindow(Gtk.Window):
 
     def start_outputs(self):
         self.b_primary_buttons = []
+        hardware_outputs = self.pulse.get_hardware_devices('sinks')
+        virtual_outputs = self.pulse.get_virtual_devices('sources')
         for i in ['1', '2', '3']:
 
             primary = self.builder.get_object(f'b_{i}_primary')
@@ -261,6 +269,11 @@ class MainWindow(Gtk.Window):
             self.b_primary_buttons.append(primary)
 
             for j in ['a', 'b']:
+                dev_list = hardware_outputs if j == 'a' else virtual_outputs
+                for dev in dev_list:
+                    if dev['name'] == self.pulse.config[j][i]['name']:
+                        self.pulse.config[j][i]['vol'] = dev['volume']
+
                 master = self.builder.get_object(f'{j}_{i}_adjust')
                 master.set_value(self.pulse.config[j][i]['vol'])
                 master.connect('value-changed', self.volume_change, [j, i])

@@ -55,20 +55,49 @@ mute (){
 }
 
 list_virtual_sinks (){
-	list=$(LC_ALL=C pactl list sinks | \
+	list=$(LC_ALL=C pactl list sinks | 
 		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
-			/module-null-sink/ {print $0} /Base Volume/ {print $0} /null-audio-sink/ {print $0}' |\
-			sed ' s/%.*//g; s/:.*\/ /: /g; /Base Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+			/module-null-sink/ {print $0} /Volume/ {print $0} /null-audio-sink/ {print $0}' |
+			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+
+
+	#printf "%s" "$list"
+	#exit
 
 	# turn into json
-	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
-		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Base Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
-		grep -vwE Monitor |  grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
+	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |
+		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |
+		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; 
+			s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g;
+			s/$/}/; s/, }/}/' |
+		sed '/null/!d; s/, \tfactory.*"//g' |
+		grep -vwE Monitor | grep -vwE remap-source | grep -vwE module-remap-source |
+		grep -vwE ladspa | grep -vwE .*_sink | grep -vwE .*rnnoise | sed 's/, Driver:.*\.c"//g')
 
 	printf "%s" "$list"
 }
+
+list_virtual_sources (){
+	list=$(LC_ALL=C pactl list sources | 
+		awk '/Source #/{print $2} /Name:/ {print $0} 
+			/Description/ {print $0} /remap-source/ {print $0}
+			/Volume/ {print $0}' |
+			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+
+	#printf "%s" "$list"
+	#exit
+	# turn into json
+	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |
+		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |
+		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; 
+			s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g;
+			s/$/}/; s/, }/}/' |
+		grep -vwE Monitor | grep -wE remap | sed 's/, \t.*node.group.*"//g; s/, Driver:.*\.c"//g')
+
+	printf "%s" "$list"
+}
+
 
 volume (){
 	vi=$2
@@ -85,13 +114,13 @@ list (){
 	list=$(LC_ALL=C pactl list $1 | \
 		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
-			/module-null-sink/ {print $0} /Base Volume/ {print $0} /null-audio-sink/ {print $0}' |\
-			sed ' s/%.*//g; s/:.*\/ /: /g; /Base Volume/s/$/%/; /id:/!s/: /:"/g; /#/!s/$/"/g;')
+			/module-null-sink/ {print $0} /Volume/ {print $0} /null-audio-sink/ {print $0}' |\
+			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
 
 	# turn into json
 	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Base Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
+		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
 		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
 	printf "%s" "$list"
@@ -425,6 +454,10 @@ case $1 in
 
 	"list-virtual-sinks")
 		list_virtual_sinks
+	;;
+
+	"list-virtual-sources")
+		list_virtual_sources
 	;;
 
 	"get-source-output-volume")
