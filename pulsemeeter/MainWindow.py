@@ -208,6 +208,8 @@ class MainWindow(Gtk.Window):
             label_evt_box.connect('button_press_event', self.label_click, label, ['vi', i])
             primary = self.builder.get_object(f'vi_{i}_primary')
             primary.set_active(self.pulse.config['vi'][i]['primary'])
+            if self.pulse.config['vi'][i]['primary'] == True:
+                primary.set_sensitive(False)
             primary.connect('toggled', self.toggle_primary, ['vi', i])
             self.vi_primary_buttons.append(primary)
 
@@ -265,6 +267,9 @@ class MainWindow(Gtk.Window):
 
             primary = self.builder.get_object(f'b_{i}_primary')
             primary.set_active(self.pulse.config['b'][i]['primary'])
+            if self.pulse.config['b'][i]['primary'] == True:
+                primary.set_sensitive(False)
+
             primary.connect('toggled', self.toggle_primary, ['b', i])
             self.b_primary_buttons.append(primary)
 
@@ -373,9 +378,11 @@ class MainWindow(Gtk.Window):
         if widget.get_active() == False:
             return
         else:
+            widget.set_sensitive(False)
             button_list = self.vi_primary_buttons if index[0] == 'vi' else self.b_primary_buttons
             for i in range(3):
                 if str(i + 1) != index[1]:
+                    button_list[i].set_sensitive(True)
                     button_list[i].set_active(False)
 
         self.pulse.set_primary(index)
