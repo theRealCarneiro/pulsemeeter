@@ -2,20 +2,18 @@ import os
 import sys
 import pathlib
 from setuptools import setup
+
 try:
     import pulsemeeter
 except ImportError as ex:
     print(f'ERROR: {ex.name} not installed, please run \'pip install requirements.txt\' inside source directory')
     sys.exit(1)
 
+
 VERSION = pulsemeeter.__version__
 README = (pathlib.Path(__file__).parent / "README.md").read_text()
+DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']),]
 REQUIREMENTS = []
-
-data_files = [
-    ('share/licenses/pulsemeeter/', ['LICENSE']),
-]
-
 
 with open('requirements.txt') as file:
     for line in file:
@@ -25,7 +23,7 @@ for directory, _, filenames in os.walk(u'share'):
     dest = directory[6:]
     if filenames:
         files = [os.path.join(directory, filename) for filename in filenames]
-        data_files.append((os.path.join('share', dest), files))
+        DATA_FILES.append((os.path.join('share', dest), files))
 
 setup(
     name='pulsemeeter',
@@ -44,7 +42,7 @@ setup(
     url='https://github.com/theRealCarneiro/pulsemeeter',
     packages=['pulsemeeter'],
     install_requires=REQUIREMENTS,
-    data_files=data_files,
+    data_files=DATA_FILES,
     entry_points={
         "console_scripts": [
             "pulsemeeter = pulsemeeter.__main__:main",
