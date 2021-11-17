@@ -1,5 +1,7 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE.md)
 
 ![](https://i.imgur.com/hYDE8dh.png)
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
