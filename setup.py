@@ -4,8 +4,8 @@ import pathlib
 from setuptools import setup
 try:
     import pulsemeeter
-except ImportError:
-    print("error: pulsemeeter requires Python 3.5 or greater")
+except ImportError as ex:
+    print(f'ERROR: {ex.name} not installed, please run \'pip install requirements.txt\' inside source directory')
     sys.exit(1)
 
 VERSION = pulsemeeter.__version__
