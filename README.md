@@ -1,6 +1,7 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
+[![pypi](https://img.shields.io/badge/pypi-v1.2.3-blue)](https://pypi.org/project/pulsemeeter/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
@@ -53,6 +54,7 @@ Build from source:
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
+pip install -r requirements.txt
 sudo pip install .
 ```
 
