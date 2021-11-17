@@ -5,7 +5,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
-[![Donate](https://img.shields.io/badge/donate-patreon-yellow.svg)](https://www.patreon.com/theRealCarneiro)
+[![Donate](https://img.shields.io/badge/Donate-patreon-yellow.svg)](https://www.patreon.com/theRealCarneiro)
 
 ![](https://i.imgur.com/hYDE8dh.png)
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
