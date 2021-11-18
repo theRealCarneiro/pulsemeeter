@@ -2,6 +2,7 @@
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
 [![pypi](https://img.shields.io/badge/pypi-v1.2.6-blue)](https://pypi.org/project/pulsemeeter/)
+[![AUR](https://img.shields.io/badge/AUR-pulsemeeter--git-informational)](https://aur.archlinux.org/packages/pulsemeeter-git/)
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Donate](https://img.shields.io/badge/donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
