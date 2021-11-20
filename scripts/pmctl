@@ -59,7 +59,7 @@ list_virtual_sinks (){
 		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
 			/module-null-sink/ {print $0} /Volume/ {print $0} /null-audio-sink/ {print $0}' |
-			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; s/: /:"/g; /#/!s/$/"/g;')
 
 
 	#printf "%s" "$list"
@@ -83,7 +83,7 @@ list_virtual_sources (){
 		awk '/Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /remap-source/ {print $0}
 			/Volume/ {print $0}' |
-			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; s/: /:"/g; /#/!s/$/"/g;')
 
 	#printf "%s" "$list"
 	#exit
@@ -115,7 +115,10 @@ list (){
 		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
 			/module-null-sink/ {print $0} /Volume/ {print $0} /null-audio-sink/ {print $0}' |\
-			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; /id/!s/: /:"/g; /#/!s/$/"/g;')
+			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; s/: /:"/g; /#/!s/$/"/g;')
+
+	#echo "$list"
+	#exit
 
 	# turn into json
 	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
