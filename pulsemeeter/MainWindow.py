@@ -98,6 +98,8 @@ class MainWindow(Gtk.Window):
         self.menu_popover.popup()
 
     def toggle_vumeters(self, widget):
+        if not shutil.which('pulse-vumeter'):
+            return
         self.enable_vumeters = widget.get_active()
         self.pulse.config['enable_vumeters'] = widget.get_active()
         if widget.get_active() == False:
@@ -142,8 +144,11 @@ class MainWindow(Gtk.Window):
             return
         if stop_only != False:
             if index[1] in self.pulse.vu_list[index[0]] or stop_only == True:
-                self.pulse.vu_list[index[0]][index[1]].terminate()
-                self.vu_thread[index[0]][index[1]].join()
+                if index[1] in self.vu_thread[index[0]]:
+                    self.pulse.vu_list[index[0]][index[1]].terminate()
+                    # self.pulse.vu_list[index[0]].pop(index[1])
+                    self.vu_thread[index[0]][index[1]].join()
+                    self.vu_thread[index[0]].pop(index[1])
                 self.vu_list[index[0]][index[1]].set_fraction(0)
 
         if stop_only == True:
@@ -371,8 +376,9 @@ class MainWindow(Gtk.Window):
 
         # if its an empty name
         else:
+            if self.pulse.config[index[0]][index[1]]['name'] != '':
+                self.restart_vumeter(index, True)
             self.pulse.config[index[0]][index[1]]['name'] = ''
-            self.restart_vumeter(index, True)
 
     def toggle_primary(self, widget, index):
         if widget.get_active() == False:

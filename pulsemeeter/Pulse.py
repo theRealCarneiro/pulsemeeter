@@ -317,14 +317,16 @@ class Pulse:
         devices = cmd(command).split('\n')
         devices_concat = []
         if devices[0] != '':
-            # print(devices)
             for i in devices:
-                jason = json.loads(i)
-                devices_concat.append(jason)
-        # if kind == 'sources':
-            # self.source_list = devices_concat
-        # else:
-            # self.sink_list = devices_concat
+                try:
+                    jason = json.loads(i)
+                    devices_concat.append(jason)
+                except:
+                    print(f'ERROR: invalid json {i}')
+        if kind == 'sources':
+            self.virtual_source_list = devices_concat
+        else:
+            self.virtual_sink_list = devices_concat
         return devices_concat
 
     def get_hardware_devices(self, kind):
@@ -333,8 +335,12 @@ class Pulse:
         devices_concat = []
         if devices[0] != '':
             for i in devices:
-                jason = json.loads(i)
-                devices_concat.append(jason)
+                try:
+                    jason = json.loads(i)
+                    devices_concat.append(jason)
+                except:
+                    print(f'ERROR: invalid json {i}')
+
         if kind == 'sources':
             self.source_list = devices_concat
         else:
@@ -443,10 +449,19 @@ class Pulse:
             for i in devices:
                 if 'name' not in i:
                     continue
-                jason = json.loads(i)
-                if 'icon' not in jason:
-                    jason['icon'] = 'audio-card'
-                apps.append(jason)
+
+                try:
+                    jason = json.loads(i)
+                    if 'icon' not in jason:
+                        jason['icon'] = 'audio-card'
+                    apps.append(jason)
+                except:
+                    print(f'ERROR: invalid json {i}')
+
+                # jason = json.loads(i)
+                # if 'icon' not in jason:
+                    # jason['icon'] = 'audio-card'
+                # apps.append(jason)
         return apps
 
     def move_source_output(self, app, name):
@@ -495,6 +510,7 @@ class Pulse:
             
         self.vu_list[index[0]][index[1]].stdout.close()
         return_code = self.vu_list[index[0]][index[1]].wait()
+        self.vu_list[index[0]].pop(index[1])
         # if return_code:
             # raise subprocess.CalledProcessError(return_code, command)
 
