@@ -4,17 +4,19 @@ init (){
 	case $1 in
 		"sink")
 			sink=$2
+			description=$3
 			pactl list sinks short | grep $sink && exit
-			pactl load-module module-null-sink sink_name=$sink sink_properties="device.description="$sink""
+			pactl load-module module-null-sink sink_name=$sink sink_properties="device.description="$description""
 		;;
 		"source")
 			source=$2
+			description=$3
 			pactl list sources short | grep $source && exit
 			pactl load-module module-null-sink sink_name=$source"_sink" # sink_properties=device.description=$source"_sink"
 			if which pulseaudio 2>/dev/null 1>&2; then
-				pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$source 
+				pactl load-module module-remap-source source_name=$source master=$source"_sink.monitor" source_properties=device.description=$description 
 			else
-				pactl load-module module-remap-source source_name=$source master=$source"_sink" source_properties=device.description=$source 
+				pactl load-module module-remap-source source_name=$source master=$source"_sink" source_properties=device.description=$description 
 			fi
 		;;
 	esac
@@ -123,7 +125,7 @@ list (){
 	# turn into json
 	list=$(echo "$list" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
+		sed '/^$/d; s/  / /g; s/Description/"description"/g; s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
 		grep -vwE Monitor | grep -vwE null | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
 	printf "%s" "$list"
@@ -372,7 +374,7 @@ fi
 
 case $1 in
 	"init")
-		init $2 $3
+		init $2 $3 $4
 	;;
 
 	"connect") 
@@ -396,7 +398,7 @@ case $1 in
 	;;
 
 	"rename")
-		rename $2 $3
+		rename $2 $3 $4
 	;;
 
 	"mute")

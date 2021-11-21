@@ -79,7 +79,9 @@ class Pulse:
             if self.config['vi'][str(i)]['name'] != '':
                 if not re.search(self.config['vi'][str(i)]['name'], sink_list):
                     sink = self.config['vi'][str(i)]['name']
-                    command = command + f"pmctl init sink {sink}\n"
+                    # Since this variable came later, default to the sink name if it doesn't exist
+                    desc = self.config['vi'][str(i)].get('desc', sink)
+                    command = command + f"pmctl init sink {sink} {desc}\n"
         return command
 
     def start_sources(self):
@@ -89,7 +91,9 @@ class Pulse:
             if self.config['b'][str(i)]['name'] != '':
                 if not re.search(self.config['b'][str(i)]['name'], source_list):
                     source = self.config['b'][str(i)]['name']
-                    command = command + f"pmctl init source {source}\n"
+                    # Since this variable came later, default to the source name if it doesn't exist
+                    desc = self.config['vi'][str(i)].get('desc', source)
+                    command = command + f"pmctl init source {source} {desc}\n"
         return command
 
     def start_eqs(self):
@@ -294,18 +298,20 @@ class Pulse:
             volume = pulsectl.PulseVolumeInfo(val / 100, 2)
             self.pulsectl.source_output_volume_set(index, volume)
 
-    def rename(self, device_index, new_name):
-        old_name = self.config[device_index[0]][device_index[1]]['name']
-        if new_name == old_name:
+    def rename(self, device_index, new_desc):
+        name = self.config[device_index[0]][device_index[1]]['name']
+        # Since this variable came later, default to the source name if it doesn't exist
+        old_desc = self.config[device_index[0]][device_index[1]].get('desc', name)
+        if new_desc == old_desc:
             return False
 
-        if old_name != '':
-            command = f'pmctl remove {old_name}'
+        if name != '':
+            command = f'pmctl remove {name}'
             os.popen(command)
 
-        self.config[device_index[0]][device_index[1]]['name'] = new_name
-        if new_name != '':
-            command = f'pmctl init sink {new_name}\n'
+        self.config[device_index[0]][device_index[1]]['desc'] = new_desc
+        if new_desc != '':
+            command = f'pmctl init sink {name} {new_desc}\n'
             command = command + self.reconnect(device_index[0], device_index[1], 'init')
             command = command + self.set_primary(device_index, 'init')
             os.popen(command)

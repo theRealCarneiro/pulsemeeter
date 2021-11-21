@@ -28,6 +28,7 @@
 	"b": {
 		"1": {
 			"name": "Virtual_Output_B1",
+			"desc": "Virtual_Output_B1",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -37,6 +38,7 @@
 		},
 		"2": {
 			"name": "Virtual_Output_B2",
+			"desc": "Virtual_Output_B2",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -46,6 +48,7 @@
 		},
 		"3": {
 			"name": "Virtual_Output_B3",
+			"desc": "Virtual_Output_B3",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
@@ -57,6 +60,7 @@
 	"vi": {
 		"1": {
 			"name": "Virtual_Input_1",
+			"desc": "Virtual_Input_1",
 			"primary": false,
 			"a1": false,
 			"a2": false,
@@ -79,6 +83,7 @@
 		},
 		"2": {
 			"name": "Virtual_Input_2",
+			"desc": "Virtual_Input_2",
 			"primary": false,
 			"a1": false,
 			"a2": false,
@@ -101,6 +106,7 @@
 		},
 		"3": {
 			"name": "Virtual_Input_3",
+			"desc": "Virtual_Input_3",
 			"primary": false,
 			"a1": false,
 			"a2": false,
