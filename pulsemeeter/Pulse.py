@@ -431,13 +431,18 @@ class Pulse:
         name_vi = []
         name_b = []
         for i in ['1','2','3']:
+            vi_name = self.config['vi'][i]['name']
+            vi_desc = self.config['vi'][i].get('desc', vi_name)
             if dev_type == 'source-output':
-                if self.config['b'][i]['name'] != '':
-                    name_b.append(self.config['b'][i]['name'])
-                if self.config['vi'][i]['name'] != '':
-                    name_vi.append(self.config['vi'][i]['name'] + '.monitor')
-            elif self.config['vi'][i]['name'] != '':
-                    name_vi.append(self.config['vi'][i]['name'])
+                b_name = self.config['b'][i]['name']
+                b_desc = self.config['b'][i].get('desc', b_name)
+                if b_desc != '':
+                    name_b.append(b_desc)
+                
+                if vi_desc != '':
+                    name_vi.append(vi_desc + '.monitor')
+            elif vi_desc != '':
+                    name_vi.append(vi_desc)
 
 
         if dev_type == 'source-output':

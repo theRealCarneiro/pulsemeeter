@@ -207,8 +207,9 @@ class MainWindow(Gtk.Window):
         for i in ['1', '2', '3']:
 
             name = self.pulse.config['vi'][i]['name']
+            desc = self.pulse.config['vi'][i].get('desc', name)
             label = self.builder.get_object(f'vi_{i}_label')
-            label.set_text(name if name != '' else f'Virtual Input {i}')
+            label.set_text(desc if desc != '' else f'Virtual Input {i}')
             label_evt_box = self.builder.get_object(f'vi_{i}_label_event_box')
             label_evt_box.connect('button_press_event', self.label_click, label, ['vi', i])
             primary = self.builder.get_object(f'vi_{i}_primary')
@@ -338,6 +339,7 @@ class MainWindow(Gtk.Window):
         name = widget.get_text()
         if not ' ' in name:
             if self.pulse.rename(self.Label_Index, name) == True:
+                self.pulse.save_config()
                 self.PopActive.set_text(name)
                 self.sink_input_box.load_application_list()
                 self.source_output_box.load_application_list()
