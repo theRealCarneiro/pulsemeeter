@@ -2,7 +2,8 @@
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
 [![pypi](https://img.shields.io/badge/pypi-v1.2.6-blue)](https://pypi.org/project/pulsemeeter/)
-[![AUR](https://img.shields.io/badge/AUR-pulsemeeter--git-informational)](https://aur.archlinux.org/packages/pulsemeeter-git/)
+[![AUR](https://img.shields.io/badge/AUR-V1.2.6-cyan)](https://aur.archlinux.org/packages/pulsemeeter-git/)
+[![AUR](https://img.shields.io/badge/AUR-pulsemeeter--git-red)](https://aur.archlinux.org/packages/pulsemeeter-git/)
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Donate](https://img.shields.io/badge/donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
@@ -38,24 +39,38 @@ You can install python dependencies with pip
 
 Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
 
-### Arch/Manjaro
-A package is available in the AUR [pulsemeeter-git](https://aur.archlinux.org/packages/pulsemeeter-git/). If you use an AUR helper:
-```sh
-paru -S pulsemeeter-git
-```
+### Arch (AUR)
+Two packages are available in the AUR: [pulsemeeter](https://aur.archlinux.org/packages/pulsemeeter) and [pulsemeeter-git](https://aur.archlinux.org/packages/pulsemeeter-git/).
 
 ### Any distro
-Install using pip:
+
+When installing for a single user, you to need to have $HOME/.local/bin in your PATH, to do this, you'll have to add this line to your ~/.profile (or .zprofile if you use zsh as your login shell)
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+#### Install using pip:
+##### Single user
+```sh
+pip install pulsemeeter
+```
+##### For all users
 ```sh
 sudo pip install pulsemeeter
 ```
-
-
-Build from source:
+#### Build from source:
+##### Single user
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
 pip install -r requirements.txt
+pip install .
+```
+
+##### For all users
+```sh
+git clone https://github.com/theRealCarneiro/pulsemeeter.git
+cd pulsemeeter
+sudo pip install -r requirements.txt
 sudo pip install .
 ```
 
