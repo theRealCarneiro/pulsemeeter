@@ -534,6 +534,7 @@ class Pulse:
 
             # if config is outdated
             if not 'version' in self.config or self.config['version'] != __version__:
+                self.config['layout'] = 'default'
                 config_orig = json.load(open(ORIG_CONFIG_FILE))
                 self.config['version'] = __version__
                 self.config['enable_vumeters'] = True

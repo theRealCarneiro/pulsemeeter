@@ -3,7 +3,7 @@ import platform
 import appdirs
  
 
-__version__ = '1.2.6'
+__version__ = '1.2.7'
 
 
 HOME = os.getenv('HOME', os.getenv('USERPROFILE'))
