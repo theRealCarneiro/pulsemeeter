@@ -9,7 +9,7 @@ from .EqPopover import EqPopover
 from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
 from .AppListWidget import AppList
-from .settings import GLADEFILE
+from .settings import GLADEFILE, LAYOUT_DIR
 
 from gi.repository import Gtk,Gdk,Gio,GLib
 
@@ -20,6 +20,7 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
         self.pulse = pulse
+        self.layout = self.pulse.config['layout']
 
         component_list = [
                     'window',
@@ -50,12 +51,13 @@ class MainWindow(Gtk.Window):
 
         try:
             self.builder.add_objects_from_file(
-                GLADEFILE,
+                os.path.join(LAYOUT_DIR, f'{self.layout}.glade'),
                 component_list
             )
         except Exception as ex:
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
+
         if not 'enable_vumeters' in self.pulse.config:
             self.pulse.config['enable_vumeters'] = True
 
@@ -75,15 +77,16 @@ class MainWindow(Gtk.Window):
         self.window = self.builder.get_object('window')
         super().__init__(self.window)
 
-        self.menu_button = self.builder.get_object('menu_button')
-        self.menu_popover = self.builder.get_object('menu_popover')
-        self.menu_popover.set_relative_to(self.menu_button)
+        if self.layout == 'default':
+            self.menu_button = self.builder.get_object('menu_button')
+            self.menu_popover = self.builder.get_object('menu_popover')
+            self.menu_popover.set_relative_to(self.menu_button)
 
-        self.menu_button.connect('pressed', self.open_settings)
+            self.menu_button.connect('pressed', self.open_settings)
 
         self.window.connect('delete_event', self.delete_event)
 
-        self.window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        # self.window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
 
         self.builder.connect_signals(self)
 
@@ -124,14 +127,17 @@ class MainWindow(Gtk.Window):
             for j in ['1','2','3']:
                 grid = self.builder.get_object(f'{i}_{j}_vumeter')
                 self.vu_list[i][j] = Gtk.ProgressBar()
-                self.vu_list[i][j].set_orientation(Gtk.Orientation.VERTICAL)
-                self.vu_list[i][j].set_margin_bottom(8)
-                self.vu_list[i][j].set_margin_top(8)
+                if self.layout == 'default':
+                    self.vu_list[i][j].set_orientation(Gtk.Orientation.VERTICAL)
+                    self.vu_list[i][j].set_margin_bottom(8)
+                    self.vu_list[i][j].set_margin_top(8)
+                    self.vu_list[i][j].set_halign(Gtk.Align.CENTER)
+                    self.vu_list[i][j].set_inverted(True)
+                else:
+                    self.vu_list[i][j].set_orientation(Gtk.Orientation.HORIZONTAL)
                 self.vu_list[i][j].set_vexpand(True)
                 self.vu_list[i][j].set_hexpand(True)
-                self.vu_list[i][j].set_halign(Gtk.Align.CENTER)
 
-                self.vu_list[i][j].set_inverted(True)
                 grid.add(self.vu_list[i][j])
                 if self.pulse.config[i][j]['name'] != '':
                     self.vu_thread[i][j] = threading.Thread(target=self.listen_peak, 
@@ -174,6 +180,8 @@ class MainWindow(Gtk.Window):
         self.source_list = self.pulse.get_hardware_devices('sources')
         for device in ['hi', 'a']:
             name_size = 35 if device == 'a' else 20
+            if self.layout != 'default':
+                name_size = 100
             devices = self.sink_list if device == 'a' else self.source_list
 
             # for each combobox

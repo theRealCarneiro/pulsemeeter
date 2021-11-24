@@ -524,7 +524,11 @@ class Pulse:
 
         # if config exists XDG_CONFIG_HOME 
         if os.path.isfile(CONFIG_FILE):
-            self.config = json.load(open(CONFIG_FILE))
+            try:
+                self.config = json.load(open(CONFIG_FILE))
+            except:
+                print('ERROR loading config file')
+                sys.exit(1)
 
             # if config is outdated
             if not 'version' in self.config or self.config['version'] != __version__:

@@ -199,5 +199,7 @@
 			"rnnoise_latency": 200
 		}
 	},
-	"enable_vumeters": true
+	"enable_vumeters": true,
+	"layout":"tabbed"
+
 }
