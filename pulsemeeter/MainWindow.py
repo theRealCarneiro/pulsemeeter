@@ -1,4 +1,5 @@
 import os
+import re
 import signal
 import shutil
 import threading
@@ -20,11 +21,11 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
         self.pulse = pulse
+        self.pulse.restart_window = False
         self.layout = self.pulse.config['layout']
 
         component_list = [
                     'window',
-                    'menu_button',
                     'menu_popover',
                     'rename_popover',
                     'popover_entry',
@@ -73,6 +74,7 @@ class MainWindow(Gtk.Window):
         self.start_outputs()
         self.start_app_list()
         self.start_vumeters()
+        self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
         super().__init__(self.window)
@@ -96,6 +98,23 @@ class MainWindow(Gtk.Window):
         signal.signal(signal.SIGINT, self.delete_event)
 
         self.subscribe_thread.start()
+
+    def start_layout_combobox(self):
+        self.layout_combobox = self.builder.get_object('layout_combobox')
+        layout_list = os.listdir(LAYOUT_DIR)
+        i = 0
+        for layout in layout_list:
+            self.layout_combobox.append_text(layout[:len(layout) - 6])
+            if layout[:len(layout) - 6] == self.layout:
+                self.layout_combobox.set_active(i)
+            i += 1
+        self.layout_combobox.connect('changed', self.change_layout)
+
+    def change_layout(self, combobox):
+        self.pulse.config['layout'] = combobox.get_active_text()
+        self.pulse.restart_window = True
+        self.window.destroy()
+        self.delete_event(None, None)
 
     def open_settings(self, widget):
         self.menu_popover.popup()

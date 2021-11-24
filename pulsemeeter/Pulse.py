@@ -34,6 +34,8 @@ class Pulse:
         for i in ['hi', 'vi', 'a', 'b']:
             self.vu_list[i] = {}
 
+        self.restart_window = False
+
 
     def get_correct_device(self, index, conn_type):
         if index[0] == 'vi':
