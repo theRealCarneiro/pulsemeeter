@@ -327,6 +327,11 @@ class MainWindow(Gtk.Window):
                 scale = self.builder.get_object(f'{j}_{i}_vol')
                 scale.add_mark(100, Gtk.PositionType.TOP, '')
 
+                if self.layout != 'default':
+                    if j == 'b':
+                        label = self.builder.get_object(f'b{i}_label')
+                        label.set_text(f'B{i} - {self.pulse.config["b"][i]["name"]}')
+
                 found = 0
                 for path in ['/usr/lib/ladspa', '/usr/local/lib/ladspa']:
                     if os.path.isfile(os.path.join(path, 'mbeq_1197.so')):
