@@ -2254,7 +2254,7 @@ KHz</property>
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Virtual Inputs</property>
+                <property name="label" translatable="yes">Hardware Inputs</property>
               </object>
               <packing>
                 <property name="position">4</property>
@@ -2309,6 +2309,7 @@ KHz</property>
                               <object class="GtkEventBox" id="vi_1_label_event_box">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="halign">start</property>
                                 <property name="vexpand">True</property>
                                 <property name="visible-window">False</property>
                                 <child>
@@ -2583,6 +2584,7 @@ KHz</property>
                               <object class="GtkEventBox" id="vi_2_label_event_box">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="halign">start</property>
                                 <property name="hexpand">False</property>
                                 <property name="vexpand">True</property>
                                 <property name="visible-window">False</property>
@@ -2980,6 +2982,7 @@ KHz</property>
                               <object class="GtkEventBox" id="vi_3_label_event_box">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
+                                <property name="halign">start</property>
                                 <property name="hexpand">True</property>
                                 <property name="vexpand">True</property>
                                 <property name="visible-window">False</property>
@@ -3134,7 +3137,7 @@ KHz</property>
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Hardware Inputs</property>
+                <property name="label" translatable="yes">Virtual Inputs</property>
               </object>
               <packing>
                 <property name="position">4</property>
@@ -3173,7 +3176,7 @@ KHz</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">False</property>
                             <child>
-                              <object class="GtkLabel">
+                              <object class="GtkLabel" id="b1_label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="halign">start</property>
@@ -3330,7 +3333,7 @@ KHz</property>
                             <property name="hexpand">False</property>
                             <property name="vexpand">False</property>
                             <child>
-                              <object class="GtkLabel">
+                              <object class="GtkLabel" id="b2_label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="halign">start</property>
@@ -3608,7 +3611,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel">
+                              <object class="GtkLabel" id="b3_label">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="halign">start</property>
@@ -3730,30 +3733,6 @@ KHz</property>
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <!-- n-columns=4 n-rows=1 -->
-          <object class="GtkGrid">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
           </packing>
         </child>
       </object>
