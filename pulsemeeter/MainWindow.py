@@ -327,9 +327,9 @@ class MainWindow(Gtk.Window):
                 scale = self.builder.get_object(f'{j}_{i}_vol')
                 scale.add_mark(100, Gtk.PositionType.TOP, '')
 
-                if self.layout != 'default':
-                    if j == 'b':
-                        label = self.builder.get_object(f'b{i}_label')
+                if j == 'b':
+                    label = self.builder.get_object(f'b{i}_label')
+                    if label != None:
                         label.set_text(f'B{i} - {self.pulse.config["b"][i]["name"]}')
 
                 found = 0
