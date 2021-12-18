@@ -61,8 +61,11 @@ def main():
     else:
         pulse = Pulse('cmd')
     arg_interpreter(sys.argv, pulse)
-    app = MainWindow(pulse)
-    return Gtk.main()
+    while True:
+        app = MainWindow(pulse)
+        Gtk.main()
+        if pulse.restart_window == False:
+            break
 
 if __name__ == '__main__':
     mainret = main()

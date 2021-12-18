@@ -1,5 +1,6 @@
 import os
-from .settings import GLADEFILE
+import sys
+from .settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
@@ -10,10 +11,11 @@ class LatencyPopover():
 
         self.config = pulse.config
         self.builder = Gtk.Builder()
+        self.layout = pulse.config['layout']
 
         try:
             self.builder.add_objects_from_file(
-                GLADEFILE,
+                os.path.join(LAYOUT_DIR, f'{self.layout}.glade'),
                 [
                     'latency_popover',
                     'latency_adjust',

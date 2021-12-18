@@ -1,4 +1,5 @@
 import os
+import re
 import signal
 import shutil
 import threading
@@ -9,7 +10,7 @@ from .EqPopover import EqPopover
 from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
 from .AppListWidget import AppList
-from .settings import GLADEFILE
+from .settings import GLADEFILE, LAYOUT_DIR
 
 from gi.repository import Gtk,Gdk,Gio,GLib
 
@@ -20,10 +21,11 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
         self.pulse = pulse
+        self.pulse.restart_window = False
+        self.layout = self.pulse.config['layout']
 
         component_list = [
                     'window',
-                    'menu_button',
                     'menu_popover',
                     'rename_popover',
                     'popover_entry',
@@ -50,12 +52,13 @@ class MainWindow(Gtk.Window):
 
         try:
             self.builder.add_objects_from_file(
-                GLADEFILE,
+                os.path.join(LAYOUT_DIR, f'{self.layout}.glade'),
                 component_list
             )
         except Exception as ex:
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
+
         if not 'enable_vumeters' in self.pulse.config:
             self.pulse.config['enable_vumeters'] = True
 
@@ -71,19 +74,21 @@ class MainWindow(Gtk.Window):
         self.start_outputs()
         self.start_app_list()
         self.start_vumeters()
+        self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
         super().__init__(self.window)
 
-        self.menu_button = self.builder.get_object('menu_button')
-        self.menu_popover = self.builder.get_object('menu_popover')
-        self.menu_popover.set_relative_to(self.menu_button)
+        if self.layout == 'default':
+            self.menu_button = self.builder.get_object('menu_button')
+            self.menu_popover = self.builder.get_object('menu_popover')
+            self.menu_popover.set_relative_to(self.menu_button)
 
-        self.menu_button.connect('pressed', self.open_settings)
+            self.menu_button.connect('pressed', self.open_settings)
 
         self.window.connect('delete_event', self.delete_event)
 
-        self.window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        # self.window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
 
         self.builder.connect_signals(self)
 
@@ -93,6 +98,23 @@ class MainWindow(Gtk.Window):
         signal.signal(signal.SIGINT, self.delete_event)
 
         self.subscribe_thread.start()
+
+    def start_layout_combobox(self):
+        self.layout_combobox = self.builder.get_object('layout_combobox')
+        layout_list = os.listdir(LAYOUT_DIR)
+        i = 0
+        for layout in layout_list:
+            self.layout_combobox.append_text(layout[:len(layout) - 6])
+            if layout[:len(layout) - 6] == self.layout:
+                self.layout_combobox.set_active(i)
+            i += 1
+        self.layout_combobox.connect('changed', self.change_layout)
+
+    def change_layout(self, combobox):
+        self.pulse.config['layout'] = combobox.get_active_text()
+        self.pulse.restart_window = True
+        self.window.destroy()
+        self.delete_event(None, None)
 
     def open_settings(self, widget):
         self.menu_popover.popup()
@@ -124,14 +146,17 @@ class MainWindow(Gtk.Window):
             for j in ['1','2','3']:
                 grid = self.builder.get_object(f'{i}_{j}_vumeter')
                 self.vu_list[i][j] = Gtk.ProgressBar()
-                self.vu_list[i][j].set_orientation(Gtk.Orientation.VERTICAL)
-                self.vu_list[i][j].set_margin_bottom(8)
-                self.vu_list[i][j].set_margin_top(8)
+                if self.layout == 'default':
+                    self.vu_list[i][j].set_orientation(Gtk.Orientation.VERTICAL)
+                    self.vu_list[i][j].set_margin_bottom(8)
+                    self.vu_list[i][j].set_margin_top(8)
+                    self.vu_list[i][j].set_halign(Gtk.Align.CENTER)
+                    self.vu_list[i][j].set_inverted(True)
+                else:
+                    self.vu_list[i][j].set_orientation(Gtk.Orientation.HORIZONTAL)
                 self.vu_list[i][j].set_vexpand(True)
                 self.vu_list[i][j].set_hexpand(True)
-                self.vu_list[i][j].set_halign(Gtk.Align.CENTER)
 
-                self.vu_list[i][j].set_inverted(True)
                 grid.add(self.vu_list[i][j])
                 if self.pulse.config[i][j]['name'] != '':
                     self.vu_thread[i][j] = threading.Thread(target=self.listen_peak, 
@@ -174,6 +199,8 @@ class MainWindow(Gtk.Window):
         self.source_list = self.pulse.get_hardware_devices('sources')
         for device in ['hi', 'a']:
             name_size = 35 if device == 'a' else 20
+            if self.layout != 'default':
+                name_size = 100
             devices = self.sink_list if device == 'a' else self.source_list
 
             # for each combobox
@@ -299,6 +326,11 @@ class MainWindow(Gtk.Window):
 
                 scale = self.builder.get_object(f'{j}_{i}_vol')
                 scale.add_mark(100, Gtk.PositionType.TOP, '')
+
+                if self.layout != 'default':
+                    if j == 'b':
+                        label = self.builder.get_object(f'b{i}_label')
+                        label.set_text(f'B{i} - {self.pulse.config["b"][i]["name"]}')
 
                 found = 0
                 for path in ['/usr/lib/ladspa', '/usr/local/lib/ladspa']:

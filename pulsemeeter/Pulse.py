@@ -34,6 +34,8 @@ class Pulse:
         for i in ['hi', 'vi', 'a', 'b']:
             self.vu_list[i] = {}
 
+        self.restart_window = False
+
 
     def get_correct_device(self, index, conn_type):
         if index[0] == 'vi':
@@ -524,10 +526,15 @@ class Pulse:
 
         # if config exists XDG_CONFIG_HOME 
         if os.path.isfile(CONFIG_FILE):
-            self.config = json.load(open(CONFIG_FILE))
+            try:
+                self.config = json.load(open(CONFIG_FILE))
+            except:
+                print('ERROR loading config file')
+                sys.exit(1)
 
             # if config is outdated
             if not 'version' in self.config or self.config['version'] != __version__:
+                self.config['layout'] = 'default'
                 config_orig = json.load(open(ORIG_CONFIG_FILE))
                 self.config['version'] = __version__
                 self.config['enable_vumeters'] = True
