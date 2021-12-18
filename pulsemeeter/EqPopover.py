@@ -1,5 +1,5 @@
 import os
-from .settings import GLADEFILE
+from .settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
@@ -11,10 +11,11 @@ class EqPopover():
 
         self.builder = Gtk.Builder()
         self.pulse = pulse
+        self.layout = pulse.config['layout']
 
         try:
             self.builder.add_objects_from_file(
-                GLADEFILE,
+                os.path.join(LAYOUT_DIR, f'{self.layout}.glade'),
                 [
                     'eq_popup',
                     'eq_50_hz_adjust',
