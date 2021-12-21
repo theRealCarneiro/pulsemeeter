@@ -15,7 +15,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
 
 ## Table of Contents
-- **[Features](fFeatures)**
+- **[Features](#features)**
 - **[Installation](#installation)**
     - [Dependencies](#dependencies)
     - [Arch](#arch-aur)
