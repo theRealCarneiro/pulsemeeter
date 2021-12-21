@@ -9,8 +9,20 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 [![Donate](https://img.shields.io/badge/donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
 [![Donate](https://img.shields.io/badge/donate-Patreon-yellow.svg)](https://www.patreon.com/theRealCarneiro)
 
+### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\]
+
 ![](https://i.imgur.com/hYDE8dh.png)
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
+
+## Table of Contents
+- **[Features](fFeatures)**
+- **[Installation](#installation)**
+    - [Dependencies](#dependencies)
+    - [Arch](#arch-aur)
+    - [Pypi install](#install-using-pip)
+    - [Manual/Git install](#any-distro)
+- **[Auto Start](#start-devices-on-startup)**
+- **[Discord Server](#discord-server)**
 
 ## Features
  - Create virtual inputs and outputs
