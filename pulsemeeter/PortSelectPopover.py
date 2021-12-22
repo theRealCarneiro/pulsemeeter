@@ -56,16 +56,8 @@ class PortSelectPopover():
         self.PortSelect_Popover.popup()
 
     def add_port(self, name, index, pulse):
-        # Gets the first radio button in the list to use as the group.
-        # If there isn't one, get_row_at_index returns None.
-        left_group = self.Left_Ports.get_row_at_index(0)
-        if left_group is not None:
-            left_group = left_group.get_child()
-        right_group = self.Right_Ports.get_row_at_index(0)
-        if right_group is not None:
-            right_group = right_group.get_child()
-        left_widget = Gtk.RadioButton.new_with_label_from_widget(left_group, name)
-        right_widget = Gtk.RadioButton.new_with_label_from_widget(right_group, name)
+        left_widget = Gtk.ToggleButton.new_with_label(name)
+        right_widget = Gtk.ToggleButton.new_with_label(name)
         self.port_widget_handles['left'][name] =\
             [
                 left_widget,
@@ -83,10 +75,7 @@ class PortSelectPopover():
 
     def add_grouped_port(self, left, right, index, pulse):
         name = f'{left}, {right}'
-        group = self.Grouped_Ports.get_row_at_index(0)
-        if group is not None:
-            group = group.get_child()
-        widget = Gtk.RadioButton.new_with_label_from_widget(group, name)
+        widget = Gtk.ToggleButton.new_with_label(name)
         self.port_widget_handles['grouped'][name] =\
             [
                 widget,
@@ -106,16 +95,17 @@ class PortSelectPopover():
     def toggle_port(self, widget, v_port, name, index, pulse, from_event):
         print(name, from_event)
         if from_event and name in self.port_widget_handles['grouped']:
+            grouped_handle = self.port_widget_handles['grouped'][name]
             if self.port_widget_handles['left'][self.port_widget_handles['grouped'][name][1][0]][0].get_active() and\
                     self.port_widget_handles['right'][self.port_widget_handles['grouped'][name][1][1]][0].get_active():
                 if not self.port_widget_handles['grouped'][name][0].get_active():
-                    self.block_handles('grouped')
+                    grouped_handle[0].handler_block(grouped_handle[2])
                     self.port_widget_handles['grouped'][name][0].set_active(True)
-                    self.block_handles('grouped', True)
+                    grouped_handle[0].handler_unblock(grouped_handle[2])
             elif self.port_widget_handles['grouped'][name][0].get_active():
-                self.block_handles('grouped')
+                grouped_handle[0].handler_block(grouped_handle[2])
                 self.port_widget_handles['grouped'][name][0].set_active(False)
-                self.block_handles('grouped', True)
+                grouped_handle[0].handler_unblock(grouped_handle[2])
         # v_port will be either 'left' or 'right' (for future this could be a number for more than stereo)
         # name will be the name of the port to connect as given to the constructor
         # do whatever is necessary to connect or disconnect the port, and change the relevant setting in the config
@@ -129,28 +119,13 @@ class PortSelectPopover():
             self.port_widget_handles['left'][ports[0]],
             self.port_widget_handles['right'][ports[1]],
         ]
-        if is_active:
-            if not handles[0][0].get_active():
-                for item in self.port_widget_handles['left'].items():
-                    if handles[0][0].get_active():
-                        handles[0][0].set_active(False)
-                self.block_handles('left')
-                handles[0][0].set_active(True)
-                self.block_handles('right', True)
-                self.toggle_port(handles[0][0], 'left', ports[0], index, pulse, False)
-            if not handles[1][0].get_active():
-                for item in self.port_widget_handles['right'].items():
-                    if handles[1][0].get_active():
-                        handles[1][0].set_active(False)
-                self.block_handles('right')
-                handles[1][0].set_active(True)
-                self.block_handles('right', True)
-                self.toggle_port(handles[1][0], 'right', ports[1], index, pulse, False)
-
-    def block_handles(self, list_name, unblock=False):
-        for name, item in self.port_widget_handles[list_name].items():
-            if list_name != 'grouped' or name not in item[1]:
-                if unblock:
-                    item[0].handler_unblock(item[2 if list_name == 'grouped' else 1])
-                else:
-                    item[0].handler_block(item[2 if list_name == 'grouped' else 1])
+        if handles[0][0].get_active() != is_active:
+            handles[0][0].handler_block(handles[0][1])
+            handles[0][0].set_active(is_active)
+            handles[0][0].handler_unblock(handles[0][1])
+            self.toggle_port(handles[0][0], 'left', ports[0], index, pulse, False)
+        if handles[1][0].get_active() != is_active:
+            handles[1][0].handler_block(handles[1][1])
+            handles[1][0].set_active(is_active)
+            handles[1][0].handler_unblock(handles[1][1])
+            self.toggle_port(handles[1][0], 'right', ports[1], index, pulse, False)
