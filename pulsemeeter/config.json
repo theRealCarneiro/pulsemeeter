@@ -6,7 +6,9 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false
+			"use_eq": false,
+			"jack": false,
+			"jack_channels": []
 		},
 		"2": {
 			"name": "",
@@ -14,7 +16,9 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false
+			"use_eq": false,
+			"jack": false,
+			"jack_channels": []
 		},
 		"3": {
 			"name": "",
@@ -22,7 +26,9 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false
+			"use_eq": false,
+			"jack": false,
+			"jack_channels": []
 		}
 	},
 	"b": {
@@ -75,7 +81,12 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false
+			"use_eq": false,
+			"channels": 2,
+			"channel_map": [
+				"front-left",
+				"front-right"
+			]
 		},
 		"2": {
 			"name": "Virtual_Input_2",
@@ -97,7 +108,12 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false
+			"use_eq": false,
+			"channels": 2,
+			"channel_map": [
+				"front-left",
+				"front-right"
+			]
 		},
 		"3": {
 			"name": "Virtual_Input_3",
@@ -119,7 +135,12 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false
+			"use_eq": false,
+			"channels": 2,
+			"channel_map": [
+				"front-left",
+				"front-right"
+			]
 		}
 	},
 	"hi": {
@@ -200,6 +221,6 @@
 		}
 	},
 	"enable_vumeters": true,
-	"layout":"tabbed"
-
+	"layout":"tabbed",
+	"use_jack": false
 }
