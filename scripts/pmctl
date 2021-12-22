@@ -5,7 +5,10 @@ init (){
 		"sink")
 			sink=$2
 			pactl list sinks short | grep $sink && exit
-			pactl load-module module-null-sink sink_name=$sink sink_properties="device.description="$sink""
+			#pactl load-module module-null-sink sink_name=$sink sink_properties="device.description="$sink""
+			channel_num=${3:-2}
+			channel_map="channel_map="${4:-'front-left,front-right'}
+			pactl load-module module-jack-sink client_name=$sink sink_name=$sink sink_properties="device.description="$sink"" connect=no channels=$channel_num $channel_map
 		;;
 		"source")
 			source=$2
@@ -18,6 +21,83 @@ init (){
 			fi
 		;;
 	esac
+}
+
+jack_list_devices() {
+	jack_lsp -c 2>/dev/null | sed '/^   .*$/d; s/:.*//' | uniq
+}
+
+jack_list_device() {
+	device=$1
+	jack_lsp -c 2>/dev/null |
+		grep --no-group-separator -B 1 ' ' |
+		sed '/^\t/!N;s/\n/: [\n/g; ' |
+		sed '/^\t/!N;s/^/]\n/g;' |
+		sed '^s///'		
+		#sed '/^\t/!N;s/^/{/g; $s/$/]}/;' |
+		#sed 's/ .* / /' 
+		#grep "^$device"
+}
+
+jack_list() {
+
+	json=$(jack_lsp -c 2>/dev/null |
+		grep --no-group-separator -B 1 ' ' |
+		sed '/^\t/!N;s/\n/": [\n/g; ' |
+		sed '/^\t/!N;s/^/],\n/g;' |
+		sed '$s/$/\n]/' |
+		sed '0,/^],$/d'		
+	)
+
+	devices=$(jack_list_devices)
+	while read dev; do
+		json=$(printf "%s" "$json" | sed "0,/^$dev/!s/$dev//; ")
+		json=$(printf "%s" "$json" | sed "/^$dev/s/^$dev:/},\n"$dev": {\n\"/;")
+		json=$(printf "%s" "$json" | sed "/^$dev/s/^$dev/\"$dev\"/;")
+	done <<< "$devices"
+	printf "%s" "$json" | sed 's/^:/\"/g; 0,/},/d' |
+		sed '/:.*\n]/!N;!s/$/,/;' |
+		sed '/"system": /,/},/d' |
+		sed '/ :/s/$/"/; / :.*\n:/,/ :.*\n\]/!s/$/,/'
+}
+
+jack_toggle (){
+	source=$1
+	status=$(jack_list_device $source)
+	tmpfile=$(cat /tmp/jackmeeter 2>/dev/null)
+
+	if [ -f /tmp/jackmeeter ]; then
+		rm /tmp/jackmeeter
+		jack_stat='jack_connect'
+		status="$tmpfile"
+	else
+		printf "%s" "$status" > /tmp/jackmeeter
+		jack_stat='jack_disconnect'
+	fi
+
+	while read conn; do
+		echo "$jack_stat $conn"
+		$jack_stat $conn
+	done <<< "$status"
+
+}
+	
+connect_jack (){
+	source=$1
+	source_channel=$2
+	sink_channel=$3
+	[ -z "$source" ] && exit
+
+	jack_connect $source:$source_channel system:playback_$sink_channel
+}
+
+disconnect_jack (){
+	source=$1
+	source_channel=$2
+	sink_channel=$3
+	[ -z "$source" ] && exit
+
+	jack_disconnect $source:$source_channel system:playback_$sink_channel
 }
 
 connect (){
@@ -310,7 +390,7 @@ rnnoise() {
 		fi
 
 	done
-
+	
 	[ -z "$found" ] && exit 1
 
 	if [ "$status" = "connect" ]; then
@@ -372,7 +452,7 @@ fi
 
 case $1 in
 	"init")
-		init $2 $3
+		init $2 $3 $4
 	;;
 
 	"connect") 
@@ -465,6 +545,24 @@ case $1 in
 
 	"get-source-output-volume")
 		get_source_output_volume $2
+	;;
+	"jack-connect")
+		connect_jack $2 $3 $4
+	;;
+	"jack-disconnect")
+		disconnect_jack $2 $3 $4
+	;;
+	"jack-list")
+		jack_list $2
+	;;
+	"jack-list-device")
+		jack_list_device $2
+	;;
+	"jack-toggle")
+		jack_toggle $2 $3
+	;;
+	"jack-list-devices")
+		jack_list_devices
 	;;
 	"*") echo "command not found";;
 esac
