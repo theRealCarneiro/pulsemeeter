@@ -7,7 +7,6 @@ try:
     import pulsemeeter
 except ImportError as ex:
     print(f'ERROR: {ex.name} not installed, please run \'pip install requirements.txt\' inside source directory')
-    sys.exit(1)
 
 
 VERSION = pulsemeeter.__version__

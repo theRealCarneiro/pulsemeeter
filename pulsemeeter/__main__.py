@@ -25,8 +25,8 @@ def is_running():
         with open(PIDFILE, 'w') as f:
             f.write(f'{os.getpid()}\n')
 
-def arg_interpreter(argv, pulse):
-    if len(argv) <= 1:
+def arg_interpreter(argv, pulse, loglevel):
+    if len(argv) <= 1 or loglevel > 0:
         return
 
     if argv[1] == 'init':
@@ -55,12 +55,18 @@ def arg_interpreter(argv, pulse):
     sys.exit(0)
 
 def main():
-    if len(sys.argv) == 1 or sys.argv[1] == 'init':
+    loglevel = 0
+    if 'loglevel-all' in sys.argv:
+        loglevel = 2
+    if 'loglevel-error' in sys.argv:
+        loglevel = 1
+        
+    if len(sys.argv) == 1 or sys.argv[1] == 'init' or loglevel > 0:
         is_running()
-        pulse = Pulse()
+        pulse = Pulse(loglevel=loglevel)
     else:
-        pulse = Pulse('cmd')
-    arg_interpreter(sys.argv, pulse)
+        pulse = Pulse('cmd', loglevel=loglevel)
+    arg_interpreter(sys.argv, pulse, loglevel)
     while True:
         app = MainWindow(pulse)
         Gtk.main()
