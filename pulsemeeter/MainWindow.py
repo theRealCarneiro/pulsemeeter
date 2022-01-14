@@ -10,6 +10,7 @@ from .EqPopover import EqPopover
 from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
 from .AppListWidget import AppList
+from .PortSelectPopover import PortSelectPopover
 from .settings import GLADEFILE, LAYOUT_DIR
 
 from gi.repository import Gtk,Gdk,Gio,GLib
@@ -42,6 +43,7 @@ class MainWindow(Gtk.Window):
                     'sink_input_viewport',
                     'vumeter_toggle',
                     'vi_1_peak',
+                    'channel_groups',
                 ]
 
         for i in range(1, 4):
@@ -69,6 +71,9 @@ class MainWindow(Gtk.Window):
         self.vumeter_toggle = self.builder.get_object('vumeter_toggle')
         self.vumeter_toggle.set_active(self.enable_vumeters)
         self.vumeter_toggle.connect('toggled', self.toggle_vumeters)
+        self.jack_toggle_check_button = self.builder.get_object('jack_toggle')
+        self.jack_toggle_check_button.set_active(self.pulse.config['jack']['enable'])
+        self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
         self.start_hardware_comboboxes()
         self.start_inputs()
         self.start_outputs()
@@ -118,6 +123,12 @@ class MainWindow(Gtk.Window):
 
     def open_settings(self, widget):
         self.menu_popover.popup()
+
+    def toggle_jack(self, widget):
+        self.pulse.config['jack']['enable'] = widget.get_active()
+        if widget.get_active() == True:
+            pass
+            
 
     def toggle_vumeters(self, widget):
         if not shutil.which('pulse-vumeter'):
@@ -217,7 +228,7 @@ class MainWindow(Gtk.Window):
                         found = True
                         combobox.set_active(i + 1)
 
-                if found == False:
+                if found == False and self.pulse.config[device][str(j)]['jack'] == False:
                     self.pulse.config[device][str(j)]['name'] = ''
 
                 combobox.connect('changed', self.on_combo_changed, [device, str(j)], devices)
@@ -287,7 +298,10 @@ class MainWindow(Gtk.Window):
                         button = self.builder.get_object(f'{device}_{i}_{k}{j}')
                         button.set_active(self.pulse.config[device][i][k + j])
                         button.connect('toggled', self.toggle_loopback, [k, j], [device, i])
-                        button.connect('button_press_event', self.open_popover, LatencyPopover, [device, i, k + j])
+                        if self.pulse.config['jack']['enable'] == False:
+                            button.connect('button_press_event', self.open_popover, LatencyPopover, [device, i, k + j])
+                        else:
+                            button.connect('button_press_event', self.open_popover, PortSelectPopover, [device, i, k + j])
 
 
 
@@ -368,7 +382,7 @@ class MainWindow(Gtk.Window):
 
     def label_rename_entry(self, widget):
         name = widget.get_text()
-        if not ' ' in name:
+        if re.match('^[a-zA-Z0-9]*$', name):
             if self.pulse.rename(self.Label_Index, name) == True:
                 self.PopActive.set_text(name)
                 self.sink_input_box.load_application_list()

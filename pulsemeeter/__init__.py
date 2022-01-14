@@ -4,6 +4,7 @@ from .AppListWidget import AppList
 from .EqPopover import EqPopover
 from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
+from .PortSelectPopover import PortSelectPopover
 from .Pulse import Pulse
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "EqPopover",
     "RnnoisePopover",
     "LatencyPopover",
+    "PortSelectPopover",
     "Pulse",
 ]
