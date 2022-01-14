@@ -164,6 +164,7 @@
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
+			"jack": false,
 			"use_rnnoise": false,
 			"rnnoise_name": "",
 			"rnnoise_control": 95,
@@ -189,6 +190,7 @@
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
+			"jack": false,
 			"use_rnnoise": false,
 			"rnnoise_name": "",
 			"rnnoise_control": 95,
@@ -214,13 +216,18 @@
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
+			"jack": false,
 			"use_rnnoise": false,
 			"rnnoise_name": "",
 			"rnnoise_control": 95,
 			"rnnoise_latency": 200
 		}
 	},
+	"jack": {
+		"enable": false,
+		"output_groups": {
+		}
+	},
 	"enable_vumeters": true,
-	"layout":"tabbed",
-	"use_jack": false
+	"layout":"default"
 }
