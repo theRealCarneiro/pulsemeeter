@@ -512,10 +512,10 @@ get_source_output_volume(){
 	printf "%d" $output 
 }
 
-#if ! pactl info >/dev/null 2>&1; then
-	#echo "ERROR PULSEAUDIO NOT RUNNING" >&2 
-	#exit 1
-#fi
+if ! pactl info >/dev/null 2>&1; then
+	echo "ERROR PULSEAUDIO NOT RUNNING" >&2 
+	exit 1
+fi
 
 case $1 in
 	"init")
