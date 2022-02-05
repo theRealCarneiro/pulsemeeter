@@ -11,6 +11,7 @@ from .RnnoisePopover import RnnoisePopover
 from .LatencyPopover import LatencyPopover
 from .AppListWidget import AppList
 from .PortSelectPopover import PortSelectPopover
+from .JackGroupsPopover import JackGroupsPopover
 from .settings import GLADEFILE, LAYOUT_DIR
 
 from gi.repository import Gtk,Gdk,Gio,GLib
@@ -35,6 +36,7 @@ class MainWindow(Gtk.Window):
                     'rnnoise_popover',
                     'rnnoise_latency_adjust',
                     'rnnoise_threshold_adjust',
+                    'jack_group_popover',
                     'sink_input_list',
                     'source_output_list',
                     'sink_input_scroll',
@@ -73,7 +75,17 @@ class MainWindow(Gtk.Window):
         self.vumeter_toggle.connect('toggled', self.toggle_vumeters)
         self.jack_toggle_check_button = self.builder.get_object('jack_toggle')
         self.jack_toggle_check_button.set_active(self.pulse.config['jack']['enable'])
+        self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
         self.jack_toggle_check_button.set_sensitive(False)
+
+
+        self.test = self.builder.get_object('test')
+        self.test.connect('pressed', self.open_group_popover)
+        self.jack_group_popover = self.builder.get_object('jack_group_popover')
+        self.jack_group_popover.set_relative_to(self.test)
+
+
+
         # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
         self.start_hardware_comboboxes()
         self.start_inputs()
@@ -127,8 +139,11 @@ class MainWindow(Gtk.Window):
 
     def toggle_jack(self, widget):
         self.pulse.config['jack']['enable'] = widget.get_active()
-        if widget.get_active() == True:
-            pass
+        for i in ['vi', 'hi']:
+            for j in self.pulse.config[i]:
+                self.pulse.config[i][j]['jack'] = widget.get_active()
+        # if widget.get_active() == True:
+            # pass
             
 
     def toggle_vumeters(self, widget):
@@ -207,6 +222,7 @@ class MainWindow(Gtk.Window):
         self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
 
     def start_hardware_comboboxes(self):
+        # device_list = {'a': self.pulse.get_hardware_devices('sinks'), 'hi': self.pulse.get_hardware_devices('sources')}
         self.sink_list = self.pulse.get_hardware_devices('sinks')
         self.source_list = self.pulse.get_hardware_devices('sources')
         for device in ['hi', 'a']:
@@ -279,7 +295,7 @@ class MainWindow(Gtk.Window):
 
                 dev_type = virtual_inputs if device == 'vi' else hardware_inputs
                 for dev in dev_type:
-                    if dev['name'] == self.pulse.config[device][i]['name']:
+                    if dev['name'] == self.pulse.config[device][i]['name'] and 'volume' in dev:
                         self.pulse.config[device][i]['vol'] = dev['volume']
 
                 vol = self.builder.get_object(f'{device}_{i}_adjust')
@@ -323,7 +339,7 @@ class MainWindow(Gtk.Window):
             for j in ['a', 'b']:
                 dev_list = hardware_outputs if j == 'a' else virtual_outputs
                 for dev in dev_list:
-                    if dev['name'] == self.pulse.config[j][i]['name']:
+                    if dev['name'] == self.pulse.config[j][i]['name'] and 'volume' in dev:
                         self.pulse.config[j][i]['vol'] = dev['volume']
 
                 master = self.builder.get_object(f'{j}_{i}_adjust')
@@ -376,6 +392,9 @@ class MainWindow(Gtk.Window):
         if type(index) == int or self.pulse.config[index[0]][index[1]]['name'] != '':
             self.pulse.volume(index, val, stream_type)
 
+    def open_group_popover(self, widget):
+        JackGroupsPopover(widget, self.pulse)
+
     def open_popover(self, button, event, popover, index):
         if event.button == 3:
             if self.pulse.config[index[0]][index[1]]['name'] != '':
@@ -420,6 +439,10 @@ class MainWindow(Gtk.Window):
             else:
                 self.pulse.start_sink(index[1])
             self.restart_vumeter(index)
+            if re.search('JACK:', device[model - 1]['description']):
+                self.pulse.config[index[0]][index[1]]['jack'] = True
+            else:
+                self.pulse.config[index[0]][index[1]]['jack'] = False
 
         # if its an empty name
         else:

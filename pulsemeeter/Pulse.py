@@ -26,7 +26,7 @@ class Pulse:
         command += self.start_sources()
         command += self.start_eqs()
         command += self.start_rnnoise()
-        command += self.start_conections()
+        command += self.start_connections()
         command += self.start_primarys()
         # command = command + self.start_mute()
         
@@ -44,7 +44,7 @@ class Pulse:
     def get_correct_device(self, index, conn_type):
         if index[0] == 'vi':
             name = self.config[index[0]][index[1]]['name']
-            if conn_type == "source" and self.config['jack']['enable'] == False:
+            if conn_type == "source":
                 return name + ".monitor"
             else:
                 return name
@@ -136,20 +136,15 @@ class Pulse:
                 command = command + self.rnnoise( source_index, sink_name, "connect", 'init')
         return command
 
-    def start_conections(self):
+    def start_connections(self):
         command = ''
         for i in ['vi', 'hi']:
-            for j in ['1', '2', '3']:
-                source = self.get_correct_device( [i, j], 'source')
-
+            for j in self.config[i]:
                 for sink_num in ['a1', 'a2', 'a3', 'b1', 'b2', 'b3']:
-                    sink_list = list(sink_num)
-
-                    sink = self.get_correct_device( [sink_list[0], sink_list[1]], 'sink') 
-
-                    if self.config[i][j][sink_num] == True and self.config[i][j]['name'] != '' and  self.config[sink_list[0]][sink_list[1]]['name'] != '':
-                        latency = self.config[i][j][sink_num + "_latency"]
-                        command = command +  f"pmctl connect {source} {sink} {latency}\n"
+                    sink_index = list(sink_num)
+                    source_index = [i, j]
+                    if self.config[i][j][sink_num] == True:
+                        command += self.connect('connect', source_index, sink_index, init='init')
         return command
 
     def start_primarys(self):
@@ -197,7 +192,7 @@ class Pulse:
     def start_sink(self, number):
 
         command = ''
-        if self.config['a'][number]['use_eq'] == True:
+        if self.config['a'][number]['use_eq'] == True and self.config['a'][number]['jack'] == False:
             name = f'a{number}_eq'
             master = self.config['a'][number]['name']
             control = self.config['a'][number]['eq_control']
@@ -206,10 +201,14 @@ class Pulse:
         for i in ['hi', 'vi']:
             for j in ['1', '2', '3']:
                 if self.config[i][j][f'a{number}'] == True:
-                    vi = self.get_correct_device([i, j], 'source')
-                    master = self.get_correct_device(['a', number], 'sink')
-                    command += f'pmctl connect {vi} {master}\n'
+                    command += self.connect('connect', [i, j], ['a', number], init='init')
+                # else:
+                    # print(i, j)
+                    # vi = self.get_correct_device([i, j], 'source')
+                    # master = self.get_correct_device(['a', number], 'sink')
+                    # command += f'pmctl connect {vi} {master}\n'
 
+        print(command)
         os.popen(command)
 
     # def remove_source(self):
@@ -231,20 +230,17 @@ class Pulse:
         # os.popen(command)
 
     def disable_sink(self, number):
-
         command = ''
-        if self.config['a'][number]['use_eq'] == True:
+        if self.config['a'][number]['use_eq'] == True and self.config['a'][number]['jack'] == False:
             name = f'a{number}_eq'
             master = self.config['a'][number]['name']
             control = self.config['a'][number]['eq_control']
             command += f'pmctl eq remove {name} {master} {control}\n'
 
         for i in ['hi', 'vi']:
-            for j in ['1', '2', '3']:
+            for j in self.config[i]:
                 if self.config[i][j][f'a{number}'] == True:
-                    vi = self.get_correct_device([i, j], 'source')
-                    master = self.get_correct_device(['a', number], 'sink')
-                    command += f'pmctl disconnect {vi} {master}\n'
+                    command += self.connect('disconnect', [i, j], ['a', number], init='disconnect_init')
 
         if self.loglevel > 1:
             print(command)
@@ -253,7 +249,7 @@ class Pulse:
     def start_source(self, number):
 
         command = ''
-        if self.config['hi'][number]['use_rnnoise'] == True:
+        if self.config['hi'][number]['use_rnnoise'] == True and self.config['hi'][number]['jack'] == False:
             sink_name = f'hi{number}_rnnoise'
 
             source = self.config['hi'][number]['name']
@@ -262,11 +258,12 @@ class Pulse:
             command += f'pmctl rnnoise {sink_name} {source} {control} connect {latency}\n'
 
         for i in ['a', 'b']:
-            for j in ['1', '2', '3']:
+            for j in self.config[i]:
                 if self.config['hi'][number][f'{i}{j}'] == True:
-                    vi = self.get_correct_device(['hi', number], 'source')
-                    master = self.get_correct_device([i, j], 'sink')
-                    command += f'pmctl connect {vi} {master}\n'
+                    command += self.connect('connect', ['hi', number], [i, j], init='init')
+                    # vi = self.get_correct_device(['hi', number], 'source')
+                    # master = self.get_correct_device([i, j], 'sink')
+                    # command += f'pmctl connect {vi} {master}\n'
 
         os.popen(command)
 
@@ -308,40 +305,81 @@ class Pulse:
         source_config = self.config[source_index[0]][source_index[1]]
         sink_config = self.config[sink_index[0]][sink_index[1]]
 
-        if init != 'disconnect':
+        conn_status = source_config[sink_index[0] + sink_index[1]]
+        if init == None and ((conn_status == True and state == 'connect' )
+                or conn_status == False and state == 'disconnect'):
+            return False
+
+        if init != 'disconnect' and init != 'disconnect_init':
             source_config[sink_index[0] + sink_index[1]] = True if state == "connect" else False
         source = self.get_correct_device(source_index, 'source')
         sink = self.get_correct_device(sink_index, 'sink')
-        if source == '' or sink == '' and sink_config['jack'] == False:
+        if (source == '' and source_config['jack'] == False) or (sink == '' and sink_config['jack'] == False):
+            print(source, source_config['jack'], sink, sink_config['jack'])
             return ''
 
         # jack stuff
         jack_config = self.config['jack']
-        if jack_config['enable'] == True:
-            channel_group = jack_config['output_groups'][sink_config['name']]
+        if jack_config['enable'] == True and \
+                ((sink_config['jack'] == True and sink_index[0] == 'a') or \
+                (source_config['jack'] == True and source_index[0] == 'hi') or \
+                (source_index[0] == 'vi' and sink_index[0] == 'b')):
+            dev_name = sink_config['name']
+            if dev_name == '': return ''
+            
             jack_map = f'{sink_index[0]}{sink_index[1]}_jack_map'
             port_group = f'{sink_index[0]}{sink_index[1]}_port_group'
             command = ''
+            source = source_config['name']
             if source_config[port_group] == False:
                 for channel in source_config[jack_map]:
                     for system_chan in source_config[jack_map][channel]:
-                        command += f"pmctl jack-{state} {source} {channel} {system_chan}\n"
+                        if sink_index[0] == 'a':
+                            system_chan = f'playback_{system_chan}'
+                            sink = 'system'
+                        if source_index[0] == 'hi':
+                            channel = f'capture_{channel}'
+                            source = 'system'
+                        if sink_index[0] == 'b':
+                            sink = sink_config['name']
+                        command += f"pmctl jack-{state} {source} {channel} {sink} {system_chan}\n"
+                        # command += f"jack-{state} {source} {channel} {system_chan}\n"
             else:
-                source_channels = source_config['channel_map']
+                if source_config['jack'] == False or source_index[0] == 'vi':
+                    source_channels = source_config['channel_map']
+                    len_source_channels = source_config['channels']
+                else:
+                    source_channels = jack_config['input_groups'][source_config['name']]
+                    len_source_channels = len(source_channels)
+                if sink_index[0] == 'a':
+                    channel_group = jack_config['output_groups'][dev_name]
+                else:
+                    channel_group = sink_config['channel_map']
                 len_sink_channels = len(channel_group)
-                len_source_channels = source_config['channels']
                 min_len = min(len_sink_channels, len_source_channels)
                 if len(source_channels) == 0:
                     source_channels = self.channels[:len_source_channels]
                 for channel_num in range(min_len):
-                    command += f"pmctl jack-{state} {source} {source_channels[channel_num]} {channel_group[channel_num]}\n"
+                    channel = source_channels[channel_num]
+                    sink_channel = channel_group[channel_num]
+                    if source_index[0] == 'hi':
+                        channel = f'capture_{channel}'
+                        source = 'system'
+                    if sink_index[0] == 'a':
+                        sink = 'system'
+                        sink_channel = f'playback_{sink_channel}'
+
+                    if sink_index[0] == 'b':
+                        sink = sink_config['name']
+
+                    command += f"pmctl jack-{state} {source} {channel} {sink} {sink_channel}\n"
 
         else:
             latency = self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1] + "_latency"]
             command = f"pmctl {state} {source} {sink} {latency}\n"
         if self.loglevel > 1:
             print(command)
-        if init != 'init':
+        if init != 'init' and init != 'disconnect_init':
             os.popen(command)
         return command
 
@@ -358,6 +396,12 @@ class Pulse:
         return int(cmd(command))
 
     def volume(self, index, val, stream_type=None):
+        if type(val) == str:
+            if re.match('[1-9]', val):
+                val = int(val)
+            else:
+                val = self.config[index[0]][index[1]]['vol'] + int(val)
+
         if stream_type == None:
             self.config[index[0]][index[1]]['vol'] = val
             name = self.config[index[0]][index[1]]['name']
@@ -425,6 +469,11 @@ class Pulse:
                     devices_concat.append(jason)
                 except:
                     print(f'ERROR: invalid json {i}')
+        if self.config['jack']['enable'] == True:
+            group_type = 'input_groups' if kind == 'sources' else 'output_groups'
+            for group in self.config['jack'][group_type]:
+                channels = self.config['jack'][group_type][group]
+                devices_concat.append({'name': group, 'description': f'JACK:{group}{channels}'})
 
         if kind == 'sources':
             self.source_list = devices_concat
