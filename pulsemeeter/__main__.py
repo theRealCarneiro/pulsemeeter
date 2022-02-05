@@ -67,7 +67,12 @@ def main():
     if sys.argv[1] == 'server':
         Server(pulse)
     else:
-        Client()
+        c = Client()
+        while True:
+            command = input()
+            c.send_command(command)
+            if len(command) == 0: break
+        # Client('connect vi 1 a 1')
 
     # if len(sys.argv) == 1 or sys.argv[1] == 'init' or loglevel > 0:
         # is_running()

@@ -1,6 +1,7 @@
 import socket 
 import sys
 import os
+from queue import Queue
 from .settings import SOCK_FILE
 
 class Server:
@@ -107,26 +108,19 @@ class Client:
             sys.exit(1)   
             if is_listen == True: self.listen()
 
-        if command != None:
-            self.send_command(command)
-
-        # while True:
-            # self.send_command()
+        # if command != None:
+            # self.send_command(command)
         
 
-    def send_command(self, command=None):
+    def send_command(self, command):
         try:
-            tmp = input()
-            if len(tmp) == 0 or tmp == 'exit':
-                raise
-
-            message = str.encode(tmp)
+            if len(command) == 0: raise
+            message = str.encode(command)
             self.sock.sendall(message)
             # print(self.sock.recv(20))
         except:
             print('closing socket')
             self.sock.close()
-            break
 
     def listen(self):
         while True:
@@ -136,3 +130,7 @@ class Client:
                 print('closing socket')
                 self.sock.close()
                 break
+
+    def close_connection(self):
+        print('closing socket')
+        self.sock.close()
