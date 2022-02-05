@@ -1,6 +1,7 @@
 import socket 
 import sys
 import os
+import threading
 from queue import Queue
 from .settings import SOCK_FILE
 
@@ -17,6 +18,7 @@ class Server:
 
         # list of clients
         self.client_list = []
+        self.client_command_thread_list = []
 
         # delete socket file if exists
         try:
@@ -27,35 +29,43 @@ class Server:
 
         self.sock.bind(SOCK_FILE)
         self.sock.listen(1)
-        self.listen()
+        self.querry_clients()
 
-    def listen(self):
+
+    # this function handles the connection requests
+    def querry_clients(self): 
+
+        # loop to get new connections
         while True:
-
             # Wait for a connection
             print('waiting for a connection')
             connection, client_address = self.sock.accept()
-            # self.client_list.append
-
             print('client connected ', client_address)
-            pid = os.fork()
-            if not pid:
-                while True:
-                    try:
-                        data = connection.recv(20)
-                        if not data: raise
+            
+            # create a thread for that client and store
+            thread = threading.Thread(target=self.listen_to_client, args=(connection,))
+            thread.start()
+            # self.client_command_thread_list.append(thread)
 
-                        print(data.decode())
-                        ret_message = self.handle_command(data)
-                        connection.sendall(ret_message)
-                        if ret_message == False:
-                            print('deu ruim')
-                            raise
-                    except:
-                        print('client disconnect')
-                        connection.close()
-                        break
+    # get data stream and pass it into command handling function
+    def listen_to_client(self, connection):
+        while True:
+            try:
+                data = connection.recv(20)
+                if not data: raise
 
+                print(data.decode())
+                ret_message = self.handle_command(data)
+                connection.sendall(ret_message)
+                if ret_message == False:
+                    raise
+            except:
+                print('client disconnect')
+                connection.close()
+                break
+
+
+    # needs rework
     def handle_command(self, data):
 
         decoded_data = data.decode()
@@ -107,10 +117,6 @@ class Client:
             print(msg)
             sys.exit(1)   
             if is_listen == True: self.listen()
-
-        # if command != None:
-            # self.send_command(command)
-        
 
     def send_command(self, command):
         try:
