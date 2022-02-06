@@ -304,6 +304,7 @@ class Pulse:
     def connect(self, state, source_index, sink_index, init=None):
         source_config = self.config[source_index[0]][source_index[1]]
         sink_config = self.config[sink_index[0]][sink_index[1]]
+        jack_config = self.config['jack']
 
         conn_status = source_config[sink_index[0] + sink_index[1]]
         if init == None and ((conn_status == True and state == 'connect' )
@@ -314,74 +315,77 @@ class Pulse:
             source_config[sink_index[0] + sink_index[1]] = True if state == "connect" else False
         source = self.get_correct_device(source_index, 'source')
         sink = self.get_correct_device(sink_index, 'sink')
-        if (source == '' and source_config['jack'] == False) or (sink == '' and sink_config['jack'] == False):
-            print(source, source_config['jack'], sink, sink_config['jack'])
+        if ((source == '' and source_config['jack'] == False) 
+                or (sink == '' and sink_config['jack'] == False)):
             return ''
-
-        # jack stuff
-        jack_config = self.config['jack']
         if jack_config['enable'] == True and \
                 ((sink_config['jack'] == True and sink_index[0] == 'a') or \
                 (source_config['jack'] == True and source_index[0] == 'hi') or \
                 (source_index[0] == 'vi' and sink_index[0] == 'b')):
-            dev_name = sink_config['name']
-            if dev_name == '': return ''
-            
-            jack_map = f'{sink_index[0]}{sink_index[1]}_jack_map'
-            port_group = f'{sink_index[0]}{sink_index[1]}_port_group'
-            command = ''
-            source = source_config['name']
-            if source_config[port_group] == False:
-                for channel in source_config[jack_map]:
-                    for system_chan in source_config[jack_map][channel]:
-                        if sink_index[0] == 'a':
-                            system_chan = f'playback_{system_chan}'
-                            sink = 'system'
-                        if source_index[0] == 'hi':
-                            channel = f'capture_{channel}'
-                            source = 'system'
-                        if sink_index[0] == 'b':
-                            sink = sink_config['name']
-                        command += f"pmctl jack-{state} {source} {channel} {sink} {system_chan}\n"
-                        # command += f"jack-{state} {source} {channel} {system_chan}\n"
-            else:
-                if source_config['jack'] == False or source_index[0] == 'vi':
-                    source_channels = source_config['channel_map']
-                    len_source_channels = source_config['channels']
-                else:
-                    source_channels = jack_config['input_groups'][source_config['name']]
-                    len_source_channels = len(source_channels)
-                if sink_index[0] == 'a':
-                    channel_group = jack_config['output_groups'][dev_name]
-                else:
-                    channel_group = sink_config['channel_map']
-                len_sink_channels = len(channel_group)
-                min_len = min(len_sink_channels, len_source_channels)
-                if len(source_channels) == 0:
-                    source_channels = self.channels[:len_source_channels]
-                for channel_num in range(min_len):
-                    channel = source_channels[channel_num]
-                    sink_channel = channel_group[channel_num]
-                    if source_index[0] == 'hi':
-                        channel = f'capture_{channel}'
-                        source = 'system'
-                    if sink_index[0] == 'a':
-                        sink = 'system'
-                        sink_channel = f'playback_{sink_channel}'
+                    self.connect_jack(state, source_index, sink_index)
 
-                    if sink_index[0] == 'b':
-                        sink = sink_config['name']
-
-                    command += f"pmctl jack-{state} {source} {channel} {sink} {sink_channel}\n"
-
-        else:
-            latency = self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1] + "_latency"]
-            command = f"pmctl {state} {source} {sink} {latency}\n"
+        latency = self.config[source_index[0]][source_index[1]][sink_index[0] + sink_index[1] + "_latency"]
+        command = f"pmctl {state} {source} {sink} {latency}\n"
         if self.loglevel > 1:
             print(command)
         if init != 'init' and init != 'disconnect_init':
             os.popen(command)
         return command
+
+    def connect_jack(self, state, source_index, sink_index):
+        source_config = self.config[source_index[0]][source_index[1]]
+        sink_config = self.config[sink_index[0]][sink_index[1]]
+        jack_config = self.config['jack']
+
+        dev_name = sink_config['name']
+        if dev_name == '': return ''
+        
+        jack_map = f'{sink_index[0]}{sink_index[1]}_jack_map'
+        port_group = f'{sink_index[0]}{sink_index[1]}_port_group'
+        command = ''
+        source = source_config['name']
+        if source_config[port_group] == False:
+            for channel in source_config[jack_map]:
+                for system_chan in source_config[jack_map][channel]:
+                    if sink_index[0] == 'a':
+                        system_chan = f'playback_{system_chan}'
+                        sink = 'system'
+                    if source_index[0] == 'hi':
+                        channel = f'capture_{channel}'
+                        source = 'system'
+                    if sink_index[0] == 'b':
+                        sink = sink_config['name']
+                    command += f"pmctl jack-{state} {source} {channel} {sink} {system_chan}\n"
+                    # command += f"jack-{state} {source} {channel} {system_chan}\n"
+        else:
+            if source_config['jack'] == False or source_index[0] == 'vi':
+                source_channels = source_config['channel_map']
+                len_source_channels = source_config['channels']
+            else:
+                source_channels = jack_config['input_groups'][source_config['name']]
+                len_source_channels = len(source_channels)
+            if sink_index[0] == 'a':
+                channel_group = jack_config['output_groups'][dev_name]
+            else:
+                channel_group = sink_config['channel_map']
+            len_sink_channels = len(channel_group)
+            min_len = min(len_sink_channels, len_source_channels)
+            if len(source_channels) == 0:
+                source_channels = self.channels[:len_source_channels]
+            for channel_num in range(min_len):
+                channel = source_channels[channel_num]
+                sink_channel = channel_group[channel_num]
+                if source_index[0] == 'hi':
+                    channel = f'capture_{channel}'
+                    source = 'system'
+                if sink_index[0] == 'a':
+                    sink = 'system'
+                    sink_channel = f'playback_{sink_channel}'
+
+                if sink_index[0] == 'b':
+                    sink = sink_config['name']
+
+                command += f"pmctl jack-{state} {source} {channel} {sink} {sink_channel}\n"
 
     def get_app_stream_volume(self, id, stream_type):
         command = f'pmctl get-{stream_type}-volume {id}'
