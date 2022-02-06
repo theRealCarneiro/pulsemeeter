@@ -7,6 +7,8 @@ from queue import SimpleQueue
 from .settings import SOCK_FILE
 
 
+LISTENER_TIMEOUT = 5
+
 class Server:
     def __init__(self, audio_server):
 
@@ -66,6 +68,7 @@ class Server:
         # And maybe wait a bit for that to happen
 
         # Close connections and join threads
+        print('closing client handler threads...')
         for conn in self.client_handler_connections.values():
             conn.shutdown()
 
@@ -75,6 +78,7 @@ class Server:
             thread.join()
 
         # Set the exit flag and wait for the listener thread to timeout
+        print(f'sending exit signal to listener thread, it should exit within {LISTENER_TIMEOUT} seconds...')
         self.exit_flag = True
         self.listener_thread.join()
 
@@ -93,7 +97,7 @@ class Server:
     def query_clients(self):
         # loop to get new connections
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-            s.settimeout(5)
+            s.settimeout(LISTENER_TIMEOUT)
             s.bind(SOCK_FILE)
             s.listen()
             i = 0
@@ -111,6 +115,10 @@ class Server:
                     self.client_handler_threads[i] = thread
                     self.client_handler_connections[i] = conn
                     self.event_queues[i] = event_queue
+
+                    # Check for an exit flag
+                    if self.exit_flag:
+                        break
                 except socket.timeout:
                     if self.exit_flag:
                         break
