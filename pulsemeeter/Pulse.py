@@ -402,6 +402,9 @@ class Pulse:
             else:
                 val = self.config[index[0]][index[1]]['vol'] + int(val)
 
+        if val > 153:
+            val = 153
+
         if stream_type == None:
             self.config[index[0]][index[1]]['vol'] = val
             name = self.config[index[0]][index[1]]['name']
