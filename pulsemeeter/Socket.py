@@ -46,44 +46,46 @@ class Server:
         signal.signal(signal.SIGINT, self.handle_exit_signal)
         signal.signal(signal.SIGTERM, self.handle_exit_signal)
 
-        # Listen for commands
-        while True:
-            message = self.command_queue.get()
-            # if the message is None, exit. Otherwise, pass it to handle_command().
-            # The string matching could probably be replaced with an enum if it's too slow
-            if message[0] == 'exit':
-                break
-            elif message[0] == 'client_handler_exit':
-                if message[1] in self.event_queues:
-                    del self.event_queues[message[1]]
-                del self.client_handler_connections[message[1]]
-                self.client_handler_threads.pop(message[1]).join()
-            elif message[0] == 'command':
-                # TODO: as mentioned in handle_command(), it probably needs a rework. This is for boilerplate.
-                ret_message = self.handle_command(message)
-                self.event_queues[message[1]].put(('return', ret_message))
+        # Make sure that even in the event of an error, cleanup still happens
+        try:
+            # Listen for commands
+            while True:
+                message = self.command_queue.get()
+                # if the message is None, exit. Otherwise, pass it to handle_command().
+                # The string matching could probably be replaced with an enum if it's too slow
+                if message[0] == 'exit':
+                    break
+                elif message[0] == 'client_handler_exit':
+                    if message[1] in self.event_queues:
+                        del self.event_queues[message[1]]
+                    del self.client_handler_connections[message[1]]
+                    self.client_handler_threads.pop(message[1]).join()
+                elif message[0] == 'command':
+                    # TODO: as mentioned in handle_command(), it probably needs a rework. This is for boilerplate.
+                    ret_message = self.handle_command(message[2])
+                    self.event_queues[message[1]].put(('return', ret_message))
 
-        # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
-        # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
-        # And maybe wait a bit for that to happen
+            # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
+            # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
+            # And maybe wait a bit for that to happen
 
-        # Close connections and join threads
-        print('closing client handler threads...')
-        for conn in self.client_handler_connections.values():
-            conn.shutdown(socket.SHUT_RDWR)
+            # Close connections and join threads
+            print('closing client handler threads...')
+            for conn in self.client_handler_connections.values():
+                conn.shutdown(socket.SHUT_RDWR)
 
-        # Not sure if joining the client handler threads is actually necessary since we're stopping anyway and the
-        # client handler threads are in daemon mode
-        for thread in self.client_handler_threads.values():
-            thread.join()
+            # Not sure if joining the client handler threads is actually necessary since we're stopping anyway and the
+            # client handler threads are in daemon mode
+            for thread in self.client_handler_threads.values():
+                thread.join()
+        finally:
+            # Set the exit flag and wait for the listener thread to timeout
+            print(f'sending exit signal to listener thread, it should exit within {LISTENER_TIMEOUT} seconds...')
+            self.exit_flag = True
+            self.listener_thread.join()
 
-        # Set the exit flag and wait for the listener thread to timeout
-        print(f'sending exit signal to listener thread, it should exit within {LISTENER_TIMEOUT} seconds...')
-        self.exit_flag = True
-        self.listener_thread.join()
-
-        # Call any code to clean up virtual devices or similar
-        self.close_server()
+            # Call any code to clean up virtual devices or similar
+            self.close_server()
 
     # function to register as a signal handler to gracefully exit
     def handle_exit_signal(self, signum, frame):
@@ -100,7 +102,7 @@ class Server:
             s.settimeout(LISTENER_TIMEOUT)
             s.bind(SOCK_FILE)
             s.listen()
-            i = 0
+            id = 0
             while True:
                 try:
                     # Wait for a connection
@@ -110,11 +112,12 @@ class Server:
 
                     # Create a thread for the client
                     event_queue = SimpleQueue()
-                    thread = threading.Thread(target=self.listen_to_client, args=(conn, event_queue, i), daemon=True)
+                    thread = threading.Thread(target=self.listen_to_client, args=(conn, event_queue, id), daemon=True)
                     thread.start()
-                    self.client_handler_threads[i] = thread
-                    self.client_handler_connections[i] = conn
-                    self.event_queues[i] = event_queue
+                    self.client_handler_threads[id] = thread
+                    self.client_handler_connections[id] = conn
+                    self.event_queues[id] = event_queue
+                    id += 1
 
                     # Check for an exit flag
                     if self.exit_flag:
@@ -134,7 +137,7 @@ class Server:
                     if not data: raise
 
                     print(data.decode())
-                    self.command_queue.put(('command', data))
+                    self.command_queue.put(('command', id, data))
                     # TODO: If this handler is being used for sending events to clients, distinguish a return value from
                     # TODO: an event
                     ret_message = event_queue.get()
