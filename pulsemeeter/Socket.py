@@ -70,11 +70,11 @@ class Server:
         # Close connections and join threads
         print('closing client handler threads...')
         for conn in self.client_handler_connections.values():
-            conn.shutdown()
+            conn.shutdown(socket.SHUT_RDWR)
 
         # Not sure if joining the client handler threads is actually necessary since we're stopping anyway and the
         # client handler threads are in daemon mode
-        for thread in self.client_handler_threads:
+        for thread in self.client_handler_threads.values():
             thread.join()
 
         # Set the exit flag and wait for the listener thread to timeout
@@ -173,7 +173,7 @@ class Server:
             if self.audio_server.connect('disconnect', source_index, sink_index):
                 return str.encode(f'{cmd_list[1]}{cmd_list[2]}:{cmd_list[3]}{cmd_list[4]}:False')
 
-        # vol [vi|hi|a|b] [1-3] 
+        # vol [vi|hi|a|b] [1-3]
         if cmd_list[0] == 'vol':
             device_index = [cmd_list[1], cmd_list[2]]
             volume = cmd_list[3]
