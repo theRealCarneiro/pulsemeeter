@@ -332,7 +332,7 @@ class Pulse:
             os.popen(command)
         return command
 
-    def connect_jack(self, state, source_index, sink_index):
+    def connect_jack(self, state, source_index, sink_index, init=None):
         source_config = self.config[source_index[0]][source_index[1]]
         sink_config = self.config[sink_index[0]][sink_index[1]]
         jack_config = self.config['jack']
@@ -386,6 +386,11 @@ class Pulse:
                     sink = sink_config['name']
 
                 command += f"pmctl jack-{state} {source} {channel} {sink} {sink_channel}\n"
+        if self.loglevel > 1:
+            print(command)
+        if init != 'init' and init != 'disconnect_init':
+            os.popen(command)
+        return command
 
     def get_app_stream_volume(self, id, stream_type):
         command = f'pmctl get-{stream_type}-volume {id}'
