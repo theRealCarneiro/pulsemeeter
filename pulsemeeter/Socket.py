@@ -274,7 +274,6 @@ class Client:
             if command_len == 0 or command == 'exit': raise
 
             msg_len = str(command_len).rjust(4, '0')
-            print(msg_len)
             self.sock.sendall(str.encode(msg_len))
 
             message = str.encode(command)
