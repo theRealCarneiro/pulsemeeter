@@ -109,7 +109,7 @@ class Server:
 
     def create_command_dict(self):
         ## None means that is an optional argument
-        ## STATE == [connnect|disconnect]
+        ## STATE == [ [connect|true|on|1] | [disconnect|false|off|0] ]
         self.commands = {
             # ARGS: [hi|vi] id, [a|b] id [None|STATE]
             # None = toggle
@@ -184,10 +184,11 @@ class Server:
             while True:
                 try:
                     # Wait for a connection
-                    print('waiting for a connection')
                     conn, addr = s.accept()
                     print('client connected ', addr)
-                    conn.sendall(str.encode(str(id)))
+
+                    # send id to client
+                    conn.sendall(str.encode(str(id).rjust(4, '0')))
 
                     # Create a thread for the client
                     event_queue = SimpleQueue()
@@ -212,7 +213,13 @@ class Server:
                 try:
                     # TODO: rework to include the length as the first 4 bytes. Get the daemon working first though, then
                     # TODO: work on compatibility.
-                    data = conn.recv(20)
+                    len = conn.recv(4)
+                    if not len:
+                        print(len)
+                        raise
+                    len = int(len.decode())
+
+                    data = conn.recv(len)
                     if not data: raise
 
                     # print(data.decode())
@@ -224,14 +231,13 @@ class Server:
                     # conn.sendall(str.encode(event))
                     # if ret_message == False:
                         # raise
-                except Exception:  # Exception doesn't catch exit exceptions (a bare except clause does)
-                    print('client disconnect')
+                except Exception as ex:  # Exception doesn't catch exit exceptions (a bare except clause does)
+                    print('client disconnect', ex)
                     conn.shutdown(socket.SHUT_RDWR)
                     # Notify the main process that this client handler is closing, so it can free its resources
                     self.command_queue.put(('client_handler_exit', id))
                     break
 
-    # needs rework
     def handle_command(self, data):
         decoded_data = data.decode()
         args = tuple(decoded_data.split(' '))
@@ -257,14 +263,20 @@ class Client:
         # connect to server
         try:
             self.sock.connect(SOCK_FILE)
-            self.id = self.sock.recv(2)
+            self.id = int(self.sock.recv(4))
         except socket.error as msg:
             print(msg)
             sys.exit(1)
 
     def send_command(self, command):
         try:
-            if len(command) == 0: raise
+            command_len = len(command)
+            if command_len == 0 or command == 'exit': raise
+
+            msg_len = str(command_len).rjust(4, '0')
+            print(msg_len)
+            self.sock.sendall(str.encode(msg_len))
+
             message = str.encode(command)
             self.sock.sendall(message)
         except:
@@ -277,21 +289,21 @@ class Client:
                 
                 # get the id of the client that sent the message
                 sender_id = self.sock.recv(4)
-                if len(sender_id) == 0: raise
+                if not sender_id: raise
                 sender_id = int(sender_id.decode())
 
                 # length of the message
                 msg_len = self.sock.recv(4)
-                if len(msg_len) == 0: raise
+                if not msg_len: raise
                 msg_len = int(msg_len.decode())
                 
                 # get event
                 event = self.sock.recv(msg_len)
-                if len(event) == 0: raise
+                if not event: raise
 
                 # only yield it if not blacklisted
                 if sender_id != blacklist_id:
-                    print(event)
+                    yield event
 
             except Exception:
                 print('closing socket')

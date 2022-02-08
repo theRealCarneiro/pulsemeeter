@@ -173,7 +173,7 @@ class Pulse:
                 if self.config[sink_type][sink_num]['use_eq'] == True:
 
                     # create eq sink
-                    command += self.eq(sink_type, sink_num, status='connect', 
+                    command += self.eq(sink_type, sink_num, status=True, 
                             reconnect=False, change_config=False, run_command=False)
 
         return command
@@ -188,7 +188,7 @@ class Pulse:
             if self.config[source_type][source_num]['use_rnnoise'] == True:
 
                 # create rnnoise sink
-                command += self.rnnoise(source_num, status='connect', 
+                command += self.rnnoise(source_num, status=True, 
                         reconnect=False, change_config=False, run_command=False)
         return command
 
@@ -205,7 +205,7 @@ class Pulse:
                     # if devices should be connected
                     if self.config[source_type][source_num][sink] == True:
                         command += self.connect(source_type, source_num, sink_type, sink_num,
-                                status='connect', run_command=False, init=True)
+                                status=True, run_command=False, init=True)
         return command
 
     # set all primary devices
@@ -237,13 +237,17 @@ class Pulse:
 
         # status = None -> toggle state
         if status == None:
-            status = 'disconnect' if source_config['use_rnnoise'] else 'connect'
+            status = not source_config['use_rnnoise']
+        else:
+            status = str2bool(status)
+
+        conn_status = 'connect' if status else 'disconnect'
 
         # create ladspa sink
-        command = f'pmctl rnnoise {ladspa_sink} {source} {control} {status} {latency}\n'
+        command = f'pmctl rnnoise {ladspa_sink} {source} {control} {conn_status} {latency}\n'
 
         if change_config: 
-            source_config['use_rnnoise'] = True if status == 'connect' else False
+            source_config['use_rnnoise'] = status
 
         # recreates all loopbacks from the device
         if reconnect:
@@ -259,7 +263,7 @@ class Pulse:
                         latency = source_config[sink + '_latency']
                         
                         # disconnect source from sinks, then connect ladspa sink to sinks
-                        if status == 'connect':
+                        if status:
                             command += f'pmctl disconnect {source} {sink_name}\n'
                             command += f'pmctl connect {sink_name}.monitor {sink_name} {latency}\n'
 
@@ -269,9 +273,11 @@ class Pulse:
                             command += f'pmctl connect {source} {sink_name} {latency}\n'
 
         if self.loglevel > 1: print(command)
-        if run_command == True: os.popen(command)
-
-        return command
+        if run_command == True:
+            os.popen(command)
+            return f'rnoise {source_type} {source_num} {status}'
+        else:
+            return command
 
     # creates a ladspa sink with eq plugin for a given output
     def eq(self, sink_type, sink_num, status=None, control=None, ladspa_sink=None,
@@ -292,18 +298,22 @@ class Pulse:
 
         # toggle on/off
         if status == None:
-            status = 'disconnect' if sink_config['use_eq'] else 'connect'
+            status = not sink_config['use_eq']
 
         # if only changing the control
-        if status == 'set':
-            status = 'connect' if sink_config['use_eq'] else 'disconnect'
+        elif status == 'set':
+            status = sink_config['use_eq']
+
+        else:
+            status = str2bool(status)
+
 
         if change_config: 
-            sink_config['use_eq'] = True if status == 'connect' else False
+            sink_config['use_eq'] = True if status else False
             sink_config['eq_control'] = control
         
         # create ladspa sink
-        if status == 'connect':
+        if status:
             command = f'pmctl eq init {ladspa_sink} {master} {control}\n'
 
         # removes ladspa sink
@@ -322,7 +332,7 @@ class Pulse:
                         vi = self.get_correct_device([source_type, source_num], 'source')
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
-                        if status == 'connect':
+                        if status:
                             command = command + f'pmctl disconnect {vi} {master}\n'
                             command = command + f'pmctl connect {vi} {ladspa_sink}\n'
 
@@ -333,13 +343,17 @@ class Pulse:
 
 
         if self.loglevel > 1: print(command)
-        if run_command: os.popen(command)
-        return command
+        if run_command:
+            os.popen(command)
+            return f'eq {sink_type} {sink_num} {status} {control}'
+        else:
+            return command
 
     # this will cleanup a hardware device and will not affect the config
     # useful when e.g. changing the device used in a hardware input/output strip
     def change_device_status(self, device_type, device_num, status, run_command=True):
         command = ''
+        status = str2bool(status)
 
         # check what type of device, then disable plugins
         if device_type == 'a': 
@@ -347,13 +361,13 @@ class Pulse:
             sink_type = device_type
             sink_num = device_num
             sink = f'{device_type}{device_num}'
-            command += self.eq(sink_type, sink_num, status='disconnect', 
+            command += self.eq(sink_type, sink_num, status=False, 
                     reconnect=False, change_config=False, run_command=False)
         else:
             device_list =['a', 'b']
             source_type = device_type
             source_num = device_num
-            command += self.rnnoise(source_num, status='disconnect', 
+            command += self.rnnoise(source_num, status=False, 
                     reconnect=False, change_config=False, run_command=False)
 
         # remove connections
@@ -388,7 +402,7 @@ class Pulse:
                 # connection status check
                 if self.config[source_type][source_num][sink] == True:
                     command += self.connect(source_type, source_num, sink_type, sink_num,
-                            status='connect', change_state=False, run_command=False, init=True)
+                            status=True, change_state=False, run_command=False, init=True)
 
         # if self.loglevel > 1: print(command)
         if run_command: os.popen(command)
@@ -401,27 +415,31 @@ class Pulse:
         source_config = self.config[source_type][source_num]
         sink_config = self.config[sink_type][sink_num]
         jack_config = self.config['jack']
-        conn_status = source_config[sink_type + sink_num]
+        cur_conn_status = source_config[sink_type + sink_num]
 
         # toggle connection status
         if status == None:
-            status = 'connect' if conn_status == False else 'disconnect'
+            status = not cur_conn_status
+        else:
+            status = str2bool(status)
+
+        conn_status = 'connect' if status else 'disconnect'
 
         # if trying to set the same state
-        if init == False and ((conn_status == True and status == 'connect' )
-                or conn_status == False and status == 'disconnect'):
+        if init == False and ((cur_conn_status and status)
+                or (not cur_conn_status and not status)):
             return False
 
         # if true, will change the config status
         if change_state == True:
-            source_config[sink_type + sink_num] = True if status == "connect" else False
+            source_config[sink_type + sink_num] = True if status else False
 
         # if using jack
         if (jack_config['enable'] == True and 
                 ((sink_config['jack'] == True and sink_type == 'a') or 
                 (source_config['jack'] == True and source_type == 'hi') or 
                 (source_type == 'vi' and sink_type == 'b'))):
-                    return self.connect_jack(status, [source_type, source_num], 
+                    return self.connect_jack(conn_status, [source_type, source_num], 
                             [sink_type, sink_num])
 
         # get name and latency of devices
@@ -433,12 +451,12 @@ class Pulse:
         if (source == '' or sink == ''):
             return ''
 
-        command = f"pmctl {status} {source} {sink} {latency}\n"
+        command = f"pmctl {conn_status} {source} {sink} {latency}\n"
 
         if self.loglevel > 1: print(command)
         if run_command == True: 
             os.popen(command)
-            return f'{source_type} {source_num} {status} {sink_type} {sink_num}'
+            return f'{source_type} {source_num} {sink_type}{sink_num} {status}'
         else:
             return command
 
@@ -867,7 +885,7 @@ class Pulse:
                         self.config['jack'][i] = config_orig['jack'][i]
 
                 for i in ['a', 'b', 'vi', 'hi']:
-                    for j in ['1', '2', '3']:
+                    for j in config_orig[i]:
                         for k in config_orig[i][j]:
                             if not k in self.config[i][j]:
                                 self.config[i][j][k] = config_orig[i][j][k]
@@ -893,3 +911,9 @@ def cmd(command):
         stderr=subprocess.STDOUT)
     stdout,stderr = MyOut.communicate()
     return stdout.decode()
+
+def str2bool(v):
+    if type(v) == bool: 
+        return v
+    else:
+        return v.lower() in ['connect', 'true', 'on', '1']
