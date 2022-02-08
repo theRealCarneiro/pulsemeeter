@@ -5,15 +5,18 @@ import signal
 import threading
 from queue import SimpleQueue
 from .settings import SOCK_FILE
+from .Pulse import Pulse
 
 
 LISTENER_TIMEOUT = 5
+
 
 class Server:
     def __init__(self, audio_server):
 
         # audio server can be pulse or pipe, so just use a generic name
         self.audio_server = audio_server
+        self.create_command_dict()
 
         # the socket only needs to be seen by the listener thread
         # self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -27,6 +30,7 @@ class Server:
 
         self.exit_flag = False
         self.command_queue = SimpleQueue()
+        self.test_queue = SimpleQueue()
         self.event_queues = {}
         self.client_handler_threads = {}
         self.client_handler_connections = {}
@@ -46,6 +50,9 @@ class Server:
         signal.signal(signal.SIGINT, self.handle_exit_signal)
         signal.signal(signal.SIGTERM, self.handle_exit_signal)
 
+        # self.notify_thread = threading.Thread(target=self.event_notify)
+        # self.notify_thread.start()
+
         # Make sure that even in the event of an error, cleanup still happens
         try:
             # Listen for commands
@@ -63,7 +70,13 @@ class Server:
                 elif message[0] == 'command':
                     # TODO: as mentioned in handle_command(), it probably needs a rework. This is for boilerplate.
                     ret_message = self.handle_command(message[2])
-                    self.event_queues[message[1]].put(('return', ret_message))
+                    if ret_message:
+                        self.event_queues[message[1]].put(('return', ret_message, message[1]))
+
+                        # notify observers
+                        for conn in self.client_handler_connections.values():
+                            conn.sendall(str.encode(str(message[1]))) # client id
+                            conn.sendall(str.encode(ret_message)) # command
 
             # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
             # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
@@ -87,6 +100,13 @@ class Server:
             # Call any code to clean up virtual devices or similar
             self.close_server()
 
+    def create_command_dict(self):
+        self.commands = {
+            'connect': self.audio_server.connect,
+            'mute': self.audio_server.mute,
+            'rnnoise': self.audio_server.rnnoise,
+        }
+
     # function to register as a signal handler to gracefully exit
     def handle_exit_signal(self, signum, frame):
         self.command_queue.put(('exit',))
@@ -109,6 +129,7 @@ class Server:
                     print('waiting for a connection')
                     conn, addr = s.accept()
                     print('client connected ', addr)
+                    conn.sendall(str.encode(str(id)))
 
                     # Create a thread for the client
                     event_queue = SimpleQueue()
@@ -136,14 +157,15 @@ class Server:
                     data = conn.recv(20)
                     if not data: raise
 
-                    print(data.decode())
+                    # print(data.decode())
                     self.command_queue.put(('command', id, data))
                     # TODO: If this handler is being used for sending events to clients, distinguish a return value from
                     # TODO: an event
-                    ret_message = event_queue.get()
-                    conn.sendall(ret_message[1])
-                    if ret_message == False:
-                        raise
+                    # ret_message = event_queue.get()
+                    # event = f'{id} {ret_message[1].decode()}'
+                    # conn.sendall(str.encode(event))
+                    # if ret_message == False:
+                        # raise
                 except Exception:  # Exception doesn't catch exit exceptions (a bare except clause does)
                     print('client disconnect')
                     conn.shutdown(socket.SHUT_RDWR)
@@ -153,73 +175,54 @@ class Server:
 
     # needs rework
     def handle_command(self, data):
-
         decoded_data = data.decode()
-        cmd_list = decoded_data.split(' ')
+        args = tuple(decoded_data.split(' '))
+        print(args)
 
-        # command interpreter
-        # need to add error handling
-
-        # connect [vi|hi] [1-3] [a|b] [1-3]
-        if cmd_list[0] == 'connect':
-            if len(cmd_list) != 5: return
-            source_index = [cmd_list[1], cmd_list[2]]
-            sink_index = [cmd_list[3], cmd_list[4]]
-            if self.audio_server.connect('connect', source_index, sink_index):
-                msg = f'{cmd_list[1]}{cmd_list[2]}:{cmd_list[3]}{cmd_list[4]}:True'
-                self.msg_queue.append(str.encode(msg))
-
-        # disconnect [vi|hi] [1-3] [a|b] [1-3]
-        if cmd_list[0] == 'disconnect':
-            source_index = [cmd_list[1], cmd_list[2]]
-            sink_index = [cmd_list[3], cmd_list[4]]
-            if self.audio_server.connect('disconnect', source_index, sink_index):
-                return str.encode(f'{cmd_list[1]}{cmd_list[2]}:{cmd_list[3]}{cmd_list[4]}:False')
-
-        # vol [vi|hi|a|b] [1-3]
-        if cmd_list[0] == 'vol':
-            device_index = [cmd_list[1], cmd_list[2]]
-            volume = cmd_list[3]
-            if self.audio_server.volume(device_index, volume):
-                return str.encode(f'{cmd_list[1]}{cmd_list[2]}:{cmd_list[3]}')
-
-        if cmd_list[0] == 'mute':
-            device_index = [cmd_list[1], cmd_list[2]]
-
-        if cmd_list[0] == 'exit':
+        if args[0] == 'exit':
             return False
 
-        return b' '
-
+        try:
+            return self.commands[args[0]](*args[1:])
+            # if self.commands[args[0]](*args[1:]):
+                # return decoded_data
+        except TypeError:
+            return False
+        except Exception:
+            return False
 
 class Client:
-    def __init__(self, command=None, is_listen=False):
+    def __init__(self):
 
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
         # connect to server
         try:
             self.sock.connect(SOCK_FILE)
+            self.id = self.sock.recv(2)
         except socket.error as msg:
             print(msg)
             sys.exit(1)
-            if is_listen == True: self.listen()
 
     def send_command(self, command):
         try:
             if len(command) == 0: raise
             message = str.encode(command)
             self.sock.sendall(message)
-            # print(self.sock.recv(20))
         except:
             print('closing socket')
             self.sock.close()
 
-    def listen(self):
+    def listen(self, blacklist_id=None):
         while True:
             try:
-                print(self.sock.recv(20))
-            except:
+                id = self.sock.recv(1)
+                if len(id) == 0: raise
+                event = self.sock.recv(20)
+                if len(event) == 0: raise
+                if int(id) != blacklist_id:
+                    print(event)
+            except Exception:
                 print('closing socket')
                 self.sock.close()
                 break

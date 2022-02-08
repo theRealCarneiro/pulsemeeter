@@ -388,7 +388,7 @@ class Pulse:
 
     # connects an input to an output
     def connect(self, source_type, source_num, sink_type, sink_num, 
-            status=None, run_command=False, change_state=True, init=False):
+            status=None, run_command=True, change_state=True, init=False):
 
         source_config = self.config[source_type][source_num]
         sink_config = self.config[sink_type][sink_num]
@@ -428,8 +428,11 @@ class Pulse:
         command = f"pmctl {status} {source} {sink} {latency}\n"
 
         if self.loglevel > 1: print(command)
-        if run_command == True: os.popen(command)
-        return command
+        if run_command == True: 
+            os.popen(command)
+            return f'{source_type} {source_num} {status} {sink_type} {sink_num}'
+        else:
+            return command
 
     # needs commenting
     def connect_jack(self, state, source_index, sink_index, init=None):
@@ -637,9 +640,11 @@ class Pulse:
         command = f"pmctl mute {device} {name} {state}\n"
 
         if self.loglevel > 1: print(command)
-        if run_command: os.popen(command)
-
-        return command
+        if run_command: 
+            os.popen(command)
+            return f'mute {device_type} {device_num} {state}'
+        else:
+            return command
 
 
     # todo
@@ -693,7 +698,8 @@ class Pulse:
         # if self.loglevel > 1: print(command)
         # if run_command: os.popen(command)
         # return command
-
+    
+    # set a device as primary (only vi and b)
     def set_primary(self, device_type, device_num, run_command=True):
         name = self.config[device_type][device_num]['name']
         for i in self.config[device_type]:
