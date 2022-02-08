@@ -103,4 +103,4 @@ class AppList(Gtk.VBox):
 
     def volume_change(self, slider, index, stream_type=None):
         val = int(slider.get_value())
-        self.pulse.volume(index, val, stream_type)
+        self.pulse.app_volume(index, val, stream_type)

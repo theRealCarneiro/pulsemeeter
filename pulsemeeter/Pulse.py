@@ -274,7 +274,7 @@ class Pulse:
         return command
 
     # creates a ladspa sink with eq plugin for a given output
-    def eq(self, sink_type, sink_num, status=None, ladspa_sink=None, 
+    def eq(self, sink_type, sink_num, status=None, control=None, ladspa_sink=None,
             reconnect=True, change_config=True, run_command=True):
 
         # get information about the device
@@ -282,16 +282,24 @@ class Pulse:
         sink_config = self.config[sink_type][sink_num]
         master = sink_config['name']
 
+        # set name for the plugin sink
+        if ladspa_sink == None: ladspa_sink = f'{sink_type}{sink_num}_eq'
+
         # control values for the eq
         if control == None:
             control = sink_config['eq_control']
             control = '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0' if control == '' else control
 
-        # set name for the plugin sink
-        if ladspa_sink == None: ladspa_sink = f'{sink_type}{sink_num}_eq'
+        # toggle on/off
+        if status == None:
+            status = 'disconnect' if sink_config['use_eq'] else 'connect'
+
+        # if only changing the control
+        if status == 'set':
+            status = 'connect' if sink_config['use_eq'] else 'disconnect'
 
         if change_config: 
-            sink_config['use_eq'] = True
+            sink_config['use_eq'] = True if status == 'connect' else False
             sink_config['eq_control'] = control
         
         # create ladspa sink
@@ -328,8 +336,8 @@ class Pulse:
         if run_command: os.popen(command)
         return command
 
-    # for hardware devices, will remove connections and plugins but 
-    # will not affect config
+    # this will cleanup a hardware device and will not affect the config
+    # useful when e.g. changing the device used in a hardware input/output strip
     def change_device_status(self, device_type, device_num, status, run_command=True):
         command = ''
 
@@ -368,7 +376,7 @@ class Pulse:
         # if self.loglevel > 1: print(command)
         if run_command: os.popen(command)
         
-    # recreates connection from a virtual input
+    # recreates connections from an input, does not affect config
     def reconnect(self, source_type, source_num, run_command=True):
         command = ''
 
@@ -380,7 +388,7 @@ class Pulse:
                 # connection status check
                 if self.config[source_type][source_num][sink] == True:
                     command += self.connect(source_type, source_num, sink_type, sink_num,
-                            status='connect', run_command=False, init=True)
+                            status='connect', change_state=False, run_command=False, init=True)
 
         # if self.loglevel > 1: print(command)
         if run_command: os.popen(command)
@@ -500,7 +508,8 @@ class Pulse:
         command = f'pmctl get-{stream_type}-volume {id}'
         return int(cmd(command))
 
-    def volume(self, index, val, stream_type=None):
+    def volume(self, device_type, device_num, val):
+        device_config = self.config[device_type][device_num]
 
         # if volume is a string, convert it to integer
         if type(val) == str:
@@ -511,39 +520,56 @@ class Pulse:
 
             # if not an absolute number, add it to current volume 
             else:
-                val = self.config[index[0]][index[1]]['vol'] + int(val)
+                val = device_config['vol'] + int(val)
 
         # limit volume at 153
         if val > 153:
             val = 153
 
-        # if its not an application volume
-        if stream_type == None:
-            self.config[index[0]][index[1]]['vol'] = val
-            name = self.config[index[0]][index[1]]['name']
-            
-            # get device info from pulsectl
-            if index[0] == 'a' or index[0] == 'vi':
-                device = self.pulsectl.get_sink_by_name(name)
-            else:
-                device = self.pulsectl.get_source_by_name(name)
-
-            # set the volume
-            volume = device.volume
-            volume.value_flat = val / 100 
-            self.pulsectl.volume_set(device, volume)
-
-        # application output volume
-        elif stream_type == 'sink-input':
-            chann = int(cmd(f'pmctl get-sink-input-chann {index}'))
-            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
-            self.pulsectl.sink_input_volume_set(index, volume)
-
-        # application input volume
+        device_config['vol'] = val
+        name = device_config['name']
+        
+        # get device info from pulsectl
+        if device_type == 'a' or device_type == 'vi':
+            device = self.pulsectl.get_sink_by_name(name)
         else:
-            chann = int(cmd(f'pmctl get-source-output-chann {index}'))
-            volume = pulsectl.PulseVolumeInfo(val / 100, 2)
-            self.pulsectl.source_output_volume_set(index, volume)
+            device = self.pulsectl.get_source_by_name(name)
+
+        # set the volume
+        volume = device.volume
+        volume.value_flat = val / 100 
+        self.pulsectl.volume_set(device, volume)
+
+    # sink input and source output volumes
+    def app_volume(self, id, val, stream_type):
+
+        if type(val) == str:
+
+            # check if is an absolute number
+            if re.match('[1-9]', val):
+                val = int(val)
+            else: 
+                return False
+
+            # if not an absolute number, add it to current volume 
+            # else:
+                # cur_vol = cmd('pmctl get-{stream_type}-volume {id}')
+                # val = device_config['vol'] + int(val)
+
+        # limit volume at 153
+        if val > 153:
+            val = 153
+        # get channel number
+        # chann = int(cmd(f'pmctl get-{stream_type}-chann {id}'))
+        chann = 2
+
+        # set volume object
+        volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+
+        if stream_type == 'sink-input':
+            self.pulsectl.sink_input_volume_set(id, volume)
+        else:
+            self.pulsectl.source_output_volume_set(id, volume)
 
     # removes a device, then creates another one with the new name
     def rename(self, device_type, device_num, new_name):
@@ -748,6 +774,10 @@ class Pulse:
                 except Exception:
                     print(f'ERROR: invalid json {i}')
         return apps
+
+    def move_app_device(self, app, name, stream_type):
+        command = f'pmctl move-{stream_type} {app} {name}'
+        os.popen(command)
 
     def move_source_output(self, app, name):
         command = f'pmctl move-source-output {app} {name}'

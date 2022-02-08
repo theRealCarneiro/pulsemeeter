@@ -70,12 +70,19 @@ class Server:
                 elif message[0] == 'command':
                     # TODO: as mentioned in handle_command(), it probably needs a rework. This is for boilerplate.
                     ret_message = self.handle_command(message[2])
+
                     if ret_message:
                         self.event_queues[message[1]].put(('return', ret_message, message[1]))
 
                         # notify observers
                         for conn in self.client_handler_connections.values():
-                            conn.sendall(str.encode(str(message[1]))) # client id
+                            # add 0 until 4 characters long
+                            id = str(message[1]).rjust(4, '0')
+                            msg_len = str(len(ret_message)).rjust(4, '0')
+
+                            # send to clients
+                            conn.sendall(str.encode(id)) # message len
+                            conn.sendall(str.encode(msg_len)) # message len
                             conn.sendall(str.encode(ret_message)) # command
 
             # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
@@ -101,10 +108,61 @@ class Server:
             self.close_server()
 
     def create_command_dict(self):
+        ## None means that is an optional argument
+        ## STATE == [connnect|disconnect]
         self.commands = {
-            'connect': self.audio_server.connect,
-            'mute': self.audio_server.mute,
-            'rnnoise': self.audio_server.rnnoise,
+            # ARGS: [hi|vi] id, [a|b] id [None|STATE]
+            # None = toggle
+            'connect': self.audio_server.connect, 
+
+            # ARGS: [hi|vi|a|b] [None|STATE]
+            # None = toggle
+            'mute': self.audio_server.mute, 
+
+            # ARGS: [hi|vi|a|b]
+            'primary': self.audio_server.set_primary, 
+
+            # ARGS: id
+            # id = hardware input id
+            'rnnoise': self.audio_server.rnnoise, 
+
+            # ARGS: [a|b] id [None|STATE|set] [None|control]
+            # 'set' is for saving a new control value, if used you HAVE to pass
+            # control, you can ommit the second and third args to toggle 
+            'eq': self.audio_server.eq,
+
+            # ARGS: [hi|a] id STATE
+            # this will cleanup a hardware device and will not affect the config
+            # useful when e.g. changing the device used in a hardware input strip
+            'change_status': self.audio_server.change_device_status,
+
+            # ARGS: [hi|vi] id
+            # wont affect config
+            'reconnect': self.audio_server.reconnect,
+
+            # ARGS: [hi|vi|a|b] id vol
+            # vol can be an absolute number from 0 to 153
+            # you can also add and subtract
+            'volume': self.audio_server.volume, 
+
+            # ARGS: id vol
+            # vol can ONLY be an absolute number from 0 to 153
+            'app-volume': self.audio_server.volume, 
+
+            # ARGS: id device [sink-input|source-output]
+            'move-app-device': self.audio_server.move_app_device,
+
+            # ARGS: id [sink-input|source-output]
+            'get-stream-volume': self.audio_server.get_app_stream_volume,
+
+            'save_config': self.audio_server.save_config,
+            
+            # not ready
+            'list-virtual-devices': self.audio_server.get_virtual_devices,
+            'list-hardware-devices': self.audio_server.get_hardware_devices,
+            'list-app-streams': self.audio_server.get_virtual_devices,
+            'rename': self.audio_server.rename, 
+
         }
 
     # function to register as a signal handler to gracefully exit
@@ -216,12 +274,25 @@ class Client:
     def listen(self, blacklist_id=None):
         while True:
             try:
-                id = self.sock.recv(1)
-                if len(id) == 0: raise
-                event = self.sock.recv(20)
+                
+                # get the id of the client that sent the message
+                sender_id = self.sock.recv(4)
+                if len(sender_id) == 0: raise
+                sender_id = int(sender_id.decode())
+
+                # length of the message
+                msg_len = self.sock.recv(4)
+                if len(msg_len) == 0: raise
+                msg_len = int(msg_len.decode())
+                
+                # get event
+                event = self.sock.recv(msg_len)
                 if len(event) == 0: raise
-                if int(id) != blacklist_id:
+
+                # only yield it if not blacklisted
+                if sender_id != blacklist_id:
                     print(event)
+
             except Exception:
                 print('closing socket')
                 self.sock.close()
