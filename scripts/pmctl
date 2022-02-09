@@ -285,7 +285,7 @@ list (){
 		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
 		grep -vwE Monitor | grep -vwE null | grep -vwE jack | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
-	printf "%s" "$list"
+	printf "%s" "$list" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 get_source_by_id() {
@@ -332,7 +332,7 @@ list_source_outputs (){
 		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
 		grep -vwE pavucontrol | grep -vwE pulse-vumeter | grep name | \
 		sed 's/ 		/ /g; s/device/"device"/g; s/name/"name"/g')
-	printf "%s" "$apps"
+	printf "%s" "$apps" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 list_sink_inputs (){
@@ -351,7 +351,7 @@ list_sink_inputs (){
 		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
 		grep name |\
 		sed 's/ 		/ /g' | sed 's/, $//; s/$/}/')
-	printf "%s" "$apps"
+	printf "%s" "$apps" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 eq (){

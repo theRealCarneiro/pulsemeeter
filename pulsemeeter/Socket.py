@@ -30,7 +30,7 @@ class Server:
 
         self.exit_flag = False
         self.command_queue = SimpleQueue()
-        self.test_queue = SimpleQueue()
+        self.client_exit_queue = SimpleQueue()
         self.event_queues = {}
         self.client_handler_threads = {}
         self.client_handler_connections = {}
@@ -69,21 +69,31 @@ class Server:
                     self.client_handler_threads.pop(message[1]).join()
                 elif message[0] == 'command':
                     # TODO: as mentioned in handle_command(), it probably needs a rework. This is for boilerplate.
-                    ret_message = self.handle_command(message[2])
+                    ret_message, notify_all = self.handle_command(message[2])
 
                     if ret_message:
                         self.event_queues[message[1]].put(('return', ret_message, message[1]))
+                        encoded_msg = ret_message.encode()
 
                         # notify observers
-                        for conn in self.client_handler_connections.values():
+                        if notify_all:
+                            client_list = self.client_handler_connections.values()
+                        else:
+                            client_list = [self.client_handler_connections[message[1]]]
+
+                        for conn in client_list:
                             # add 0 until 4 characters long
                             id = str(message[1]).rjust(4, '0')
-                            msg_len = str(len(ret_message)).rjust(4, '0')
+                            msg_len = str(len(encoded_msg)).rjust(4, '0')
 
                             # send to clients
-                            conn.sendall(str.encode(id)) # message len
-                            conn.sendall(str.encode(msg_len)) # message len
-                            conn.sendall(str.encode(ret_message)) # command
+                            try:
+                                conn.sendall(id.encode()) # sender id
+                                conn.sendall(msg_len.encode()) # message len
+                                conn.sendall(encoded_msg) # command
+                            except OSError:
+                                print(f'client {message[1]} already disconnected, message not sent')
+                                
 
             # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
             # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
@@ -111,57 +121,64 @@ class Server:
         ## None means that is an optional argument
         ## STATE == [ [connect|true|on|1] | [disconnect|false|off|0] ]
         self.commands = {
-            # ARGS: [hi|vi] id, [a|b] id [None|STATE]
+            # ARGS: [hi|vi] id [a|b] id [None|STATE]
             # None = toggle
-            'connect': self.audio_server.connect, 
+            'connect': [self.audio_server.connect, True],
 
             # ARGS: [hi|vi|a|b] [None|STATE]
             # None = toggle
-            'mute': self.audio_server.mute, 
+            'mute': [self.audio_server.mute, True],
 
             # ARGS: [hi|vi|a|b]
-            'primary': self.audio_server.set_primary, 
+            'primary': [self.audio_server.set_primary, True],
 
             # ARGS: id
             # id = hardware input id
-            'rnnoise': self.audio_server.rnnoise, 
+            'rnnoise': [self.audio_server.rnnoise, True],
 
             # ARGS: [a|b] id [None|STATE|set] [None|control]
             # 'set' is for saving a new control value, if used you HAVE to pass
             # control, you can ommit the second and third args to toggle 
-            'eq': self.audio_server.eq,
+            'eq': [self.audio_server.eq, True],
 
             # ARGS: [hi|a] id STATE
             # this will cleanup a hardware device and will not affect the config
             # useful when e.g. changing the device used in a hardware input strip
-            'change_status': self.audio_server.change_device_status,
+            'change_status': [self.audio_server.change_device_status, False],
 
             # ARGS: [hi|vi] id
             # wont affect config
-            'reconnect': self.audio_server.reconnect,
+            'reconnect': [self.audio_server.reconnect, False],
+            
+
+            # ARGS: [a|b] id NEW_DEVICE
+            # NEW_DEVICE is the name of the device
+            'change_hd': [self.audio_server.change_hardware_device, True],
 
             # ARGS: [hi|vi|a|b] id vol
             # vol can be an absolute number from 0 to 153
             # you can also add and subtract
-            'volume': self.audio_server.volume, 
+            'volume': [self.audio_server.volume, True],
 
             # ARGS: id vol
             # vol can ONLY be an absolute number from 0 to 153
-            'app-volume': self.audio_server.volume, 
+            'app-volume': [self.audio_server.volume, False],
 
             # ARGS: id device [sink-input|source-output]
-            'move-app-device': self.audio_server.move_app_device,
+            'move-app-device': [self.audio_server.move_app_device, True],
 
             # ARGS: id [sink-input|source-output]
-            'get-stream-volume': self.audio_server.get_app_stream_volume,
+            'get-stream-volume': [self.audio_server.get_app_stream_volume, False],
 
-            'save_config': self.audio_server.save_config,
+            'get-config': [self.audio_server.get_config, False],
+
+            'save_config': [self.audio_server.save_config,],
             
             # not ready
-            'list-virtual-devices': self.audio_server.get_virtual_devices,
-            'list-hardware-devices': self.audio_server.get_hardware_devices,
-            'list-app-streams': self.audio_server.get_virtual_devices,
-            'rename': self.audio_server.rename, 
+            'list-vi': [self.audio_server.get_virtual_devices, False],
+            'list-hi': [self.audio_server.get_hardware_devices, False],
+            'list-apps': [self.audio_server.get_virtual_devices, False],
+            'rename': [self.audio_server.rename, True], 
 
         }
 
@@ -213,16 +230,14 @@ class Server:
                 try:
                     # TODO: rework to include the length as the first 4 bytes. Get the daemon working first though, then
                     # TODO: work on compatibility.
-                    len = conn.recv(4)
+                    msg_len = conn.recv(4)
                     if not len:
-                        print(len)
                         raise
-                    len = int(len.decode())
+                    msg_len = int(msg_len.decode())
 
-                    data = conn.recv(len)
+                    data = conn.recv(msg_len)
                     if not data: raise
 
-                    # print(data.decode())
                     self.command_queue.put(('command', id, data))
                     # TODO: If this handler is being used for sending events to clients, distinguish a return value from
                     # TODO: an event
@@ -231,11 +246,12 @@ class Server:
                     # conn.sendall(str.encode(event))
                     # if ret_message == False:
                         # raise
-                except Exception as ex:  # Exception doesn't catch exit exceptions (a bare except clause does)
-                    print('client disconnect', ex)
+                except Exception:  # Exception doesn't catch exit exceptions (a bare except clause does)
+                    print(f'client {id} disconnect')
                     conn.shutdown(socket.SHUT_RDWR)
                     # Notify the main process that this client handler is closing, so it can free its resources
                     self.command_queue.put(('client_handler_exit', id))
+                    self.client_exit_queue.put(id)
                     break
 
     def handle_command(self, data):
@@ -247,7 +263,7 @@ class Server:
             return False
 
         try:
-            return self.commands[args[0]](*args[1:])
+            return (self.commands[args[0]][0](*args[1:]), self.commands[args[0]][1],)
             # if self.commands[args[0]](*args[1:]):
                 # return decoded_data
         except TypeError:
@@ -270,26 +286,34 @@ class Client:
 
     def send_command(self, command):
         try:
-            command_len = len(command)
-            if command_len == 0 or command == 'exit': raise
 
-            msg_len = str(command_len).rjust(4, '0')
-            self.sock.sendall(str.encode(msg_len))
+            # encode message ang get it's length
+            message = command.encode()
+            msg_len = len(message)
+            if msg_len == 0 or command == 'exit': raise
 
-            message = str.encode(command)
+            # send message length
+            msg_len = str(msg_len).rjust(4, '0')
+            self.sock.sendall(msg_len.encode())
+
+            # send message
             self.sock.sendall(message)
+
+            # wait for answer
+            for event in self.listen(wait_id=self.id):
+                return(event)
+                
         except:
             print('closing socket')
             self.sock.close()
 
-    def listen(self, blacklist_id=None):
+    def listen(self, blacklist_id=None, wait_id=None):
         while True:
             try:
-                
                 # get the id of the client that sent the message
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise
-                sender_id = int(sender_id.decode())
+                sender_id = int(sender_id)
 
                 # length of the message
                 msg_len = self.sock.recv(4)
@@ -299,10 +323,14 @@ class Client:
                 # get event
                 event = self.sock.recv(msg_len)
                 if not event: raise
+                event = event.decode()
 
                 # only yield it if not blacklisted
                 if sender_id != blacklist_id:
                     yield event
+                
+                    if wait_id == sender_id:
+                        return event
 
             except Exception:
                 print('closing socket')
