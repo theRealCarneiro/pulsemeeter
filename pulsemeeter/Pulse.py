@@ -521,6 +521,25 @@ class Pulse:
             os.popen(command)
         return command
 
+    def change_hardware_device(self, sink_type, sink_num, name):
+        device_config = self.config[sink_type][sink_num]
+
+        # if device its not an empty name
+        if device_config['name'] != '':
+            self.change_device_status(sink_type, sink_num, False)
+
+        device_config['name'] = name
+
+        # if chosen device is not an empty name
+        if name != '':
+            self.change_device_status(sink_type, sink_num, True)
+            # self.config[sink_type][sink_num]['jack'] = re.search('JACK:', 
+                    # new_device['description'])
+            # self.config[sink_type][sink_num]['jack'] = name in  
+
+        print(f'{sink_type} {sink_num} {name}')
+        return f'{sink_type} {sink_num} {name}'
+
     # get volume from source outputs and sink inputs
     def get_app_stream_volume(self, id, stream_type):
         command = f'pmctl get-{stream_type}-volume {id}'
@@ -557,6 +576,7 @@ class Pulse:
         volume = device.volume
         volume.value_flat = val / 100 
         self.pulsectl.volume_set(device, volume)
+        return f'{device_type} {device_num} {val}'
 
     # sink input and source output volumes
     def app_volume(self, id, val, stream_type):
@@ -636,34 +656,38 @@ class Pulse:
     # get list of cards
     def get_hardware_devices(self, kind):
         command = f"pmctl list {kind}"
-        devices = cmd(command).split('\n')
-        devices_concat = []
+        devices = cmd(command)
+        # devices_concat = []
 
         # if list is not empty
-        if devices[0] != '':
+        # if devices[0] != '':
 
             # iterate between jsons
-            for i in devices:
+            # for i in devices:
 
-                # load a json and add it into a list
-                try:
-                    jason = json.loads(i)
-                    devices_concat.append(jason)
-                except:
-                    print(f'ERROR: invalid json {i}')
+            # load a json and add it into a list
+        try:
+            jason = json.loads(devices)
+            # devices_concat.append(jason)
+        except:
+            print(f'ERROR: invalid json {devices}')
 
         # if using jack, also list groups
         if self.config['jack']['enable'] == True:
             group_type = 'input_groups' if kind == 'sources' else 'output_groups'
             for group in self.config['jack'][group_type]:
                 channels = self.config['jack'][group_type][group]
-                devices_concat.append({'name': group, 'description': f'JACK:{group}{channels}'})
+                jason.append({'name': group, 'description': f'JACK:{group}{channels}'})
+                # devices_concat.append()
 
         if kind == 'sources':
-            self.source_list = devices_concat
+            self.source_list = jason
         else:
-            self.sink_list = devices_concat
-        return devices_concat
+            self.sink_list = jason
+        return json.dumps(jason, ensure_ascii=False)
+
+    def get_config(self):
+        return json.dumps(self.config, ensure_ascii=False)
 
     # def mute(self, index, state=None, init=None):
     def mute(self, device_type, device_num, state=None, run_command=True):
