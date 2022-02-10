@@ -144,7 +144,12 @@ class Server:
             # ARGS: [hi|a] id STATE
             # this will cleanup a hardware device and will not affect the config
             # useful when e.g. changing the device used in a hardware input strip
-            'change_status': [self.audio_server.change_device_status, False],
+            'toggle-hd': [self.audio_server.toggle_hardware_device, False],
+
+            # ARGS: [vi|b] id STATE
+            # this will cleanup a virtual device and will not affect the config
+            # useful when e.g. renaming the device
+            'toggle-vd': [self.audio_server.toggle_virtual_device, False],
 
             # ARGS: [hi|vi] id
             # wont affect config
@@ -175,8 +180,8 @@ class Server:
             'save_config': [self.audio_server.save_config,],
             
             # not ready
-            'list-vi': [self.audio_server.get_virtual_devices, False],
-            'list-hi': [self.audio_server.get_hardware_devices, False],
+            'get-vd': [self.audio_server.get_virtual_devices, False],
+            'get-hd': [self.audio_server.get_hardware_devices, False],
             'list-apps': [self.audio_server.get_virtual_devices, False],
             'rename': [self.audio_server.rename, True], 
 
@@ -188,7 +193,9 @@ class Server:
 
     # TODO: if the daemon should clean up its virtual devices on exit, do that here
     def close_server(self):
-        pass
+        # self.audio_server
+        self.audio_server.save_config()
+        self.audio_server.cleanup()
 
     # this function handles the connection requests
     def query_clients(self):
@@ -267,9 +274,10 @@ class Server:
             # if self.commands[args[0]](*args[1:]):
                 # return decoded_data
         except TypeError:
-            return False
-        except Exception:
-            return False
+            return ('Invalid number of arguments', False)
+        except Exception as ex:
+            print(ex)
+            return (ex, False)
 
 class Client:
     def __init__(self):

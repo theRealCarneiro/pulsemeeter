@@ -203,6 +203,9 @@ remove (){
 
 	index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
 	[ -z "$index" ] || pactl unload-module $index 
+	
+	aux_index="$(LC_ALL=C pactl list modules | grep -B 2 $device'_sink' | grep Module | sed 's/.*#//g')"
+	[ -z "$aux_index" ] || pactl unload-module $aux_index
 }
 
 mute (){
@@ -234,7 +237,8 @@ list_virtual_sinks (){
 		grep -vwE Monitor | grep -vwE remap-source | grep -vwE module-remap-source |
 		grep -vwE ladspa | grep -vwE .*_sink | grep -vwE .*rnnoise | sed 's/, Driver:.*\.c"//g')
 
-	printf "%s" "$list"
+	#printf "%s" "$list"
+	printf "%s" "$list" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 list_virtual_sources (){
@@ -254,7 +258,8 @@ list_virtual_sources (){
 			s/$/}/; s/, }/}/' |
 		grep -vwE Monitor | grep -wE remap | sed 's/, \t.*node.group.*"//g; s/, Driver:.*\.c"//g')
 
-	printf "%s" "$list"
+	#printf "%s" "$list"
+	printf "%s" "$list" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 
