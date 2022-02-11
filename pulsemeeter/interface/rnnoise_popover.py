@@ -1,5 +1,5 @@
 import os
-from .settings import LAYOUT_DIR
+from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 

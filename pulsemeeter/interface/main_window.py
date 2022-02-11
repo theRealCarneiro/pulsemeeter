@@ -6,12 +6,13 @@ import threading
 import sys
 import json
 
-# from .EqPopover import EqPopover
-# from .RnnoisePopover import RnnoisePopover
-# from .LatencyPopover import LatencyPopover
-# from .AppListWidget import AppList
-# from .PortSelectPopover import PortSelectPopover
-# from .JackGroupsPopover import JackGroupsPopover
+from .app_list_widget import AppList
+from .eq_popover import EqPopover
+from .latency_popover import LatencyPopover
+from .rnnoise_popover import RnnoisePopover
+from .groups_popover import JackGroupsPopover
+from .port_select_popover import PortSelectPopover
+
 from ..settings import GLADEFILE, LAYOUT_DIR
 
 from gi import require_version as gi_require_version
@@ -359,12 +360,12 @@ class MainWindow(Gtk.Window):
                         button.connect('clicked', self.toggle_loopback, input_type,
                                 input_id, output_type, output_id)
 
-                        if self.init_config['jack']['enable'] == False:
-                            button.connect('button_press_event', self.open_popover, LatencyPopover,
-                                    [input_type, input_id, sink])
-                        else:
-                            button.connect('button_press_event', self.open_popover, PortSelectPopover, 
-                                    [input_type, input_id, sink])
+                        # if self.init_config['jack']['enable'] == False:
+                            # button.connect('button_press_event', self.open_popover, LatencyPopover,
+                                    # [input_type, input_id, sink])
+                        # else:
+                            # button.connect('button_press_event', self.open_popover, PortSelectPopover, 
+                                    # [input_type, input_id, sink])
 
     # start output devices
     def start_outputs(self):
@@ -417,7 +418,7 @@ class MainWindow(Gtk.Window):
                 eq = self.builder.get_object(f'{output_type}_{output_id}_eq')
                 eq.set_active(sink_config['use_eq'])
                 eq.connect('clicked', self.toggle_eq, output_type, output_id)
-                eq.connect('button_press_event', self.open_popover, EqPopover, [output_type, output_id])
+                # eq.connect('button_press_event', self.open_popover, EqPopover, [output_type, output_id])
 
                 # to hide eq button if plugin not found
                 found = 0
@@ -449,8 +450,8 @@ class MainWindow(Gtk.Window):
         val = int(slider.get_value())
         self.sock.send_command(f'volume {device_type} {device_num} {val}')
 
-    def open_group_popover(self, widget):
-        JackGroupsPopover(widget, self.pulse)
+    # def open_group_popover(self, widget):
+        # JackGroupsPopover(widget, self.pulse)
 
     def open_popover(self, button, event, popover, index):
         if event.button == 3:

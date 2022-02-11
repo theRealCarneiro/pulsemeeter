@@ -1,4 +1,4 @@
-from .interface import *
+from .interface import MainWindow
 from .backends import *
 from .socket import *
 from .settings import __version__

@@ -1,5 +1,8 @@
 import sys
 from ..settings import GLADEFILE
+
+from gi import require_version as gi_require_version
+gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk,Gio
 
 class AppList(Gtk.VBox):
