@@ -6,10 +6,10 @@ import sys
 import subprocess
  
 import pulsectl
-from .settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, __version__
 
 class Pulse:
-    def __init__(self, init=None, loglevel=0):
+    def __init__(self, config, loglevel=0):
+        self.config = config
         self.loglevel = loglevel
 
         # check if pulseaudio is running
@@ -22,16 +22,16 @@ class Pulse:
                 'rear-right', 'front-center', 'lfe', 'side-left',
                 'side-right', 'aux0', 'aux1', 'aux2', 'aux3'
                 ]
-        self.read_config()
+        # self.read_config()
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
-        if init == 'cmd': return
+        # if init == 'cmd': return
         command = ''
         command += self.start_sinks()
         command += self.start_sources()
         command += self.start_eqs()
         command += self.start_rnnoise()
         command += self.start_connections()
-        command += self.start_primarys()
+        # command += self.start_primarys()
         # command += self.start_mute()
         
         # print(command)
@@ -42,7 +42,7 @@ class Pulse:
         for i in ['hi', 'vi', 'a', 'b']:
             self.vu_list[i] = {}
 
-        self.restart_window = False
+        # self.restart_window = False
 
 
     # get the correct device to connect to, e.g. include .monitor in a 
@@ -222,11 +222,11 @@ class Pulse:
 
     def cleanup(self):
         # remove connections
-        print('removing connections')
+        # print('removing connections')
         command = self.stop_connections(run_command=False)
 
         # remove rnnoise
-        print('removing rnnoise')
+        # print('removing rnnoise')
         for hi_id in self.config['hi']:
             hi_config = self.config['hi'][hi_id]
             if hi_config['use_rnnoise']:
@@ -234,7 +234,7 @@ class Pulse:
                         reconnect=False, change_config=False, run_command=False)
 
         # remove eqs
-        print('removing eqs')
+        # print('removing eqs')
         for output_type in ['a', 'b']:
             for output_id in self.config[output_type]:
                 output_config = self.config[output_type][output_id]
@@ -243,7 +243,7 @@ class Pulse:
                             reconnect=False, change_config=False, run_command=False)
 
         # remove virtual devices
-        print('removing virtual devices')
+        # print('removing virtual devices')
         for device_type in ['b', 'vi']:
             for device_id in self.config[device_type]:
                 command += self.toggle_virtual_device(device_type, device_id, status=False, disconnect=False, run_command=False)
@@ -312,8 +312,8 @@ class Pulse:
                             command += f'pmctl disconnect {sink_name}.monitor {sink_name} {latency}\n'
                             command += f'pmctl connect {source} {sink_name} {latency}\n'
 
-        if self.loglevel > 1: print(command)
         if run_command == True:
+            if self.loglevel > 1: print(command)
             os.popen(command)
             return f'rnoise {input_type} {input_id} {status}'
         else:
@@ -343,6 +343,9 @@ class Pulse:
         # if only changing the control
         elif status == 'set':
             status = sink_config['use_eq']
+
+        elif status == 'get':
+            return control
 
         else:
             status = str2bool(status)
@@ -382,8 +385,8 @@ class Pulse:
                             command += f'pmctl connect {vi} {master}\n'
 
 
-        if self.loglevel > 1: print(command)
         if run_command:
+            if self.loglevel > 1: print(command)
             os.popen(command)
             return f'eq {output_type} {output_id} {status} {control}'
         else:
@@ -437,9 +440,10 @@ class Pulse:
                     command += self.connect(input_type, input_id, output_type, output_id,
                             status=status, change_state=False, run_command=False, init=True)
 
-        # if self.loglevel > 1: print(command)
-        if run_command: os.popen(command)
-        print(command)
+        if run_command: 
+            if self.loglevel > 1: print(command)
+            os.popen(command)
+        # print(command)
         return command
 
     # connects an input to an output
@@ -490,7 +494,7 @@ class Pulse:
         if run_command == True: 
             if self.loglevel > 1: print(command)
             os.popen(command)
-            return f'{input_type} {input_id} {output_type}{output_id} {status}'
+            return f'connect {input_type} {input_id} {output_type} {output_id} {status}'
         else:
             return command
 
@@ -616,7 +620,7 @@ class Pulse:
             command += self.rnnoise(input_id, status=status, 
                     reconnect=False, change_config=False, run_command=False)
 
-        # if self.loglevel > 1: print(command)
+        if self.loglevel > 1: print(command)
         if run_command: os.popen(command)
 
     def toggle_virtual_device(self, device_type, device_id, status=False, disconnect=True, run_command=True):
@@ -725,8 +729,8 @@ class Pulse:
         conn_status = 1 if state else 0
         command = f"pmctl mute {device} {name} {conn_status}\n"
 
-        if self.loglevel > 1: print(command)
         if run_command: 
+            if self.loglevel > 1: print(command)
             os.popen(command)
             return f'mute {device_type} {device_id} {state}'
         else:
@@ -918,51 +922,6 @@ class Pulse:
 
     def jack_get_ports(self):
         return cmd('pmctl jack-system-ports')
-
-    def read_config(self):
-
-        # if config exists XDG_CONFIG_HOME 
-        if os.path.isfile(CONFIG_FILE):
-            try:
-                self.config = json.load(open(CONFIG_FILE))
-            except:
-                print('ERROR loading config file')
-                sys.exit(1)
-
-            # if config is outdated it will try to add missing keys
-            if not 'version' in self.config or self.config['version'] != __version__:
-                self.config['layout'] = 'default'
-                config_orig = json.load(open(ORIG_CONFIG_FILE))
-                self.config['version'] = __version__
-                self.config['enable_vumeters'] = True
-
-                if 'jack' not in self.config:
-                    self.config['jack'] = {}
-                for i in config_orig['jack']:
-                    if i not in self.config['jack']:
-                        self.config['jack'][i] = config_orig['jack'][i]
-
-                for i in ['a', 'b', 'vi', 'hi']:
-                    for j in config_orig[i]:
-                        for k in config_orig[i][j]:
-                            if not k in self.config[i][j]:
-                                self.config[i][j][k] = config_orig[i][j][k]
-                self.save_config()
-        else:
-            self.config = json.load(open(ORIG_CONFIG_FILE))
-             
-            self.config['version'] = __version__
-
-            self.save_config()
-
-    def get_config(self):
-        return json.dumps(self.config, ensure_ascii=False)
-
-    def save_config(self):
-        if not os.path.isdir(CONFIG_DIR):
-            os.mkdir(CONFIG_DIR)
-        with open(CONFIG_FILE, 'w') as outfile:
-            json.dump(self.config, outfile, indent='\t', separators=(',', ': '))
 
 def cmd(command):
     sys.stdout.flush()

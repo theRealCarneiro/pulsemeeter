@@ -6,13 +6,17 @@ import threading
 import sys
 import json
 
-from .EqPopover import EqPopover
-from .RnnoisePopover import RnnoisePopover
-from .LatencyPopover import LatencyPopover
-from .AppListWidget import AppList
-from .PortSelectPopover import PortSelectPopover
-from .JackGroupsPopover import JackGroupsPopover
-from .settings import GLADEFILE, LAYOUT_DIR
+# from .EqPopover import EqPopover
+# from .RnnoisePopover import RnnoisePopover
+# from .LatencyPopover import LatencyPopover
+# from .AppListWidget import AppList
+# from .PortSelectPopover import PortSelectPopover
+# from .JackGroupsPopover import JackGroupsPopover
+from ..settings import GLADEFILE, LAYOUT_DIR
+
+from gi import require_version as gi_require_version
+
+gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk,Gdk,Gio,GLib
 

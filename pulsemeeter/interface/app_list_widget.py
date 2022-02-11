@@ -1,6 +1,5 @@
 import sys
-from . import Pulse
-from .settings import GLADEFILE
+from ..settings import GLADEFILE
 from gi.repository import Gtk,Gio
 
 class AppList(Gtk.VBox):

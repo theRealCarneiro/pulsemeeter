@@ -1,21 +1,26 @@
 import socket
+import json
 import sys
 import os
 import signal
 import threading
 from queue import SimpleQueue
-from .settings import SOCK_FILE
-from .Pulse import Pulse
+
+from ..backends import Pulse
+from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__
 
 
-LISTENER_TIMEOUT = 5
+LISTENER_TIMEOUT = 1
 
 
 class Server:
-    def __init__(self, audio_server):
+    def __init__(self):
 
         # audio server can be pulse or pipe, so just use a generic name
-        self.audio_server = audio_server
+        audio_server = Pulse
+
+        self.read_config()
+        self.audio_server = audio_server(self.config)
         self.create_command_dict()
 
         # the socket only needs to be seen by the listener thread
@@ -175,9 +180,9 @@ class Server:
             # ARGS: id [sink-input|source-output]
             'get-stream-volume': [self.audio_server.get_app_stream_volume, False],
 
-            'get-config': [self.audio_server.get_config, False],
+            'get-config': [self.get_config, False],
 
-            'save_config': [self.audio_server.save_config,],
+            'save_config': [self.save_config,],
             
             # not ready
             'get-vd': [self.audio_server.get_virtual_devices, False],
@@ -194,7 +199,7 @@ class Server:
     # TODO: if the daemon should clean up its virtual devices on exit, do that here
     def close_server(self):
         # self.audio_server
-        self.audio_server.save_config()
+        self.save_config()
         self.audio_server.cleanup()
 
     # this function handles the connection requests
@@ -216,7 +221,8 @@ class Server:
 
                     # Create a thread for the client
                     event_queue = SimpleQueue()
-                    thread = threading.Thread(target=self.listen_to_client, args=(conn, event_queue, id), daemon=True)
+                    thread = threading.Thread(target=self.listen_to_client, 
+                            args=(conn, event_queue, id), daemon=True)
                     thread.start()
                     self.client_handler_threads[id] = thread
                     self.client_handler_connections[id] = conn
@@ -248,11 +254,6 @@ class Server:
                     self.command_queue.put(('command', id, data))
                     # TODO: If this handler is being used for sending events to clients, distinguish a return value from
                     # TODO: an event
-                    # ret_message = event_queue.get()
-                    # event = f'{id} {ret_message[1].decode()}'
-                    # conn.sendall(str.encode(event))
-                    # if ret_message == False:
-                        # raise
                 except Exception:  # Exception doesn't catch exit exceptions (a bare except clause does)
                     print(f'client {id} disconnect')
                     conn.shutdown(socket.SHUT_RDWR)
@@ -279,72 +280,59 @@ class Server:
             print(ex)
             return (ex, False)
 
-class Client:
-    def __init__(self):
-
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-
-        # connect to server
-        try:
-            self.sock.connect(SOCK_FILE)
-            self.id = int(self.sock.recv(4))
-        except socket.error as msg:
-            print(msg)
-            sys.exit(1)
-
-    def send_command(self, command):
-        try:
-
-            # encode message ang get it's length
-            message = command.encode()
-            msg_len = len(message)
-            if msg_len == 0 or command == 'exit': raise
-
-            # send message length
-            msg_len = str(msg_len).rjust(4, '0')
-            self.sock.sendall(msg_len.encode())
-
-            # send message
-            self.sock.sendall(message)
-
-            # wait for answer
-            for event in self.listen(wait_id=self.id):
-                return(event)
-                
-        except:
-            print('closing socket')
-            self.sock.close()
-
-    def listen(self, blacklist_id=None, wait_id=None):
-        while True:
+    def read_config(self):
+        # if config exists XDG_CONFIG_HOME 
+        if os.path.isfile(CONFIG_FILE):
             try:
-                # get the id of the client that sent the message
-                sender_id = self.sock.recv(4)
-                if not sender_id: raise
-                sender_id = int(sender_id)
+                self.config = json.load(open(CONFIG_FILE))
+            except:
+                print('ERROR loading config file')
+                sys.exit(1)
 
-                # length of the message
-                msg_len = self.sock.recv(4)
-                if not msg_len: raise
-                msg_len = int(msg_len.decode())
-                
-                # get event
-                event = self.sock.recv(msg_len)
-                if not event: raise
-                event = event.decode()
+            # if config is outdated it will try to add missing keys
+            if not 'version' in self.config or self.config['version'] != __version__:
+                self.config['layout'] = 'default'
+                config_orig = json.load(open(ORIG_CONFIG_FILE))
+                self.config['version'] = __version__
+                self.config['enable_vumeters'] = True
 
-                # only yield it if not blacklisted
-                if sender_id != blacklist_id:
-                    yield event
-                
-                    if wait_id == sender_id:
-                        return event
+                if 'jack' not in self.config:
+                    self.config['jack'] = {}
+                for i in config_orig['jack']:
+                    if i not in self.config['jack']:
+                        self.config['jack'][i] = config_orig['jack'][i]
 
-            except Exception:
-                print('closing socket')
-                self.sock.close()
-                break
+                for i in ['a', 'b', 'vi', 'hi']:
+                    for j in config_orig[i]:
+                        for k in config_orig[i][j]:
+                            if not k in self.config[i][j]:
+                                self.config[i][j][k] = config_orig[i][j][k]
+                self.save_config()
+        else:
+            self.config = json.load(open(ORIG_CONFIG_FILE))
+             
+            self.config['version'] = __version__
 
-    def close_connection(self):
-        print('closing socket')
-        self.sock.close()
+            self.save_config()
+
+    def get_config(self, args=None):
+        if args == None:
+            return json.dumps(self.config, ensure_ascii=False)
+        else:
+            args = args.split(':')
+            print(args)
+            config = self.config
+            for arg in args:
+                config = config[arg]
+
+            if type(config) != dict:
+                return config
+            else:
+                return json.dumps(config, ensure_ascii=False)
+
+
+    def save_config(self):
+        if not os.path.isdir(CONFIG_DIR):
+            os.mkdir(CONFIG_DIR)
+        with open(CONFIG_FILE, 'w') as outfile:
+            json.dump(self.config, outfile, indent='\t', separators=(',', ': '))
