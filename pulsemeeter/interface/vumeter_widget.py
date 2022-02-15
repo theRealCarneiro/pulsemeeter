@@ -69,6 +69,7 @@ class Vumeter(Gtk.ProgressBar):
         self.name = self.config[self.device_type][self.device_id]['name']
 
     def start(self):
+        GLib.idle_add(self.set_sensitive, True)
         self.thread = threading.Thread(target=self.listen_peak)
         self.thread.start()
 

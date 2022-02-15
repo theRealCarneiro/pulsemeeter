@@ -115,8 +115,8 @@ class MainWindow(Gtk.Window):
         self.start_hardware_comboboxes()
         self.start_inputs()
         self.start_outputs()
-        self.start_app_list()
         self.start_vumeters()
+        self.start_app_list()
         # self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
@@ -470,7 +470,7 @@ class MainWindow(Gtk.Window):
         model = widget.get_active()
         name = device[model - 1]['name'] if model > 0 else ''
 
-        self.sock.change_hardware_device(output_type, output_id, name)
+        print(self.sock.change_hardware_device(output_type, output_id, name))
         self.vu_list[output_type][output_id].restart()
 
         # if re.search('JACK:', device[model - 1]['description']):
@@ -535,7 +535,7 @@ class MainWindow(Gtk.Window):
         self.listen_thread.start()
 
     def update_loopback_buttons(self, input_type, input_id, output_type,
-            output_id, state):
+            output_id, state, latency):
 
         sink = output_type + output_id
         state = state == 'True'
@@ -558,6 +558,7 @@ class MainWindow(Gtk.Window):
     def update_primary_buttons(self, device_type, device_id):
         
         button_list = self.primary_buttons[device_type]
+        print('aq')
         for dev_id in button_list:
             if dev_id == device_id:
                 GLib.idle_add(button_list[dev_id].set_active, True)
@@ -581,8 +582,8 @@ class MainWindow(Gtk.Window):
     def delete_event(self, widget, event):
         self.listen_client.close_connection()
         self.listen_thread.join()
-        # self.pulse.end_subscribe()
-        # self.subscribe_thread.join()
+        self.sock.end_subscribe()
+        self.subscribe_thread.join()
         if self.enable_vumeters == True:
             for i in ['hi', 'vi', 'a', 'b']:
                 for j in self.vu_list[i]:

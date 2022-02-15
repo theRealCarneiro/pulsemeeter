@@ -8,7 +8,7 @@ import threading
 from queue import SimpleQueue
 
 from ..backends import Pulse
-from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__
+from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
 
 
 LISTENER_TIMEOUT = 1
@@ -16,6 +16,18 @@ LISTENER_TIMEOUT = 1
 
 class Server:
     def __init__(self):
+
+        # delete socket file if exists
+        try:
+            if self.is_running():
+                raise Exception('Another copy is already running')
+            os.unlink(SOCK_FILE)
+        except OSError:
+            if os.path.exists(SOCK_FILE):
+                raise
+        except Exception as ex:
+            print(str(ex))
+            sys.exit(1)
 
         # audio server can be pulse or pipe, so just use a generic name
         audio_server = Pulse
@@ -41,12 +53,6 @@ class Server:
         self.client_handler_threads = {}
         self.client_handler_connections = {}
 
-        # delete socket file if exists
-        try:
-            os.unlink(SOCK_FILE)
-        except OSError:
-            if os.path.exists(SOCK_FILE):
-                raise
 
         # Start listener thread
         self.listener_thread = threading.Thread(target=self.query_clients)
@@ -85,8 +91,8 @@ class Server:
                             client_list = self.client_handler_connections.values()
                         elif message[1] in self.client_handler_connections:
                             client_list = [self.client_handler_connections[message[1]]]
-                        else:
-                            continue
+                        # else:
+                            # continue
 
                         for conn in client_list:
 
@@ -125,6 +131,22 @@ class Server:
             # Call any code to clean up virtual devices or similar
             self.close_server()
 
+    def is_running(self):
+        try:
+            with open(PIDFILE) as f:
+                pid = int(next(f))
+            if os.kill(pid, 0) != False:
+                # print('Another copy is already running')
+                return True
+            else:
+                with open(PIDFILE, 'w') as f:
+                    f.write(f'{os.getpid()}\n')
+                return False
+        except Exception:
+            with open(PIDFILE, 'w') as f:
+                f.write(f'{os.getpid()}\n')
+            return False
+
 
     # function to register as a signal handler to gracefully exit
     def handle_exit_signal(self, signum, frame):
@@ -148,19 +170,19 @@ class Server:
                 try:
                     # Wait for a connection
                     conn, addr = s.accept()
-                    print('client connected ', addr)
+                    print('client connected ', id)
 
                     # send id to client
                     conn.sendall(str.encode(str(id).rjust(4, '0')))
 
                     # Create a thread for the client
                     event_queue = SimpleQueue()
+                    self.client_handler_connections[id] = conn
+                    self.event_queues[id] = event_queue
                     thread = threading.Thread(target=self.listen_to_client, 
                             args=(conn, event_queue, id), daemon=True)
                     thread.start()
                     self.client_handler_threads[id] = thread
-                    self.client_handler_connections[id] = conn
-                    self.event_queues[id] = event_queue
                     id += 1
 
                     # Check for an exit flag

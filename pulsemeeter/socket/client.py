@@ -12,6 +12,7 @@ class Client:
 
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.callback_dict = {}
+        self.sub_proc = None
 
         # connect to server
         try:
@@ -63,7 +64,6 @@ class Client:
                     if print_event: print(event)
 
             except Exception as ex:
-                print('closing socket')
                 break
 
 
@@ -145,7 +145,7 @@ class Client:
         elif command == 'rename' or command == 'change-hd':
             device_type = args[0]
             device_id = args[1]
-            name = int(args[2])
+            name = args[2]
             self.config[device_type][device_id]['name'] = name
             print(self.config[device_type][device_id]['name'])
 
@@ -337,15 +337,19 @@ class Client:
         sys.stdout.flush()
         env = os.environ
         env['LC_ALL'] = 'C'
-        self.MyOut = subprocess.Popen(command, env=env, 
+        self.sub_proc = subprocess.Popen(command, env=env, 
             stdout=subprocess.PIPE, 
             stderr=subprocess.STDOUT,
             universal_newlines=True)
 
-        for stdout_line in iter(self.MyOut.stdout.readline, ""):
+        for stdout_line in iter(self.sub_proc.stdout.readline, ""):
             yield stdout_line 
             
-        self.MyOut.stdout.close()
-        return_code = self.MyOut.wait()
+        self.sub_proc.stdout.close()
+        return_code = self.sub_proc.wait()
         if return_code:
             raise subprocess.CalledProcessError(return_code, command)
+
+    def end_subscribe(self):
+        if self.sub_proc != None:
+            self.sub_proc.terminate()

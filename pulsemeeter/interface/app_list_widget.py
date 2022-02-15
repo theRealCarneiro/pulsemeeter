@@ -125,10 +125,6 @@ class AppList(Gtk.VBox):
     def app_combo_change(self, combobox, app):
         name = combobox.get_active_text()
         self.client.move_app_device(app, name, self.dev_type)
-        # if self.dev_type == 'sink-input':
-            # self.pulse.move_sink_input(app, name)
-        # if self.dev_type == 'source-output':
-            # self.pulse.move_source_output(app, name)
 
     def volume_change(self, slider, index, stream_type=None):
         val = slider.get_value()

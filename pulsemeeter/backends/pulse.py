@@ -754,26 +754,6 @@ class Pulse:
             return f'primary {device_type} {device_id}'
         return command
 
-    # def get_virtual_device_name(self, dev_type):
-        # name_vi = []
-        # name_b = []
-        # for i in ['1','2','3']:
-            # if dev_type == 'source-output':
-                # if self.config['b'][i]['name'] != '':
-                    # name_b.append(self.config['b'][i]['name'])
-                # if self.config['vi'][i]['name'] != '':
-                    # name_vi.append(self.config['vi'][i]['name'] + '.monitor')
-            # elif self.config['vi'][i]['name'] != '':
-                    # name_vi.append(self.config['vi'][i]['name'])
-
-
-        # if dev_type == 'source-output':
-            # name_b.extend(name_vi)
-            # dev_list = name_b
-        # else:
-            # dev_list = name_vi
-        # return dev_list
-
     # get volume from source outputs and sink inputs
     def get_app_stream_volume(self, id, stream_type):
         command = f'pmctl get-{stream_type}-volume {id}'
@@ -864,14 +844,6 @@ class Pulse:
         os.popen(command)
         return f'app {app} {name} {stream_type}'
 
-    # def move_source_output(self, app, name):
-        # command = f'pmctl move-source-output {app} {name}'
-        # os.popen(command)
-
-    # def move_sink_input(self, app, name):
-        # command = f'pmctl move-sink-input {app} {name}'
-        # os.popen(command)
-
     # subscribe to pulseaudio events
     def subscribe(self):
         command = ['pactl', 'subscribe']
@@ -893,37 +865,6 @@ class Pulse:
 
     def end_subscribe(self):
         self.MyOut.terminate()
-
-    # subscribe to vumeter events
-    # def vumeter(self, index):
-        # name = self.config[index[0]][index[1]]['name']
-        # dev_type = '0' if index[0] == 'vi' or index[0] == 'a' else '1'
-        # command = ['pulse-vumeter', name, dev_type]
-        # sys.stdout.flush()
-        # self.vu_list[index[0]][index[1]] = subprocess.Popen(command,
-            # stdout=subprocess.PIPE, 
-            # stderr=subprocess.STDOUT,
-            # shell=False,
-            # encoding='utf-8',
-            # universal_newlines=False)
-
-        # # return piped values
-        # for stdout_line in iter(self.vu_list[index[0]][index[1]].stdout.readline, ""):
-            # yield stdout_line 
-            
-        # # close connection
-        # self.vu_list[index[0]][index[1]].stdout.close()
-        # return_code = self.vu_list[index[0]][index[1]].wait()
-        # self.vu_list[index[0]].pop(index[1])
-
-        # # if return_code:
-            # # raise subprocess.CalledProcessError(return_code, command)
-
-    # def end_vumeter(self):
-        # for i in ['hi', 'vi', 'a', 'b']:
-            # for j in ['1','2','3']:
-                # if j in self.vu_list[i]:
-                    # self.vu_list[i][j].terminate()
 
     def jack_get_ports(self):
         return cmd('pmctl jack-system-ports')
