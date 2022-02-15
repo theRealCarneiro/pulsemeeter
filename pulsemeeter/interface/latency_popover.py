@@ -7,15 +7,23 @@ gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk,Gdk
 
 class LatencyPopover():
-    def __init__(self, button, pulse, index):
+    def __init__(self, button, sock, input_index, output_index):
 
-        self.config = pulse.config
+        input_type = input_index[0]
+        input_id = input_index[1]
+
+        output_type = output_index[0]
+        output_id = output_index[1]
+        sink = output_type + output_id
+
         self.builder = Gtk.Builder()
-        self.layout = pulse.config['layout']
+        self.sock = sock
+        layout = sock.config['layout']
+        self.device_config = sock.config[input_type][input_id]
 
         try:
             self.builder.add_objects_from_file(
-                os.path.join(LAYOUT_DIR, f'{self.layout}.glade'),
+                os.path.join(LAYOUT_DIR, f'{layout}.glade'),
                 [
                     'latency_popover',
                     'latency_adjust',
@@ -26,26 +34,18 @@ class LatencyPopover():
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
-        self.Latency_Popover = self.builder.get_object('latency_popover')
-        self.Latency_Popover.set_relative_to(button)
+        self.latency_popover = self.builder.get_object('latency_popover')
+        self.latency_popover.set_relative_to(button)
 
-        self.Latency_Adjust = self.builder.get_object('latency_adjust')
-        self.Latency_Adjust.set_value(self.config[index[0]][index[1]][index[2] + '_latency'])
-        self.Apply_Latency_Button = self.builder.get_object('apply_latency_button')
-        self.Apply_Latency_Button.connect('pressed', self.apply_latency, index, pulse)
+        self.latency_adjust = self.builder.get_object('latency_adjust')
+        self.latency_adjust.set_value(self.device_config[sink + '_latency'])
+        self.apply_latency_button = self.builder.get_object('apply_latency_button')
+        self.apply_latency_button.connect('pressed', self.apply_latency, input_type, input_id, output_type, output_id)
 
 
-        self.Latency_Popover.popup()
+        self.latency_popover.popup()
 
-    def apply_latency(self, widget, index, pulse):
-        val = int(self.Latency_Adjust.get_value())
-        self.config[index[0]][index[1]][index[2] + '_latency'] = val
-        if self.config[index[0]][index[1]][index[2]] == False:
-            return
-        dev = list(index[2])
-        command = ''
-        command = command + pulse.connect('disconnect', [index[0], index[1]], dev, 'init')
-        command = command + pulse.connect('connect', [index[0], index[1]], dev, 'init')
-        # print(command)
-        os.popen(command)
-
+    def apply_latency(self, widget, input_type, input_id, output_type, output_id):
+        sink = output_type + output_id
+        latency = int(self.latency_adjust.get_value())
+        self.sock.connect(input_type, input_id, output_type, output_id, True, latency)

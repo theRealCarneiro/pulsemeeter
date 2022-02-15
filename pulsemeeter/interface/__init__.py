@@ -5,6 +5,7 @@ from .latency_popover import LatencyPopover
 from .rnnoise_popover import RnnoisePopover
 from .groups_popover import JackGroupsPopover
 from .port_select_popover import PortSelectPopover
+from .vumeter_widget import Vumeter
 
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     'RnoisePopover',
     'JackGroupsPopover',
     'PortSelectPopover',
+    'Vumeter',
 ]

@@ -1,4 +1,5 @@
 import os
+import sys
 from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
@@ -6,15 +7,16 @@ gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk,Gdk
 
 class RnnoisePopover():
-    def __init__(self, button, pulse, index):
+    def __init__(self, button, sock, deivce_type, device_id):
 
-        self.pulse = pulse
         self.builder = Gtk.Builder()
-        self.layout = pulse.config['layout']
+        self.sock = sock
+        self.device_config = sock.config['hi'][device_id]
+        layout = sock.config['layout']
 
         try:
             self.builder.add_objects_from_file(
-                os.path.join(LAYOUT_DIR, f'{self.layout}.glade'),
+                os.path.join(LAYOUT_DIR, f'{layout}.glade'),
                 [
                     'rnnoise_popover',
                     'rnnoise_latency_adjust',
@@ -26,32 +28,31 @@ class RnnoisePopover():
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
-        self.Rnnoise_Popover = self.builder.get_object('rnnoise_popover')
-        self.Rnnoise_Popover.set_relative_to(button)
+        self.rnnoise_popover = self.builder.get_object('rnnoise_popover')
+        self.rnnoise_popover.set_relative_to(button)
 
-        self.Rnnoise_Latency_Adjust = self.builder.get_object('rnnoise_latency_adjust')
-        self.Rnnoise_Latency_Adjust.set_value(self.pulse.config[index[0]][index[1]]['rnnoise_latency'])
+        self.rnnoise_latency_adjust = self.builder.get_object('rnnoise_latency_adjust')
+        self.rnnoise_latency_adjust.set_value(self.device_config['rnnoise_latency'])
 
-        self.Rnnoise_Threshold_Adjust = self.builder.get_object('rnnoise_threshold_adjust')
-        self.Rnnoise_Threshold_Adjust.set_value(self.pulse.config[index[0]][index[1]]['rnnoise_control'])
+        self.rnnoise_threshold_adjust = self.builder.get_object('rnnoise_threshold_adjust')
+        self.rnnoise_threshold_adjust.set_value(self.device_config['rnnoise_control'])
 
-        self.Apply_Rnnoise_Button = self.builder.get_object('apply_rnnoise_button')
-        self.Apply_Rnnoise_Button.connect('pressed', self.apply_button, index)
+        self.apply_rnnoise_button = self.builder.get_object('apply_rnnoise_button')
+        self.apply_rnnoise_button.connect('pressed', self.apply_button, device_id)
 
-        self.Rnnoise_Popover.popup()
+        self.rnnoise_popover.popup()
 
-    def apply_button(self, widget, index):
-        val = int(self.Rnnoise_Latency_Adjust.get_value())
-        self.pulse.config[index[0]][index[1]]['rnnoise_latency'] = val
-        val = int(self.Rnnoise_Threshold_Adjust.get_value())
-        self.pulse.config[index[0]][index[1]]['rnnoise_control'] = val
+    def apply_button(self, widget, device_id):
+        latency = int(self.rnnoise_latency_adjust.get_value())
+        # self.device_config['rnnoise_latency'] = val
 
-        if self.pulse.config[index[0]][index[1]]['use_rnnoise'] == False:
+        control = int(self.rnnoise_threshold_adjust.get_value())
+        # self.device_config['rnnoise_control'] = val
+
+        if self.device_config['use_rnnoise'] == False:
             return
-        sink_name = self.pulse.config[index[0]][index[1]]['rnnoise_name']
-        command = ''
-        command = command + self.pulse.rnnoise(index, sink_name, 'disconnect', 'cmd_only')
-        command = command + self.pulse.rnnoise(index, sink_name, 'connect', 'cmd_only')
+
+        self.sock.rnnoise(device_id, 'set', control, latency)
+        # sink_name = self.device_config['rnnoise_name']
         # print(command)
-        os.popen(command)
 

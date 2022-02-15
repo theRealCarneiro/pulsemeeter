@@ -7,9 +7,10 @@ from gi.repository import Gtk,Gio
 
 class AppList(Gtk.VBox):
 
-    def __init__(self, dev_type, pulse):
+    def __init__(self, dev_type, client):
         super().__init__(spacing=0)
-        self.pulse = pulse
+        self.client = client
+        self.config = client.config
         self.dev_type = dev_type
 
         self.box_list = []
@@ -19,17 +20,42 @@ class AppList(Gtk.VBox):
         if id == None and len(self.box_list) > 0:
             self.remove_app_dev()
 
-        app_list = self.pulse.get_app_streams(self.dev_type)
+        app_list = self.client.list_apps(self.dev_type)
 
         if len(app_list) == 0: 
             return
 
-        dev_list = self.pulse.get_virtual_device_name(self.dev_type)
+        name_vi = []
+        name_b = []
+        for i in ['vi', 'b']:
+            for j in self.config[i]:
+                device_config = self.config[i][j]
+                if device_config['name'] != '':
+
+                    # if virtual input
+                    if i == 'vi':
+                        name = device_config['name']
+                        if self.dev_type == 'source-output':
+                            name += '.monitor'
+                        name_vi.append(name)
+
+                    # if virtual output
+                    elif self.dev_type != 'sink-input':
+                        name_b.append(device_config['name'])
+
+        if self.dev_type == 'source-output':
+            name_b.extend(name_vi)
+            dev_list = name_b
+        else:
+            dev_list = name_vi
 
         for i in app_list:
             if id != None:
                 if str(id) != str(i['id']):
                     continue
+
+            if 'icon' not in i:
+                i['icon'] = 'audio-card'
 
             icon = Gio.ThemedIcon(name=i['icon'])
             image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
@@ -52,7 +78,7 @@ class AppList(Gtk.VBox):
             combobox.set_margin_right(10)
 
             adjust = Gtk.Adjustment(lower=0, upper=153, step_increment=1, page_increment=10)
-            adjust.set_value(self.pulse.get_app_stream_volume(i['id'], self.dev_type))
+            adjust.set_value(self.client.get_app_volume(i['id'], self.dev_type))
             adjust.connect('value_changed', self.volume_change, i['id'], self.dev_type)
 
             scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adjust)
@@ -98,11 +124,12 @@ class AppList(Gtk.VBox):
 
     def app_combo_change(self, combobox, app):
         name = combobox.get_active_text()
-        if self.dev_type == 'sink-input':
-            self.pulse.move_sink_input(app, name)
-        if self.dev_type == 'source-output':
-            self.pulse.move_source_output(app, name)
+        self.client.move_app_device(app, name, self.dev_type)
+        # if self.dev_type == 'sink-input':
+            # self.pulse.move_sink_input(app, name)
+        # if self.dev_type == 'source-output':
+            # self.pulse.move_source_output(app, name)
 
     def volume_change(self, slider, index, stream_type=None):
-        val = int(slider.get_value())
-        self.pulse.app_volume(index, val, stream_type)
+        val = slider.get_value()
+        self.client.set_app_volume(index, int(val), stream_type)

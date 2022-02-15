@@ -1,4 +1,5 @@
 import os
+import pulsectl
 import re
 import signal
 import shutil
@@ -12,27 +13,29 @@ from .latency_popover import LatencyPopover
 from .rnnoise_popover import RnnoisePopover
 from .groups_popover import JackGroupsPopover
 from .port_select_popover import PortSelectPopover
+from .vumeter_widget import Vumeter
 
 from ..settings import GLADEFILE, LAYOUT_DIR
 
 from gi import require_version as gi_require_version
 
+# from pulsectl import Pulse
 gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk,Gdk,Gio,GLib
 
 class MainWindow(Gtk.Window):
 
-    def __init__(self, sock):
+    def __init__(self, command_client, listen_client):
+        self.exit_flag = False
+        GLib.threads_init()
 
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
-        self.sock = sock
-        init_config = sock.send_command('get-config')
-        self.init_config = json.loads(init_config)
-        # self.pulse = pulse
-        # self.pulse.restart_window = False
-        self.layout = self.init_config['layout']
+        self.sock = command_client
+        self.listen_client = listen_client
+        self.config = listen_client.config
+        self.layout = self.config['layout']
 
         component_list = [
                     'window',
@@ -74,10 +77,10 @@ class MainWindow(Gtk.Window):
 
 
         self.devices = {}
-        self.devices['a'] = json.loads(self.sock.send_command('get-hd sinks'))
-        self.devices['b'] = json.loads(self.sock.send_command('get-vd sources'))
-        self.devices['vi'] = json.loads(self.sock.send_command('get-vd sinks'))
-        self.devices['hi'] = json.loads(self.sock.send_command('get-hd sources'))
+        self.devices['a'] = self.sock.list_hardware_devices('sinks')
+        self.devices['b'] = self.sock.list_virtual_devices('sources')
+        self.devices['vi'] = self.sock.list_virtual_devices('sinks')
+        self.devices['hi'] = self.sock.list_hardware_devices('sources')
 
         self.hardware_comboboxes = {}
         self.primary_buttons = {}
@@ -88,16 +91,13 @@ class MainWindow(Gtk.Window):
         self.rnnoise_buttons = {}
         self.eq_buttons = {}
 
-        # if not 'enable_vumeters' in self.pulse.config:
-            # self.pulse.config['enable_vumeters'] = True
+        self.enable_vumeters = True
+        if not shutil.which('pulse-vumeter') or self.config['enable_vumeters'] == False:
+            self.enable_vumeters = False
 
-        # self.enable_vumeters = True
-        # if not shutil.which('pulse-vumeter') or self.pulse.config['enable_vumeters'] == False:
-            # self.enable_vumeters = False
-
-        # self.vumeter_toggle = self.builder.get_object('vumeter_toggle')
-        # self.vumeter_toggle.set_active(self.enable_vumeters)
-        # self.vumeter_toggle.connect('toggled', self.toggle_vumeters)
+        self.vumeter_toggle = self.builder.get_object('vumeter_toggle')
+        self.vumeter_toggle.set_active(self.enable_vumeters)
+        self.vumeter_toggle.connect('toggled', self.toggle_vumeters)
         # self.jack_toggle_check_button = self.builder.get_object('jack_toggle')
         # self.jack_toggle_check_button.set_active(self.pulse.config['jack']['enable'])
         # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
@@ -115,19 +115,22 @@ class MainWindow(Gtk.Window):
         self.start_hardware_comboboxes()
         self.start_inputs()
         self.start_outputs()
-        # self.start_app_list()
-        # self.start_vumeters()
+        self.start_app_list()
+        self.start_vumeters()
         # self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
         super().__init__(self.window)
 
-        # if self.layout == 'default':
-            # self.menu_button = self.builder.get_object('menu_button')
-            # self.menu_popover = self.builder.get_object('menu_popover')
-            # self.menu_popover.set_relative_to(self.menu_button)
+        if self.layout == 'default':
+            self.menu_button = self.builder.get_object('menu_button')
+            self.menu_popover = self.builder.get_object('menu_popover')
+            self.menu_popover.set_relative_to(self.menu_button)
 
-            # self.menu_button.connect('pressed', self.open_settings)
+            self.menu_button.connect('pressed', self.open_settings)
+
+
+        self.listen_socket()
 
         self.window.connect('delete_event', self.delete_event)
 
@@ -139,8 +142,6 @@ class MainWindow(Gtk.Window):
 
         signal.signal(signal.SIGTERM, self.delete_event)
         signal.signal(signal.SIGINT, self.delete_event)
-
-        # self.subscribe_thread.start()
 
     def start_layout_combobox(self):
         self.layout_combobox = self.builder.get_object('layout_combobox')
@@ -167,84 +168,46 @@ class MainWindow(Gtk.Window):
         for i in ['vi', 'hi']:
             for j in self.pulse.config[i]:
                 self.pulse.config[i][j]['jack'] = widget.get_active()
-        # if widget.get_active() == True:
-            # pass
-            
 
     def toggle_vumeters(self, widget):
         if not shutil.which('pulse-vumeter'):
             return
         self.enable_vumeters = widget.get_active()
-        self.pulse.config['enable_vumeters'] = widget.get_active()
-        if widget.get_active() == False:
-            self.pulse.end_vumeter()
-        for i in ['hi', 'vi', 'a', 'b']:
-            for j in ['1','2','3']:
-                if self.pulse.config[i][j]['name'] != '':
-                    if widget.get_active() == False:
-                        self.vu_list[i][j].set_fraction(0)
-                        self.vu_thread[i][j].join() 
-                    else:
-                        self.vu_thread[i][j] = threading.Thread(target=self.listen_peak, 
-                                args=([i, j],))
-                        self.vu_thread[i][j].start() 
+        self.config['enable_vumeters'] = widget.get_active()
+        for device_type in ['hi', 'vi', 'a', 'b']:
+            for device_id in self.config[device_type]:
+                # if self.config[device_type][device_id]['name'] != '':
+                if widget.get_active() == False:
+                    self.vu_list[device_type][device_id].close()
+                else:
+                    self.vu_list[device_type][device_id].reload_device()
+                    self.vu_list[device_type][device_id].start()
 
     def start_vumeters(self):
         self.vu_list = {}
-        self.vu_thread = {}
-        for i in ['hi', 'vi', 'a', 'b']:
-            self.vu_list[i] = {}
-            self.vu_thread[i] = {}
-            for j in ['1','2','3']:
-                grid = self.builder.get_object(f'{i}_{j}_vumeter')
-                self.vu_list[i][j] = Gtk.ProgressBar()
-                if self.layout == 'default':
-                    self.vu_list[i][j].set_orientation(Gtk.Orientation.VERTICAL)
-                    self.vu_list[i][j].set_margin_bottom(8)
-                    self.vu_list[i][j].set_margin_top(8)
-                    self.vu_list[i][j].set_halign(Gtk.Align.CENTER)
-                    self.vu_list[i][j].set_inverted(True)
-                else:
-                    self.vu_list[i][j].set_orientation(Gtk.Orientation.HORIZONTAL)
-                self.vu_list[i][j].set_vexpand(True)
-                self.vu_list[i][j].set_hexpand(True)
-
-                grid.add(self.vu_list[i][j])
-                if self.pulse.config[i][j]['name'] != '':
-                    self.vu_thread[i][j] = threading.Thread(target=self.listen_peak, 
-                            args=([i, j],))
+        for device_type in ['hi', 'vi', 'a', 'b']:
+            self.vu_list[device_type] = {}
+            for device_id in self.config[device_type]:
+                device_config = self.config[device_type][device_id]
+                grid = self.builder.get_object(f'{device_type}_{device_id}_vumeter')
+                vert = True if self.layout == 'default' else False
+                vumeter = Vumeter(device_type, device_id, self.config, vertical=vert)
+                grid.add(vumeter)
+                if device_config['name'] != '':
                     if self.enable_vumeters == True:
-                        self.vu_thread[i][j].start() 
-
-    def restart_vumeter(self, index, stop=True, start=True):
-        if self.enable_vumeters == False:
-            return
-        if stop:
-            if index[1] in self.pulse.vu_list[index[0]] or stop_only == True:
-                if index[1] in self.vu_thread[index[0]]:
-                    self.pulse.vu_list[index[0]][index[1]].terminate()
-                    # self.pulse.vu_list[index[0]].pop(index[1])
-                    self.vu_thread[index[0]][index[1]].join()
-                    self.vu_thread[index[0]].pop(index[1])
-                self.vu_list[index[0]][index[1]].set_fraction(0)
-
-        if not start:
-            return
-
-        self.vu_thread[index[0]][index[1]] = threading.Thread(target=self.listen_peak, 
-                args=(index,))
-        self.vu_thread[index[0]][index[1]].start()
-
+                        vumeter.start() 
+                self.vu_list[device_type][device_id] = vumeter
 
     def start_app_list(self):
         sink_input_viewport = self.builder.get_object('sink_input_viewport')
         source_output_viewport = self.builder.get_object('source_output_viewport')
-        self.sink_input_box = AppList('sink-input', self.pulse)
-        self.source_output_box = AppList('source-output', self.pulse)
+        self.sink_input_box = AppList('sink-input', self.sock)
+        self.source_output_box = AppList('source-output', self.sock)
         sink_input_viewport.add(self.sink_input_box)
         source_output_viewport.add(self.source_output_box)
 
         self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
+        self.subscribe_thread.start()
 
     def start_hardware_comboboxes(self):
         for device_type in ['hi', 'a']:
@@ -256,9 +219,9 @@ class MainWindow(Gtk.Window):
 
             # for each combobox
             found = False
-            for device_num in self.init_config[device_type]:
-                device_config = self.init_config[device_type][device_num]
-                combobox = self.builder.get_object(f'{device_type}_{device_num}_combobox')
+            for device_id in self.config[device_type]:
+                device_config = self.config[device_type][device_id]
+                combobox = self.builder.get_object(f'{device_type}_{device_id}_combobox')
                 combobox.append_text('')
 
                 for i in range(0, len(devices)):
@@ -273,8 +236,8 @@ class MainWindow(Gtk.Window):
                 if found == False and device_config['jack'] == False:
                     device_config['name'] = ''
 
-                combobox.connect('changed', self.on_combo_changed, device_type, device_num, devices)
-                self.hardware_comboboxes[device_type][device_num] = combobox
+                combobox.connect('changed', self.on_combo_changed, device_type, device_id, devices)
+                self.hardware_comboboxes[device_type][device_id] = combobox
 
     def start_inputs(self):
         self.rename_popover = self.builder.get_object('rename_popover')
@@ -289,18 +252,21 @@ class MainWindow(Gtk.Window):
             self.volume_adjusts[input_type] = {}
             self.volume_sliders[input_type] = {}
             self.mute_buttons[input_type] = {}
+            self.loopback_buttons[input_type] = {}
 
-            for input_id in self.init_config[input_type]:
+            for input_id in self.config[input_type]:
 
                 if input_type == 'vi':
-                    name = self.init_config['vi'][input_id]['name']
+                    name = self.config['vi'][input_id]['name']
                     label = self.builder.get_object(f'vi_{input_id}_label')
                     label.set_text(name if name != '' else f'Virtual Input {input_id}')
-                    label_evt_box = self.builder.get_object(f'vi_{input_id}_label_event_box')
-                    label_evt_box.connect('button_press_event', self.label_click, label, 'vi', input_id)
+                    label_evt_box = self.builder.get_object(
+                            f'vi_{input_id}_label_event_box')
+                    label_evt_box.connect('button_press_event', self.label_click, label,
+                            'vi', input_id)
                     primary = self.builder.get_object(f'vi_{input_id}_primary')
-                    primary.set_active(self.init_config['vi'][input_id]['primary'])
-                    if self.init_config['vi'][input_id]['primary'] == True:
+                    primary.set_active(self.config['vi'][input_id]['primary'])
+                    if self.config['vi'][input_id]['primary'] == True:
                         primary.set_sensitive(False)
                     primary.connect('clicked', self.toggle_primary, 'vi', input_id)
                     self.primary_buttons['vi'][input_id] = primary
@@ -309,17 +275,22 @@ class MainWindow(Gtk.Window):
 
                     # noise reduction button
                     rnnoise = self.builder.get_object(f'hi_{input_id}_rnnoise')
-                    rnnoise.set_active(self.init_config['hi'][input_id]['use_rnnoise'])
+                    rnnoise.set_active(self.config['hi'][input_id]['use_rnnoise'])
                     rnnoise.connect('clicked', self.toggle_rnnoise, 'hi', input_id)
+
+                    rnnoise.connect('button_press_event', self.open_popover, 
+                            RnnoisePopover, input_type, input_id)
                     self.rnnoise_buttons[input_id] = rnnoise
                     # check for rnnoise plugin
                     found = 0
-                    for arc in ['', '64']:
-                        for path in [f'/usr/lib{arc}/ladspa', f'/usr/local/lib{arc}/ladspa']:
-                            if os.path.isfile(os.path.join(path, 'librnnoise_ladspa.so')): 
+                    for lib in ['lib', 'lib64']:
+                        for path in [f'/usr/{lib}/ladspa', f'/usr/local/{lib}/ladspa']:
+                            if os.path.isfile(os.path.join(path, 
+                                'librnnoise_ladspa.so')): 
                                 found = 1
                                 break
-                            elif os.path.isfile(os.path.join(path, 'rnnoise_ladspa.so')):
+                            elif os.path.isfile(os.path.join(path, 
+                                'rnnoise_ladspa.so')):
                                 found = 1
                                 break
                     if found == 0:
@@ -328,7 +299,7 @@ class MainWindow(Gtk.Window):
 
 
                 # recover volume if possible
-                source_config = self.init_config[input_type][input_id]
+                source_config = self.config[input_type][input_id]
                 for source in self.devices[input_type]:
                     if source['name'] == source_config['name'] and 'volume' in source:
                         source_config['vol'] = source['volume']
@@ -337,22 +308,22 @@ class MainWindow(Gtk.Window):
                 adjust = self.builder.get_object(f'{input_type}_{input_id}_adjust')
                 adjust.set_value(source_config['vol'])
                 vol_slider = self.builder.get_object(f'{input_type}_{input_id}_vol')
-                vol_slider.connect('value-changed', self.volume_change, input_type, input_id)
+                vol_slider.connect('value-changed', self.volume_change, 
+                        input_type, input_id)
                 vol_slider.add_mark(100, Gtk.PositionType.TOP, '')
                 self.volume_adjusts[input_type][input_id] = adjust
                 self.volume_sliders[input_type][input_id] = vol_slider
 
                 # connect mute buttons
                 mute = self.builder.get_object(f'{input_type}_{input_id}_mute')
-                mute.set_active(self.init_config[input_type][input_id]['mute'])
+                mute.set_active(self.config[input_type][input_id]['mute'])
                 mute.connect('clicked', self.toggle_mute, input_type, input_id)
                 self.mute_buttons[input_type][input_id] = mute
 
                 # connection buttons
-                self.loopback_buttons[input_type] = {}
                 self.loopback_buttons[input_type][input_id] = {}
                 for output_type in ['a', 'b']:
-                    for output_id in self.init_config[output_type]:
+                    for output_id in self.config[output_type]:
                         sink = output_type + output_id
                         button = self.builder.get_object(f'{input_type}_{input_id}_{sink}')
                         button.set_active(source_config[sink])
@@ -360,12 +331,12 @@ class MainWindow(Gtk.Window):
                         button.connect('clicked', self.toggle_loopback, input_type,
                                 input_id, output_type, output_id)
 
-                        # if self.init_config['jack']['enable'] == False:
-                            # button.connect('button_press_event', self.open_popover, LatencyPopover,
-                                    # [input_type, input_id, sink])
-                        # else:
-                            # button.connect('button_press_event', self.open_popover, PortSelectPopover, 
-                                    # [input_type, input_id, sink])
+                        if self.config['jack']['enable'] == False:
+                            button.connect('button_press_event', self.latency_popover, LatencyPopover,
+                                    input_type, input_id, output_type, output_id)
+                        else:
+                            button.connect('button_press_event', self.open_popover, PortSelectPopover, 
+                                    [input_type, input_id, sink])
 
     # start output devices
     def start_outputs(self):
@@ -377,10 +348,11 @@ class MainWindow(Gtk.Window):
             self.volume_adjusts[output_type] = {}
             self.volume_sliders[output_type] = {}
             self.mute_buttons[output_type] = {}
+            self.eq_buttons[output_type] = {}
 
-            for output_id in self.init_config[output_type]:
+            for output_id in self.config[output_type]:
 
-                sink_config = self.init_config[output_type][output_id]
+                sink_config = self.config[output_type][output_id]
 
                 if output_type == 'b':
                     primary = self.builder.get_object(f'b_{output_id}_primary')
@@ -403,7 +375,8 @@ class MainWindow(Gtk.Window):
                 adjust = self.builder.get_object(f'{output_type}_{output_id}_adjust')
                 adjust.set_value(sink_config['vol'])
                 vol_slider = self.builder.get_object(f'{output_type}_{output_id}_vol')
-                vol_slider.connect('value-changed', self.volume_change, output_type, output_id)
+                vol_slider.connect('value-changed', self.volume_change, output_type, 
+                        output_id)
                 vol_slider.add_mark(100, Gtk.PositionType.TOP, '')
                 self.volume_adjusts[output_type][output_id] = adjust
                 self.volume_sliders[output_type][output_id] = vol_slider
@@ -418,12 +391,15 @@ class MainWindow(Gtk.Window):
                 eq = self.builder.get_object(f'{output_type}_{output_id}_eq')
                 eq.set_active(sink_config['use_eq'])
                 eq.connect('clicked', self.toggle_eq, output_type, output_id)
-                # eq.connect('button_press_event', self.open_popover, EqPopover, [output_type, output_id])
+                eq.connect('button_press_event', self.open_popover, EqPopover, 
+                        output_type, output_id)
+                self.eq_buttons[output_type][output_id] = eq
 
                 # to hide eq button if plugin not found
                 found = 0
                 for arc in ['', '64']:
-                    for path in [f'/usr/lib{arc}/ladspa', f'/usr/local/lib{arc}/ladspa']:
+                    for path in [f'/usr/lib{arc}/ladspa', 
+                            f'/usr/local/lib{arc}/ladspa']:
                         if os.path.isfile(os.path.join(path, 'mbeq_1197.so')):
                             found = 1
                     if found == 0:
@@ -432,41 +408,51 @@ class MainWindow(Gtk.Window):
 
     def toggle_eq(self, button, output_type, output_id):
         state = button.get_active()
-        self.sock.send_command(f'eq {output_type} {output_id} {state}')
+        self.sock.eq(output_type, output_id, state)
 
     def toggle_rnnoise(self, widget, input_type, input_id):
         state = widget.get_active()
-        self.sock.send_command(f'rnnoise {input_id} {state}')
+        self.sock.rnnoise(input_id, state)
 
-    def toggle_mute(self, button, device_type, device_num):
+    def toggle_mute(self, button, device_type, device_id):
         state = 1 if button.get_active() else 0
-        self.sock.send_command(f'mute {device_type} {device_num} {state}')
+        self.sock.mute(device_type, device_id, state)
 
     def toggle_loopback(self, button, input_type, input_id, output_type, output_id):
         state =  button.get_active()
-        self.sock.send_command(f'connect {input_type} {input_id} {output_type} {output_id} {state}')
+        self.sock.connect(input_type, input_id, output_type, output_id, state)
 
-    def volume_change(self, slider, device_type, device_num):
+    def volume_change(self, slider, device_type, device_id):
         val = int(slider.get_value())
-        self.sock.send_command(f'volume {device_type} {device_num} {val}')
+        if self.config[device_type][device_id]['vol'] != val:
+            self.sock.volume(device_type, device_id, val)
 
-    # def open_group_popover(self, widget):
-        # JackGroupsPopover(widget, self.pulse)
+    def open_group_popover(self, widget):
+        JackGroupsPopover(widget, self.pulse)
 
-    def open_popover(self, button, event, popover, index):
+    def open_popover(self, button, event, popover, device_type, device_id):
         if event.button == 3:
-            if self.pulse.config[index[0]][index[1]]['name'] != '':
-                popover(button, self.pulse, index)
+            if self.config[device_type][device_id]['name'] != '':
+                popover(button, self.sock, device_type, device_id)
+
+    def latency_popover(self, button, event, popover, input_type, input_id, 
+            output_type, output_id):
+        if event.button == 3:
+            if self.config[input_type][input_id]['name'] != '':
+                popover(button, self.sock, [input_type, input_id], 
+                        [output_type, output_id])
 
     def label_rename_entry(self, widget):
         name = widget.get_text()
+        device_type = self.rename_device_type
+        device_id = self.rename_device_id
         old_name = self.active_label.get_text()
         if re.match('^[a-zA-Z0-9]*$', name) and name != old_name:
-            self.sock.send_command(f'rename {self.rename_device_type} {self.rename_device_id} {name}')
+            self.sock.rename(device_type, device_id, name)
             self.active_label.set_text(name)
-            self.sink_input_box.load_application_list()
-            self.source_output_box.load_application_list()
-            # self.restart_vumeter(self.Label_Index)
+            # self.sink_input_box.load_application_list()
+            # self.source_output_box.load_application_list()
+            self.vu_list[device_type][device_id].restart()
 
         else:
             return
@@ -483,18 +469,16 @@ class MainWindow(Gtk.Window):
     def on_combo_changed(self, widget, output_type, output_id, device):
         model = widget.get_active()
         name = device[model - 1]['name'] if model > 0 else ''
-        print(name)
 
-        self.sock.send_command(f'change_hd {output_type} {output_id} {name}')
-        # start = True if model > 0 else False
-        # self.restart_vumeter([output_type, output_id], stop=True, start=start)
+        self.sock.change_hardware_device(output_type, output_id, name)
+        self.vu_list[output_type][output_id].restart()
 
         # if re.search('JACK:', device[model - 1]['description']):
-            # self.pulse.config[device_type][device_num]['jack'] = True
+            # self.pulse.config[device_type][device_id]['jack'] = True
         # else:
-            # self.pulse.config[device_type][device_num]['jack'] = False
+            # self.pulse.config[device_type][device_id]['jack'] = False
 
-    def toggle_primary(self, widget, device_type, device_num):
+    def toggle_primary(self, widget, device_type, device_id):
         if widget.get_active() == False:
             return
         else:
@@ -505,15 +489,14 @@ class MainWindow(Gtk.Window):
                     button_list[button].set_sensitive(True)
                     button_list[button].set_active(False)
 
-        self.sock.send_command(f'primary {device_type} {device_num}')
+        self.sock.primary(device_type, device_id)
         # if index[0] == 'vi':
             # self.sink_input_box.load_application_list()
         # else:
             # self.source_output_box.load_application_list()
 
-
     def listen_subscribe(self):
-        for i in self.pulse.subscribe():
+        for i in self.sock.subscribe():
 
             if 'remove' in i:
                 id = i.split('#')[1].strip('\n')
@@ -531,24 +514,78 @@ class MainWindow(Gtk.Window):
                 elif 'source-output' in i:
                     GLib.idle_add(self.source_output_box.load_application_list, id)
 
-    def listen_peak(self, index):
-        old = 0
-        for i in self.pulse.vumeter(index):
-            try:
-                val = float(i.strip('\n'))
-                GLib.idle_add(self.vu_list[index[0]][index[1]].set_fraction, val)
-            except:
-                return
+
+    def listen_socket(self):
+        self.listen_client.set_callback_function('connect', 
+                self.update_loopback_buttons)
+        self.listen_client.set_callback_function('mute', 
+                self.update_mute_buttons)
+        self.listen_client.set_callback_function('primary', 
+                self.update_primary_buttons)
+        self.listen_client.set_callback_function('rnnoise', 
+                self.update_rnnoise_buttons)
+        self.listen_client.set_callback_function('eq', 
+                self.update_eq_buttons)
+        self.listen_client.set_callback_function('volume', 
+                self.update_volume_slider)
+
+        self.listen_thread = threading.Thread(target=self.listen_client.listen, 
+            args=(False,self.sock.id))
+
+        self.listen_thread.start()
+
+    def update_loopback_buttons(self, input_type, input_id, output_type,
+            output_id, state):
+
+        sink = output_type + output_id
+        state = state == 'True'
+        
+        button = self.loopback_buttons[input_type][input_id][sink]
+        GLib.idle_add(button.set_active, state)
+
+    def update_mute_buttons(self, input_type, input_id, state):
+        state = state == 'True'
+        
+        button = self.mute_buttons[input_type][input_id]
+        GLib.idle_add(button.set_active, state)
+
+    def update_volume_slider(self, device_type, device_id, val):
+        val = int(val)
+        
+        adjust = self.volume_adjusts[device_type][device_id]
+        GLib.idle_add(adjust.set_value, val)
+
+    def update_primary_buttons(self, device_type, device_id):
+        
+        button_list = self.primary_buttons[device_type]
+        for dev_id in button_list:
+            if dev_id == device_id:
+                GLib.idle_add(button_list[dev_id].set_active, True)
+                GLib.idle_add(button_list[dev_id].set_sensitive, False)
+            else:
+                GLib.idle_add(button_list[dev_id].set_active, False)
+                GLib.idle_add(button_list[dev_id].set_sensitive, True)
+        
+    def update_rnnoise_buttons(self, input_id, state):
+        state = state == 'True'
+        
+        button = self.rnnoise_buttons[input_id]
+        GLib.idle_add(button.set_active, state)
+
+    def update_eq_buttons(self, output_type, output_id, state):
+        state = state == 'True'
+        
+        button = self.eq_buttons[output_type][output_id]
+        GLib.idle_add(button.set_active, state)
 
     def delete_event(self, widget, event):
-        # self.pulse.save_config()
+        self.listen_client.close_connection()
+        self.listen_thread.join()
         # self.pulse.end_subscribe()
         # self.subscribe_thread.join()
-        # if self.enable_vumeters == True:
-            # self.pulse.end_vumeter()
-            # for i in ['hi', 'vi', 'a', 'b']:
-                # for j in ['1','2','3']:
-                    # if j in self.vu_thread[i]:
-                        # self.vu_thread[i][j].join()
+        if self.enable_vumeters == True:
+            for i in ['hi', 'vi', 'a', 'b']:
+                for j in self.vu_list[i]:
+                    self.vu_list[i][j].close()
         Gtk.main_quit()
         return False

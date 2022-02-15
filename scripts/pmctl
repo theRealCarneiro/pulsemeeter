@@ -183,6 +183,11 @@ connect (){
 	latency=${3:-200}
 
 	[ -z "$source" -o -z "$sink" ] && exit
+
+	index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$sink source=$source" | grep Module | sed 's/.*#//g')"
+	[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
+		printf "Error disconnecting $source $2 to System:$3\n" >&2
+
 	LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$sink source=$source" >/dev/null || \
 	pactl load-module module-loopback sink=$sink source=$source sink_dont_move=true source_dont_move=true latency_msec=$latency 2>/dev/null ||
 		printf "Error connecting $source to $sink\n" >&2
@@ -481,6 +486,22 @@ rnnoise() {
 	
 	[ -z "$found" ] && exit 1
 
+	# unload sink that will recive filtered data
+	index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name$" | grep Module | sed 's/.*#//g')"
+	[ -z "$index" ] || pactl unload-module $index
+
+	# pipewire doesn't remove devices that depend on others,
+	# so we have to remove them by hand
+	if ! [ which pulseaudio 2>/dev/null 1>&2 ]; then
+		# unload sink that will filter data
+		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] ||  pactl unload-module $index
+
+		# loopback from source to ladspa sink
+		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" source=$master" | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] || pactl unload-module $index
+	fi
+
 	if [ "$status" = "connect" ]; then
 		pactl list sinks short 2>/dev/null | grep "$sink_name" > /dev/null && exit
 		
@@ -495,25 +516,8 @@ rnnoise() {
 		# loopback from source to ladspa sink
 		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true >/dev/null 2>&1 ||
 			echo "Error loading rnnoise loopback for $master"
-
-	else
-		# unload sink that will recive filtered data
-		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name$" | grep Module | sed 's/.*#//g')"
-		[ -z "$index" ] || pactl unload-module $index
-
-		# pipewire doesn't remove devices that depend on others,
-		# so we have to remove them by hand
-		if ! [ which pulseaudio 2>/dev/null 1>&2 ]; then
-			# unload sink that will filter data
-			index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
-			[ -z "$index" ] ||  pactl unload-module $index
-
-			# loopback from source to ladspa sink
-			index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" source=$master" | grep Module | sed 's/.*#//g')"
-			[ -z "$index" ] || pactl unload-module $index
-		fi
-
 	fi
+
 }
 
 get_sink_input_chann_num (){

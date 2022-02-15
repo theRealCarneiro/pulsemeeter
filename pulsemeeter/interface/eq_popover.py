@@ -9,11 +9,12 @@ from gi.repository import Gtk,Gdk
 
 class EqPopover():
 
-    def __init__(self, button, output_type, output_id, sock, layout):
+    def __init__(self, button, sock, output_type, output_id):
 
         self.builder = Gtk.Builder()
         self.sock = sock
-        # device_config = 
+        layout = sock.config['layout']
+        self.device_config = sock.config[output_type][output_id]
 
         try:
             self.builder.add_objects_from_file(
@@ -66,7 +67,7 @@ class EqPopover():
         self.apply_eq_button = self.builder.get_object('apply_eq_button')
         self.reset_eq_button = self.builder.get_object('reset_eq_button')
 
-        control = self.sock.send_command('get-config {output_type}:{output_id}:eq_control') 
+        control = self.device_config['eq_control'] 
         j = 0
         if control != '':
             for i in control.split(','):
@@ -84,17 +85,13 @@ class EqPopover():
         self.builder.connect_signals(self)
 
     def apply_eq(self, widget, output_type, output_id):
+        # if self.device_config['use_eq'] == False:
+            # return
         control=''
         for i in self.eq:
             control = control + ',' + str(i.get_value())
         control = control[1:]
-        # if self.pulse.config[output_type][output_id]['use_eq'] == False:
-            # return
-        self.pulse.apply_eq(index, control=control)
-
-    def disable_eq(self, widget, index):
-        # self.pulse.
-        self.pulse.remove_eq(index)
+        self.sock.eq(output_type, output_id, 'set', control=control)
 
     def reset_eq(self, widget):
         for i in self.eq:
