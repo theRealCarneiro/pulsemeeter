@@ -102,6 +102,7 @@ class Server:
 
                             # send to clients
                             try:
+                                # print(id, ret_message)
                                 conn.sendall(id.encode()) # sender id
                                 conn.sendall(msg_len.encode()) # message len
                                 conn.sendall(encoded_msg) # command
@@ -170,7 +171,7 @@ class Server:
                 try:
                     # Wait for a connection
                     conn, addr = s.accept()
-                    print('client connected ', id)
+                    # print('client connected ', id)
 
                     # send id to client
                     conn.sendall(str.encode(str(id).rjust(4, '0')))
@@ -211,7 +212,7 @@ class Server:
                     # TODO: If this handler is being used for sending events to clients, distinguish a return value from
                     # TODO: an event
                 except Exception:  # Exception doesn't catch exit exceptions (a bare except clause does)
-                    print(f'client {id} disconnect')
+                    # print(f'client {id} disconnect')
                     conn.shutdown(socket.SHUT_RDWR)
                     # Notify the main process that this client handler is closing, so it can free its resources
                     self.command_queue.put(('client_handler_exit', id))
@@ -228,7 +229,7 @@ class Server:
         else:
             args = ()
 
-        print(command, args)
+        # print(command, args)
 
         if command == 'exit':
             return False
@@ -296,7 +297,7 @@ class Server:
             return json.dumps(self.config, ensure_ascii=False)
         else:
             args = args.split(':')
-            print(args)
+            # print(args)
             config = self.config
             for arg in args:
                 config = config[arg]
@@ -391,7 +392,7 @@ class Server:
             # },
             
 
-            # ARGS: [a|b] id NEW_DEVICE
+            # ARGS: [a|hi] id NEW_DEVICE
             # NEW_DEVICE is the name of the device
             'change_hd': {
                 'function': self.audio_server.change_hardware_device,

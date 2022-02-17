@@ -284,7 +284,7 @@ class Pulse:
         command = f'pmctl rnnoise {ladspa_sink} {source} {control} {conn_status} {latency}\n'
 
         if change_config: 
-            source_config['use_rnnoise'] = status
+            if status != 'set': source_config['use_rnnoise'] = status
             source_config['rnnoise_latency'] = int(latency)
             source_config['rnnoise_control'] = int(control)
 
@@ -302,24 +302,24 @@ class Pulse:
                         latency = source_config[sink + '_latency']
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
-                        if status == 'set':
+                        if status == 'set' and conn_status:
                             command += f'pmctl disconnect {ladspa_sink}.monitor {sink_name}\n'
                             command += f'pmctl connect {ladspa_sink}.monitor {sink_name} {latency}\n'
                         
                         # disconnect source from sinks, then connect ladspa sink to sinks
                         elif status == True:
                             command += f'pmctl disconnect {source} {sink_name}\n'
-                            command += f'pmctl connect {sink_name}.monitor {sink_name} {latency}\n'
+                            command += f'pmctl connect {ladspa_sink}.monitor {sink_name} {latency}\n'
 
                         # disconnect ladspa sink from sinks, then connect source to sinks
                         elif status == False:
-                            command += f'pmctl disconnect {sink_name}.monitor {sink_name} {latency}\n'
+                            command += f'pmctl disconnect {ladspa_sink}.monitor {sink_name} {latency}\n'
                             command += f'pmctl connect {source} {sink_name} {latency}\n'
 
         if run_command == True:
             if self.loglevel > 1: print(command)
             os.popen(command)
-            return f'rnoise {input_type} {input_id} {status}'
+            return f'rnnoise {input_id} {status} {control}'
         else:
             return command
 
@@ -330,7 +330,7 @@ class Pulse:
         # get information about the device
         sink = output_type + output_id
         sink_config = self.config[output_type][output_id]
-        master = sink_config['name']
+        master = self.get_correct_device([output_type, output_id], 'sink')
 
         # set name for the plugin sink
         if ladspa_sink == None: ladspa_sink = f'{output_type}{output_id}_eq'
@@ -343,24 +343,25 @@ class Pulse:
         # toggle on/off
         if status == None:
             status = not sink_config['use_eq']
+            conn_status = status
 
         # if only changing the control
         elif status == 'set':
-            status = sink_config['use_eq']
+            conn_status = sink_config['use_eq']
 
         else:
-            status = str2bool(status)
+            conn_status = str2bool(status)
 
 
         if change_config: 
-            sink_config['use_eq'] = True if status else False
+            if status != 'set': sink_config['use_eq'] = conn_status
             sink_config['eq_control'] = control
 
         if status == sink_config['use_eq'] == False:
-            return f'eq {output_type} {output_id} {status} {control}'
+            return f'eq {output_type} {output_id} {conn_status} {control}'
         
         # create ladspa sink
-        if status:
+        if conn_status:
             command = f'pmctl eq init {ladspa_sink} {master} {control}\n'
 
         # removes ladspa sink
@@ -378,8 +379,14 @@ class Pulse:
                     if self.config[input_type][input_id][sink] == True:
                         vi = self.get_correct_device([input_type, input_id], 'source')
 
+
                         # disconnect source from sinks, then connect ladspa sink to sinks
-                        if status:
+                        if status == 'set' and conn_status:
+                            command += f'pmctl disconnect {vi} {ladspa_sink}\n'
+                            command += f'pmctl connect {vi} {master}\n'
+
+                        # disconnect source from sinks, then connect ladspa sink to sinks
+                        if conn_status:
                             command = command + f'pmctl disconnect {vi} {master}\n'
                             command = command + f'pmctl connect {vi} {ladspa_sink}\n'
 
@@ -566,7 +573,7 @@ class Pulse:
         return command
 
     def change_hardware_device(self, output_type, output_id, name):
-        print(f'{output_type} {output_id} {name}')
+        # print(f'{output_type} {output_id} {name}')
         device_config = self.config[output_type][output_id]
 
         # if device its not an empty name
@@ -602,6 +609,16 @@ class Pulse:
             input_type = device_type
             input_id = device_id
 
+        if status:
+            if device_type == 'a' and device_config['use_eq']:
+                command += self.eq(output_type, output_id, status=True, 
+                        reconnect=False, change_config=False, run_command=False)
+
+            elif device_type == 'hi' and device_config['use_rnnoise']:
+                command += self.rnnoise(input_id, status=True, 
+                        reconnect=False, change_config=False, run_command=False)
+
+
         # set connections
         for target_type in device_list:
             for target_num in self.config[target_type]:
@@ -615,16 +632,18 @@ class Pulse:
                     sink = f'{output_type}{output_id}'
 
                 if self.config[input_type][input_id][sink] == True:
-                    command += self.connect(input_type, input_id, 'a', output_id,
+                    print(output_type, output_id)
+                    command += self.connect(input_type, input_id, output_type, output_id,
                             status=status, run_command=False, change_state=False, init=True)
 
-        if device_type == 'a' and device_config['use_eq']:
-            command += self.eq(output_type, output_id, status=status, 
-                    reconnect=False, change_config=False, run_command=False)
+        if not status:
+            if device_type == 'a' and device_config['use_eq']:
+                command += self.eq(output_type, output_id, status=False, 
+                        reconnect=False, change_config=False, run_command=False)
 
-        elif device_type == 'hi' and device_config['use_rnnoise']:
-            command += self.rnnoise(input_id, status=status, 
-                    reconnect=False, change_config=False, run_command=False)
+            elif device_type == 'hi' and device_config['use_rnnoise']:
+                command += self.rnnoise(input_id, status=False, 
+                        reconnect=False, change_config=False, run_command=False)
 
         if self.loglevel > 1: print(command)
         if run_command: os.popen(command)

@@ -339,7 +339,7 @@ list_source_outputs (){
 	# sed hell to transform into json
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
+		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/window.icon_name[^,]*,//g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
 		grep -vwE pavucontrol | grep -vwE pulse-vumeter | grep name | \
 		sed 's/ 		/ /g; s/device/"device"/g; s/name/"name"/g')
 	printf "%s" "$apps" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
@@ -358,7 +358,7 @@ list_sink_inputs (){
 	# sed hell to transform into json
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
+		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/window.icon_name[^,]*,//g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
 		grep name |\
 		sed 's/ 		/ /g' | sed 's/, $//; s/$/}/')
 	printf "%s" "$apps" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
