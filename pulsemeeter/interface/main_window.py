@@ -115,7 +115,7 @@ class MainWindow(Gtk.Window):
         self.start_inputs()
         self.start_outputs()
         self.start_vumeters()
-        # self.start_app_list()
+        self.start_app_list()
         # self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
@@ -580,8 +580,8 @@ class MainWindow(Gtk.Window):
     def delete_event(self, widget, event):
         self.client.close_connection()
         self.client.stop_listen()
-        # self.client.end_subscribe()
-        # self.subscribe_thread.join()
+        self.client.end_subscribe()
+        self.subscribe_thread.join()
         if self.enable_vumeters == True:
             for i in ['hi', 'vi', 'a', 'b']:
                 for j in self.vu_list[i]:
