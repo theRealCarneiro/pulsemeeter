@@ -10,7 +10,7 @@ from queue import SimpleQueue
 
 class Client:
 
-    def __init__(self):
+    def __init__(self, listen=False):
 
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.callback_dict = {}
@@ -27,7 +27,9 @@ class Client:
             sys.exit(1)
         self.send_command('get-config', nowait=True)
         self.config = json.loads(self.get_message())
-        self.start_listen()
+
+        if listen:
+            self.start_listen()
 
     def start_listen(self, print_event=False):
         self.stop_listen()
