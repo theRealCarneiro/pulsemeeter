@@ -16,6 +16,7 @@ from .port_select_popover import PortSelectPopover
 from .vumeter_widget import Vumeter
 
 from ..settings import GLADEFILE, LAYOUT_DIR
+from ..socket import Client
 
 from gi import require_version as gi_require_version
 
@@ -26,13 +27,13 @@ from gi.repository import Gtk,Gdk,Gio,GLib
 
 class MainWindow(Gtk.Window):
 
-    def __init__(self, client):
+    def __init__(self):
         self.exit_flag = False
         GLib.threads_init()
 
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
-        self.client = client
+        self.client = Client(listen=True)
         self.config = self.client.config
         self.layout = self.config['layout']
 
