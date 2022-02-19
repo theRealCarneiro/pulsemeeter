@@ -17,6 +17,7 @@ LISTENER_TIMEOUT = 1
 class Server:
     def __init__(self):
 
+        self.ready = False
         # delete socket file if exists
         try:
             if self.is_running():
@@ -25,15 +26,13 @@ class Server:
         except OSError:
             if os.path.exists(SOCK_FILE):
                 raise
-        except Exception as ex:
-            print(str(ex))
-            sys.exit(1)
 
         # audio server can be pulse or pipe, so just use a generic name
         audio_server = Pulse
 
         self.config = self.read_config()
         self.audio_server = audio_server(self.config, loglevel=2)
+        self.ready = True
         self.create_command_dict()
 
         # the socket only needs to be seen by the listener thread
@@ -53,17 +52,24 @@ class Server:
         self.client_handler_threads = {}
         self.client_handler_connections = {}
 
+    def start_server(self, daemon=False):
 
         # Start listener thread
         self.listener_thread = threading.Thread(target=self.query_clients)
         self.listener_thread.start()
 
+        self.main_loop_thread = threading.Thread(target=self.main_loop)
+        self.main_loop_thread.start()
+
         # Register signal handlers
-        signal.signal(signal.SIGINT, self.handle_exit_signal)
-        signal.signal(signal.SIGTERM, self.handle_exit_signal)
+        if daemon:
+            signal.signal(signal.SIGINT, self.handle_exit_signal)
+            signal.signal(signal.SIGTERM, self.handle_exit_signal)
 
         # self.notify_thread = threading.Thread(target=self.event_notify)
         # self.notify_thread.start()
+
+    def main_loop(self):
 
         # Make sure that even in the event of an error, cleanup still happens
         try:
@@ -108,6 +114,9 @@ class Server:
                                 conn.sendall(encoded_msg) # command
                             except OSError:
                                 print(f'client {message[1]} already disconnected, message not sent')
+
+                    if ret_message == 'exit': 
+                        break
                                 
 
             # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
@@ -136,13 +145,19 @@ class Server:
         try:
             with open(PIDFILE) as f:
                 pid = int(next(f))
+
+            # if pid of running instance
             if os.kill(pid, 0) != False:
-                # print('Another copy is already running')
                 return True
+            
+            # if pid is of a closed instance
             else:
+                # write pid to file
                 with open(PIDFILE, 'w') as f:
                     f.write(f'{os.getpid()}\n')
                 return False
+
+        # PIDFILE does not exist
         except Exception:
             with open(PIDFILE, 'w') as f:
                 f.write(f'{os.getpid()}\n')
@@ -150,7 +165,7 @@ class Server:
 
 
     # function to register as a signal handler to gracefully exit
-    def handle_exit_signal(self, signum, frame):
+    def handle_exit_signal(self, signum=None, frame=None):
         self.command_queue.put(('exit',))
 
     # TODO: if the daemon should clean up its virtual devices on exit, do that here
@@ -232,7 +247,7 @@ class Server:
         # print(command, args)
 
         if command == 'exit':
-            return False
+            return command, True
 
         try:
             # verify that command existes

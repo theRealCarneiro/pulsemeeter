@@ -699,15 +699,18 @@ class Pulse:
     def get_virtual_devices(self, kind):
         command = f"pmctl list-virtual-{kind}"
         devices = cmd(command)
-        try:
-            jason = json.loads(devices)
-        except:
-            print(f'ERROR: invalid json {devices}')
+        if devices == '':
+            devices = '[]'
+        # jason = []
+        # try:
+            # jason = json.loads(devices)
+        # except:
+            # print(f'ERROR: invalid json {devices}')
 
-        if kind == 'sources':
-            self.virtual_source_list = jason
-        else:
-            self.virtual_sink_list = jason
+        # if kind == 'sources':
+            # self.virtual_source_list = jason
+        # else:
+            # self.virtual_sink_list = jason
         return devices
 
     # get list of cards

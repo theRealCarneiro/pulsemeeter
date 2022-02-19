@@ -13,10 +13,12 @@ class Client:
     def __init__(self, listen=False):
 
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.exit_flag = False
         self.callback_dict = {}
         self.listen_thread = None
         self.sub_proc = None
         self.return_queue = SimpleQueue()
+        self.can_listen = listen
 
         # connect to server
         try:
@@ -25,19 +27,23 @@ class Client:
         except socket.error as msg:
             print(msg)
             sys.exit(1)
-        self.send_command('get-config', nowait=True)
-        self.config = json.loads(self.get_message())
 
-        if listen:
+        self.config = json.loads(self.send_command('get-config', nowait=True))
+
+        if self.can_listen:
             self.start_listen()
 
+    # start listen thread
     def start_listen(self, print_event=False):
         self.stop_listen()
         self.listen_thread = threading.Thread(target=self.listen, args=(print_event,))
         self.listen_thread.start()
 
+    # stop listen thread
     def stop_listen(self):
-        if self.listen_thread != None: self.listen_thread.join()
+        if self.listen_thread != None: 
+            self.exit_flag = True
+            self.listen_thread.join()
 
     def send_command(self, command, nowait=False):
         try:
@@ -55,12 +61,13 @@ class Client:
             self.sock.sendall(message)
 
             # wait for answer
-            if not nowait:
+            if nowait or not self.can_listen:
+                ret_msg = self.get_message() 
+            else: 
                 ret_msg = self.return_queue.get()
-                print(ret_msg)
-                return ret_msg
-            # for event in self.listen(wait_id=self.id):
-                # return(event)
+
+            return ret_msg
+
                 
         except:
             print('closing socket')
@@ -70,20 +77,23 @@ class Client:
     def listen(self, print_event=True):
         while True:
             try:
+                if self.exit_flag == True: break
                 sender_id = self.sock.recv(4)
-                if not sender_id: raise
+                if not sender_id: raise ConnectionError
                 sender_id = int(sender_id)
 
                 # length of the message
                 msg_len = self.sock.recv(4)
-                if not msg_len: raise
+                if not msg_len: raise ConnectionError
                 msg_len = int(msg_len.decode())
                 
                 # get event
                 event = self.sock.recv(msg_len)
-                if not event: raise
+                if not event: raise ConnectionError
                 event = event.decode()
 
+                if event == 'exit':
+                    break
 
                 self.assert_config(event)
                 if print_event: print(event)
@@ -92,9 +102,14 @@ class Client:
                 else:
                     self.return_queue.put(event)
 
-            except Exception as ex:
+            except ConnectionError:
                 print('closing socket')
                 break
+
+            # except Exception as ex:
+                # print('closing socket')
+                # raise
+
 
 
     def get_message(self):
@@ -120,10 +135,10 @@ class Client:
                     return event
 
             except:
-                print('')
-                break
+                raise
 
 
+    # set a callback function to a command
     def set_callback_function(self, command, function):
         self.callback_dict[command] = function
 
@@ -136,6 +151,7 @@ class Client:
         args = tuple(command[1:])
         function(*args)
 
+    # update the config
     def assert_config(self, event):
         event = event.split(' ')
         command = event[0]
@@ -236,22 +252,6 @@ class Client:
             return False
 
         return True
-
-    def list_apps(self, device_type):
-        command = f'get-app-list {device_type}'
-        return json.loads(self.send_command(command))
-
-    def move_app_device(self, app_id, device, stream_type):
-        command = f'move-app-device {app_id} {device} {stream_type}'
-        return self.send_command(command)
-
-    def get_app_volume(self, app_id, stream_type):
-        command = f'get-stream-volume {app_id} {stream_type}'
-        return int(self.send_command(command))
-
-    def set_app_volume(self, app_id, vol, stream_type):
-        command = f'app-volume {app_id} {vol} {stream_type}'
-        return self.send_command(command)
 
     def connect(self, input_type, input_id, output_type, output_id, state=None, latency=None):
         
@@ -380,7 +380,27 @@ class Client:
         if device_type not in ['sinks', 'sources']:
             return
 
-        return json.loads(self.send_command(f'get-vd {device_type}'))
+        ret =self.send_command(f'get-vd {device_type}') 
+        print(ret)
+        return json.loads(ret)
+
+    # get sink-input and source-output list
+    def list_apps(self, device_type):
+        command = f'get-app-list {device_type}'
+        return json.loads(self.send_command(command))
+
+    # change application device
+    def move_app_device(self, app_id, device, stream_type):
+        command = f'move-app-device {app_id} {device} {stream_type}'
+        return self.send_command(command)
+
+    def get_app_volume(self, app_id, stream_type):
+        command = f'get-stream-volume {app_id} {stream_type}'
+        return int(self.send_command(command))
+
+    def set_app_volume(self, app_id, vol, stream_type):
+        command = f'app-volume {app_id} {vol} {stream_type}'
+        return self.send_command(command)
 
 
     def close_connection(self):
