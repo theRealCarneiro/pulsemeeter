@@ -1,9 +1,10 @@
 import os
 import signal
 import json
-import sys
+import sys, threading
 import argparse
-# import re
+import re
+import textwrap
 
 from .settings import PIDFILE
 from . import MainWindow
@@ -11,199 +12,286 @@ from . import Pulse
 from . import Client, Server
 
 from gi import require_version as gi_require_version
+
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-def is_running():
+# change these to change all occurences of these values (also for checking)
+true_values = ('true', '1', 'on')
+false_values = ('false', '0', 'off')
+
+# change these to just change help text and other things where it just prints
+input_values = ('hi', 'vi')
+output_values = ('a', 'b')
+
+# COLORED TEXT
+class format:
+    # format text using ANSI escape codes
+    def __init__(self, text=''):
+        self.BOLD = '\033[1m'
+        self.UNDERLINE = '\033[4m'
+        self.GREEN = '\033[92m'
+        self.RED = '\033[91m'
+        self.YELLOW = '\033[33m'
+        self.BOLD_RED = self.BOLD+self.RED
+        self.CLEAR = '\033[2J'
+        self.END = '\033[0m'
+        self.text = text
+
+    def bold(self):
+        return self.BOLD + self.text + self.END
+    def red_bold(self):
+        return self.BOLD_RED + self.text + self.END
+    def green(self):
+        return self.GREEN + self.text + self.END
+    def yellow(self):
+        return self.YELLOW + self.text + self.END
+    def red(self):
+        return self.RED + self.text + self.END
+    # clear terminal
+    def clear(self):
+        return self.CLEAR + self.END
+    # print a color end
+    def end(self):
+        return self.END
+
+# DEBUG HELPERS
+# start in specified mode and switch between them
+def debug_start(client, start_option):
+    if start_option == 'input':
+        server_input_mode(client)
+    elif start_option == 'listen':
+        server_listen_mode(client)
+
+def server_input_mode(client):
+    print(f'\n{format("INPUT:").green()}')
     try:
-        with open(PIDFILE) as f:
-            pid = int(next(f))
-        if os.kill(pid, 0) != False:
-            print('Another copy is already running')
-            sys.exit(0)
-        else:
-            with open(PIDFILE, 'w') as f:
-                f.write(f'{os.getpid()}\n')
-    except Exception:
-        with open(PIDFILE, 'w') as f:
-            f.write(f'{os.getpid()}\n')
+        while client:
+            command = input(format('> ').bold())
+            if command == 'listen' or 'Listen':
+                server_listen_mode(client)
+            elif command == 'exit' or 'Exit':
+                raise KeyboardInterrupt
+            else:
+                print(client.send_command(command))
+    except KeyboardInterrupt:
+        print('\nclosing debugger')
+        sys.exit(0)
 
+def server_listen_mode(client):
+    print(f'\n{format("LISTEN:").yellow()}')
+    try:
+        client.listen()
+    except KeyboardInterrupt:
+        print()
+        server_input_mode(client)
+
+# PRETTY PRINT
+def pprint_bool_options(style='simple'):
+    # pretty print boolean values
+    if style == 'pretty':
+        return ' | '.join(map(str, true_values))+'\n'+' | '.join(map(str, false_values))
+    elif style == 'simple':
+        return '('+'|'.join(map(str, true_values))+') | ('+'|'.join(map(str, false_values))+')'
+
+def pprint_device_options(devices='all'):
+    # pretty print devices
+    if devices == 'all':
+        return '[number] | '.join((map(str, input_values)))+'[number] | '+'[number] | '.join(map(str, output_values))+'[number]'
+    elif devices == 'input':
+        return '[number] | '.join(map(str, input_values))+'[number]'
+    elif devices == 'output':
+        return '[number] | '.join(map(str, output_values))+'[number]'
+    elif devices == None:
+        pass
+
+# CONVERTERS
 def str_to_bool(string, parser):
-        if type(string) == bool: return string 
+    if type(string) == bool:
+        return string
+    elif string.lower() in true_values:
+        return True
+    elif string.lower() in false_values:
+        return False
+    else:
+        parser.error(f'value has to be one of these options: {pprint_bool_options()}')
+
+# check if values are valid and check devices for different type
+def convert_eq_rnnoise(args, parser, type):
+    # generate device_args by using sinks or sources
+    if type == 'eq':
+        device_args = convert_device(args, parser, 'general', ('a', 'b'))
+    elif type == 'rnnoise':
+        device_args = convert_device(args, parser, 'general', ('hi', 'vi'))
+    # check if eq gets 15 values for control
+    if args.state == 'set' and args.value is not None:
+        if type == 'eq':
+            values = args.value.split(',')
+            if len(values) == 15:
+                return (*device_args, args.state, args.value)
+            else:
+                parser.error('Wrong values supplied. You need to assign 15 values separated by a comma. (eg. 1,2,3,...)')
+        elif type == 'rnnoise':
+            return (device_args[1], args.state, args.value)
+    else:
+        if type == 'rnnoise':
+            if args.state is None:
+                return (device_args[1])
+            else:
+                return (*device_args[1], str_to_bool(args.state, parser))
         else:
-            if string.lower() in ['true', '1', 'on']: return True
-            elif string.lower() in ['false', '0', 'off']: return False
+            if args.state is None:
+                return (device_args)
+            else:
+                return (*device_args, str_to_bool(args.state, parser))
 
-# ----------------
-# Parser generators 
-# ----------------
-device_arg = {'type': int}
+# convert [device][number] -> [device] [number] and check if device is valid
+def convert_device(args, parser, device_type='general', allowed_devices=('hi', 'vi', 'a', 'b')):
+    if device_type == 'general':
+        # convert all devices
+        try:
+            # return device + value
+            device = re.match(f'^({"|".join(allowed_devices)})', args.device).group()
+            num = re.search(r'\d+$', args.device).group()
+        except:
+            parser.error(f'device has to be assigned like this: [{"|".join(allowed_devices)}][number].')
+        else:
+            return (device, num)
+    elif device_type == 'source-to-sink':
+        # convert source -> sink device
+        try:
+            in_device = re.match(r'^(hi|vi)', args.input).group()
+            in_num = re.search(r'\d+$', args.input).group()
+            out_device = re.match(r'^(a|b)', args.output).group()
+            out_num = re.search(r'\d+$', args.output).group()
+        except:
+            parser.error('device has to be assigned like this: [hi|vi][number] [a|b][number]')
+        else:
+            return (in_device, in_num, out_device, out_num)
+    else:
+        parser.error(f'internal error: unknown device convert "{device_type}".')
 
-def parser_generic(parser ,value_type, source, sink):
-    if source == True or sink == True:
-        device = parser.add_mutually_exclusive_group(required=True)
-    if source == True:
-        device.add_argument('-vi', '--virtual-input', **device_arg)
-        device.add_argument('-hi', '--hardware-input', **device_arg)
-    if sink == True:
-        device.add_argument('-a', **device_arg)
-        device.add_argument('-b', **device_arg)
-    if value_type != None:
-        parser.add_argument('value', type=value_type, default=None, nargs='?')
+# PARSER GENERATORS
+device_arg = {'type': str}
 
-def parser_only_value(parser, value_type):
-    parser.add_argument('value', type=value_type, default=None ,nargs='?')
+# generic device = device + [value]
+def parser_generic(parser, value_type, help='', device_help='all'):
+    parser.add_argument('device', **device_arg, help=pprint_device_options(device_help))
+    if value_type is not None:
+        parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
-def parser_source_to_sink(parser, value_type):
-    in_device = parser.add_mutually_exclusive_group(required=True)
-    in_device.add_argument('-vi', '--virtual-input', **device_arg)
-    in_device.add_argument('-hi', '--hardware-input', **device_arg)
-    out_device = parser.add_mutually_exclusive_group(required=True)
-    out_device.add_argument('-a', **device_arg)
-    out_device.add_argument('-b', **device_arg)
-    parser.add_argument('value', type=value_type, default=None, nargs='?')
+# only value
+def parser_only_value(parser, value_type, help=''):
+    parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
-# ----------------
+# source -> sink (only used for connect)
+def parser_source_to_sink(parser, value_type, help='', help_input=pprint_device_options('input'), help_output=pprint_device_options('output')):
+    parser.add_argument('input', **device_arg, help=help_input)
+    parser.add_argument('output', **device_arg, help=help_output)
+    parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
-def create_parser_args(c):
-    parser = argparse.ArgumentParser(description='Replicating voicemeeter routing functionalities in linux with pulseaudio')
+# only device type + [value]
+def parser_only_device(parser, value_type):
+    parser.add_argument('device', **device_arg, help='hi | vi | a | b')
+    if value_type is not None:
+        parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
-    # Parser_generic = [parser] [value_type] [source] [sink]
+# only eq and rnnoise
+def parser_eq_rnnoise(parser, type):
+    if type == 'eq':
+        parser.add_argument('device', **device_arg, help=pprint_device_options('output'))
+    elif type == 'rnnoise':
+        parser.add_argument('device', **device_arg, help=pprint_device_options('input'))
+    parser.add_argument('state', type=str, choices=(*true_values, *false_values, 'set', None), default=None, nargs='?', help='')
+    parser.add_argument('value', type=str, default=None, nargs='?', help='only needed when using set as state. Seperate with a comma.')
+
+# ARGS INTERPRETER AND PARSER
+def create_parser_args():
+    parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s', description=(f'Use "{format("%(prog)s [command] -h").green()}" to get usage information. Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
+
+    parser.add_argument('-d', '--debug', action='store_true', help='go into debug mode')
+
     subparsers = parser.add_subparsers(dest='command')
-    parser_source_to_sink(subparsers.add_parser('connect'), str)
-    # primary
-    parser_generic(subparsers.add_parser('mute'), str, True, True)
-    parser_generic(subparsers.add_parser('rnnoise'), int, True, False)
-    # eq
-    # change status
-    parser_generic(subparsers.add_parser('reconnect'), int, True, False)
-    parser_generic(subparsers.add_parser('change_hd'), str, False, True)
-    parser_generic(subparsers.add_parser('volume'), str, True, True)
-    parser_generic(subparsers.add_parser('app-volume'), int, False, False)
-    # move app device
-    # get stream volume
-    # get config
-    # save config
+    subparsers.add_parser('daemon', description='start the daemon') # just to show it in the help menu
+    parser_source_to_sink(subparsers.add_parser('connect', description='connect an input to an output.'), str, 'OPTIONAL '+pprint_bool_options())
+    parser_generic(subparsers.add_parser('primary', description='Select primary device. Only available for virtual devices.'), None, '', None)
+    parser_generic(subparsers.add_parser('mute', description='mute/unmute a device.'), str, 'OPTIONAL '+pprint_bool_options())
+    parser_generic(subparsers.add_parser('change-hardware-device', description='change the hardware device'), str, 'name of the device')
+    parser_generic(subparsers.add_parser('volume', description='change volume'), str, '+[value] | -[value] | [value]')
+    parser_eq_rnnoise(subparsers.add_parser('rnnoise', description='turn on/off noise reduction and change values'), 'rnnoise')
+    parser_eq_rnnoise(subparsers.add_parser('eq', usage='[device] [(true|on)(false|off)(set)] [value1],[value2],[...]', description='15 values are needed. To toggle only include the device.'), 'eq')
 
     args = parser.parse_args()
-    
-    arg_interpreter(args, parser, c)
+    arg_interpreter(args, parser)
 
-
-def arg_interpreter(args, parser, client):
-    #if len(args) <= 1 or loglevel > 0:
-        #return
-
-    # ----------------
-    # Format devices
-    # ----------------    
-    # connect is the only command which uses 2 devices
-    # TODO: Maybe find a more elegant solution
-    if args.command == 'connect':
-        if args.hardware_input: input_device=f'hi {args.hardware_input}'
-        elif args.virtual_input: input_device=f'vi {args.virtual_input}'
-        elif args.a: output_device=f'a {args.a}'
-        elif args.b: output_device=f'b {args.b}'
-        else:
-            parser.error('device is unknown. (unknown device coming from parser)')
+def arg_interpreter(args, parser):
+    try:
+        client = Client()
+    except:
+        print(format('error: daemon is not started. Use "pulsemeeter daemon" to start it').red_bold())
     else:
-        if args.hardware_input: device=f'hi {args.hardware_input}'
-        elif args.virtual_input: device=f'vi {args.virtual_input}'
-        elif args.a: device=f'a {args.a}'
-        elif args.b: device=f'b {args.b}'
-        else:
-            parser.error('device is unknown. (unknown device coming from parser)')
+        if args.debug:
+                print(f'You are entering the {format("debug mode").red()}.')
+                print(f'While in INPUT mode type "{format("listen").bold()}" to switch to the LISTEN mode.')
+                print(f'While in LISTEN mode use {format("ctrl+c").bold()} to switch back to INPUT mode.')
+                debug_start(client, 'input')
 
-    # ----------------
-
-    if args.command == 'connect':
-        if args.value == None:
-            client.send_command(f'{input_device} {output_device}')
-        else:
-            client.send_command(f'{input_device} {output_device} {args.value}')
-
-    elif args.command == 'mute':
-        if args.value != None:
-            bool_value = str_to_bool(args.value, parser)
-            if type(bool_value) == bool:
-                client.send_command(f'mute {device} {bool_value}')
+        elif args.command == 'connect':
+            device_args = convert_device(args, parser, 'source-to-sink')
+            if args.value is not None:
+                client.connect(*(device_args), str_to_bool(args.value, parser))
             else:
-                parser.error('value has to be [true|false], [1|0] or [on|off]')
-        else:
-            client.send_command(f'mute {device}')
+                client.connect(*device_args)
 
-    elif args.command == 'rnnoise':
-        client.send_command(f'rnnoise {args.value}')    
-
-    elif args.command == 'reconnect':
-        client.send_command(f'reconnect {device}')
-
-    elif args.command == 'change_hd':
-        client.send_command(f'change_hd {device} {args.value}')
-    
-    # TODO: add regex
-    elif args.command == 'volume':
-        if args.value != None:
-            if args.value[0] in ['+', '-'] and args.value[1:].isnumeric():
-                client.send_command(f'volume {device} {args.value}')
-            elif args.value.isnumeric():
-                client.send_command(f'volume {device} {args.value}')
+        elif args.command == 'mute':
+            device_args = convert_device(args, parser)
+            if args.value is not None:
+                client.mute(*(device_args), str_to_bool(args.value, parser))
             else:
-                parser.error('Unknown prefix in value.\nPlease only use "+[number] or "-[number]" as a prefix.')
-        else:
-            parser.error('the following arguments are required: value')
+                client.mute(*(device_args))
 
-    elif args.command == 'app-volume':
-        client.send_command(f'app-volume {value}')
+        elif args.command == 'primary':
+            client.primary(*convert_device(args, parser, 'general', ('vi', 'b')))
 
-    sys.exit(0)
+        elif args.command == 'change-hardware-device':
+            try:
+                device = re.search(r'^(a|hi)+', args.device).group()
+                num = re.search(r'\d+$', args.device).group()
+                client.change_hardware_device(device, num, args.value)
+            except:
+                parser.error('device has to be assigned like this: [a|hi][number] [NEW_DEVICE].')
+
+        elif args.command == 'volume':
+            device_args = convert_device(args, parser)
+            if args.value is not None:
+                if re.match(r'[+|-]?\d+$', args.value):
+                    client.volume(*(device_args), args.value)
+                else:
+                    parser.error('value has to be assigned like this: +[number] | -[number] | [number]')
+            else:
+                parser.error('the following arguments are required: value')
+
+        elif args.command == 'eq':
+            client.eq(*convert_eq_rnnoise(args, parser, 'eq'))
+
+        elif args.command == 'rnnoise':
+            client.rnnoise(*convert_eq_rnnoise(args, parser, 'rnnoise'))
+
+        sys.exit(0)
 
 def main():
-    loglevel = 0
-    if 'loglevel-all' in sys.argv:
-        loglevel = 2
-    if 'loglevel-error' in sys.argv:
-        loglevel = 1
-        
-    pulse = Pulse(loglevel=loglevel)
-
     if len(sys.argv) == 1:
-        print('no argument given')
-    elif sys.argv[1] == 'server':
-        Server(pulse)
-    elif sys.argv[1] == 'listen':
-        c = Client()
-        c.listen()
-    elif sys.argv[1] == 'client':
-        c = Client()
-        while True:
-            command = input()
-            c.send_command(command)
-            print(command)
-            if len(command) == 0: break
+        c = Client(listen=True)
+
+        app = MainWindow()
+        Gtk.main()
+
+    elif sys.argv[1] == 'daemon':
+        server = Server()
+        server.start_server(daemon=True)
     else:
-        c = Client()
-        while True:
-            create_parser_args(c)
-            if len(sys.argv[1]) == 0: break
-    
+        create_parser_args()
 
-    # else:
-        # is_running()
-
-    # if len(sys.argv) == 1 or sys.argv[1] == 'init' or loglevel > 0:
-        # is_running()
-        # pulse = Pulse(loglevel=loglevel)
-    # else:
-        # pulse = Pulse('cmd', loglevel=loglevel)
-
-    # arg_interpreter(sys.argv, pulse, loglevel)
-
-    # while True:
-        # app = MainWindow(pulse)
-        # Gtk.main()
-        # if pulse.restart_window == False:
-            # break
 
 if __name__ == '__main__':
     mainret = main()
