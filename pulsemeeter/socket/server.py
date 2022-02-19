@@ -31,7 +31,7 @@ class Server:
         audio_server = Pulse
 
         self.config = self.read_config()
-        self.audio_server = audio_server(self.config, loglevel=2)
+        self.audio_server = audio_server(self.config, loglevel=0)
         self.ready = True
         self.create_command_dict()
 
@@ -172,7 +172,8 @@ class Server:
     def close_server(self):
         # self.audio_server
         self.save_config()
-        self.audio_server.cleanup()
+        if self.config['cleanup']:
+            self.audio_server.cleanup()
 
     # this function handles the connection requests
     def query_clients(self):

@@ -229,5 +229,6 @@
 		}
 	},
 	"enable_vumeters": true,
+	"cleanup": false,
 	"layout":"default"
 }
