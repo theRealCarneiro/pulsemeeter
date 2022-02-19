@@ -122,7 +122,7 @@ def convert_eq_rnnoise(args, parser, type):
     if type == 'eq':
         device_args = convert_device(args, parser, 'general', ('a', 'b'))
     elif type == 'rnnoise':
-        device_args = convert_device(args, parser, 'general', ('hi', 'vi'))
+        device_args = convert_device(args, parser, 'general', 'hi')
     # check if eq gets 15 values for control
     if args.state == 'set' and args.value is not None:
         if type == 'eq':
@@ -154,7 +154,10 @@ def convert_device(args, parser, device_type='general', allowed_devices=('hi', '
             device = re.match(f'^({"|".join(allowed_devices)})', args.device).group()
             num = re.search(r'\d+$', args.device).group()
         except:
-            parser.error(f'device has to be assigned like this: [{"|".join(allowed_devices)}][number].')
+            if type(allowed_devices) == str:
+                parser.error(f'device has to be assigned like this: [{allowed_devices}][number].')
+            else:
+                parser.error(f'device has to be assigned like this: [{"|".join(allowed_devices)}][number].')
         else:
             return (device, num)
     elif device_type == 'source-to-sink':
@@ -200,10 +203,12 @@ def parser_only_device(parser, value_type):
 def parser_eq_rnnoise(parser, type):
     if type == 'eq':
         parser.add_argument('device', **device_arg, help=pprint_device_options('output'))
+        value_help = 'Only needed when using set as state. Needs 15 values seperated by with a comma.'
     elif type == 'rnnoise':
         parser.add_argument('device', **device_arg, help=pprint_device_options('input'))
+        value_help = 'Only needed when using set as state.'
     parser.add_argument('state', type=str, choices=(*true_values, *false_values, 'set', None), default=None, nargs='?', help='')
-    parser.add_argument('value', type=str, default=None, nargs='?', help='only needed when using set as state. Seperate with a comma.')
+    parser.add_argument('value', type=str, default=None, nargs='?', help=value_help)
 
 # ARGS INTERPRETER AND PARSER
 def create_parser_args():
@@ -218,8 +223,8 @@ def create_parser_args():
     parser_generic(subparsers.add_parser('mute', description='mute/unmute a device.'), str, 'OPTIONAL '+pprint_bool_options())
     parser_generic(subparsers.add_parser('change-hardware-device', description='change the hardware device'), str, 'name of the device')
     parser_generic(subparsers.add_parser('volume', description='change volume'), str, '+[value] | -[value] | [value]')
-    parser_eq_rnnoise(subparsers.add_parser('rnnoise', description='turn on/off noise reduction and change values'), 'rnnoise')
-    parser_eq_rnnoise(subparsers.add_parser('eq', usage='[device] [(true|on)(false|off)(set)] [value1],[value2],[...]', description='15 values are needed. To toggle only include the device.'), 'eq')
+    parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage = f'%(prog)s [device] [{pprint_bool_options()} | (set)] [value]', description='turn on/off noise reduction and change values. To toggle only include the device.'), 'rnnoise')
+    parser_eq_rnnoise(subparsers.add_parser('eq', usage=f'%(prog)s [device] [{pprint_bool_options()} | (set)] [value1],[value2],[...]', description='turn on/off eq and change values. To toggle only include the device.'), 'eq')
 
     args = parser.parse_args()
     arg_interpreter(args, parser)
