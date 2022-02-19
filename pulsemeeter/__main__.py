@@ -280,14 +280,22 @@ def arg_interpreter(args, parser):
         sys.exit(0)
 
 def main():
-    if len(sys.argv) == 1:
-        c = Client(listen=True)
+    try:
+        server = Server()
+        running = False
+    except:
+        running = True
 
+    if len(sys.argv) == 1:
+        if not running: server.start_server()
         app = MainWindow()
         Gtk.main()
+        if not running: server.handle_exit_signal()
 
     elif sys.argv[1] == 'daemon':
-        server = Server()
+        if running:
+            print('Server is already running')
+            sys.exit(1)
         server.start_server(daemon=True)
     else:
         create_parser_args()

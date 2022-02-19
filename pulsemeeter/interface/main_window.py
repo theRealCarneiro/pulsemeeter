@@ -78,9 +78,9 @@ class MainWindow(Gtk.Window):
 
         self.devices = {}
         self.devices['a'] = self.client.list_hardware_devices('sinks')
-        self.devices['b'] = self.client.list_virtual_devices('sources')
-        self.devices['vi'] = self.client.list_virtual_devices('sinks')
         self.devices['hi'] = self.client.list_hardware_devices('sources')
+        # self.devices['b'] = self.client.list_virtual_devices('sources')
+        # self.devices['vi'] = self.client.list_virtual_devices('sinks')
 
         self.hardware_comboboxes = {}
         self.primary_buttons = {}
@@ -300,9 +300,9 @@ class MainWindow(Gtk.Window):
 
                 # recover volume if possible
                 source_config = self.config[input_type][input_id]
-                for source in self.devices[input_type]:
-                    if source['name'] == source_config['name'] and 'volume' in source:
-                        source_config['vol'] = source['volume']
+                # for source in self.devices[input_type]:
+                    # if source['name'] == source_config['name'] and 'volume' in source:
+                        # source_config['vol'] = source['volume']
 
                 # connect volume sliders
                 adjust = self.builder.get_object(f'{input_type}_{input_id}_adjust')
@@ -367,9 +367,9 @@ class MainWindow(Gtk.Window):
                     if label != None:
                         label.set_text(f'B{output_id} - {sink_config["name"]}')
 
-                for sink in self.devices[output_type]:
-                    if sink['name'] == sink_config['name'] and 'volume' in sink:
-                        sink_config['vol'] = sink['volume']
+                # for sink in self.devices[output_type]:
+                    # if sink['name'] == sink_config['name'] and 'volume' in sink:
+                        # sink_config['vol'] = sink['volume']
                 
                 # volume slider and adjustment 
                 adjust = self.builder.get_object(f'{output_type}_{output_id}_adjust')
