@@ -284,10 +284,17 @@ class Server:
 
             # if config is outdated it will try to add missing keys
             if not 'version' in config or config['version'] != __version__:
-                config['layout'] = 'default'
                 config_orig = json.load(open(ORIG_CONFIG_FILE))
                 config['version'] = __version__
-                config['enable_vumeters'] = True
+
+                if 'layout' not in config:
+                    config['layout'] = 'default'
+
+                if 'cleanup' not in config:
+                    config['cleanup'] = False
+
+                if 'enable_vumeters' not in config:
+                    config['enable_vumeters'] = True
 
                 if 'jack' not in config:
                     config['jack'] = {}
