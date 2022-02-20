@@ -106,7 +106,6 @@ class MainWindow(Gtk.Window):
         self.window = self.builder.get_object('window')
         super().__init__(self.window)
 
-
         self.listen_socket()
 
         self.window.connect('delete_event', self.delete_event)
@@ -480,7 +479,7 @@ class MainWindow(Gtk.Window):
         model = widget.get_active()
         name = device[model - 1]['name'] if model > 0 else ''
 
-        print(self.client.change_hardware_device(output_type, output_id, name))
+        self.client.change_hardware_device(output_type, output_id, name)
         self.vu_list[output_type][output_id].restart()
 
         # if re.search('JACK:', device[model - 1]['description']):
@@ -538,6 +537,8 @@ class MainWindow(Gtk.Window):
                 self.update_eq_buttons)
         self.client.set_callback_function('volume', 
                 self.update_volume_slider)
+        self.client.set_callback_function('change-hd', 
+                self.update_comboboxes)
 
         # self.listen_thread = threading.Thread(target=self.client.listen, 
             # args=(True,self.client.id))
@@ -587,6 +588,23 @@ class MainWindow(Gtk.Window):
         
         button = self.eq_buttons[output_type][output_id]
         GLib.idle_add(button.set_active, state)
+
+    def update_comboboxes(self, device_type, device_id, device):
+        if device == 'None': device = ''
+        devices = self.devices[device_type]
+
+        # for each combobox
+        device_config = self.config[device_type][device_id]
+        combobox = self.hardware_comboboxes[device_type][device_id]
+
+        found = False
+        for i in range(0, len(devices)):
+            if devices[i]['name'] == device:
+                found = True
+                combobox.set_active(i + 1)
+
+        if found == False and device_config['jack'] == False:
+            combobox.set_active(0)
 
     def delete_event(self, widget, event):
         self.client.close_connection()

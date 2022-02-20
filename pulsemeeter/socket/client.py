@@ -166,39 +166,35 @@ class Client:
             if len(args) > 4:
                 latency = int(args[5])
                 self.config[input_type][input_id][f'{sink}_latency'] = int(latency)
-            print(self.config[input_type][input_id][sink])
 
         elif command == 'mute':
             device_type = args[0]
             device_id = args[1]
             state = args[2].lower() == 'true'
             self.config[device_type][device_id]['mute'] = state
-            print(f'setting mute {device_type} {device_id}',self.config[device_type][device_id]['mute'])
 
         elif command == 'primary':
             device_type = args[0]
             device_id = args[1]
             self.config[device_type][device_id]['primary'] = True
-            print(self.config[device_type][device_id]['primary'])
 
             for dev_id in self.config[device_type]:
                 if dev_id != device_id:
                     self.config[device_type][dev_id]['primary'] = False
-                    print(self.config[device_type][dev_id]['primary'])
 
         elif command == 'volume':
             device_type = args[0]
             device_id = args[1]
             vol = int(args[2])
             self.config[device_type][device_id]['vol'] = vol
-            print(self.config[device_type][device_id]['vol'])
         
         elif command == 'rename' or command == 'change-hd':
             device_type = args[0]
             device_id = args[1]
             name = args[2]
+            if name == 'None':
+                name = ''
             self.config[device_type][device_id]['name'] = name
-            print(self.config[device_type][device_id]['name'])
 
         elif command == 'eq':
             device_type = args[0]
@@ -368,6 +364,12 @@ class Client:
 
     def change_hardware_device(self, device_type, device_id, device):
 
+        if device == self.config[device_type][device_id]['name']:
+            return
+
+        if device == '':
+            device = None
+
         if not self.verify_device(device_type, device_id, 'any'):
             return
 
@@ -389,7 +391,6 @@ class Client:
             return
 
         ret =self.send_command(f'get-vd {device_type}') 
-        print(ret)
         return json.loads(ret)
 
     # get sink-input and source-output list

@@ -573,6 +573,7 @@ class Pulse:
         return command
 
     def change_hardware_device(self, output_type, output_id, name):
+        if name in ['None', None]: name = ''
         # print(f'{output_type} {output_id} {name}')
         device_config = self.config[output_type][output_id]
 
@@ -588,6 +589,8 @@ class Pulse:
             # self.config[output_type][output_id]['jack'] = re.search('JACK:', 
                     # new_device['description'])
             # self.config[output_type][output_id]['jack'] = name in  
+        else:
+            name = None
 
         return f'change-hd {output_type} {output_id} {name}'
 
@@ -632,7 +635,6 @@ class Pulse:
                     sink = f'{output_type}{output_id}'
 
                 if self.config[input_type][input_id][sink] == True:
-                    print(output_type, output_id)
                     command += self.connect(input_type, input_id, output_type, output_id,
                             status=status, run_command=False, change_state=False, init=True)
 
@@ -657,7 +659,6 @@ class Pulse:
         conn_type = 'sink' if device_type == 'vi' else 'source'
 
         if status:
-            print('ai')
             command += f'pmctl init {conn_type} {name}\n'
             if device_config['primary']:
                 command += self.set_primary(device_type, device_id, run_command=False)
@@ -703,7 +704,6 @@ class Pulse:
         state = str2bool(state)
         self.config['cleanup'] = state
         ret = f'cleanup {state}'
-        print(ret)
         return ret
 
     # get a dict list of inputs
