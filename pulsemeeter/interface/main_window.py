@@ -95,39 +95,16 @@ class MainWindow(Gtk.Window):
         if not shutil.which('pulse-vumeter') or self.config['enable_vumeters'] == False:
             self.enable_vumeters = False
 
-        self.vumeter_toggle = self.builder.get_object('vumeter_toggle')
-        self.vumeter_toggle.set_active(self.enable_vumeters)
-        self.vumeter_toggle.connect('toggled', self.toggle_vumeters)
-        # self.jack_toggle_check_button = self.builder.get_object('jack_toggle')
-        # self.jack_toggle_check_button.set_active(self.pulse.config['jack']['enable'])
-        # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
-        # self.jack_toggle_check_button.set_sensitive(False)
-
-
-        # self.test = self.builder.get_object('test')
-        # self.test.connect('pressed', self.open_group_popover)
-        # self.jack_group_popover = self.builder.get_object('jack_group_popover')
-        # self.jack_group_popover.set_relative_to(self.test)
-
-
-
-        # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
         self.start_hardware_comboboxes()
         self.start_inputs()
         self.start_outputs()
         self.start_vumeters()
         self.start_app_list()
+        self.start_menu_items()
         # self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
         super().__init__(self.window)
-
-        if self.layout == 'default':
-            self.menu_button = self.builder.get_object('menu_button')
-            self.menu_popover = self.builder.get_object('menu_popover')
-            self.menu_popover.set_relative_to(self.menu_button)
-
-            self.menu_button.connect('pressed', self.open_settings)
 
 
         self.listen_socket()
@@ -143,7 +120,22 @@ class MainWindow(Gtk.Window):
         signal.signal(signal.SIGTERM, self.delete_event)
         signal.signal(signal.SIGINT, self.delete_event)
 
-    def start_layout_combobox(self):
+    def start_menu_items(self):
+        if self.layout == 'default':
+            self.menu_button = self.builder.get_object('menu_button')
+            self.menu_popover = self.builder.get_object('menu_popover')
+            self.menu_popover.set_relative_to(self.menu_button)
+
+            self.menu_button.connect('pressed', self.open_settings)
+
+        self.vumeter_toggle = self.builder.get_object('vumeter_toggle')
+        self.vumeter_toggle.set_active(self.enable_vumeters)
+        self.vumeter_toggle.connect('toggled', self.toggle_vumeters)
+
+        self.cleanup_toggle = self.builder.get_object('cleanup_toggle')
+        self.cleanup_toggle.set_active(self.config['cleanup'])
+        self.cleanup_toggle.connect('toggled', self.toggle_cleanup)
+
         self.layout_combobox = self.builder.get_object('layout_combobox')
         layout_list = os.listdir(LAYOUT_DIR)
         i = 0
@@ -154,11 +146,29 @@ class MainWindow(Gtk.Window):
             i += 1
         self.layout_combobox.connect('changed', self.change_layout)
 
+        # self.jack_toggle_check_button = self.builder.get_object('jack_toggle')
+        # self.jack_toggle_check_button.set_active(self.pulse.config['jack']['enable'])
+        # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
+        # self.jack_toggle_check_button.set_sensitive(False)
+
+
+        # self.test = self.builder.get_object('test')
+        # self.test.connect('pressed', self.open_group_popover)
+        # self.jack_group_popover = self.builder.get_object('jack_group_popover')
+        # self.jack_group_popover.set_relative_to(self.test)
+
+
+
+        # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
+    def toggle_cleanup(self, widget):
+        self.client.set_cleanup(widget.get_active())
+
     def change_layout(self, combobox):
-        self.pulse.config['layout'] = combobox.get_active_text()
-        self.pulse.restart_window = True
-        self.window.destroy()
-        self.delete_event(None, None)
+        # self.pulse.config['layout'] = )
+        self.client.set_layout(combobox.get_active_text())
+        # self.pulse.restart_window = True
+        # self.window.destroy()
+        # self.delete_event(None, None)
 
     def open_settings(self, widget):
         self.menu_popover.popup()

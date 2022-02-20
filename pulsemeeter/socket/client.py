@@ -210,6 +210,14 @@ class Client:
                 control = args[3]
                 self.config[device_type][device_id]['eq_control'] = control
 
+        elif command == 'layout':
+            layout = args[0]
+            self.config['layout'] = layout
+
+        elif command == 'cleanup':
+            state = args[0]
+            self.config['cleanup'] = state.lower() == 'true'
+
         elif command == 'rnnoise':
             device_id = args[0]
             state = args[1].lower() == 'true'
@@ -402,6 +410,22 @@ class Client:
         command = f'app-volume {app_id} {vol} {stream_type}'
         return self.send_command(command)
 
+    def set_layout(self, layout):
+        if layout == self.config['layout']:
+            return
+
+        command = f'set-layout {layout}'
+        return self.send_command(command)
+
+    def set_cleanup(self, state):
+        if type(state) == str:
+            state = state.lower() == 'true'
+
+        if state == self.config['cleanup']:
+            return
+
+        command = f'set-cleanup {state}'
+        return self.send_command(command)
 
     def close_connection(self):
         self.sock.shutdown(socket.SHUT_RDWR)

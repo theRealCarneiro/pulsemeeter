@@ -68,9 +68,9 @@ def server_input_mode(client):
     try:
         while client:
             command = input(format('> ').bold())
-            if command == 'listen' or 'Listen':
+            if command == 'listen':
                 server_listen_mode(client)
-            elif command == 'exit' or 'Exit':
+            elif command == 'exit':
                 raise KeyboardInterrupt
             else:
                 print(client.send_command(command))

@@ -695,6 +695,17 @@ class Pulse:
 
         return f'rename {device_type} {device_id} {new_name}'
 
+    def change_layout(self, layout):
+        self.config['layout'] = layout
+        return f'layout {layout}'
+
+    def set_cleanup(self, state):
+        state = str2bool(state)
+        self.config['cleanup'] = state
+        ret = f'cleanup {state}'
+        print(ret)
+        return ret
+
     # get a dict list of inputs
     def get_virtual_devices(self, kind):
         command = f"pmctl list-virtual-{kind}"

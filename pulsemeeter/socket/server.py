@@ -465,6 +465,18 @@ class Server:
                 'notify': False,
                 'regex': ''
             },
+
+            'set-layout': {
+                'function': self.audio_server.change_layout,
+                'notify': True,
+                'regex': '[aA-zZ]+$'
+            },
+
+            'set-cleanup': {
+                'function': self.audio_server.set_cleanup,
+                'notify': True,
+                'regex': f'{state}$'
+            },
             
             # not ready
             'get-vd': {'function': self.audio_server.get_virtual_devices, 'notify': False, 'regex': ''},
