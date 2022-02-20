@@ -539,11 +539,18 @@ class MainWindow(Gtk.Window):
                 self.update_volume_slider)
         self.client.set_callback_function('change-hd', 
                 self.update_comboboxes)
+        self.client.set_callback_function('exit', 
+                self.close_on_server_exit)
 
-        # self.listen_thread = threading.Thread(target=self.client.listen, 
-            # args=(True,self.client.id))
-
-        # self.client.start_listen()
+    def close_on_server_exit(self):
+        self.client.end_subscribe()
+        self.subscribe_thread.join()
+        if self.enable_vumeters == True:
+            for i in ['hi', 'vi', 'a', 'b']:
+                for j in self.vu_list[i]:
+                    self.vu_list[i][j].close()
+        GLib.idle_add(self.window.destroy)
+        Gtk.main_quit()
 
     def update_loopback_buttons(self, input_type, input_id, output_type,
             output_id, state, latency):
@@ -606,7 +613,7 @@ class MainWindow(Gtk.Window):
         if found == False and device_config['jack'] == False:
             combobox.set_active(0)
 
-    def delete_event(self, widget, event):
+    def delete_event(self, widget=None, event=None):
         self.client.close_connection()
         self.client.stop_listen()
         self.client.end_subscribe()

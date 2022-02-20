@@ -78,16 +78,21 @@ class Server:
                 message = self.command_queue.get()
                 # if the message is None, exit. Otherwise, pass it to handle_command().
                 # The string matching could probably be replaced with an enum if it's too slow
-                if message[0] == 'exit':
-                    break
-                elif message[0] == 'client_handler_exit':
+                # if message[0] == 'exit':
+                    # break
+                if message[0] == 'client_handler_exit':
                     if message[1] in self.event_queues:
                         del self.event_queues[message[1]]
                     del self.client_handler_connections[message[1]]
                     self.client_handler_threads.pop(message[1]).join()
-                elif message[0] == 'command':
+                elif message[0] == 'command' or message[0] == 'exit':
 
-                    ret_message, notify_all = self.handle_command(message[2])
+                    if message[0] != 'exit':
+                        ret_message, notify_all = self.handle_command(message[2])
+                        sender_id = message[1]
+                    else:
+                        ret_message, notify_all = ('exit', True)
+                        sender_id = 9999
 
                     if ret_message:
                         encoded_msg = ret_message.encode()
@@ -95,7 +100,7 @@ class Server:
                         # notify observers
                         if notify_all:
                             client_list = self.client_handler_connections.values()
-                        elif message[1] in self.client_handler_connections:
+                        elif sender_id in self.client_handler_connections:
                             client_list = [self.client_handler_connections[message[1]]]
                         # else:
                             # continue
@@ -103,13 +108,13 @@ class Server:
                         for conn in client_list:
 
                             # add 0 until 4 characters long
-                            id = str(message[1]).rjust(4, '0')
+                            sender_id = str(sender_id).rjust(4, '0')
                             msg_len = str(len(encoded_msg)).rjust(4, '0')
 
                             # send to clients
                             try:
                                 # print(id, ret_message)
-                                conn.sendall(id.encode()) # sender id
+                                conn.sendall(sender_id.encode()) # sender id
                                 conn.sendall(msg_len.encode()) # message len
                                 conn.sendall(encoded_msg) # command
                             except OSError:

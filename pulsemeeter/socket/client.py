@@ -93,7 +93,8 @@ class Client:
                 event = event.decode()
 
                 if event == 'exit':
-                    break
+                    self.handle_callback(event)
+                    continue
 
                 self.assert_config(event)
                 if print_event: print(event)
