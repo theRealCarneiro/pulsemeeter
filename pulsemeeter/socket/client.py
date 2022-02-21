@@ -344,11 +344,12 @@ class Client:
         if type(vol) == str:
             if not re.match('[+-]?\d+$', vol):
                 return 'invalid volume'
+            if re.match('^\d+$', vol):
+                if self.config[device_type][device_id]['vol'] == int(vol):
+                    return
 
         command = f'volume {device_type} {device_id} {vol}'
-        if re.match('^\d+$', vol):
-            if self.config[device_type][device_id]['vol'] == int(vol):
-                return
+
         return self.send_command(command)
 
 
