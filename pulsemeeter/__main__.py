@@ -2,9 +2,10 @@ import os
 import signal
 import json
 import sys, threading
+import subprocess
 import argparse
 import re
-import textwrap
+import platform
 
 from .settings import PIDFILE, CONFIG_FILE, __version__
 from . import MainWindow
@@ -20,9 +21,49 @@ from gi.repository import Gtk
 true_values = ('true', '1', 'on')
 false_values = ('false', '0', 'off')
 
-# change these to just change help text and other things where it just prints
-input_values = ('hi', 'vi')
-output_values = ('a', 'b')
+# change these to just change possible devices
+all_devices = ('hi', 'vi', 'a', 'b')
+
+# PRETTY PRINT
+def pprint_bool_options(style='simple'):
+    # pretty print boolean values
+    if style == 'pretty':
+        return ' | '.join(map(str, true_values))+'\n'+' | '.join(map(str, false_values))
+    elif style == 'simple':
+        return '['+'|'.join(map(str, true_values))+'] | ['+'|'.join(map(str, false_values))+']'
+
+def pprint_device_options(allowed_devices = all_devices):
+    # pretty print devices
+    if type(allowed_devices) == str:
+        return f'{allowed_devices}[number]'
+    else:
+        return f'{"[number] | ".join(map(str, allowed_devices))}[number]'
+
+# HELP MESSAGES
+class help:
+    class description:
+        DEBUG = 'go into debug mode'
+        STATUS = 'status information'
+        NO_COLOR = 'deactivate colors for this command'
+        DAEMON = 'start the daemon'
+        CONNECT = 'connect an input to an output'
+        PRIMARY = 'Select primary device.'
+        MUTE = 'mute/unmute a device'
+        CHANGE_HARDWARE_DEVICE = 'Change the hardware device.'
+        VOLUME = 'change volume'
+        RNNOISE = 'Turn on/off noise reduction and change values. To toggle only include the device.'
+        EQ = 'Turn on/off eq and change values. To toggle only include the device'
+
+    class usage:
+        RNNOISE = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value]'
+        EQ = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value1],[value2],[...]'
+
+    class value:
+        MUTE = f'OPTIONAL {pprint_bool_options()}'
+        CHANGE_HARDWARE_DEVICE = 'name of the device'
+        VOLUME = '+[value] | -[value] | [value]'
+        CONNECT = f'OPTIONAL {pprint_bool_options()}'
+        PRIMARY = ''
 
 # COLORED TEXT
 class format:
@@ -34,6 +75,7 @@ class format:
         self.RED = '\033[91m'
         self.YELLOW = '\033[33m'
         self.BOLD_RED = self.BOLD+self.RED
+        self.GREY = '\033[30m'
         self.CLEAR = '\033[2J'
         self.END = '\033[0m'
         self.text = text
@@ -42,6 +84,8 @@ class format:
         return self.BOLD + self.text + self.END
     def red_bold(self):
         return self.BOLD_RED + self.text + self.END
+    def grey(self):
+        return self.GREY + self.text + self.END
     def green(self):
         return self.GREEN + self.text + self.END
     def yellow(self):
@@ -54,6 +98,7 @@ class format:
     # print a color end
     def end(self):
         return self.END
+
 
 # DEBUG HELPERS
 # start in specified mode and switch between them
@@ -85,23 +130,6 @@ def server_listen_mode(client):
     except KeyboardInterrupt:
         print()
         server_input_mode(client)
-
-# PRETTY PRINT
-def pprint_bool_options(style='simple'):
-    # pretty print boolean values
-    if style == 'pretty':
-        return ' | '.join(map(str, true_values))+'\n'+' | '.join(map(str, false_values))
-    elif style == 'simple':
-        return '('+'|'.join(map(str, true_values))+') | ('+'|'.join(map(str, false_values))+')'
-
-def pprint_device_options(devices='all'):
-    # pretty print devices
-    if devices == 'all':
-        return '[number] | '.join((map(str, input_values)))+'[number] | '+'[number] | '.join(map(str, output_values))+'[number]'
-    elif devices == 'input':
-        return '[number] | '.join(map(str, input_values))+'[number]'
-    elif devices == 'output':
-        return '[number] | '.join(map(str, output_values))+'[number]'
 
 # CONVERTERS
 def str_to_bool(string, parser):
@@ -144,7 +172,7 @@ def convert_eq_rnnoise(args, parser, type):
                 return (*device_args, str_to_bool(args.state, parser))
 
 # convert [device][number] -> [device] [number] and check if device is valid
-def convert_device(args, parser, device_type='general', allowed_devices=('hi', 'vi', 'a', 'b')):
+def convert_device(args, parser, device_type='general', allowed_devices=all_devices):
     if device_type == 'general':
         # convert all devices
         try:
@@ -179,13 +207,13 @@ def convert_device(args, parser, device_type='general', allowed_devices=('hi', '
 device_arg = {'type': str}
 
 # generic device = device + [value]
-def parser_generic(parser, value_type, help='', device_help='all'):
+def parser_generic(parser, value_type, help='', device_help=all_devices):
     parser.add_argument('device', **device_arg, help=pprint_device_options(device_help))
     if value_type is not None:
         parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
 # source -> sink (only used for connect)
-def parser_source_to_sink(parser, value_type, help='', help_input=pprint_device_options('input'), help_output=pprint_device_options('output')):
+def parser_source_to_sink(parser, value_type, help='', help_input=pprint_device_options(('hi', 'vi')), help_output=pprint_device_options(('a', 'b'))):
     parser.add_argument('input', **device_arg, help=help_input)
     parser.add_argument('output', **device_arg, help=help_output)
     parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
@@ -193,56 +221,78 @@ def parser_source_to_sink(parser, value_type, help='', help_input=pprint_device_
 # only eq and rnnoise
 def parser_eq_rnnoise(parser, type):
     if type == 'eq':
-        parser.add_argument('device', **device_arg, help=pprint_device_options('output'))
+        parser.add_argument('device', **device_arg, help=pprint_device_options(('a', 'b')))
         value_help = 'Only needed when using set as state. Needs 15 values seperated by with a comma.'
     elif type == 'rnnoise':
-        parser.add_argument('device', **device_arg, help=pprint_device_options('input'))
+        parser.add_argument('device', **device_arg, help=pprint_device_options('hi'))
         value_help = 'Only needed when using set as state.'
     parser.add_argument('state', type=str, choices=(*true_values, *false_values, 'set', None), default=None, nargs='?', help='')
     parser.add_argument('value', type=str, default=None, nargs='?', help=value_help)
 
 # ARGS INTERPRETER AND PARSER
 def create_parser_args():
+
     parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s', description=(f'Use "{format("%(prog)s [command] -h").green()}" to get usage information. Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
 
-    parser.add_argument('-d', '--debug', action='store_true', help='go into debug mode')
-    parser.add_argument('-i', '--information', action='store_true', help='get informations about the installation')
+    parser.add_argument('-d', '--debug', action='store_true', help=help.description.DEBUG)
+    parser.add_argument('-s', '--status', action='store_true', help=help.description.STATUS)
 
     subparsers = parser.add_subparsers(dest='command')
-    subparsers.add_parser('daemon', description='start the daemon') # just to show it in the help menu
-    parser_source_to_sink(subparsers.add_parser('connect', description='connect an input to an output.'), str, 'OPTIONAL '+pprint_bool_options())
-    parser_generic(subparsers.add_parser('primary', description='Select primary device. Only available for virtual devices.'), None, '', None)
-    parser_generic(subparsers.add_parser('mute', description='mute/unmute a device.'), str, 'OPTIONAL '+pprint_bool_options())
-    parser_generic(subparsers.add_parser('change-hardware-device', description='change the hardware device. Device has to be virtual input or b.'), str, 'name of the device')
-    parser_generic(subparsers.add_parser('volume', description='change volume'), str, '+[value] | -[value] | [value]')
-    parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage = f'%(prog)s [device] [{pprint_bool_options()} | (set)] [value]', description='turn on/off noise reduction and change values. To toggle only include the device.'), 'rnnoise')
-    parser_eq_rnnoise(subparsers.add_parser('eq', usage=f'%(prog)s [device] [{pprint_bool_options()} | (set)] [value1],[value2],[...]', description='turn on/off eq and change values. To toggle only include the device.'), 'eq')
+    subparsers.add_parser('daemon', description=help.description.DAEMON) # just to show it in the help menu
+    parser_source_to_sink(subparsers.add_parser('connect', description=help.description.CONNECT), str, help.value.CONNECT)
+    parser_generic(subparsers.add_parser('primary',description=help.description.PRIMARY), None, help.value.PRIMARY, ('vi', 'b'))
+    parser_generic(subparsers.add_parser('mute', description=help.description.MUTE), str, help.value.MUTE)
+    parser_generic(subparsers.add_parser('change-hardware-device', description=help.description.CHANGE_HARDWARE_DEVICE),str, help.value.CHANGE_HARDWARE_DEVICE, ('vi', 'b'))
+    parser_generic(subparsers.add_parser('volume', description=help.description.VOLUME), str, help.value.VOLUME)
+    parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage = help.usage.RNNOISE, description=help.description.RNNOISE), 'rnnoise')
+    parser_eq_rnnoise(subparsers.add_parser('eq', usage=help.usage.EQ, description=help.description.EQ), 'eq')
 
     args = parser.parse_args()
     arg_interpreter(args, parser)
 
 def arg_interpreter(args, parser):
-    if args.information:
+    if args.status:
+        # information page
         if server_running:
             print(f'Server: {format("running").green()}')
         else:
             print(f'Server: {format("not running").red()}')
-        print(f'pulsemeeter version: {format(__version__).bold()}')
-        print(f'Python version: {format(sys.version).bold()}')
+
+        try:
+            subprocess.check_call('pmctl')
+            print(f'Pulseaudio: {format("running").green()}')
+        except:
+            print(f'Pulseaudio: {format("not running").red()}')
+        
+        try:
+            audio_server = os.popen('pactl info | grep "Server Name"').read()
+            audio_server = audio_server.split(': ')[1]
+            audio_server = audio_server.replace('\n', '')
+            audio_server = format(audio_server).bold()
+        except:
+            audio_server = format('could not be determined').red()
+      
+        print(f'audio server: {audio_server}')
+        print(f'Pulsemeeter version: {format(__version__).bold()}')
         print(f'Config File: {format(CONFIG_FILE).bold()}')
+        print(f'OS: {format(platform.platform()).bold()}')
+        print(f'Python version: {format(sys.version).bold()}')
         sys.exit(0)
     else:
+        # try to connect with client
         try:
             client = Client()
         except:
             print(format('error: daemon is not started. Use "pulsemeeter daemon" to start it.').red())
         else:
+            # debug page
             if args.debug:
                     print(f'You are entering the {format("debug mode").red()}.')
                     print(f'While in INPUT mode type "{format("listen").bold()}" to switch to the LISTEN mode.')
                     print(f'While in LISTEN mode use {format("ctrl+c").bold()} to switch back to INPUT mode.')
                     debug_start(client, 'input')
 
+            # command interpreter
             elif args.command == 'connect':
                 device_args = convert_device(args, parser, 'source-to-sink')
                 if args.value is not None:
@@ -279,7 +329,7 @@ def arg_interpreter(args, parser):
             elif args.command == 'rnnoise':
                 client.rnnoise(*convert_eq_rnnoise(args, parser, 'rnnoise'))
 
-            sys.exit(0)
+    sys.exit(0)
 
 def main():
     global server_running
