@@ -230,5 +230,6 @@
 	},
 	"enable_vumeters": true,
 	"cleanup": false,
+	"tray": true,
 	"layout":"default"
 }

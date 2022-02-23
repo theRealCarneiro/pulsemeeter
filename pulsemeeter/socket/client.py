@@ -10,7 +10,7 @@ from queue import SimpleQueue
 
 class Client:
 
-    def __init__(self, listen=False):
+    def __init__(self, listen=False, noconfig=False):
 
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.exit_flag = False
@@ -19,6 +19,7 @@ class Client:
         self.sub_proc = None
         self.return_queue = SimpleQueue()
         self.can_listen = listen
+        self.noconfig = noconfig
 
         # connect to server
         try:
@@ -51,7 +52,7 @@ class Client:
             # encode message ang get it's length
             message = command.encode()
             msg_len = len(message)
-            if msg_len == 0 or command == 'exit': raise
+            if msg_len == 0: raise
 
             # send message length
             msg_len = str(msg_len).rjust(4, '0')
@@ -96,7 +97,7 @@ class Client:
                     self.handle_callback(event)
                     continue
 
-                self.assert_config(event)
+                if not self.noconfig: self.assert_config(event)
                 if print_event: print(event)
                 if sender_id != self.id:
                     self.handle_callback(event)

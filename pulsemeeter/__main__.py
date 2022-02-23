@@ -1,4 +1,5 @@
 import os
+import time
 import signal
 import json
 import sys, threading
@@ -117,6 +118,9 @@ def server_input_mode(client):
                 server_listen_mode(client)
             elif command == 'exit':
                 raise KeyboardInterrupt
+            elif command == 'close_server':
+                client.send_command('exit')
+
             else:
                 print(client.send_command(command))
     except KeyboardInterrupt:
@@ -333,23 +337,32 @@ def arg_interpreter(args, parser):
 
 def main():
     global server_running
+    tray = None
     try:
         server = Server()
         server_running = False
+        server.start_server(daemon=True)
+        time.sleep(0.1)
     except:
         server_running = True
 
+    print(server_running)
     if len(sys.argv) == 1:
-        if not server_running: server.start_server()
-        app = MainWindow()
+        app = MainWindow(isserver=(not server_running))
         Gtk.main()
-        if not server_running: server.handle_exit_signal()
+        if not server_running: 
+            server.handle_exit_signal()
 
     elif sys.argv[1] == 'daemon':
         if server_running:
             print('Server is already running')
             sys.exit(1)
-        server.start_server(daemon=True)
+
+        if server.config['tray']:
+            app = MainWindow(isserver=True, trayonly=True)
+            Gtk.main()
+            server.handle_exit_signal()
+
     else:
         create_parser_args()
 

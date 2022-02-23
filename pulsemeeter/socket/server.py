@@ -11,13 +11,12 @@ from ..backends import Pulse
 from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
 
 
-LISTENER_TIMEOUT = 1
+LISTENER_TIMEOUT = 2
 
 
 class Server:
     def __init__(self):
 
-        self.ready = False
         # delete socket file if exists
         try:
             if self.is_running():
@@ -27,13 +26,15 @@ class Server:
             if os.path.exists(SOCK_FILE):
                 raise
 
+
         # audio server can be pulse or pipe, so just use a generic name
+        self.closed = False
         audio_server = Pulse
 
         self.config = self.read_config()
         self.audio_server = audio_server(self.config, loglevel=0)
-        self.ready = True
         self.create_command_dict()
+
 
         # the socket only needs to be seen by the listener thread
         # self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -91,7 +92,8 @@ class Server:
                         ret_message, notify_all = self.handle_command(message[2])
                         sender_id = message[1]
                     else:
-                        ret_message, notify_all = ('exit', True)
+                        ret_message = 'exit'
+                        notify_all = True
                         sender_id = 9999
 
                     if ret_message:
@@ -118,7 +120,7 @@ class Server:
                                 conn.sendall(msg_len.encode()) # message len
                                 conn.sendall(encoded_msg) # command
                             except OSError:
-                                print(f'client {message[1]} already disconnected, message not sent')
+                                print(f'client {sender_id} already disconnected, message not sent')
 
                     if ret_message == 'exit': 
                         break
@@ -137,6 +139,7 @@ class Server:
             # client handler threads are in daemon mode
             for thread in self.client_handler_threads.values():
                 thread.join()
+
         finally:
             # Set the exit flag and wait for the listener thread to timeout
             print(f'sending exit signal to listener thread, it should exit within {LISTENER_TIMEOUT} seconds...')
@@ -145,6 +148,7 @@ class Server:
 
             # Call any code to clean up virtual devices or similar
             self.close_server()
+
 
     def is_running(self):
         try:
@@ -179,6 +183,7 @@ class Server:
         self.save_config()
         if self.config['cleanup']:
             self.audio_server.cleanup()
+        self.closed = True
 
     # this function handles the connection requests
     def query_clients(self):
@@ -292,11 +297,11 @@ class Server:
                 config_orig = json.load(open(ORIG_CONFIG_FILE))
                 config['version'] = __version__
 
-                if 'layout' not in config:
-                    config['layout'] = 'default'
+                if 'layout' not in config: config['layout'] = 'default'
 
-                if 'cleanup' not in config:
-                    config['cleanup'] = False
+                if 'cleanup' not in config: config['cleanup'] = False
+
+                if 'tray' not in config: config['tray'] = True
 
                 if 'enable_vumeters' not in config:
                     config['enable_vumeters'] = True

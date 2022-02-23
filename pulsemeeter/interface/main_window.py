@@ -1,4 +1,5 @@
 import os
+import time
 import pulsectl
 import re
 import signal
@@ -22,19 +23,36 @@ from gi import require_version as gi_require_version
 
 # from pulsectl import Pulse
 gi_require_version('Gtk', '3.0')
+gi_require_version('AppIndicator3', '0.1')
 
-from gi.repository import Gtk,Gdk,Gio,GLib
+from gi.repository import Gtk,Gdk,Gio,GLib,AppIndicator3
 
 class MainWindow(Gtk.Window):
 
-    def __init__(self):
+    def __init__(self, isserver=False, trayonly=False):
+
+        self.isserver = isserver
+        self.client = Client(listen=True)
+        self.config = self.client.config
+        self.trayonly = trayonly
+
+        if self.config['tray'] and isserver:
+            self.tray = self.create_indicator()
+
+        if trayonly: 
+            self.client.set_callback_function('exit', self.close_on_server_exit)
+            return
+
+        self.start_window(isserver)
+
+    def start_window(self, isserver):
+
+        self.trayonly = False
         self.exit_flag = False
         GLib.threads_init()
 
         Gtk.Window.__init__(self)
         self.builder = Gtk.Builder()
-        self.client = Client(listen=True)
-        self.config = self.client.config
         self.layout = self.config['layout']
 
         component_list = [
@@ -104,7 +122,8 @@ class MainWindow(Gtk.Window):
         # self.start_layout_combobox()
 
         self.window = self.builder.get_object('window')
-        super().__init__(self.window)
+        # self.add_window(self.window)
+        # super().__init__(self.window)
 
         self.listen_socket()
 
@@ -116,8 +135,10 @@ class MainWindow(Gtk.Window):
 
         self.window.show_all()
 
-        signal.signal(signal.SIGTERM, self.delete_event)
-        signal.signal(signal.SIGINT, self.delete_event)
+
+        if not isserver:
+            signal.signal(signal.SIGTERM, self.delete_event)
+            signal.signal(signal.SIGINT, self.delete_event)
 
     def start_menu_items(self):
         if self.layout == 'default':
@@ -543,13 +564,14 @@ class MainWindow(Gtk.Window):
                 self.close_on_server_exit)
 
     def close_on_server_exit(self):
-        self.client.end_subscribe()
-        self.subscribe_thread.join()
-        if self.enable_vumeters == True:
-            for i in ['hi', 'vi', 'a', 'b']:
-                for j in self.vu_list[i]:
-                    self.vu_list[i][j].close()
-        GLib.idle_add(self.window.destroy)
+        if not self.trayonly:
+            self.client.end_subscribe()
+            self.subscribe_thread.join()
+            if self.enable_vumeters == True:
+                for i in ['hi', 'vi', 'a', 'b']:
+                    for j in self.vu_list[i]:
+                        self.vu_list[i][j].close()
+            GLib.idle_add(self.window.destroy)
         Gtk.main_quit()
 
     def update_loopback_buttons(self, input_type, input_id, output_type,
@@ -613,14 +635,56 @@ class MainWindow(Gtk.Window):
         if found == False and device_config['jack'] == False:
             combobox.set_active(0)
 
-    def delete_event(self, widget=None, event=None):
-        self.client.close_connection()
-        self.client.stop_listen()
-        self.client.end_subscribe()
-        self.subscribe_thread.join()
-        if self.enable_vumeters == True:
-            for i in ['hi', 'vi', 'a', 'b']:
-                for j in self.vu_list[i]:
-                    self.vu_list[i][j].close()
+    def create_indicator(self):
+        indicator = AppIndicator3.Indicator.new(id='pulsemeetertray', 
+                icon_name='Pulsemeeter',
+                category=AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
+
+        indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
+
+        command_one = Gtk.MenuItem(label='Open Pulsmeeter')
+        command_one.connect('activate', self.open_ui)
+        exittray = Gtk.MenuItem(label='Close')
+        exittray.connect('activate', self.tray_exit)
+
+        menu = Gtk.Menu()
+        menu.append(command_one)
+        menu.append(exittray)
+        menu.show_all()
+
+        indicator.set_menu(menu)
+        return indicator
+
+    # def quit(self, widget=None):
+        # self.client.send_command('exit')
+
+    def open_ui(self):
+        os.popen('pulsemeeter')
+
+    def tray_exit(self, widget):
+        if not self.trayonly:
+            self.window.destroy()
+            self.delete_event()
+        else:
+            self.client.close_connection()
+            self.client.stop_listen()
+
         Gtk.main_quit()
+        return False
+
+    def delete_event(self, widget=None, event=None):
+        if not self.trayonly:
+            self.client.end_subscribe()
+            self.subscribe_thread.join()
+            if self.enable_vumeters == True:
+                for i in ['hi', 'vi', 'a', 'b']:
+                    for j in self.vu_list[i]:
+                        self.vu_list[i][j].close()
+            self.trayonly = True
+
+        if not self.config['tray'] or not self.isserver:
+            self.client.close_connection()
+            self.client.stop_listen()
+            Gtk.main_quit()
+
         return False
