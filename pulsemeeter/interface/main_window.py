@@ -41,7 +41,8 @@ class MainWindow(Gtk.Window):
             return
 
         self.windowinstance = self.start_window(isserver)
-        self.create_indicator()
+        if self.config['tray'] and isserver:
+            self.create_indicator()
 
     def start_window(self, isserver):
 
