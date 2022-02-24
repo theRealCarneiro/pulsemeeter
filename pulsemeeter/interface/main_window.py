@@ -24,7 +24,6 @@ from gi import require_version as gi_require_version
 # from pulsectl import Pulse
 gi_require_version('Gtk', '3.0')
 gi_require_version('AppIndicator3', '0.1')
-
 from gi.repository import Gtk,Gdk,Gio,GLib,AppIndicator3
 
 class MainWindow(Gtk.Window):
@@ -36,14 +35,14 @@ class MainWindow(Gtk.Window):
         self.config = self.client.config
         self.trayonly = trayonly
 
-        if self.config['tray'] and isserver:
-            self.tray = self.create_indicator()
 
         if trayonly: 
             self.client.set_callback_function('exit', self.close_on_server_exit)
             return
 
-        self.start_window(isserver)
+        self.windowinstance = self.start_window(isserver)
+        if self.config['tray'] and isserver:
+            self.create_indicator()
 
     def start_window(self, isserver):
 
@@ -140,6 +139,8 @@ class MainWindow(Gtk.Window):
             signal.signal(signal.SIGTERM, self.delete_event)
             signal.signal(signal.SIGINT, self.delete_event)
 
+        return self.window
+
     def start_menu_items(self):
         if self.layout == 'default':
             self.menu_button = self.builder.get_object('menu_button')
@@ -176,7 +177,6 @@ class MainWindow(Gtk.Window):
         # self.test.connect('pressed', self.open_group_popover)
         # self.jack_group_popover = self.builder.get_object('jack_group_popover')
         # self.jack_group_popover.set_relative_to(self.test)
-
 
 
         # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
@@ -635,42 +635,48 @@ class MainWindow(Gtk.Window):
         if found == False and device_config['jack'] == False:
             combobox.set_active(0)
 
+    def tray_menu(self):
+        menu = Gtk.Menu()
+
+        item_open = Gtk.MenuItem(label='Open Pulsemeeter')
+        item_open.connect('activate', self.open_ui)
+        menu.append(item_open)
+
+        item_exit = Gtk.MenuItem(label='Close')
+        item_exit.connect('activate', self.tray_exit)
+        menu.append(item_exit)
+
+        menu.show_all()
+        return menu
+
     def create_indicator(self):
-        indicator = AppIndicator3.Indicator.new(id='pulsemeetertray', 
+        indicator = AppIndicator3.Indicator.new(id='pulsemeetertray',
                 icon_name='Pulsemeeter',
                 category=AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
 
         indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
 
-        command_one = Gtk.MenuItem(label='Open Pulsmeeter')
-        command_one.connect('activate', self.open_ui)
-        exittray = Gtk.MenuItem(label='Close')
-        exittray.connect('activate', self.tray_exit)
+        indicator.set_menu(self.tray_menu())
+        Gtk.main()
 
-        menu = Gtk.Menu()
-        menu.append(command_one)
-        menu.append(exittray)
-        menu.show_all()
+    def open_ui(self, widget):
+        #os.popen('pulsemeeter')
+        try:
+            self.windowinstance.present()
+        except:
+            self.windowinstance = self.start_window(self.isserver)
+            self.trayonly = False
 
-        indicator.set_menu(menu)
-        return indicator
-
-    # def quit(self, widget=None):
-        # self.client.send_command('exit')
-
-    def open_ui(self):
-        os.popen('pulsemeeter')
 
     def tray_exit(self, widget):
-        if not self.trayonly:
-            self.window.destroy()
-            self.delete_event()
-        else:
-            self.client.close_connection()
-            self.client.stop_listen()
+        self.windowinstance.close()
+        self.delete_event()
+        self.client.close_connection()
+        self.client.stop_listen()
 
         Gtk.main_quit()
         return False
+
 
     def delete_event(self, widget=None, event=None):
         if not self.trayonly:
@@ -681,6 +687,7 @@ class MainWindow(Gtk.Window):
                     for j in self.vu_list[i]:
                         self.vu_list[i][j].close()
             self.trayonly = True
+            self.windowinstance = None
 
         if not self.config['tray'] or not self.isserver:
             self.client.close_connection()
