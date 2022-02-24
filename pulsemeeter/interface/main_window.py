@@ -35,10 +35,10 @@ class MainWindow(Gtk.Window):
         self.config = self.client.config
         self.trayonly = trayonly
         self.windowinstance = None
+        self.tray = None
 
         if self.config['tray'] and isserver:
             self.tray = self.create_indicator()
-
 
         if trayonly: 
             self.client.set_callback_function('exit', self.close_on_server_exit)
@@ -161,6 +161,10 @@ class MainWindow(Gtk.Window):
         self.cleanup_toggle.set_active(self.config['cleanup'])
         self.cleanup_toggle.connect('toggled', self.toggle_cleanup)
 
+        self.tray_toggle = self.builder.get_object('tray_toggle')
+        self.tray_toggle.set_active(self.config['tray'])
+        self.tray_toggle.connect('toggled', self.toggle_tray)
+
         self.layout_combobox = self.builder.get_object('layout_combobox')
         layout_list = os.listdir(LAYOUT_DIR)
         i = 0
@@ -181,18 +185,28 @@ class MainWindow(Gtk.Window):
         # self.test.connect('pressed', self.open_group_popover)
         # self.jack_group_popover = self.builder.get_object('jack_group_popover')
         # self.jack_group_popover.set_relative_to(self.test)
-
-
         # self.jack_toggle_check_button.connect('toggled', self.toggle_jack)
+
+
+    def toggle_tray(self, widget):
+        state = widget.get_active()
+        self.client.set_tray(state)
+        if state:
+            if self.tray == None:
+                self.tray = self.create_indicator()
+            else:
+                self.tray.set_status(1)
+
+        else:
+            self.tray.set_status(0)
+
     def toggle_cleanup(self, widget):
         self.client.set_cleanup(widget.get_active())
 
     def change_layout(self, combobox):
-        # self.pulse.config['layout'] = )
         self.client.set_layout(combobox.get_active_text())
-        # self.pulse.restart_window = True
         # self.window.destroy()
-        # self.delete_event(None, None)
+        # self.delete_event()
 
     def open_settings(self, widget):
         self.menu_popover.popup()

@@ -348,6 +348,13 @@ class Server:
         with open(CONFIG_FILE, 'w') as outfile:
             json.dump(config, outfile, indent='\t', separators=(',', ': '))
 
+    def set_tray(self, state):
+        if type(state) == str:
+            state = state.lower() == 'true'
+        self.config['tray'] = state
+        ret_msg = f'tray {state}'
+        return ret_msg
+
     def create_command_dict(self):
 
         # some useful regex
@@ -494,11 +501,34 @@ class Server:
                 'notify': True,
                 'regex': f'{state}$'
             },
+
+            'set-tray': {
+                'function': self.set_tray,
+                'notify': True,
+                'regex': f'{state}$'
+            },
             
             # not ready
-            'get-vd': {'function': self.audio_server.get_virtual_devices, 'notify': False, 'regex': ''},
-            'get-hd': {'function': self.audio_server.get_hardware_devices, 'notify': False, 'regex': ''},
-            'list-apps': {'function': self.audio_server.get_virtual_devices, 'notify': False, 'regex': ''},
-            'rename': {'function': self.audio_server.rename, 'notify': True, 'regex': ''}, 
+            'get-vd': {
+                    'function': self.audio_server.get_virtual_devices, 
+                    'notify': False, 
+                    'regex': ''
+            },
+            'get-hd': {
+                    'function': 
+                    self.audio_server.get_hardware_devices, 
+                    'notify': False, 
+                    'regex': ''
+            },
+            'list-apps': {
+                    'function': self.audio_server.get_virtual_devices, 
+                    'notify': False, 
+                    'regex': ''
+            },
+            'rename': {
+                    'function': self.audio_server.rename, 
+                    'notify': True, 
+                    'regex': ''
+            }, 
 
         }

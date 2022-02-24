@@ -216,6 +216,10 @@ class Client:
             state = args[0]
             self.config['cleanup'] = state.lower() == 'true'
 
+        elif command == 'tray':
+            state = args[0]
+            self.config['tray'] = state.lower() == 'true'
+
         elif command == 'rnnoise':
             device_id = args[0]
             state = args[1].lower() == 'true'
@@ -419,6 +423,16 @@ class Client:
             return
 
         command = f'set-layout {layout}'
+        return self.send_command(command)
+
+    def set_tray(self, state):
+        if type(state) == str:
+            state = state.lower() == 'true'
+
+        if state == self.config['tray']:
+            return
+
+        command = f'set-tray {state}'
         return self.send_command(command)
 
     def set_cleanup(self, state):
