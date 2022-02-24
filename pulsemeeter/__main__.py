@@ -45,10 +45,10 @@ class help:
     class description:
         DEBUG = 'go into debug mode'
         STATUS = 'status information'
-        NO_COLOR = 'deactivate colors for this command'
+        NO_COLOR = 'deactivate colors for the executed command'
         DAEMON = 'start the daemon'
-        CONNECT = 'connect an input to an output'
-        PRIMARY = 'Select primary device.'
+        CONNECT = 'connect input to output'
+        PRIMARY = 'select primary device'
         MUTE = 'mute/unmute a device'
         CHANGE_HARDWARE_DEVICE = 'Change the hardware device.'
         VOLUME = 'change volume'
@@ -69,7 +69,7 @@ class help:
 # COLORED TEXT
 class format:
     # format text using ANSI escape codes
-    def __init__(self, text=''):
+    def __init__(self, no_color=False):
         self.BOLD = '\033[1m'
         self.UNDERLINE = '\033[4m'
         self.GREEN = '\033[92m'
@@ -79,26 +79,34 @@ class format:
         self.GREY = '\033[30m'
         self.CLEAR = '\033[2J'
         self.END = '\033[0m'
-        self.text = text
+        self.no_color = no_color
 
-    def bold(self):
-        return self.BOLD + self.text + self.END
-    def red_bold(self):
-        return self.BOLD_RED + self.text + self.END
-    def grey(self):
-        return self.GREY + self.text + self.END
-    def green(self):
-        return self.GREEN + self.text + self.END
-    def yellow(self):
-        return self.YELLOW + self.text + self.END
-    def red(self):
-        return self.RED + self.text + self.END
+    def bold(self, text):
+        if self.no_color: return text
+        else: return self.BOLD + text + self.END
+    def red_bold(self, text):
+        if self.no_color: return text
+        else: return self.BOLD_RED + text + self.END
+    def grey(self, text):
+        if self.no_color: return text
+        else: return self.GREY + text + self.END
+    def green(self, text):
+        if self.no_color: return text
+        else: return self.GREEN + text + self.END
+    def yellow(self, text):
+        if self.no_color: return text
+        else: return self.YELLOW + text + self.END
+    def red(self, text):
+        if self.no_color: return text
+        else: return self.RED + text + self.END
     # clear terminal
-    def clear(self):
-        return self.CLEAR + self.END
+    def clear(self, text):
+        if self.no_color: return text
+        else: return self.CLEAR + self.END
     # print a color end
-    def end(self):
-        return self.END
+    def end(self, text):
+        if self.no_color: return text
+        else: return self.END
 
 
 # DEBUG HELPERS
@@ -110,10 +118,10 @@ def debug_start(client, start_option):
         server_listen_mode(client)
 
 def server_input_mode(client):
-    print(f'\n{format("INPUT:").green()}')
+    print(f'\n{color.green("INPUT:")}')
     try:
         while client:
-            command = input(format('> ').bold())
+            command = input(color.bold('> '))
             if command == 'listen':
                 server_listen_mode(client)
             elif command == 'exit':
@@ -128,7 +136,7 @@ def server_input_mode(client):
         sys.exit(0)
 
 def server_listen_mode(client):
-    print(f'\n{format("LISTEN:").yellow()}')
+    print(f'\n{color.yellow("LISTEN:")}')
     try:
         client.listen()
     except KeyboardInterrupt:
@@ -235,9 +243,11 @@ def parser_eq_rnnoise(parser, type):
 
 # ARGS INTERPRETER AND PARSER
 def create_parser_args():
+    color = format()
 
-    parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s', description=(f'Use "{format("%(prog)s [command] -h").green()}" to get usage information. Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
+    parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s', description=(f'Use "{color.green("%(prog)s [command] -h")}" to get usage information. Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
 
+    parser.add_argument('-nc', '--no-color', action='store_true', help=help.description.NO_COLOR)
     parser.add_argument('-d', '--debug', action='store_true', help=help.description.DEBUG)
     parser.add_argument('-s', '--status', action='store_true', help=help.description.STATUS)
 
@@ -255,45 +265,48 @@ def create_parser_args():
     arg_interpreter(args, parser)
 
 def arg_interpreter(args, parser):
+    global color
+    color = format(no_color=args.no_color)
+
     if args.status:
         # information page
-        if another_sv_runing:
-            print(f'Server: {format("running").green()}')
+
+        if another_sv_running:
+            print(f'Server: {color.green("running")}')
         else:
-            print(f'Server: {format("not running").red()}')
+            print(f'Server: {color.red("not running")}')
 
         try:
             subprocess.check_call('pmctl')
-            print(f'Pulseaudio: {format("running").green()}')
+            print(f'Pulseaudio: {color.green("running")}')
         except:
-            print(f'Pulseaudio: {format("not running").red()}')
+            print(f'Pulseaudio: {color.red("not running")}')
         
         try:
             audio_server = os.popen('pactl info | grep "Server Name"').read()
             audio_server = audio_server.split(': ')[1]
             audio_server = audio_server.replace('\n', '')
-            audio_server = format(audio_server).bold()
         except:
-            audio_server = format('could not be determined').red()
+            audio_server = color.red('could not be determined')
       
-        print(f'audio server: {audio_server}')
-        print(f'Pulsemeeter version: {format(__version__).bold()}')
-        print(f'Config File: {format(CONFIG_FILE).bold()}')
-        print(f'OS: {format(platform.platform()).bold()}')
-        print(f'Python version: {format(sys.version).bold()}')
+        print(f'audio server: {color.bold(audio_server)}')
+        print(f'Pulsemeeter version: {color.bold(__version__)}')
+        print(f'Config File: {color.bold(CONFIG_FILE)}')
+        print(f'OS: {color.bold(platform.platform())}')
+        print(f'Python version: {color.bold(sys.version)}')
         sys.exit(0)
     else:
         # try to connect with client
         try:
             client = Client()
         except:
-            print(format('error: daemon is not started. Use "pulsemeeter daemon" to start it.').red())
+            print(color.red('error: daemon is not started. Use "pulsemeeter daemon" to start it.'))
         else:
             # debug page
             if args.debug:
-                    print(f'You are entering the {format("debug mode").red()}.')
-                    print(f'While in INPUT mode type "{format("listen").bold()}" to switch to the LISTEN mode.')
-                    print(f'While in LISTEN mode use {format("ctrl+c").bold()} to switch back to INPUT mode.')
+                    print(f'You are entering the {color.red("debug mode")}.')
+                    print(f'While in INPUT mode type "{color.bold("listen")}" to switch to the LISTEN mode.')
+                    print(f'While in LISTEN mode use {color.bold("ctrl+c")} to switch back to INPUT mode.')
                     debug_start(client, 'input')
 
             # command interpreter
@@ -335,20 +348,27 @@ def arg_interpreter(args, parser):
 
     sys.exit(0)
 
+def startserver(server):
+    try:
+        server.start_server(daemon=True)
+        time.sleep(0.1)
+    except:
+        print('Could not start server')
+        sys.exit(1)
+
 def main():
-    global another_sv_runing
+    global another_sv_running
 
     try:
         server = Server()
-        another_sv_runing = False
-        # time.sleep(0.2)
+        another_sv_running = False
     except:
-        another_sv_runing = True
+        another_sv_running = True
 
+    isserver = not another_sv_running
 
     if len(sys.argv) == 1:
         trayonly = False
-        isserver = not another_sv_runing
 
     elif sys.argv[1] == 'daemon':
         if not isserver:
@@ -365,9 +385,8 @@ def main():
         create_parser_args()
         sys.exit(0)
 
-    if isserver: 
-        server.start_server(daemon=True) 
-        time.sleep(0.1)
+    if isserver:
+        startserver(server)
 
     app = MainWindow(isserver=isserver, trayonly=trayonly)
     Gtk.main()
