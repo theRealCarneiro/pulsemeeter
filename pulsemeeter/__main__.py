@@ -345,16 +345,16 @@ def main():
         time.sleep(0.1)
     except:
         server_running = True
+    isserver = not server_running
 
-    print(server_running)
     if len(sys.argv) == 1:
-        app = MainWindow(isserver=(not server_running))
+        app = MainWindow(isserver=isserver, trayonly=False)
         Gtk.main()
-        if not server_running: 
+        if isserver: 
             server.handle_exit_signal()
 
     elif sys.argv[1] == 'daemon':
-        if server_running:
+        if not isserver:
             print('Server is already running')
             sys.exit(1)
 
@@ -365,7 +365,3 @@ def main():
 
     else:
         create_parser_args()
-
-if __name__ == '__main__':
-    mainret = main()
-    sys.exit(mainret)

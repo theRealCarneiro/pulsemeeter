@@ -34,6 +34,10 @@ class MainWindow(Gtk.Window):
         self.client = Client(listen=True)
         self.config = self.client.config
         self.trayonly = trayonly
+        self.windowinstance = None
+
+        if self.config['tray'] and isserver:
+            self.tray = self.create_indicator()
 
 
         if trayonly: 
@@ -41,8 +45,8 @@ class MainWindow(Gtk.Window):
             return
 
         self.windowinstance = self.start_window(isserver)
-        if self.config['tray'] and isserver:
-            self.create_indicator()
+        # if self.config['tray'] and isserver:
+            # self.create_indicator()
 
     def start_window(self, isserver):
 
@@ -657,7 +661,8 @@ class MainWindow(Gtk.Window):
         indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
 
         indicator.set_menu(self.tray_menu())
-        Gtk.main()
+        return indicator
+        # Gtk.main()
 
     def open_ui(self, widget):
         #os.popen('pulsemeeter')
@@ -669,7 +674,8 @@ class MainWindow(Gtk.Window):
 
 
     def tray_exit(self, widget):
-        self.windowinstance.close()
+        if self.windowinstance != None:
+            self.windowinstance.close()
         self.delete_event()
         self.client.close_connection()
         self.client.stop_listen()
