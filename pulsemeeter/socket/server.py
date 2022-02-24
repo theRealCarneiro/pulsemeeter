@@ -15,7 +15,7 @@ LISTENER_TIMEOUT = 2
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, init_devices_exit=False):
 
         # delete socket file if exists
         try:

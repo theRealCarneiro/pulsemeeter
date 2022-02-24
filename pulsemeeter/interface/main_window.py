@@ -37,8 +37,8 @@ class MainWindow(Gtk.Window):
         self.windowinstance = None
         self.tray = None
 
-        if self.config['tray'] and isserver:
-            self.tray = self.create_indicator()
+        # if self.config['tray'] and isserver:
+        self.tray = self.create_indicator()
 
         if trayonly: 
             self.client.set_callback_function('exit', self.close_on_server_exit)
@@ -672,7 +672,7 @@ class MainWindow(Gtk.Window):
                 icon_name='Pulsemeeter',
                 category=AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
 
-        indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
+        indicator.set_status(int(self.config['tray']))
 
         indicator.set_menu(self.tray_menu())
         return indicator

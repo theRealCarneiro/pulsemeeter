@@ -257,7 +257,7 @@ def create_parser_args():
 def arg_interpreter(args, parser):
     if args.status:
         # information page
-        if server_running:
+        if another_sv_runing:
             print(f'Server: {format("running").green()}')
         else:
             print(f'Server: {format("not running").red()}')
@@ -336,32 +336,39 @@ def arg_interpreter(args, parser):
     sys.exit(0)
 
 def main():
-    global server_running
-    tray = None
+    global another_sv_runing
+
     try:
         server = Server()
-        server_running = False
-        server.start_server(daemon=True)
-        time.sleep(0.1)
+        another_sv_runing = False
+        # time.sleep(0.2)
     except:
-        server_running = True
-    isserver = not server_running
+        another_sv_runing = True
+
 
     if len(sys.argv) == 1:
-        app = MainWindow(isserver=isserver, trayonly=False)
-        Gtk.main()
-        if isserver: 
-            server.handle_exit_signal()
+        trayonly = False
+        isserver = not another_sv_runing
 
     elif sys.argv[1] == 'daemon':
         if not isserver:
             print('Server is already running')
             sys.exit(1)
 
-        if server.config['tray']:
-            app = MainWindow(isserver=True, trayonly=True)
-            Gtk.main()
-            server.handle_exit_signal()
+        isserver = True
+        trayonly = True
+
+    elif sys.argv[1] == 'init':
+        return
 
     else:
         create_parser_args()
+        sys.exit(0)
+
+    if isserver: 
+        server.start_server(daemon=True) 
+        time.sleep(0.1)
+
+    app = MainWindow(isserver=isserver, trayonly=trayonly)
+    Gtk.main()
+    if isserver: server.handle_exit_signal()
