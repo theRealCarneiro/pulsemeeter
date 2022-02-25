@@ -37,8 +37,9 @@ class MainWindow(Gtk.Window):
         self.windowinstance = None
         self.tray = None
 
-        # if self.config['tray'] and isserver:
-        self.tray = self.create_indicator()
+        if isserver:
+            self.tray = self.create_indicator()
+            self.client.set_callback_function('tray', self.update_tray_status)
 
         if trayonly: 
             self.client.set_callback_function('exit', self.close_on_server_exit)
@@ -191,14 +192,12 @@ class MainWindow(Gtk.Window):
     def toggle_tray(self, widget):
         state = widget.get_active()
         self.client.set_tray(state)
-        if state:
-            if self.tray == None:
-                self.tray = self.create_indicator()
-            else:
+        if self.isserver:
+            if state:
+                if self.tray == None: self.tray = self.create_indicator()
                 self.tray.set_status(1)
-
-        else:
-            self.tray.set_status(0)
+            else:
+                self.tray.set_status(0)
 
     def toggle_cleanup(self, widget):
         self.client.set_cleanup(widget.get_active())
@@ -578,8 +577,10 @@ class MainWindow(Gtk.Window):
                 self.update_volume_slider)
         self.client.set_callback_function('change-hd', 
                 self.update_comboboxes)
+
         self.client.set_callback_function('exit', 
                 self.close_on_server_exit)
+
 
     def close_on_server_exit(self):
         if not self.trayonly:
@@ -652,6 +653,17 @@ class MainWindow(Gtk.Window):
 
         if found == False and device_config['jack'] == False:
             combobox.set_active(0)
+
+    def update_tray_status(self, state):
+        if type(state) == str:
+            state = state.lower() == 'true'
+
+        if not self.trayonly:
+            GLib.idle_add(self.tray_toggle.set_active, state)
+
+        if self.isserver:
+            GLib.idle_add(self.tray.set_status, int(state))
+
 
     def tray_menu(self):
         menu = Gtk.Menu()
