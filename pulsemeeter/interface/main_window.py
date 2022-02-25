@@ -242,14 +242,24 @@ class MainWindow(Gtk.Window):
                 grid.add(vumeter)
                 if device_config['name'] != '':
                     if self.enable_vumeters == True:
-                        vumeter.start() 
+                        try:
+                            vumeter.start() 
+                        except:
+                            print(f'Could not start vumeter for {device_type}{device_id}')
+                           
                 self.vu_list[device_type][device_id] = vumeter
 
     def start_app_list(self):
         sink_input_viewport = self.builder.get_object('sink_input_viewport')
         source_output_viewport = self.builder.get_object('source_output_viewport')
-        self.sink_input_box = AppList('sink-input', self.client)
-        self.source_output_box = AppList('source-output', self.client)
+        try:
+            self.sink_input_box = AppList('sink-input', self.client)
+            self.source_output_box = AppList('source-output', self.client)
+        except Exception as ex:
+            print('App sinks returned an error, audio beckend probably crashed')
+            self.window.destroy()
+            self.delete_event()
+
         sink_input_viewport.add(self.sink_input_box)
         source_output_viewport.add(self.source_output_box)
 

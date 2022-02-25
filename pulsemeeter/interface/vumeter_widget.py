@@ -45,7 +45,15 @@ class Vumeter(Gtk.ProgressBar):
 
         # return piped values
         for peak in iter(self.process.stdout.readline, ""):
-            peak = float(peak)
+            try:
+                peak = float(peak)
+
+            # if pulse crashes, the vumeter will throw an error
+            # but we don't want the ui to crash
+            except:
+                print(f'Could not start vumeter for {self.name}')
+                break
+
             if peak <= 0.00 and self.get_sensitive == True:
                 GLib.idle_add(self.set_fraction, 0)
                 GLib.idle_add(self.set_sensitive, False)

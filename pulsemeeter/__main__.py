@@ -362,8 +362,12 @@ def main():
     try:
         server = Server()
         another_sv_running = False
-    except:
+    except ConnectionAbortedError:
         another_sv_running = True
+
+    except Exception as ex:
+        print(ex)
+        sys.exit(1)
 
     isserver = not another_sv_running
 

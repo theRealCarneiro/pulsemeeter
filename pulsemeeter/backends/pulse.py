@@ -904,11 +904,19 @@ class Pulse:
 
 def cmd(command):
     sys.stdout.flush()
-    MyOut = subprocess.Popen(command.split(' '), 
+    p = subprocess.Popen(command.split(' '), 
         stdout=subprocess.PIPE, 
         stderr=subprocess.STDOUT)
-    stdout,stderr = MyOut.communicate()
+    stdout,stderr = p.communicate()
+    if p.returncode:
+        raise
     return stdout.decode()
+
+def run_command(command):
+    try:
+        subprocess.check_call(command)
+    except:
+        sys.exit(1)
 
 def str2bool(v):
     if type(v) == bool: 

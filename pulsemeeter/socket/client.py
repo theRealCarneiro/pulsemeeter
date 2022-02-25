@@ -403,7 +403,13 @@ class Client:
     # get sink-input and source-output list
     def list_apps(self, device_type):
         command = f'get-app-list {device_type}'
-        return json.loads(self.send_command(command))
+        try:
+            ret_message = json.loads(self.send_command(command))
+        except:
+            print('invalid json from server')
+            raise
+
+        return ret_message
 
     # change application device
     def move_app_device(self, app_id, device, stream_type):

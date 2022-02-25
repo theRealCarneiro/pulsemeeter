@@ -20,7 +20,7 @@ class Server:
         # delete socket file if exists
         try:
             if self.is_running():
-                raise Exception('Another copy is already running')
+                raise ConnectionAbortedError('Another copy is already running')
             os.unlink(SOCK_FILE)
         except OSError:
             if os.path.exists(SOCK_FILE):
