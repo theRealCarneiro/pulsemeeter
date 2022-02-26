@@ -133,7 +133,9 @@ class Server:
             # Close connections and join threads
             print('closing client handler threads...')
             for conn in self.client_handler_connections.values():
-                conn.shutdown(socket.SHUT_RDWR)
+                # only close open connections
+                if conn.fileno() != -1:
+                    conn.shutdown(socket.SHUT_RDWR)
 
             # Not sure if joining the client handler threads is actually necessary since we're stopping anyway and the
             # client handler threads are in daemon mode
