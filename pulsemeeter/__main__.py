@@ -128,13 +128,14 @@ def server_input_mode(client):
                 server_listen_mode(client)
             elif command.lower() == 'exit':
                 raise KeyboardInterrupt
-            elif command == 'close_server':
+            elif command == 'close server':
                 print('closing server')
-                print(client.send_command('exit'))
+                client.close_server()
+                raise KeyboardInterrupt
             else:
                 print(client.send_command(command))
     except KeyboardInterrupt:
-        print('\nclosing debugger')
+        print('closing debugger')
         sys.exit(0)
 
 def server_listen_mode(client):
