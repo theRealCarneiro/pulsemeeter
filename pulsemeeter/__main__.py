@@ -54,6 +54,7 @@ class help:
         VOLUME = 'change volume'
         RNNOISE = 'Turn on/off noise reduction and change values. To toggle only include the device.'
         EQ = 'Turn on/off eq and change values. To toggle only include the device'
+        RENAME = 'rename device'
 
     class usage:
         RNNOISE = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value]'
@@ -65,6 +66,7 @@ class help:
         VOLUME = '+[value] | -[value] | [value]'
         CONNECT = f'OPTIONAL {pprint_bool_options()}'
         PRIMARY = ''
+        RENAME = 'name'
 
 # COLORED TEXT
 class format:
@@ -122,13 +124,13 @@ def server_input_mode(client):
     try:
         while client:
             command = input(color.bold('> '))
-            if command == 'listen':
+            if command.lower() == 'listen':
                 server_listen_mode(client)
-            elif command == 'exit':
+            elif command.lower() == 'exit':
                 raise KeyboardInterrupt
             elif command == 'close_server':
-                client.send_command('exit')
-
+                print('closing server')
+                print(client.send_command('exit'))
             else:
                 print(client.send_command(command))
     except KeyboardInterrupt:
@@ -253,10 +255,12 @@ def create_parser_args():
 
     subparsers = parser.add_subparsers(dest='command')
     subparsers.add_parser('daemon', description=help.description.DAEMON) # just to show it in the help menu
+    subparsers.add_parser('exit')
     parser_source_to_sink(subparsers.add_parser('connect', description=help.description.CONNECT), str, help.value.CONNECT)
     parser_generic(subparsers.add_parser('primary',description=help.description.PRIMARY), None, help.value.PRIMARY, ('vi', 'b'))
     parser_generic(subparsers.add_parser('mute', description=help.description.MUTE), str, help.value.MUTE)
     parser_generic(subparsers.add_parser('change-hardware-device', description=help.description.CHANGE_HARDWARE_DEVICE),str, help.value.CHANGE_HARDWARE_DEVICE, ('vi', 'b'))
+    parser_generic(subparsers.add_parser('rename', description=help.description.RENAME), str, help.value.RENAME, ('vi', 'b'))
     parser_generic(subparsers.add_parser('volume', description=help.description.VOLUME), str, help.value.VOLUME)
     parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage = help.usage.RNNOISE, description=help.description.RNNOISE), 'rnnoise')
     parser_eq_rnnoise(subparsers.add_parser('eq', usage=help.usage.EQ, description=help.description.EQ), 'eq')
@@ -346,6 +350,9 @@ def arg_interpreter(args, parser):
             elif args.command == 'rnnoise':
                 client.rnnoise(*convert_eq_rnnoise(args, parser, 'rnnoise'))
 
+            elif args.command == 'rename':
+                client.rename(*convert_device(args, parser), args.value)
+
     sys.exit(0)
 
 def startserver(server):
@@ -355,6 +362,10 @@ def startserver(server):
     except:
         print('Could not start server')
         sys.exit(1)
+
+def startwindow(isserver, trayonly):
+    app = MainWindow(isserver=isserver, trayonly=trayonly)
+    Gtk.main()
 
 def main():
     global another_sv_running
@@ -371,17 +382,40 @@ def main():
 
     isserver = not another_sv_running
 
+    #none: Start Server (if not already started) and open window (tray) (eg. launching through dmenu)
     if len(sys.argv) == 1:
-        trayonly = False
+        if isserver:
+            startserver(server)
+        startwindow(isserver, trayonly=False)
 
-    elif sys.argv[1] == 'daemon':
-        if not isserver:
-            print('Server is already running')
+
+    # exit: close Server and with that all applications
+    elif sys.argv[1].lower() == 'exit':
+        try:
+            if another_sv_running:
+                # TODO: handle_exit_signal ??
+                # server.handle_exit_signal()
+                print('closing server...')
+                client = Client()
+                client.send_command('exit')
+            else:
+                print('no instance is running')
+                raise
+        except:
+            print('unable to close server')
             sys.exit(1)
 
-        isserver = True
-        trayonly = True
+    # daemon: Start Server and start tray icon (if set in config) (eg. Startup of Computer)
+    elif sys.argv[1].lower() == 'daemon':
+        if another_sv_running:
+            print('The server is already running.')
+            sys.exit(1)
+        else:
+            startserver(server)
+            if server.config['tray'] is True:
+                startwindow(isserver=True, trayonly=True)
 
+    # init: Just start devices and connections
     elif sys.argv[1] == 'init':
         return
 
@@ -389,9 +423,3 @@ def main():
         create_parser_args()
         sys.exit(0)
 
-    if isserver:
-        startserver(server)
-
-    app = MainWindow(isserver=isserver, trayonly=trayonly)
-    Gtk.main()
-    if isserver: server.handle_exit_signal()
