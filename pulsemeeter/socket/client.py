@@ -62,6 +62,7 @@ class Client:
             self.sock.sendall(message)
 
             # wait for answer
+            ret_msg = ''
             if nowait or not self.can_listen:
                 ret_msg = self.get_message() 
             else: 
@@ -73,6 +74,7 @@ class Client:
         except:
             print('closing socket')
             self.sock.close()
+            raise
 
 
     def listen(self, print_event=True):
@@ -453,6 +455,10 @@ class Client:
 
     def close_connection(self):
         self.sock.shutdown(socket.SHUT_RDWR)
+
+    def close_server(self):
+        self.send_command('exit')
+
 
     def subscribe(self):
         command = ['pactl', 'subscribe']

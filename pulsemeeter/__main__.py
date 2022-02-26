@@ -363,9 +363,11 @@ def startserver(server):
         print('Could not start server')
         sys.exit(1)
 
-def startwindow(isserver, trayonly):
+def start_app(isserver, trayonly, server):
+    if isserver: startserver(server)
     app = MainWindow(isserver=isserver, trayonly=trayonly)
     Gtk.main()
+    if isserver: server.handle_exit_signal()
 
 def main():
     global another_sv_running
@@ -373,53 +375,53 @@ def main():
     try:
         server = Server()
         another_sv_running = False
+
     except ConnectionAbortedError:
         another_sv_running = True
 
     except Exception as ex:
         print(ex)
-        sys.exit(1)
+        return 1
 
     isserver = not another_sv_running
 
-    #none: Start Server (if not already started) and open window (tray) (eg. launching through dmenu)
+    #none: Start Server (if not already started) and open window 
     if len(sys.argv) == 1:
-        if isserver:
-            startserver(server)
-        startwindow(isserver, trayonly=False)
+        trayonly = False
 
-
-    # exit: close Server and with that all applications
-    elif sys.argv[1].lower() == 'exit':
-        try:
-            if another_sv_running:
-                # TODO: handle_exit_signal ??
-                # server.handle_exit_signal()
-                print('closing server...')
-                client = Client()
-                client.send_command('exit')
-            else:
-                print('no instance is running')
-                raise
-        except:
-            print('unable to close server')
-            sys.exit(1)
-
-    # daemon: Start Server and start tray icon (if set in config) (eg. Startup of Computer)
+    # daemon: disable application window creation for instance
     elif sys.argv[1].lower() == 'daemon':
         if another_sv_running:
             print('The server is already running.')
-            sys.exit(1)
-        else:
-            startserver(server)
-            if server.config['tray'] is True:
-                startwindow(isserver=True, trayonly=True)
+            return 1
+
+        trayonly = True
 
     # init: Just start devices and connections
     elif sys.argv[1] == 'init':
-        return
+        return 0
+
+    # exit: close server, all clients should close after they recive an exit signal from
+    # the server
+    elif sys.argv[1].lower() == 'exit':
+        try:
+            if another_sv_running:
+                print('closing server...')
+                client = Client()
+                client.close_server()
+                return 0
+            else:
+                print('no instance is running')
+                return 1
+        except Exception as ex:
+            print('unable to close server', ex)
+            return 1
+
 
     else:
         create_parser_args()
-        sys.exit(0)
+        return 0
 
+
+    start_app(isserver, trayonly, server)
+    return 0
