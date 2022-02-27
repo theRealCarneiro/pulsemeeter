@@ -256,8 +256,9 @@ class MainWindow(Gtk.Window):
             self.sink_input_box = AppList('sink-input', self.client)
             self.source_output_box = AppList('source-output', self.client)
         except Exception as ex:
-            print('App sinks returned an error, audio beckend probably crashed')
-            self.window.destroy()
+            print('App sinks returned an error, audio backend probably crashed')
+            if self.windowinstance is not None:
+                self.windowinstance.destroy()
             self.delete_event()
 
         sink_input_viewport.add(self.sink_input_box)
@@ -504,14 +505,23 @@ class MainWindow(Gtk.Window):
         device_type = self.rename_device_type
         device_id = self.rename_device_id
         old_name = self.active_label.get_text()
-        if re.match('^[a-zA-Z0-9]*$', name) and name != old_name:
+        if re.match('^[a-zA-Z0-9"_"]*$', name) and name != old_name:
             self.client.rename(device_type, device_id, name)
             self.active_label.set_text(name)
             # self.sink_input_box.load_application_list()
             # self.source_output_box.load_application_list()
             self.vu_list[device_type][device_id].restart()
-
         else:
+            dialog = Gtk.MessageDialog(
+                transient_for=self.windowinstance,
+                flags=0,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.OK,
+                text='name is not allowed'
+            )
+            dialog.format_secondary_text('The name can only consist of numbers, letters and "_".')
+            dialog.run()
+            dialog.destroy()
             return
 
         self.rename_popover.popdown()
@@ -713,17 +723,21 @@ class MainWindow(Gtk.Window):
         if self.windowinstance != None:
             self.windowinstance.close()
         self.delete_event()
-        self.client.close_connection()
-        self.client.stop_listen()
+        # maybe TODO: the self.client does not stop listening even with stop listen
+        client = Client()
+        client.close_server()
 
         Gtk.main_quit()
-        return False
-
+        return 0
 
     def delete_event(self, widget=None, event=None):
         if not self.trayonly:
             self.client.end_subscribe()
-            self.subscribe_thread.join()
+            try:
+                self.subscribe_thread.join()
+            except:
+                # when the application didnt manage to start the app list there is no thread.
+                print('Could not join subscribe_thread (maybe there is none)')
             if self.enable_vumeters == True:
                 for i in ['hi', 'vi', 'a', 'b']:
                     for j in self.vu_list[i]:
