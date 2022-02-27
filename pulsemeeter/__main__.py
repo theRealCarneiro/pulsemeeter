@@ -25,6 +25,8 @@ false_values = ('false', '0', 'off')
 # change these to just change possible devices
 all_devices = ('hi', 'vi', 'a', 'b')
 
+all_get = ('volume', 'mute', 'primary', 'name', 'eq', 'rnnoise')
+
 # PRETTY PRINT
 def pprint_bool_options(style='simple'):
     # pretty print boolean values
@@ -46,7 +48,6 @@ class help:
         DEBUG = 'go into debug mode'
         STATUS = 'status information'
         NO_COLOR = 'deactivate colors for the executed command'
-        DAEMON = 'start the daemon'
         CONNECT = 'connect input to output'
         PRIMARY = 'select primary device'
         MUTE = 'mute/unmute a device'
@@ -55,6 +56,7 @@ class help:
         RNNOISE = 'Turn on/off noise reduction and change values. To toggle only include the device.'
         EQ = 'Turn on/off eq and change values. To toggle only include the device'
         RENAME = 'rename device'
+        GET = 'eg. pulsemeeter get volume a1'
 
     class usage:
         RNNOISE = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value]'
@@ -67,6 +69,7 @@ class help:
         CONNECT = f'OPTIONAL {pprint_bool_options()}'
         PRIMARY = ''
         RENAME = 'name'
+        GET = 'value to get'
 
 # COLORED TEXT
 class format:
@@ -244,6 +247,10 @@ def parser_eq_rnnoise(parser, type):
     parser.add_argument('state', type=str, choices=(*true_values, *false_values, 'set', None), default=None, nargs='?', help='')
     parser.add_argument('value', type=str, default=None, nargs='?', help=value_help)
 
+def parser_get(parser, type):
+    parser.add_argument('value', type=type, help=help.value.GET, choices=all_get)
+    parser.add_argument('device', **device_arg, help=pprint_device_options())
+
 # ARGS INTERPRETER AND PARSER
 def create_parser_args():
     color = format()
@@ -255,14 +262,26 @@ def create_parser_args():
     parser.add_argument('-s', '--status', action='store_true', help=help.description.STATUS)
 
     subparsers = parser.add_subparsers(dest='command')
-    subparsers.add_parser('daemon', description=help.description.DAEMON) # just to show it in the help menu
+
+    # commands to only show in help menu
+    subparsers.add_parser('daemon')
+    subparsers.add_parser('init')
     subparsers.add_parser('exit')
+
+    # get (retrieve values)
+    parser_get(subparsers.add_parser('get', description=help.description.GET), str)
+
+    # source to sink (connect)
     parser_source_to_sink(subparsers.add_parser('connect', description=help.description.CONNECT), str, help.value.CONNECT)
+
+    # generic (device and with value if not None)
     parser_generic(subparsers.add_parser('primary',description=help.description.PRIMARY), None, help.value.PRIMARY, ('vi', 'b'))
     parser_generic(subparsers.add_parser('mute', description=help.description.MUTE), str, help.value.MUTE)
     parser_generic(subparsers.add_parser('change-hardware-device', description=help.description.CHANGE_HARDWARE_DEVICE),str, help.value.CHANGE_HARDWARE_DEVICE, ('vi', 'b'))
     parser_generic(subparsers.add_parser('rename', description=help.description.RENAME), str, help.value.RENAME, ('vi', 'b'))
     parser_generic(subparsers.add_parser('volume', description=help.description.VOLUME), str, help.value.VOLUME)
+
+    # eq or rnnoise (allows state)
     parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage = help.usage.RNNOISE, description=help.description.RNNOISE), 'rnnoise')
     parser_eq_rnnoise(subparsers.add_parser('eq', usage=help.usage.EQ, description=help.description.EQ), 'eq')
 
@@ -273,9 +292,8 @@ def arg_interpreter(args, parser):
     global color
     color = format(no_color=args.no_color)
 
+    # commands which do not need a client
     if args.status:
-        # information page
-
         if another_sv_running:
             print(f'Server: {color.green("running")}')
         else:
@@ -301,7 +319,7 @@ def arg_interpreter(args, parser):
         print(f'Python version: {color.bold(sys.version)}')
         sys.exit(0)
     else:
-        # try to connect with client
+        # commands which need a client
         try:
             client = Client()
         except:
@@ -314,7 +332,29 @@ def arg_interpreter(args, parser):
                     print(f'While in LISTEN mode use {color.bold("ctrl+c")} to switch back to INPUT mode.')
                     debug_start(client, 'input')
 
-            # command interpreter
+            # COMMAND INTERPRETER
+
+            # retrieve config values
+            elif args.command == 'get':
+                if args.value == 'volume':
+                    device_args = convert_device(args, parser)
+                    print(client.config[device_args[0]][device_args[1]]['vol'])
+                elif args.value == 'mute':
+                    device_args = convert_device(args, parser)
+                    print(client.config[device_args[0]][device_args[1]]['mute'])
+                elif args.value == 'primary':
+                    device_args = convert_device(args, parser, allowed_devices=('vi', 'b'))
+                    print(client.config[device_args[0]][device_args[1]]['primary'])
+                elif args.value == 'name':
+                    device_args = convert_device(args, parser, allowed_devices='vi')
+                    print(client.config[device_args[0]][device_args[1]]['name'])
+                elif args.value == 'eq':
+                    device_args = convert_device(args, parser, allowed_devices=('a', 'b'))
+                    print(client.config[device_args[0]][device_args[1]]['use_eq'])
+                elif args.value == 'rnnoise':
+                    device_args = convert_device(args, parser, allowed_devices='hi')
+                    print(client.config[device_args[0]][device_args[1]]['use_rnnoise'])
+
             elif args.command == 'connect':
                 device_args = convert_device(args, parser, 'source-to-sink')
                 if args.value is not None:
@@ -330,10 +370,10 @@ def arg_interpreter(args, parser):
                     client.mute(*(device_args))
 
             elif args.command == 'primary':
-                client.primary(*convert_device(args, parser, 'general', ('vi', 'b')))
+                client.primary(*convert_device(args, parser, allowed_devices=('vi', 'b')))
 
             elif args.command == 'change-hardware-device':
-                client.change_hardware_device(*convert_device(args, parser, 'generic', ('a', 'hi')), value)
+                client.change_hardware_device(*convert_device(args, parser, allowed_devices=('a', 'hi')), value)
 
             elif args.command == 'volume':
                 device_args = convert_device(args, parser)
@@ -341,9 +381,11 @@ def arg_interpreter(args, parser):
                     if re.match(r'[+|-]?\d+$', args.value):
                         client.volume(*(device_args), args.value)
                     else:
-                        parser.error('value has to be assigned like this: +[number] | -[number] | [number]')
+                        parser.error(f'value has to be assigned like this: {color.bold("+[number] | -[number] | [number]")}')
                 else:
-                    parser.error('the following arguments are required: value')
+                    # do not blame me. I dont know how to insert the "" into the string
+                    text = '"pulsemeeter get volume [device]"'
+                    parser.error(f'the following arguments are required: value\n{color.grey("tip: To retrieve the volume use ")+color.grey(text)}')
 
             elif args.command == 'eq':
                 client.eq(*convert_eq_rnnoise(args, parser, 'eq'))
