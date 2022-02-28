@@ -406,11 +406,9 @@ def startserver(server):
         print('Could not start server')
         sys.exit(1)
 
-def start_app(isserver, trayonly, server):
-    if isserver: startserver(server)
+def start_app(isserver, trayonly):
     app = MainWindow(isserver=isserver, trayonly=trayonly)
     Gtk.main()
-    if isserver: server.handle_exit_signal()
 
 def main():
     global another_sv_running
@@ -430,22 +428,23 @@ def main():
 
     #none: Start Server (if not already started) and open window 
     if len(sys.argv) == 1:
-        trayonly = False
+        if isserver: startserver(server)
+        start_app(isserver, trayonly=False)
 
-    # daemon: disable application window creation for instance
+    # daemon: disable application window creation for instance and just start tray
     elif sys.argv[1].lower() == 'daemon':
         if another_sv_running:
             print('The server is already running.')
             return 1
-
-        trayonly = True
+        else:
+            startserver(server)
+            start_app(isserver, trayonly=True)
 
     # init: Just start devices and connections
     elif sys.argv[1] == 'init':
         return 0
 
-    # exit: close server, all clients should close after they recive an exit signal from
-    # the server
+    # exit: close server, all clients should close after they recive an exit signal from the server
     elif sys.argv[1].lower() == 'exit':
         try:
             if another_sv_running:
@@ -465,6 +464,4 @@ def main():
         create_parser_args()
         return 0
 
-
-    start_app(isserver, trayonly, server)
     return 0
