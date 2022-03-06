@@ -25,7 +25,7 @@ false_values = ('false', '0', 'off')
 # change these to just change possible devices
 all_devices = ('hi', 'vi', 'a', 'b')
 
-all_get = ('volume', 'mute', 'primary', 'name', 'eq', 'rnnoise')
+all_get = ('volume', 'mute', 'primary', 'name', 'eq', 'rnnoise', 'connect')
 
 # PRETTY PRINT
 def pprint_bool_options(style='simple'):
@@ -70,6 +70,7 @@ class help:
         PRIMARY = ''
         RENAME = 'name'
         GET = 'value to get'
+        GET_DEVICE2 = 'only used for connect'
 
 # COLORED TEXT
 class format:
@@ -190,7 +191,7 @@ def convert_eq_rnnoise(args, parser, type):
                 return (*device_args, str_to_bool(args.state, parser))
 
 # convert [device][number] -> [device] [number] and check if device is valid
-def convert_device(args, parser, device_type='general', allowed_devices=all_devices):
+def convert_device(args, parser, device_type='general', allowed_devices=all_devices, con_in=None, con_out=None):
     if device_type == 'general':
         # convert all devices
         try:
@@ -210,10 +211,16 @@ def convert_device(args, parser, device_type='general', allowed_devices=all_devi
     elif device_type == 'source-to-sink':
         # convert source -> sink device
         try:
-            in_device = re.match(r'^(hi|vi)', args.input).group()
-            in_num = re.search(r'\d+$', args.input).group()
-            out_device = re.match(r'^(a|b)', args.output).group()
-            out_num = re.search(r'\d+$', args.output).group()
+            if con_in is None and con_out is None:
+                inputd = args.input
+                outputd = args.output
+            else: 
+                inputd = con_in
+                outputd = con_out
+            in_device = re.match(r'^(hi|vi)', inputd).group()
+            in_num = re.search(r'\d+$', inputd).group()
+            out_device = re.match(r'^(a|b)', outputd).group()
+            out_num = re.search(r'\d+$', outputd).group()
         except:
             parser.error('device has to be assigned like this: [hi|vi][number] [a|b][number]')
         else:
@@ -250,6 +257,7 @@ def parser_eq_rnnoise(parser, type):
 def parser_get(parser, type):
     parser.add_argument('value', type=type, help=help.value.GET, choices=all_get)
     parser.add_argument('device', **device_arg, help=pprint_device_options())
+    parser.add_argument('device2', **device_arg, help=f'{pprint_device_options()} ({help.value.GET_DEVICE2})', default=None, nargs='?') 
 
 # ARGS INTERPRETER AND PARSER
 def create_parser_args():
@@ -336,24 +344,31 @@ def arg_interpreter(args, parser):
 
             # retrieve config values
             elif args.command == 'get':
-                if args.value == 'volume':
-                    device_args = convert_device(args, parser)
-                    print(client.config[device_args[0]][device_args[1]]['vol'])
-                elif args.value == 'mute':
-                    device_args = convert_device(args, parser)
-                    print(client.config[device_args[0]][device_args[1]]['mute'])
-                elif args.value == 'primary':
-                    device_args = convert_device(args, parser, allowed_devices=('vi', 'b'))
-                    print(client.config[device_args[0]][device_args[1]]['primary'])
-                elif args.value == 'name':
-                    device_args = convert_device(args, parser, allowed_devices='vi')
-                    print(client.config[device_args[0]][device_args[1]]['name'])
-                elif args.value == 'eq':
-                    device_args = convert_device(args, parser, allowed_devices=('a', 'b'))
-                    print(client.config[device_args[0]][device_args[1]]['use_eq'])
-                elif args.value == 'rnnoise':
-                    device_args = convert_device(args, parser, allowed_devices='hi')
-                    print(client.config[device_args[0]][device_args[1]]['use_rnnoise'])
+                try:
+                    if args.value == 'volume':
+                        device_args = convert_device(args, parser)
+                        print(client.config[device_args[0]][device_args[1]]['vol'])
+                    elif args.value == 'mute':
+                        device_args = convert_device(args, parser)
+                        print(client.config[device_args[0]][device_args[1]]['mute'])
+                    elif args.value == 'primary':
+                        device_args = convert_device(args, parser, allowed_devices=('vi', 'b'))
+                        print(client.config[device_args[0]][device_args[1]]['primary'])
+                    elif args.value == 'name':
+                        device_args = convert_device(args, parser, allowed_devices='vi')
+                        print(client.config[device_args[0]][device_args[1]]['name'])
+                    elif args.value == 'eq':
+                        device_args = convert_device(args, parser, allowed_devices=('a', 'b'))
+                        print(client.config[device_args[0]][device_args[1]]['use_eq'])
+                    elif args.value == 'rnnoise':
+                        device_args = convert_device(args, parser, allowed_devices='hi')
+                        print(client.config[device_args[0]][device_args[1]]['use_rnnoise'])
+                    elif args.value == 'connect':
+                        device_args = convert_device(args, parser, 'source-to-sink', con_in=args.device, con_out=args.device2)
+                        out = device_args[2]+device_args[3]
+                        print(client.config[device_args[0]][device_args[1]][out])
+                except:
+                    print(color.red('error: Could not get value for this.'))
 
             elif args.command == 'connect':
                 device_args = convert_device(args, parser, 'source-to-sink')
@@ -398,7 +413,7 @@ def arg_interpreter(args, parser):
 
     sys.exit(0)
 
-def startserver(server):
+def start_server(server):
     try:
         server.start_server(daemon=True)
         time.sleep(0.1)
@@ -428,27 +443,32 @@ def main():
 
     #none: Start Server (if not already started) and open window 
     if len(sys.argv) == 1:
-        if isserver: startserver(server)
+        if isserver: start_server(server)
         start_app(isserver, trayonly=False)
+        if isserver: server.handle_exit_signal()
 
-    # daemon: disable application window creation for instance and just start tray
+    # daemon: disable application window creation for instance
     elif sys.argv[1].lower() == 'daemon':
-        if another_sv_running:
+        if not isserver:
             print('The server is already running.')
             return 1
         else:
-            startserver(server)
+            start_server(server)
             start_app(isserver, trayonly=True)
+            server.handle_exit_signal()
+            return 0
 
     # init: Just start devices and connections
     elif sys.argv[1] == 'init':
         return 0
 
-    # exit: close server, all clients should close after they recive an exit signal from the server
+    # exit: close server, all clients should close after they recive an exit signal from
+    # the server
     elif sys.argv[1].lower() == 'exit':
         try:
             if another_sv_running:
                 print('closing server...')
+                print('It may take a few seconds...')
                 client = Client()
                 client.close_server()
                 return 0
@@ -463,5 +483,6 @@ def main():
     else:
         create_parser_args()
         return 0
+
 
     return 0
