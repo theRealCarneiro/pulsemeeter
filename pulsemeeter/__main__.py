@@ -428,6 +428,7 @@ def start_app(isserver, trayonly):
 def main():
     global another_sv_running
 
+    server = None
     try:
         server = Server()
         another_sv_running = False

@@ -724,8 +724,8 @@ class MainWindow(Gtk.Window):
             self.windowinstance.close()
         self.delete_event()
         # maybe TODO: the self.client does not stop listening even with stop listen
-        client = Client()
-        client.close_server()
+        # client = Client()
+        # client.close_server()
 
         Gtk.main_quit()
         return 0
