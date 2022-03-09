@@ -266,17 +266,15 @@ class Client:
         return True
 
     def connect(self, input_type, input_id, output_type, output_id, state=None, latency=None):
-        
+
         if (not self.verify_device(input_type, input_id, 'input') 
                 or not self.verify_device(output_type, output_id, 'output')):
-            return
+                return
 
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
         if state != None: command += f' {state}'
         if latency != None: command += f' {latency}'
 
-        if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
-            return
         return self.send_command(command)
 
 
@@ -336,7 +334,6 @@ class Client:
 
         elif control != None and state != 'set':
             return
-
 
         if (self.config[output_type][output_id]['use_eq'] == state
                 or self.config[output_type][output_id]['eq_control'] == control):
@@ -407,11 +404,11 @@ class Client:
         command = f'get-app-list {device_type}'
         try:
             ret_message = json.loads(self.send_command(command))
+            return ret_message
         except:
             print('invalid json from server')
+            return False
             raise
-
-        return ret_message
 
     # change application device
     def move_app_device(self, app_id, device, stream_type):

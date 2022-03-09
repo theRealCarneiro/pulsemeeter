@@ -156,8 +156,10 @@ class Pulse:
 
                     command += f"pmctl init {input_type} {source} {channels} {channel_map}\n"
 
+
         if self.loglevel > 1: print(command)
         return command
+
 
     # creates all ladspa sinks for eq plugin
     def start_eqs(self):
@@ -332,6 +334,7 @@ class Pulse:
         sink_config = self.config[output_type][output_id]
         master = self.get_correct_device([output_type, output_id], 'sink')
 
+
         # set name for the plugin sink
         if ladspa_sink == None: ladspa_sink = f'{output_type}{output_id}_eq'
 
@@ -476,7 +479,7 @@ class Pulse:
         # if trying to set the same state
         if (init == False and latency == None) and ((cur_conn_status and status)
                 or (not cur_conn_status and not status)):
-            return False
+            return ''
 
         # if true, will change the config status
         if change_state == True:
@@ -499,17 +502,21 @@ class Pulse:
             source_config[f'{output_type}{output_id}_latency'] = int(latency)
 
         # check if device exists
-        if (source == '' or sink == ''):
-            return ''
+        # if (source == '' or sink == ''):
+        #    return ''
 
         command = f"pmctl {conn_status} {source} {sink} {latency}\n"
+        device_exists = self.config[output_type][output_id]['name'] != ''
 
-        if run_command == True: 
-            if self.loglevel > 1: print(command)
-            os.popen(command)
+        if device_exists:
+            if run_command == True: 
+                if self.loglevel > 1: print(command)
+                os.popen(command)
+                return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
+            else:
+                return command
+        else: 
             return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
-        else:
-            return command
 
     # needs commenting
     def connect_jack(self, state, source_index, sink_index, init=None):
@@ -799,8 +806,10 @@ class Pulse:
         if type(val) == str:
 
             # check if is an absolute number or + and -
-            if re.match('[1-9]', val):
+            if val.isdigit():
                 val = int(val)
+            #if re.match('[1-9]', val):
+            #    val = int(val)
 
             # if not an absolute number, add it to current volume 
             else:
@@ -814,7 +823,7 @@ class Pulse:
         name = device_config['name']
         
         # get device info from pulsectl
-        if device_type == 'a' or device_type == 'vi':
+        if device_type in ['a', 'vi']:
             device = self.pulsectl.get_sink_by_name(name)
         else:
             device = self.pulsectl.get_source_by_name(name)
@@ -831,7 +840,7 @@ class Pulse:
         if type(val) == str:
 
             # check if is an absolute number
-            if re.match('\d+', val):
+            if val.isdigit():
                 val = int(val)
             else: 
                 return False

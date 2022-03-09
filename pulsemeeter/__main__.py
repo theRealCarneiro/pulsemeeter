@@ -428,7 +428,6 @@ def start_app(isserver, trayonly):
 def main():
     global another_sv_running
 
-    server = None
     try:
         server = Server()
         another_sv_running = False
@@ -462,7 +461,7 @@ def main():
     # init: Just start devices and connections
     elif sys.argv[1] == 'init':
         return 0
-
+    
     # exit: close server, all clients should close after they recive an exit signal from
     # the server
     elif sys.argv[1].lower() == 'exit':
@@ -479,8 +478,7 @@ def main():
         except Exception as ex:
             print('unable to close server', ex)
             return 1
-
-
+    
     else:
         create_parser_args()
         return 0

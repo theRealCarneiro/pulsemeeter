@@ -204,7 +204,7 @@ class MainWindow(Gtk.Window):
 
     def change_layout(self, combobox):
         self.client.set_layout(combobox.get_active_text())
-        # self.window.destroy()
+        self.open_ui
         # self.delete_event()
 
     def open_settings(self, widget):
@@ -250,22 +250,31 @@ class MainWindow(Gtk.Window):
                 self.vu_list[device_type][device_id] = vumeter
 
     def start_app_list(self):
+        # this is probably not the best solution but it handles the pactl errors fine
         sink_input_viewport = self.builder.get_object('sink_input_viewport')
         source_output_viewport = self.builder.get_object('source_output_viewport')
         try:
             self.sink_input_box = AppList('sink-input', self.client)
             self.source_output_box = AppList('source-output', self.client)
+
+            sink_input_viewport.add(self.sink_input_box)
+            source_output_viewport.add(self.source_output_box)
+
+            self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
+            self.subscribe_thread.start()
         except Exception as ex:
-            print('App sinks returned an error, audio backend probably crashed')
+            print('App sinks returned an error, audio backend probably crashed. Server will be closed.')
             if self.windowinstance is not None:
                 self.windowinstance.destroy()
             self.delete_event()
+            try:
+                # I need to create a new client so it stops listening
+                client = Client()
+                client.close_server()
+            except:
+                print('Could not close server.')
+            sys.exit(1)
 
-        sink_input_viewport.add(self.sink_input_box)
-        source_output_viewport.add(self.source_output_box)
-
-        self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
-        self.subscribe_thread.start()
 
     def start_hardware_comboboxes(self):
         for device_type in ['hi', 'a']:
@@ -477,7 +486,7 @@ class MainWindow(Gtk.Window):
         self.client.mute(device_type, device_id, state)
 
     def toggle_loopback(self, button, input_type, input_id, output_type, output_id):
-        state =  button.get_active()
+        state = button.get_active()
         self.client.connect(input_type, input_id, output_type, output_id, state)
 
     def volume_change(self, slider, device_type, device_id):
@@ -620,6 +629,7 @@ class MainWindow(Gtk.Window):
         state = state == 'True'
         
         button = self.loopback_buttons[input_type][input_id][sink]
+        
         GLib.idle_add(button.set_active, state)
 
     def update_mute_buttons(self, input_type, input_id, state):
