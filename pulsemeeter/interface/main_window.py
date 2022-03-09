@@ -202,9 +202,12 @@ class MainWindow(Gtk.Window):
     def toggle_cleanup(self, widget):
         self.client.set_cleanup(widget.get_active())
 
+    # not perfect yet but works
     def change_layout(self, combobox):
         self.client.set_layout(combobox.get_active_text())
-        self.open_ui
+        self.windowinstance.destroy()
+        self.windowinstance = self.start_window(self.isserver)
+        self.trayonly = False
         # self.delete_event()
 
     def open_settings(self, widget):
