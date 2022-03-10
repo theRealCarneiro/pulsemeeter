@@ -269,7 +269,7 @@ class Client:
 
         if (not self.verify_device(input_type, input_id, 'input') 
                 or not self.verify_device(output_type, output_id, 'output')):
-                return
+            return
            
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
         if state != None: command += f' {state}'
