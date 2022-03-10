@@ -270,13 +270,13 @@ class Client:
         if (not self.verify_device(input_type, input_id, 'input') 
                 or not self.verify_device(output_type, output_id, 'output')):
                 return
-            
-        if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
-            return
-
+           
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
         if state != None: command += f' {state}'
         if latency != None: command += f' {latency}'
+        
+        if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
+            return
 
         return self.send_command(command)
 
