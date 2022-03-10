@@ -443,9 +443,7 @@ def main():
 
     #none: Start Server (if not already started) and open window 
     if len(sys.argv) == 1:
-        if isserver: start_server(server)
-        start_app(isserver, trayonly=False)
-        if isserver: server.handle_exit_signal()
+        trayonly = False
 
     # daemon: disable application window creation for instance
     elif sys.argv[1].lower() == 'daemon':
@@ -453,10 +451,7 @@ def main():
             print('The server is already running.')
             return 1
         else:
-            start_server(server)
-            start_app(isserver, trayonly=True)
-            server.handle_exit_signal()
-            return 0
+            trayonly = True
 
     # init: Just start devices and connections
     elif sys.argv[1] == 'init':
@@ -483,5 +478,8 @@ def main():
         create_parser_args()
         return 0
 
+    if isserver: start_server(server)
+    start_app(isserver, trayonly)
+    if isserver: server.handle_exit_signal()
 
     return 0
