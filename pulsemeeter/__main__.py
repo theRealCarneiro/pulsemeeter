@@ -450,8 +450,8 @@ def main():
         if not isserver:
             print('The server is already running.')
             return 1
-        else:
-            trayonly = True
+        
+        trayonly = True
 
     # init: Just start devices and connections
     elif sys.argv[1] == 'init':
@@ -477,7 +477,8 @@ def main():
     else:
         create_parser_args()
         return 0
-
+    
+    # only no args and daemon arg reach this part of the code
     if isserver: start_server(server)
     start_app(isserver, trayonly)
     if isserver: server.handle_exit_signal()
