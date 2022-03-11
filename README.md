@@ -14,7 +14,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 ![](https://i.imgur.com/hYDE8dh.png)
 (This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
 
-## Table of Contents
+# Table of Contents
 - **[Features](#features)**
 - **[Installation](#installation)**
     - [Dependencies](#dependencies)
@@ -24,53 +24,57 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 - **[Auto Start](#start-devices-on-startup)**
 - **[Discord Server](#discord-server)**
 
-## Features
+# Features
  - Create virtual inputs and outputs
  - Route audio from one device to another
  - Volume control
  - Equalizer for hardware and virtual outputs
  - Rnnoise noise reduction (same algorithm as [noisetorch](https://github.com/lawl/NoiseTorch)) for hardware inputs
 
-## Installation
+# Installation
 
-### Dependencies
-You can install python dependencies with pip
-`pip install -r requirements.txt`
 
+## Dependencies
+
+### Python Dependencies
 
  - pip
+
+Pip will automaticly install these dependencies if you're not building from source
  - [appdirs](https://pypi.org/project/appdirs)
  - [setuptools](https://pypi.org/project/setuptools)
  - [pygobject](https://pypi.org/project/PyGObject)
  - [pulsectl](https://pypi.org/project/pulsectl)
  
- #### Optional Dependencies
+ ### Optional Dependencies
+ These dependencies are only for 
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice)
  - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/pacman packages available)
  - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
 Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
 
-### Arch (AUR)
-Two packages are available in the AUR: [pulsemeeter](https://aur.archlinux.org/packages/pulsemeeter) and [pulsemeeter-git](https://aur.archlinux.org/packages/pulsemeeter-git/).
+## Any distro
 
-### Any distro
+Only optional dependencies are not installed using this method, all essential dependencies are automatically installed 
 
-When installing for a single user, you to need to have $HOME/.local/bin in your PATH, to do this, you'll have to add this line to your ~/.profile (or .zprofile if you use zsh as your login shell)
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-#### Install using pip:
-##### Single user
+### Single user
+When installing for a single user (without sudo) you need to add ~/.local/bin to your path, [this section](#add-local-bin-to-path) will show you how to do it
 ```sh
 pip install pulsemeeter
 ```
-##### For all users
+### For all users
 ```sh
 sudo pip install pulsemeeter
 ```
-#### Build from source:
-##### Single user
+
+## Arch (AUR)
+Two packages are available in the AUR: [pulsemeeter](https://aur.archlinux.org/packages/pulsemeeter) and [pulsemeeter-git](https://aur.archlinux.org/packages/pulsemeeter-git/).
+
+## Build from source:
+
+### Single user
+When installing for a single user (without sudo) you need to add ~/.local/bin to your path, [this section](#add-local-bin-to-path) will show you how to do it
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
@@ -78,7 +82,7 @@ pip install -r requirements.txt
 pip install .
 ```
 
-##### For all users
+### For all users
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
@@ -90,6 +94,13 @@ sudo pip install .
 
 ```sh
 sudo pip uninstall pulsemeeter
+```
+
+### Add local bin to PATH
+
+When installing for a single user, you to need to have $HOME/.local/bin in your PATH, to do this, you'll have to add this line to your ~/.profile (or .zprofile if you use zsh as your login shell) file
+```sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ## Start devices on startup
