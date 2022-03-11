@@ -1,6 +1,6 @@
 import os
 import sys
-from .settings import LAYOUT_DIR
+from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
@@ -52,15 +52,21 @@ class PortSelectPopover():
 
     def create_port_list(self, default=False):
         channel_group = self.pulse.config[self.index[2][0]][self.index[2][1]]['name']
-        print(channel_group)
-        ports = self.pulse.config['jack']['output_groups'][channel_group]
+        if self.index[2][0] == 'a':
+            ports = self.pulse.config['jack']['output_groups'][channel_group]
+        else:
+            ports = self.pulse.config['b'][self.index[2][1:]]['channel_map']
         port_num = len(ports)
         sink_channel_num = self.pulse.config[self.index[0]][self.index[1]]['channels']
-        sink_channel_map = self.pulse.config[self.index[0]][self.index[1]]['channel_map']
+        if self.index[0] != 'hi':
+            sink_channel_map = self.pulse.config[self.index[0]][self.index[1]]['channel_map']
+        else:
+            group = self.pulse.config[self.index[0]][self.index[1]]['name']
+            sink_channel_map = self.pulse.config['jack']['input_groups'][group]
         if len(sink_channel_map) == 0:
             sink_channel_map = self.pulse.channels[:sink_channel_num]
 
-        output = f'{self.index[2][0]}{self.index[2][1]}'
+        output = self.index[2]
         jack_ports = f'{output}_jack_map'
         port_group = f'{output}_port_group'
         for i in self.channel_box:
@@ -82,6 +88,7 @@ class PortSelectPopover():
                     if jack_ports not in self.pulse.config[self.index[0]][self.index[1]]:
                         self.pulse.config[self.index[0]][self.index[1]][jack_ports] = {}
                     if channel in self.pulse.config[self.index[0]][self.index[1]][jack_ports]:
+                        # print(self.pulse.config[self.index[0]][self.index[1]][jack_ports][channel])
                         if i in self.pulse.config[self.index[0]][self.index[1]][jack_ports][channel]:
                             self.button_list[channel][i].set_active(True)
                 hbox.pack_start(self.button_list[channel][i], True, True, 0)

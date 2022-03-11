@@ -39,15 +39,28 @@ init (){
 		"jack-source")
 			source=$2
 			channel_num=${3:-2}
-			channel_map="channel_map="${4:-'front-left,front-right'}
+			channel_map=""${4:-'front-left,front-right'}
 			pactl load-module module-jack-source \
 				client_name=$source \
 				source_name=$source \
 				source_properties="device.description="$source"" \
 				connect=no \
 				channels=$channel_num \
-				$channel_map 2>/dev/null || 
-					printf "Error creating virtual output $sink\n" >&2
+				channel_map=$channel_map 2>/dev/null || 
+					printf "Error creating virtual output $source\n" >&2
+
+			pactl load-module module-jack-sink \
+				client_name=$source"_sink" \
+				sink_name=$source"_sink" \
+				sink_properties="device.description="$source'_sink'"" \
+				connect=no \
+				channels=$channel_num \
+				channel_map=$channel_map 2>/dev/null || 
+					printf "Error creating virtual output $source'_sink'\n" >&2
+			for channel in $(echo $channel_map | sed 's/,/ /g'); do
+				jack_connect $source"_sink":$channel $source:$channel 2>/dev/null ||
+					printf "Error connecting jack $source to sink loopback\n" >&2
+			done
 		;;
 	esac
 }
@@ -59,24 +72,28 @@ set_primary () {
 		echo "Error setting $device $name as primary" >&2
 }
 
-create_jack_group () {
-	group=$1
-	channel_num=$2
-	channel_map=$3
+#create_jack_group () {
+	#group=$1
+	#channel_num=$2
+	#channel_map=$3
 
-	[ -z "$channel_num" -o -z "$channel_num" ] && exit
-	pactl load-module module-jack-sink \
-		client_name=$group \
-		sink_name=$group \
-		sink_properties="device.description="$group"" \
-		connect=no \
-		channels=$channel_num \
-		channel_map=$channel_map ||
-			printf "Error \n" >&2
-}
+	#[ -z "$channel_num" -o -z "$channel_num" ] && exit
+	#pactl load-module module-jack-sink \
+		#client_name=$group \
+		#sink_name=$group \
+		#sink_properties="device.description="$group"" \
+		#connect=no \
+		#channels=$channel_num \
+		#channel_map=$channel_map ||
+			#printf "Error \n" >&2
+#}
 
 jack_system_ports () {
 	jack_lsp -U 2>/dev/null | sed -n '/playback/s/.*://p'
+}
+
+jack_system_port_count () {
+	jack_lsp -U 2>/dev/null | sed -n '/playback/s/.*://p' | wc -l
 }
 
 jack_list_devices() {
@@ -141,20 +158,22 @@ jack_toggle (){
 connect_jack (){
 	source=$1
 	source_channel=$2
-	sink_channel=$3
+	sink=$3
+	sink_channel=$4
 	[ -z "$source" ] && exit
 
-	jack_connect $source:$source_channel system:playback_$sink_channel 2>/dev/null ||
+	jack_connect $source:$source_channel $sink:$sink_channel 2>/dev/null ||
 		printf "Error connecting jack $source $2 to System:$3\n" >&2
 }
 
 disconnect_jack (){
 	source=$1
 	source_channel=$2
-	sink_channel=$3
+	sink=$3
+	sink_channel=$4
 	[ -z "$source" ] && exit
 
-	jack_disconnect $source:$source_channel system:playback_$sink_channel 2>/dev/null ||
+	jack_disconnect $source:$source_channel $sink:$sink_channel 2>/dev/null ||
 		printf "Error disconnecting jack $source $2 to System:$3\n" >&2
 }
 
@@ -164,6 +183,11 @@ connect (){
 	latency=${3:-200}
 
 	[ -z "$source" -o -z "$sink" ] && exit
+
+	index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$sink source=$source" | grep Module | sed 's/.*#//g')"
+	[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
+		printf "Error disconnecting $source $2 to System:$3\n" >&2
+
 	LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$sink source=$source" >/dev/null || \
 	pactl load-module module-loopback sink=$sink source=$source sink_dont_move=true source_dont_move=true latency_msec=$latency 2>/dev/null ||
 		printf "Error connecting $source to $sink\n" >&2
@@ -184,6 +208,9 @@ remove (){
 
 	index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
 	[ -z "$index" ] || pactl unload-module $index 
+	
+	aux_index="$(LC_ALL=C pactl list modules | grep -B 2 $device'_sink' | grep Module | sed 's/.*#//g')"
+	[ -z "$aux_index" ] || pactl unload-module $aux_index
 }
 
 mute (){
@@ -215,7 +242,8 @@ list_virtual_sinks (){
 		grep -vwE Monitor | grep -vwE remap-source | grep -vwE module-remap-source |
 		grep -vwE ladspa | grep -vwE .*_sink | grep -vwE .*rnnoise | sed 's/, Driver:.*\.c"//g')
 
-	printf "%s" "$list"
+	#printf "%s" "$list"
+	printf "%s" "$list" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 list_virtual_sources (){
@@ -235,7 +263,8 @@ list_virtual_sources (){
 			s/$/}/; s/, }/}/' |
 		grep -vwE Monitor | grep -wE remap | sed 's/, \t.*node.group.*"//g; s/, Driver:.*\.c"//g')
 
-	printf "%s" "$list"
+	#printf "%s" "$list"
+	printf "%s" "$list" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 
@@ -254,7 +283,7 @@ list (){
 	list=$(LC_ALL=C pactl list $1 | \
 		awk '/Sink #/{print $2} /Source #/{print $2} /Name:/ {print $0} 
 			/Description/ {print $0} /ladspa/{print $0} /remap-source/ {print $0}
-			/module-null-sink/ {print $0} /module-jack-sink/ {print $0} /Volume/ {print $0} /null-audio-sink/ {print $0}' |\
+			/module-null-sink/ {print $0} /module-jack-sink/ {print $0} /module-jack-source/ {print $0} /Volume/ {print $0} /null-audio-sink/ {print $0}' |\
 			sed '/Base Volume/d; s/%.*//g; s/:.*\/ /: /g; /Volume/s/$/%/; s/: /:"/g; /#/!s/$/"/g;')
 
 	#echo "$list"
@@ -266,7 +295,7 @@ list (){
 		sed '/^$/d; s/ 	/ /g; s/Description/"description"/g; s/Volume:"/"volume":/g; s/%"//g; s/Name/"name"/g; s/$/}/; s/, }/}/' |\
 		grep -vwE Monitor | grep -vwE null | grep -vwE jack | grep -vwE remap-source | grep -vwE module-remap-source | grep -vwE ladspa)
 
-	printf "%s" "$list"
+	printf "%s" "$list" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 get_source_by_id() {
@@ -310,10 +339,10 @@ list_source_outputs (){
 	# sed hell to transform into json
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
+		sed '/^$/d; s/application\.name = /name:/g; s/application.icon_name = /"icon":/g; s/window.icon_name[^,]*,//g; s/media.icon_name = /"icon":/g; s/application.process.binary = /"binary":/g; s/$/}/; s/, }/}/' |\
 		grep -vwE pavucontrol | grep -vwE pulse-vumeter | grep name | \
 		sed 's/ 		/ /g; s/device/"device"/g; s/name/"name"/g')
-	printf "%s" "$apps"
+	printf "%s" "$apps" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 list_sink_inputs (){
@@ -329,10 +358,10 @@ list_sink_inputs (){
 	# sed hell to transform into json
 	apps=$(echo "$apps" | sed ':a $!N;s/\n/, /;ta P;D;' |\
 		sed ':a $!N;s/#/\n{"id":/;ta P;D;' |\
-		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
+		sed '/^$/d;/^$/d; s/application.icon_name = /"icon":/g; s/window.icon_name[^,]*,//g; s/media.icon_name = /"icon":/g; s/application.name = /"name":/g' |\
 		grep name |\
 		sed 's/ 		/ /g' | sed 's/, $//; s/$/}/')
-	printf "%s" "$apps"
+	printf "%s" "$apps" | sed '1 s/^/[/g' | sed 's/$/,/g' | sed '$ s/.$/]/g' |tr -d '\n'
 }
 
 eq (){
@@ -457,6 +486,22 @@ rnnoise() {
 	
 	[ -z "$found" ] && exit 1
 
+	# unload sink that will recive filtered data
+	index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name$" | grep Module | sed 's/.*#//g')"
+	[ -z "$index" ] || pactl unload-module $index
+
+	# pipewire doesn't remove devices that depend on others,
+	# so we have to remove them by hand
+	if ! [ which pulseaudio 2>/dev/null 1>&2 ]; then
+		# unload sink that will filter data
+		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] ||  pactl unload-module $index
+
+		# loopback from source to ladspa sink
+		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" source=$master" | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] || pactl unload-module $index
+	fi
+
 	if [ "$status" = "connect" ]; then
 		pactl list sinks short 2>/dev/null | grep "$sink_name" > /dev/null && exit
 		
@@ -471,25 +516,8 @@ rnnoise() {
 		# loopback from source to ladspa sink
 		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true >/dev/null 2>&1 ||
 			echo "Error loading rnnoise loopback for $master"
-
-	else
-		# unload sink that will recive filtered data
-		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name$" | grep Module | sed 's/.*#//g')"
-		[ -z "$index" ] || pactl unload-module $index
-
-		# pipewire doesn't remove devices that depend on others,
-		# so we have to remove them by hand
-		if ! [ which pulseaudio 2>/dev/null 1>&2 ]; then
-			# unload sink that will filter data
-			index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
-			[ -z "$index" ] ||  pactl unload-module $index
-
-			# loopback from source to ladspa sink
-			index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" source=$master" | grep Module | sed 's/.*#//g')"
-			[ -z "$index" ] || pactl unload-module $index
-		fi
-
 	fi
+
 }
 
 get_sink_input_chann_num (){
@@ -617,10 +645,10 @@ case $1 in
 		get_source_output_volume $2
 	;;
 	"jack-connect")
-		connect_jack $2 $3 $4
+		connect_jack $2 $3 $4 $5
 	;;
 	"jack-disconnect")
-		disconnect_jack $2 $3 $4
+		disconnect_jack $2 $3 $4 $5
 	;;
 	"jack-list")
 		jack_list $2
@@ -636,6 +664,9 @@ case $1 in
 	;;
 	"jack-system-ports")
 		jack_system_ports
+	;;
+	"jack-system-port-count")
+		jack_system_port_count
 	;;
 	"jack-create-group")
 		create_jack_group $2 $3 $4
