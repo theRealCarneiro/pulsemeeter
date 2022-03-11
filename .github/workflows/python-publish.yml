@@ -25,11 +25,12 @@ jobs:
         python-version: '3.x'
     - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y libgirepository1.0-dev libgtk-3-dev libpulse-dev libappindicator3-dev
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install build
     - name: Build package
-      run: python -m build
+      run: python setup.py build
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
