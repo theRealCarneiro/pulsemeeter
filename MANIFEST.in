@@ -1,6 +1,5 @@
 recursive-include share/*
-include pulsemeeter/layouts/*
-include pulsemeeter/Interface.glade
+include pulsemeeter/interface/layouts/*
 include pulsemeeter/config.json
 include LICENSE
 include MANIFEST.in
