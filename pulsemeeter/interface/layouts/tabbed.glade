@@ -3850,9 +3850,9 @@ KHz</property>
             <child>
               <object class="GtkCheckButton" id="jack_toggle">
                 <property name="label" translatable="yes">Enable jack</property>
-                <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">False</property>
+                <property name="no-show-all">True</property>
                 <property name="halign">start</property>
                 <property name="draw-indicator">True</property>
               </object>
