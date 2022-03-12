@@ -1,8 +1,8 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
-[![pypi](https://img.shields.io/badge/pypi-v1.2.10-blue)](https://pypi.org/project/pulsemeeter/)
-[![AUR](https://img.shields.io/badge/AUR-V1.2.10-cyan)](https://aur.archlinux.org/packages/pulsemeeter-git/)
+[![pypi](https://img.shields.io/badge/pypi-v1.2.12-blue)](https://pypi.org/project/pulsemeeter/)
+[![AUR](https://img.shields.io/badge/AUR-V1.2.12-cyan)](https://aur.archlinux.org/packages/pulsemeeter/)
 [![AUR](https://img.shields.io/badge/AUR-pulsemeeter--git-red)](https://aur.archlinux.org/packages/pulsemeeter-git/)
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
@@ -11,8 +11,8 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 ### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\]
 
-![](https://i.imgur.com/hYDE8dh.png)
-(This screenshot was taken while using ant dracula gtk theme, its a gtk application so it will use your theme)
+![](https://i.imgur.com/L4KZEqV.png)
+(This screenshot was taken while using ant dracula gtk theme, it will use your theme)
 
 # Table of Contents
 - **[Features](#features)**
@@ -47,9 +47,9 @@ Pip will automaticly install these dependencies if you're not building from sour
  - [pulsectl](https://pypi.org/project/pulsectl)
  
  ### Optional Dependencies
- These dependencies are only for 
- - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice)
- - [swh-plugins](https://github.com/swh/ladspa) (apt/dnf/pacman packages available)
+ These dependencies are optional and will enable new features in the application
+ - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) for noise reduction
+ - [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
  - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
 Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
