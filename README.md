@@ -1,7 +1,7 @@
 # Pulsemeeter
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
-[![pypi](https://img.shields.io/badge/pypi-v1.2.12-blue)](https://pypi.org/project/pulsemeeter/)
+[![pypi](https://img.shields.io/badge/pypi-v1.2.13-blue)](https://pypi.org/project/pulsemeeter/)
 [![AUR](https://img.shields.io/badge/AUR-V1.2.12-cyan)](https://aur.archlinux.org/packages/pulsemeeter/)
 [![AUR](https://img.shields.io/badge/AUR-pulsemeeter--git-red)](https://aur.archlinux.org/packages/pulsemeeter-git/)
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
@@ -19,8 +19,8 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 - **[Installation](#installation)**
     - [Dependencies](#dependencies)
     - [Arch](#arch-aur)
-    - [Pypi install](#install-using-pip)
-    - [Manual/Git install](#any-distro)
+    - [Pypi install](#any-distro)
+    - [Manual/Git install](#build-from-source)
 - **[Auto Start](#start-devices-on-startup)**
 - **[Discord Server](#discord-server)**
 
@@ -41,7 +41,6 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
  - pip
 
 Pip will automaticly install these dependencies if you're not building from source
- - [appdirs](https://pypi.org/project/appdirs)
  - [setuptools](https://pypi.org/project/setuptools)
  - [pygobject](https://pypi.org/project/PyGObject)
  - [pulsectl](https://pypi.org/project/pulsectl)
