@@ -1,4 +1,3 @@
 setuptools
 pulsectl
 pygobject
-appdirs

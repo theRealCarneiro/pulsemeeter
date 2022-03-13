@@ -1,8 +1,6 @@
 import os
 import time
-import signal
-import json
-import sys, threading
+import sys
 import subprocess
 import argparse
 import re

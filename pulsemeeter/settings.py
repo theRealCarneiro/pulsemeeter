@@ -1,16 +1,16 @@
 import os
 import platform
-import appdirs
  
 
-__version__ = '1.2.12'
+__version__ = '1.2.13'
 
 
 HOME = os.getenv('HOME', os.getenv('USERPROFILE'))
 
 USER = os.getenv('USER')
 APP_DIR = os.path.dirname(os.path.realpath(__file__))
-CONFIG_DIR = appdirs.user_config_dir('pulsemeeter')
+XDG_CONFIG_HOME = os.getenv('XDG_CONFIG_HOME', f'/home/{USER}/.config')
+CONFIG_DIR = os.path.join(XDG_CONFIG_HOME, 'pulsemeeter')
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.json')
 ORIG_CONFIG_FILE = os.path.join(APP_DIR, 'config.json')
 LAYOUT_DIR = os.path.join(APP_DIR, 'interface/layouts')
