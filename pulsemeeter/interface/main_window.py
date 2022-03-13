@@ -355,21 +355,18 @@ class MainWindow(Gtk.Window):
                     found = 0
                     for lib in ['lib', 'lib64']:
                         for path in [f'/usr/{lib}/ladspa', f'/usr/local/{lib}/ladspa']:
-                            if os.path.isfile(os.path.join(path, 
-                                'librnnoise_ladspa.so')): 
-                                found = 1
-                                break
-                            elif os.path.isfile(os.path.join(path, 
-                                'rnnoise_ladspa.so')):
-                                found = 1
-                                break
+                            for plugin in ['librnnoise_ladspa.so', 'rnnoise_ladspa.so']:
+                                if os.path.isfile(os.path.join(path, plugin)): 
+                                    found = 1
+                                    break
                     if found == 0:
                         rnnoise.set_visible(False)
                         rnnoise.set_no_show_all(True)
 
 
-                # recover volume if possible
                 source_config = self.config[input_type][input_id]
+
+                # recover volume if possible
                 # for source in self.devices[input_type]:
                     # if source['name'] == source_config['name'] and 'volume' in source:
                         # source_config['vol'] = source['volume']
