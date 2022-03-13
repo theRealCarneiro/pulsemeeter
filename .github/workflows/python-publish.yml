@@ -24,11 +24,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgirepository1.0-dev libgtk-3-dev libpulse-dev libappindicator3-dev
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      run: python -m pip install --upgrade pip setuptools
     - name: Build package
       run: python setup.py sdist
     - name: Publish package
