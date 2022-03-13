@@ -818,6 +818,9 @@ class Pulse:
         # limit volume at 153
         if val > 153:
             val = 153
+        # limit volume at 0
+        elif val < 0:
+            val = 0
 
         device_config['vol'] = val
         name = device_config['name']
