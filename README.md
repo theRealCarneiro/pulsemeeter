@@ -33,17 +33,19 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 # Installation
 
-
 ## Dependencies
+Visit the [dependencies](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation#installing-dependencies) section in the wiki to get in depth information on how to install these for your specific system.
+ - pip
+ - libappindicator3
+ - gobject-introspection-1.0
+ - libpulse
+
 
 ### Python Dependencies
-
- - pip
-
-Pip will automaticly install these dependencies if you're not building from source
- - [setuptools](https://pypi.org/project/setuptools)
+Pip will automaticly install these dependencies
  - [pygobject](https://pypi.org/project/PyGObject)
  - [pulsectl](https://pypi.org/project/pulsectl)
+ - [setuptools](https://pypi.org/project/setuptools/)
  
  ### Optional Dependencies
  These dependencies are optional and will enable new features in the application
@@ -51,11 +53,7 @@ Pip will automaticly install these dependencies if you're not building from sour
  - [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
  - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
-Visit the [installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) section in the wiki to get in depth information on how to install these for your specific system.
-
 ## Any distro
-
-Only optional dependencies are not installed using this method, all essential dependencies are automatically installed 
 
 ### Single user
 When installing for a single user (without sudo) you need to add ~/.local/bin to your path, [this section](#add-local-bin-to-path) will show you how to do it
@@ -77,7 +75,6 @@ When installing for a single user (without sudo) you need to add ~/.local/bin to
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-pip install -r requirements.txt
 pip install .
 ```
 
@@ -85,7 +82,6 @@ pip install .
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-sudo pip install -r requirements.txt
 sudo pip install .
 ```
 
