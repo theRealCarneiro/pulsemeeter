@@ -27,4 +27,3 @@ jobs:
       run: |
         python -m build
         ls dist/*
-        tar -tf dist/*
