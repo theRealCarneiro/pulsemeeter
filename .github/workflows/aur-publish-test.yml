@@ -1,8 +1,6 @@
-name: aur-publish
+name: aur-publish-test
 
-on:
-  release:
-    types: [published]
+on: workflow_dispatch
 
 jobs:
         
