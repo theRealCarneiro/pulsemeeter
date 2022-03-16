@@ -16,7 +16,7 @@ jobs:
           sed -i "s/pkgver=.*/pkgver=$(python setup.py --version)/g" PKGBUILD
 
       - name: Publish AUR package
-        uses: KSXGitHub/github-actions-deploy-aur@<TAG>
+        uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
         with:
           pkgname: pulsemeeter
           pkgbuild: ./PKGBUILD
