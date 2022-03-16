@@ -1,6 +1,8 @@
-name: aur-publish-test
+name: Publish stable release on AUR
 
-on: workflow_dispatch
+on:
+  release:
+    types: [published]
 
 jobs:
         
