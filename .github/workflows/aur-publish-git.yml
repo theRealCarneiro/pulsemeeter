@@ -12,13 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       
       # Runs a single command using the runners shell
       - name: Create PKGBUILD
         run:  |
           curl "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pulsemeeter-git" --silent > PKGBUILD
-          ls
           version=$(printf "%s" "$(git describe --long | sed 's/\([^-]*-\)g/r\1/;s/-/./g; s/.//')")
           sed -i "s/pkgver=.*/pkgver=$version/g" PKGBUILD
           cat PKGBUILD
