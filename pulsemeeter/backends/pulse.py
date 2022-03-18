@@ -1,5 +1,4 @@
 import os
-import shutil
 import json
 import re
 import sys
@@ -273,6 +272,7 @@ class Pulse:
         # status = None -> toggle state
         if status == None:
             status = not source_config['use_rnnoise']
+            conn_status = 'connect' if status else 'disconnect'
 
         # if only changing control
         elif status == 'set':
@@ -429,6 +429,8 @@ class Pulse:
             input_type = device_type
             input_id = device_id
 
+        else: return 'invalid device'
+
         # reseting the values here just to be clear that they're different now
         device_type = ''
         device_id = ''
@@ -534,6 +536,7 @@ class Pulse:
         if source_config[port_group] == False:
             for channel in source_config[jack_map]:
                 for system_chan in source_config[jack_map][channel]:
+                    sink = ''
                     if sink_index[0] == 'a':
                         system_chan = f'playback_{system_chan}'
                         sink = 'system'
@@ -562,6 +565,7 @@ class Pulse:
             for channel_num in range(min_len):
                 channel = source_channels[channel_num]
                 sink_channel = channel_group[channel_num]
+                sink = ''
                 if source_index[0] == 'hi':
                     channel = f'capture_{channel}'
                     source = 'system'
@@ -611,32 +615,35 @@ class Pulse:
         # check what type of device, then disable plugins
         if device_type == 'a': 
             device_list = ['hi', 'vi']
-            output_type = device_type
-            output_id = device_id
-            sink = f'{device_type}{device_id}'
+
+            if status:
+                if device_config['use_eq']:
+                    command += self.eq(device_type, device_id, status=True, 
+                            reconnect=False, change_config=False, run_command=False)
+
         else:
             device_list =['a', 'b']
-            input_type = device_type
-            input_id = device_id
 
-        if status:
-            if device_type == 'a' and device_config['use_eq']:
-                command += self.eq(output_type, output_id, status=True, 
-                        reconnect=False, change_config=False, run_command=False)
-
-            elif device_type == 'hi' and device_config['use_rnnoise']:
-                command += self.rnnoise(input_id, status=True, 
-                        reconnect=False, change_config=False, run_command=False)
+            if status:
+                if device_type == 'hi' and device_config['use_rnnoise']:
+                    command += self.rnnoise(device_id, status=True, 
+                            reconnect=False, change_config=False, run_command=False)
 
 
         # set connections
         for target_type in device_list:
             for target_num in self.config[target_type]:
 
+                sink = ''
                 if device_type == 'a':
                     input_type = target_type
                     input_id = target_num
+                    output_type = device_type
+                    output_id = device_id
+                    sink = f'{device_type}{device_id}'
                 else:
+                    input_type = device_type
+                    input_id = device_id
                     output_type = target_type
                     output_id = target_num
                     sink = f'{output_type}{output_id}'
@@ -647,11 +654,11 @@ class Pulse:
 
         if not status:
             if device_type == 'a' and device_config['use_eq']:
-                command += self.eq(output_type, output_id, status=False, 
+                command += self.eq(device_type, device_id, status=False, 
                         reconnect=False, change_config=False, run_command=False)
 
             elif device_type == 'hi' and device_config['use_rnnoise']:
-                command += self.rnnoise(input_id, status=False, 
+                command += self.rnnoise(device_id, status=False, 
                         reconnect=False, change_config=False, run_command=False)
 
         if self.loglevel > 1: print(command)

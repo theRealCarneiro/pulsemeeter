@@ -349,9 +349,9 @@ class Client:
         if not self.verify_device(device_type, device_id, 'any'):
             return
         if type(vol) == str:
-            if not re.match('[+-]?\d+$', vol):
+            if not re.match('[+-]?[1-9]+$', vol):
                 return 'invalid volume'
-            if re.match('^\d+$', vol):
+            if re.match('^[1-9]+$', vol):
                 if self.config[device_type][device_id]['vol'] == int(vol):
                     return
 
