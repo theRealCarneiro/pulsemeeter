@@ -101,6 +101,9 @@ export PATH="$HOME/.local/bin:$PATH"
 ## Start devices on startup
 All connections and devices will be restored with the command `pulsemeeter init`
 
+## Extensions
+[@Fl1tzi](https://github.com/Fl1tzi) Elgato Streamdeck intergration [pulsemeeter-streamdeck](https://github.com/Fl1tzi/pulsemeeter-streamdeck)
+
 ## Discord Server
 If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)
 
