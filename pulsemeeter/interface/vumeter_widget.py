@@ -6,7 +6,8 @@ from gi import require_version as gi_require_version
 # from ..backends import Pulse
 gi_require_version('Gtk', '3.0')
 
-from gi.repository import Gtk,Gdk,Gio,GLib
+from gi.repository import Gtk, GLib
+
 
 class Vumeter(Gtk.ProgressBar):
 

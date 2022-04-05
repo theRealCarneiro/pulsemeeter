@@ -43,7 +43,7 @@ class Client:
 
     # stop listen thread
     def stop_listen(self):
-        if self.listen_thread != None: 
+        if self.listen_thread is not None:
             self.exit_flag = True
             self.listen_thread.join()
 
@@ -65,23 +65,21 @@ class Client:
             # wait for answer
             ret_msg = ''
             if nowait or not self.can_listen:
-                ret_msg = self.get_message() 
-            else: 
+                ret_msg = self.get_message()
+            else:
                 ret_msg = self.return_queue.get()
 
             return ret_msg
 
-                
-        except:
+        except Exception:
             print('closing socket')
             self.sock.close()
             raise
 
-
     def listen(self, print_event=True):
         while True:
             try:
-                if self.exit_flag == True: break
+                if self.exit_flag is True: break
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise ConnectionError
                 sender_id = int(sender_id)
@@ -90,7 +88,7 @@ class Client:
                 msg_len = self.sock.recv(4)
                 if not msg_len: raise ConnectionError
                 msg_len = int(msg_len.decode())
-                
+
                 # get event
                 event = self.sock.recv(msg_len)
                 if not event: raise ConnectionError
@@ -115,8 +113,6 @@ class Client:
                 # print('closing socket')
                 # raise
 
-
-
     def get_message(self):
         while True:
             try:
@@ -129,19 +125,17 @@ class Client:
                 msg_len = self.sock.recv(4)
                 if not msg_len: raise
                 msg_len = int(msg_len.decode())
-                
+
                 # get event
                 event = self.sock.recv(msg_len)
                 if not event: raise
                 event = event.decode()
 
-
                 if self.id == sender_id:
                     return event
 
-            except:
+            except Exception:
                 raise
-
 
     # set a callback function to a command
     def set_callback_function(self, command, function):
@@ -151,7 +145,7 @@ class Client:
         command = event.split(' ')
         if command[0] not in self.callback_dict:
             return
-        
+
         function = self.callback_dict[command[0]]
         args = tuple(command[1:])
         function(*args)
@@ -232,7 +226,6 @@ class Client:
                 control = args[2]
                 self.config['hi'][device_id]['rnnoise_control'] = control
 
-
     def verify_device(self, device_type, device_id, dev):
 
         if dev == 'virtual':
@@ -295,7 +288,6 @@ class Client:
             return
         return self.send_command(command)
 
-
     def primary(self, device_type, device_id):
 
         if not self.verify_device(device_type, device_id, 'any'):
@@ -303,10 +295,9 @@ class Client:
 
         command = f'primary {device_type} {device_id}'
 
-        if self.config[device_type][device_id]['primary'] == True:
+        if self.config[device_type][device_id]['primary'] is True:
             return
         return self.send_command(command)
-
 
     def rnnoise(self, input_id, state=None, control=None, latency=None):
 
@@ -314,14 +305,13 @@ class Client:
             return 'invalid device index'
 
         command = f'rnnoise {input_id}'
-        if state != None: command += f' {state}'
+        if state is not None: command += f' {state}'
         if control and latency: command += f' {control} {latency}'
 
-        if (self.config['hi'][input_id]['use_rnnoise'] == state
-                or self.config['hi'][input_id]['rnnoise_control'] == control):
+        if (self.config['hi'][input_id]['use_rnnoise'] == state or
+                self.config['hi'][input_id]['rnnoise_control'] == control):
             return
         return self.send_command(command)
-
 
     def eq(self, output_type, output_id, state=None, control=None):
 
@@ -456,25 +446,24 @@ class Client:
     def close_server(self):
         self.send_command('exit')
 
-
     def subscribe(self):
         command = ['pactl', 'subscribe']
         sys.stdout.flush()
         env = os.environ
         env['LC_ALL'] = 'C'
-        self.sub_proc = subprocess.Popen(command, env=env, 
-            stdout=subprocess.PIPE, 
+        self.sub_proc = subprocess.Popen(command, env=env,
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True)
 
         for stdout_line in iter(self.sub_proc.stdout.readline, ""):
-            yield stdout_line 
-            
+            yield stdout_line
+
         self.sub_proc.stdout.close()
         return_code = self.sub_proc.wait()
         if return_code:
             raise subprocess.CalledProcessError(return_code, command)
 
     def end_subscribe(self):
-        if self.sub_proc != None:
+        if self.sub_proc is not None:
             self.sub_proc.terminate()

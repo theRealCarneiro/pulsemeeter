@@ -349,7 +349,7 @@ class Server:
 
         # some useful regex
         state = '(True|False|1|0|on|off|true|false)'
-        # eq_control = r'([1-9](\.[1-9])?)(,[1-9](\.[1-9])?){14}'
+        # eq_control = r'([0-9](\.[0-9])?)(,[0-9](\.[0-9])?){14}'
 
         # None means that is an optional argument
         # STATE == [ [connect|true|on|1] | [disconnect|false|off|0] ]
@@ -359,7 +359,7 @@ class Server:
             'connect': {
                 'function': self.audio_server.connect,
                 'notify': True,
-                'regex': f'(vi|hi) [1-9]+( (a|b) [1-9]+)?( ({state}))?( [1-9]+)?$'
+                'regex': f'(vi|hi) [0-9]+( (a|b) [0-9]+)?( ({state}))?( [0-9]+)?$'
             },
 
             # ARGS: [hi|vi|a|b] [None|STATE]
@@ -367,14 +367,14 @@ class Server:
             'mute': {
                 'function': self.audio_server.mute,
                 'notify': True,
-                'regex': f'(vi|hi|a|b) [1-9]+( ({state}))?$'
+                'regex': f'(vi|hi|a|b) [0-9]+( ({state}))?$'
             },
 
             # ARGS: [hi|vi|a|b]
             'primary': {
                 'function': self.audio_server.set_primary,
                 'notify': True,
-                'regex': r'(vi|hi|a|b) [1-9]+$'
+                'regex': r'(vi|hi|a|b) [0-9]+$'
             },
 
             # ARGS: id
@@ -382,7 +382,7 @@ class Server:
             'rnnoise': {
                 'function': self.audio_server.rnnoise,
                 'notify': True,
-                'regex': f'[1-9]+( ({state}|(set [1-9]+ [1-9]+)))?$'
+                'regex': f'[0-9]+( ({state}|(set [0-9]+ [0-9]+)))?$'
             },
 
             # ARGS: [a|b] id [None|STATE|set] [None|control]
@@ -391,7 +391,7 @@ class Server:
             'eq': {
                 'function': self.audio_server.eq,
                 'notify': True,
-                'regex': r'(a|b) [1-9]+( ((True|False|1|0|on|off|true|false)|(set ([1-9]+(\.[1-9]+)?)(,[1-9]+(\.[1-9]+)?){{14}})))?$'
+                'regex': r'(a|b) [0-9]+( ((True|False|1|0|on|off|true|false)|(set ([0-9]+(\.[0-9]+)?)(,[0-9]+(\.[0-9]+)?){{14}})))?$'
             },
 
             ''
@@ -401,7 +401,7 @@ class Server:
             'toggle-hd': {
                 'function': self.audio_server.toggle_hardware_device,
                 'notify': False,
-                'regex': f'(hi|a) [1-9]+( {state})?$'
+                'regex': f'(hi|a) [0-9]+( {state})?$'
             },
 
             # ARGS: [vi|b] id STATE
@@ -410,7 +410,7 @@ class Server:
             'toggle-vd': {
                 'function': self.audio_server.toggle_virtual_device,
                 'notify': False,
-                'regex': f'(vi|b) [1-9]+( {state})?$'
+                'regex': f'(vi|b) [0-9]+( {state})?$'
             },
 
             # ARGS: [hi|vi] id
@@ -427,7 +427,7 @@ class Server:
             'change_hd': {
                 'function': self.audio_server.change_hardware_device,
                 'notify': True,
-                'regex': r'(a|hi) [1-9]+ \w([\w\.-]+)?$'
+                'regex': r'(a|hi) [0-9]+ \w([\w\.-]+)?$'
             },
 
             # ARGS: [hi|vi|a|b] id vol
@@ -436,7 +436,7 @@ class Server:
             'volume': {
                 'function': self.audio_server.volume,
                 'notify': True,
-                'regex': '(a|b|hi|vi) [1-9]+ [+-]?[0-9]+$'
+                'regex': '(a|b|hi|vi) [0-9]+ [+-]?[0-9]+$'
             },
 
             # ARGS: id vol [sink-input|source-output]
@@ -444,21 +444,21 @@ class Server:
             'app-volume': {
                 'function': self.audio_server.app_volume,
                 'notify': True,
-                'regex': '[1-9]+ [0-9]+ (sink-input|source-output)$'
+                'regex': '[0-9]+ [0-9]+ (sink-input|source-output)$'
             },
 
             # ARGS: id device [sink-input|source-output]
             'move-app-device': {
                 'function': self.audio_server.move_app_device,
                 'notify': True,
-                'regex': r'[1-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
+                'regex': r'[0-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
             },
 
             # ARGS: id [sink-input|source-output]
             'get-stream-volume': {
                 'function': self.audio_server.get_app_stream_volume,
                 'notify': False,
-                'regex': '[1-9]+ (sink-input|source-output)$'
+                'regex': '[0-9]+ (sink-input|source-output)$'
             },
 
             # ARGS: [sink-input|source-output]

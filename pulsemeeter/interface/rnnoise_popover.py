@@ -4,7 +4,8 @@ from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
-from gi.repository import Gtk,Gdk
+from gi.repository import Gtk
+
 
 class RnnoisePopover():
     def __init__(self, button, sock, deivce_type, device_id):
