@@ -1,9 +1,10 @@
-import sys
-from ..settings import GLADEFILE
+# import sys
+# from ..settings import GLADEFILE
 
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk,Gio
+from gi.repository import Gtk, Gio
+
 
 class AppList(Gtk.VBox):
 
@@ -17,12 +18,12 @@ class AppList(Gtk.VBox):
         self.load_application_list()
 
     def load_application_list(self, id=None):
-        if id == None and len(self.box_list) > 0:
+        if id is None and len(self.box_list) > 0:
             self.remove_app_dev()
 
         app_list = self.client.list_apps(self.dev_type)
 
-        if len(app_list) == 0: 
+        if len(app_list) == 0:
             return
 
         name_vi = []

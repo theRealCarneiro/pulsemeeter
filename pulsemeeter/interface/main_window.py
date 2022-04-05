@@ -198,9 +198,9 @@ class MainWindow(Gtk.Window):
     def change_layout(self, combobox):
         self.client.set_layout(combobox.get_active_text())
         self.windowinstance.destroy()
+        self.delete_event()
         self.windowinstance = self.start_window(self.isserver)
         self.trayonly = False
-        # self.delete_event()
 
     def open_settings(self, widget):
         self.menu_popover.popup()
@@ -259,8 +259,9 @@ class MainWindow(Gtk.Window):
 
             self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
             self.subscribe_thread.start()
-        except Exception:
+        except Exception as ex:
             print('App sinks returned an error, audio backend returned error')
+            print(ex)
             if self.windowinstance is not None:
                 self.windowinstance.destroy()
             self.delete_event()
