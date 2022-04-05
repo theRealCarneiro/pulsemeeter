@@ -97,31 +97,7 @@ class Server:
 
                     # print(ret_message)
                     if ret_message:
-                        encoded_msg = ret_message.encode()
-
-                        # notify observers
-                        client_list = []
-                        if notify_all:
-                            client_list = self.client_handler_connections.values()
-                        elif sender_id in self.client_handler_connections:
-                            client_list = [self.client_handler_connections[message[1]]]
-                        # else:
-                            # continue
-
-                        for conn in client_list:
-
-                            # add 0 until 4 characters long
-                            sender_id = str(sender_id).rjust(4, '0')
-                            msg_len = str(len(encoded_msg)).rjust(4, '0')
-
-                            # send to clients
-                            try:
-                                # print(id, ret_message)
-                                conn.sendall(sender_id.encode())  # sender id
-                                conn.sendall(msg_len.encode())  # message len
-                                conn.sendall(encoded_msg)  # command
-                            except OSError:
-                                print(f'client {sender_id} already disconnected, message not sent')
+                        self.send_message(ret_message, message, sender_id, notify_all)
 
                     if ret_message == 'exit':
                         break
@@ -150,6 +126,32 @@ class Server:
 
             # Call any code to clean up virtual devices or similar
             self.close_server()
+
+    def send_message(self, ret_message, message, sender_id, notify_all):
+        encoded_msg = ret_message.encode()
+
+        # notify observers
+        client_list = []
+        if notify_all:
+            client_list = self.client_handler_connections.values()
+        elif sender_id in self.client_handler_connections:
+            client_list = [self.client_handler_connections[message[1]]]
+        # else:
+            # continue
+
+        for conn in client_list:
+
+            # add 0 until 4 characters long
+            sender_id = str(sender_id).rjust(4, '0')
+            msg_len = str(len(encoded_msg)).rjust(4, '0')
+
+            # send to clients
+            try:
+                conn.sendall(sender_id.encode())  # sender id
+                conn.sendall(msg_len.encode())  # message len
+                conn.sendall(encoded_msg)  # command
+            except OSError:
+                print(f'client {sender_id} already disconnected, message not sent')
 
     def is_running(self):
         try:
