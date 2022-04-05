@@ -31,7 +31,7 @@ class Server:
         audio_server = Pulse
 
         self.config = self.read_config()
-        self.audio_server = audio_server(self.config, loglevel=2)
+        self.audio_server = audio_server(self.config, loglevel=0)
         self.create_command_dict()
 
         # the socket only needs to be seen by the listener thread
