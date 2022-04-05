@@ -506,14 +506,12 @@ def main():
     # only no args and daemon arg reach this part of the code
 
     # start server if there's no server running
-    if server is not None:
-        start_server(server)
+    if server is not None: start_server(server)
 
     # start gtk
     start_app(isserver, trayonly)
 
     # close server if there's one running
-    if server is not None:
-        server.handle_exit_signal()
+    if server is not None: server.handle_exit_signal()
 
     return 0

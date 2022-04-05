@@ -8,6 +8,7 @@ import os
 import re
 from queue import SimpleQueue
 
+
 class Client:
 
     def __init__(self, listen=False, noconfig=False):
@@ -191,7 +192,7 @@ class Client:
             device_id = args[1]
             vol = int(args[2])
             self.config[device_type][device_id]['vol'] = vol
-        
+
         elif command == 'rename' or command == 'change-hd':
             device_type = args[0]
             device_id = args[1]
@@ -267,19 +268,19 @@ class Client:
 
     def connect(self, input_type, input_id, output_type, output_id, state=None, latency=None):
 
-        if (not self.verify_device(input_type, input_id, 'input') 
-                or not self.verify_device(output_type, output_id, 'output')):
+        if (not self.verify_device(input_type, input_id, 'input') or
+                not self.verify_device(output_type, output_id, 'output')):
             return
-           
+
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
-        if state != None: command += f' {state}'
-        if latency != None: command += f' {latency}'
-        
+        if state is not None: command += f' {state}'
+        if latency is not None: command += f' {latency}'
+
         if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
             return
 
+        print(command)
         return self.send_command(command)
-
 
     def mute(self, device_type, device_id, state=None):
 
@@ -287,7 +288,7 @@ class Client:
             return
 
         command = f'mute {device_type} {device_id}'
-        if state != None: command += f' {state}'
+        if state is not None: command += f' {state}'
 
         # print('config: ', self.config[device_type][device_id]['mute'], 'new: ', state)
         if self.config[device_type][device_id]['mute'] == state:
@@ -329,20 +330,19 @@ class Client:
 
         command = f'eq {output_type} {output_id}'
 
-        if control != None and state == 'set':
+        if control is not None and state == 'set':
             command += f' set {control}'
 
-        elif control == None and state != None:
+        elif control is None and state is not None:
             command += f' {state}'
 
-        elif control != None and state != 'set':
+        elif control is not None and state != 'set':
             return
 
-        if (self.config[output_type][output_id]['use_eq'] == state
-                or self.config[output_type][output_id]['eq_control'] == control):
+        if (self.config[output_type][output_id]['use_eq'] == state or
+                self.config[output_type][output_id]['eq_control'] == control):
             return
         return self.send_command(command)
-
 
     def volume(self, device_type, device_id, vol):
 
@@ -356,9 +356,9 @@ class Client:
                     return
 
         command = f'volume {device_type} {device_id} {vol}'
+        # print(command)
 
         return self.send_command(command)
-
 
     def rename(self, device_type, device_id, name):
 
@@ -369,7 +369,6 @@ class Client:
         if self.config[device_type][device_id]['name'] == name:
             return
         return self.send_command(command)
-
 
     def change_hardware_device(self, device_type, device_id, device):
 
@@ -387,28 +386,26 @@ class Client:
             return
         return self.send_command(command)
 
-
     def list_hardware_devices(self, device_type):
         if device_type not in ['sinks', 'sources']:
             return
 
         return json.loads(self.send_command(f'get-hd {device_type}'))
 
-
     def list_virtual_devices(self, device_type):
         if device_type not in ['sinks', 'sources']:
             return
 
-        ret =self.send_command(f'get-vd {device_type}') 
+        ret = self.send_command(f'get-vd {device_type}')
         return json.loads(ret)
 
     # get sink-input and source-output list
     def list_apps(self, device_type):
         command = f'get-app-list {device_type}'
         try:
-            ret_message = json.loads(self.send_command(command))
-            return ret_message
-        except:
+            ret_message = self.send_command(command)
+            return json.loads(ret_message)
+        except Exception:
             print('invalid json from server')
             return False
             raise

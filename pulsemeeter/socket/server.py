@@ -31,7 +31,7 @@ class Server:
         audio_server = Pulse
 
         self.config = self.read_config()
-        self.audio_server = audio_server(self.config, loglevel=0)
+        self.audio_server = audio_server(self.config, loglevel=2)
         self.create_command_dict()
 
         # the socket only needs to be seen by the listener thread
@@ -95,6 +95,7 @@ class Server:
                         notify_all = True
                         sender_id = 9999
 
+                    # print(ret_message)
                     if ret_message:
                         encoded_msg = ret_message.encode()
 
@@ -433,7 +434,7 @@ class Server:
             'volume': {
                 'function': self.audio_server.volume,
                 'notify': True,
-                'regex': '(a|b|hi|vi) [1-9]+ [+-]?[1-9]+$'
+                'regex': '(a|b|hi|vi) [1-9]+ [+-]?[0-9]+$'
             },
 
             # ARGS: id vol [sink-input|source-output]
@@ -441,7 +442,7 @@ class Server:
             'app-volume': {
                 'function': self.audio_server.app_volume,
                 'notify': True,
-                'regex': '[1-9]+ [1-9]+ (sink-input|source-output)$'
+                'regex': '[1-9]+ [0-9]+ (sink-input|source-output)$'
             },
 
             # ARGS: id device [sink-input|source-output]

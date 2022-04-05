@@ -11,7 +11,7 @@ with open('pulsemeeter/settings.py') as f:
 
 VERSION = __version__
 README = (pathlib.Path(__file__).parent / "README.md").read_text()
-DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']),]
+DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']), ]
 REQUIREMENTS = []
 
 with open('requirements.txt') as file:
@@ -39,7 +39,7 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=['pulsemeeter','pulsemeeter.interface','pulsemeeter.socket','pulsemeeter.backends'],
+    packages=['pulsemeeter', 'pulsemeeter.interface', 'pulsemeeter.socket', 'pulsemeeter.backends'],
     install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
     entry_points={
