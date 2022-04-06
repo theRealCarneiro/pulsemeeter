@@ -104,23 +104,26 @@ class Pulse:
             # if device does not have a name
             if self.config['vi'][device_id]['name'] != '':
 
-                # if device is available on pulse
-                if not re.search(self.config['vi'][device_id]['name'], sink_list):
+                # external key means that the user is responsible for managing that sink
+                if self.config['vi'][device_id]['external'] is False:
 
-                    # set sink properties
-                    sink = self.config['vi'][device_id]['name']
-                    channels = ''
-                    channel_map = ''
-                    output_type = 'sink'
+                    # if device is available on pulse
+                    if not re.search(self.config['vi'][device_id]['name'], sink_list):
 
-                    # for jack sinks
-                    if self.config['jack']['enable'] is True:
-                        channels = self.config['vi'][device_id]['channels']
-                        channel_map = self.config['vi'][device_id]['channel_map']
-                        channel_map = ','.join(channel_map) if len(channel_map) > 0 else ','.join(self.channels[:channels])
-                        output_type = 'jack-sink'
+                        # set sink properties
+                        sink = self.config['vi'][device_id]['name']
+                        channels = ''
+                        channel_map = ''
+                        output_type = 'sink'
 
-                    command += f"pmctl init {output_type} {sink} {channels} {channel_map}\n"
+                        # for jack sinks
+                        if self.config['jack']['enable'] is True:
+                            channels = self.config['vi'][device_id]['channels']
+                            channel_map = self.config['vi'][device_id]['channel_map']
+                            channel_map = ','.join(channel_map) if len(channel_map) > 0 else ','.join(self.channels[:channels])
+                            output_type = 'jack-sink'
+
+                        command += f"pmctl init {output_type} {sink} {channels} {channel_map}\n"
 
         if self.loglevel > 1: print(command)
         return command
@@ -658,6 +661,10 @@ class Pulse:
     def toggle_virtual_device(self, device_type, device_id, status=False, disconnect=True, run_command=True):
         command = ''
         device_config = self.config[device_type][device_id]
+
+        if device_config['external'] is True:
+            return ''
+
         name = device_config["name"]
         if name == '': return ''
         status = str2bool(status)

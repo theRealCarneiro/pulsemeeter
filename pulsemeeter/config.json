@@ -64,6 +64,7 @@
 		"1": {
 			"name": "Virtual_Input_1",
 			"primary": false,
+			"external": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -91,6 +92,7 @@
 		"2": {
 			"name": "Virtual_Input_2",
 			"primary": false,
+			"external": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -118,6 +120,7 @@
 		"3": {
 			"name": "Virtual_Input_3",
 			"primary": false,
+			"external": true,
 			"a1": false,
 			"a2": false,
 			"a3": false,
