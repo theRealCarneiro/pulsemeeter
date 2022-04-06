@@ -68,7 +68,7 @@ class EqPopover():
         self.apply_eq_button = self.builder.get_object('apply_eq_button')
         self.reset_eq_button = self.builder.get_object('reset_eq_button')
 
-        control = self.device_config['eq_control'] 
+        control = self.device_config['eq_control']
         j = 0
         if control != '':
             for i in control.split(','):
@@ -86,8 +86,6 @@ class EqPopover():
         self.builder.connect_signals(self)
 
     def apply_eq(self, widget, output_type, output_id):
-        # if self.device_config['use_eq'] == False:
-            # return
         control=''
         for i in self.eq:
             control = control + ',' + str(i.get_value())

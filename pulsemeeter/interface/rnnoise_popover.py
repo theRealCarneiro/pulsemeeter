@@ -50,10 +50,9 @@ class RnnoisePopover():
         control = int(self.rnnoise_threshold_adjust.get_value())
         # self.device_config['rnnoise_control'] = val
 
-        if self.device_config['use_rnnoise'] == False:
+        if self.device_config['use_rnnoise'] is False:
             return
 
         self.sock.rnnoise(device_id, 'set', control, latency)
         # sink_name = self.device_config['rnnoise_name']
         # print(command)
-
