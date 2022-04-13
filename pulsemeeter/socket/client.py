@@ -82,7 +82,10 @@ class Client:
                 if self.exit_flag is True: break
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise ConnectionError
-                sender_id = int(sender_id)
+                try:
+                    sender_id = int(sender_id)
+                except ValueError:
+                    sender_id = None
 
                 # length of the message
                 msg_len = self.sock.recv(4)
@@ -119,7 +122,10 @@ class Client:
                 # get the id of the client that sent the message
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise
-                sender_id = int(sender_id)
+                try:
+                    sender_id = int(sender_id)
+                except ValueError:
+                    sender_id = None
 
                 # length of the message
                 msg_len = self.sock.recv(4)

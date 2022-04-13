@@ -85,15 +85,15 @@ class Server:
                     del self.client_handler_connections[message[1]]
                     self.client_handler_threads.pop(message[1]).join()
 
-                elif message[0] == 'command' or message[0] == 'exit':
+                elif message[0] in ['command', 'exit', 'audio_server']:
 
-                    if message[0] != 'exit':
+                    if message[0] == 'command':
                         ret_message, notify_all = self.handle_command(message[2])
                         sender_id = message[1]
                     else:
-                        ret_message = 'exit'
+                        ret_message = message[0] if message[0] == 'exit' else message[2]
                         notify_all = True
-                        sender_id = 9999
+                        sender_id = None
 
                     # print(ret_message)
                     if ret_message:
