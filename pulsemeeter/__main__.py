@@ -356,7 +356,7 @@ def arg_interpreter(args, parser):
         # commands which need a client
         try:
             client = Client()
-        except:
+        except Exception:
             print(color.red('error: daemon is not started. Use "pulsemeeter daemon" to start it.'))
         else:
             # debug page
