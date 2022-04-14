@@ -774,12 +774,12 @@ class Pulse:
             devices = cmd(command)
             try:
                 jason = json.loads(devices)
-            except:
+            except Exception:
                 print(f'ERROR: invalid json {devices}')
                 return 'empty'
 
             # if using jack, also list groups
-            if self.config['jack']['enable'] == True:
+            if self.config['jack']['enable'] is True:
                 group_type = 'input_groups' if kind == 'sources' else 'output_groups'
                 for group in self.config['jack'][group_type]:
                     channels = self.config['jack'][group_type][group]
