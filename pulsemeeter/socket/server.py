@@ -5,7 +5,11 @@ import sys
 import os
 import signal
 import threading
+import codecs
+import traceback
 from queue import SimpleQueue
+
+import asyncio
 
 from ..backends import Pulse
 from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
@@ -13,9 +17,8 @@ from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __v
 
 LISTENER_TIMEOUT = 2
 
-
 class Server:
-    def __init__(self):
+    def __init__(self, init_audio_server=True):
 
         # delete socket file if exists
         try:
@@ -26,13 +29,15 @@ class Server:
             if os.path.exists(SOCK_FILE):
                 raise
 
+
         # audio server can be pulse or pipe, so just use a generic name
         self.closed = False
         audio_server = Pulse
 
         self.config = self.read_config()
-        self.audio_server = audio_server(self.config, loglevel=0)
+        self.audio_server = audio_server(self.config, loglevel=0, init=init_audio_server)
         self.create_command_dict()
+
 
         # the socket only needs to be seen by the listener thread
         # self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -53,6 +58,9 @@ class Server:
 
     def start_server(self, daemon=False):
 
+        # the asyncio loop
+        self.async_loop = asyncio.get_event_loop()
+
         # Start listener thread
         self.listener_thread = threading.Thread(target=self.query_clients)
         self.listener_thread.start()
@@ -60,6 +68,13 @@ class Server:
         self.main_loop_thread = threading.Thread(target=self.main_loop)
         self.main_loop_thread.start()
 
+        # add the async task to listen to pulseaudio events
+        self.pulse_listener_task = asyncio.run_coroutine_threadsafe(self.pulse_listener(), self.async_loop)
+
+        # run the async code in thread
+        self.pulse_listener_thread = threading.Thread(target=self.async_loop.run_forever, daemon=True)
+        self.pulse_listener_thread.start()
+        
         # Register signal handlers
         if daemon:
             signal.signal(signal.SIGINT, self.handle_exit_signal)
@@ -67,9 +82,9 @@ class Server:
 
         # self.notify_thread = threading.Thread(target=self.event_notify)
         # self.notify_thread.start()
-
+    
+    
     def main_loop(self):
-
         # Make sure that even in the event of an error, cleanup still happens
         try:
             # Listen for commands
@@ -105,14 +120,13 @@ class Server:
             # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
             # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
             # And maybe wait a bit for that to happen
-
             # Close connections and join threads
             print('closing client handler threads...')
             for conn in self.client_handler_connections.values():
                 # only close open connections
                 if conn.fileno() != -1:
                     conn.shutdown(socket.SHUT_RDWR)
-
+            
             # Not sure if joining the client handler threads is actually necessary since we're stopping anyway and the
             # client handler threads are in daemon mode
             for thread in self.client_handler_threads.values():
@@ -120,15 +134,35 @@ class Server:
 
         finally:
             # Set the exit flag and wait for the listener thread to timeout
-            print(f'sending exit signal to listener thread, it should exit within {LISTENER_TIMEOUT} seconds...')
+            print(f'sending exit signal to listener threads, they should exit within {LISTENER_TIMEOUT} seconds...')
             self.exit_flag = True
-            self.listener_thread.join()
+            try:
+                self.listener_thread.join()
+            except:
+                print('Could not exit client listener')
+            
+            try:
+                self.pulse_listener_task.cancel()                    
+                self.async_loop.stop()
+                self.pulse_listener_thread.join()
+            except:
+                print('could not exit pulse listener')
+
 
             # Call any code to clean up virtual devices or similar
             self.close_server()
-
+    
+    def to_bytes(self, s):
+        if type(s) is bytes:
+            return s
+        elif type(s) is str or (sys.version_info[0] < 3 and type(s) is unicode):
+            return codecs.encode(s, 'utf-8')
+        else:
+            raise TypeError("Expected bytes or string, but got %s." % type(s))
+    
     def send_message(self, ret_message, message, sender_id, notify_all):
-        encoded_msg = ret_message.encode()
+        encoded_msg = self.to_bytes(ret_message)
+        # encoded_msg = ret_message.encode()
 
         # notify observers
         client_list = []
@@ -152,6 +186,86 @@ class Server:
                 conn.sendall(encoded_msg)  # command
             except OSError:
                 print(f'client {sender_id} already disconnected, message not sent')
+    
+    def config_device_from_name(self, name):
+        '''
+        searches for device with name(pulseaudio device) and returns tuple:
+        - device_type
+        - device_id
+        '''
+        for device_type in ['a', 'b', 'hi', 'vi']:
+            # iterate through all devices (can scale with device count)
+            device_id_range = range(1, len(self.config[device_type])+1)
+            for device_id in device_id_range:
+                device_id = str(device_id)
+                device_config = self.config[device_type][device_id]
+                if device_config["name"] == name:
+                    return {
+                            "device_type": device_type, 
+                            "device_id": device_id
+                            }
+        return
+    
+    # thanks EnumValue
+    def fa_enum_to_string(self, argument):
+        '''facility EnumValue to native string'''
+        case = {
+            'client',
+            'sink_input',
+            'source_output',
+            'module',
+            'sink',
+            'source'
+        }
+        for case in case:
+            if argument == case: return case
+
+    async def pulse_listener_handler(self, event):
+        '''
+        handles incoming events from the pulseaudio listener
+        (updates config if needed and alerts clients)
+        '''
+        if event.t == 'change':
+            device = await self.audio_server.device_from_event(event)
+            if device is not None:
+                pulsem_device = self.config_device_from_name(device.name) 
+                if pulsem_device is not None:
+                    device_config = self.config[pulsem_device["device_type"]][pulsem_device["device_id"]]
+                    # read the volume data from config and from pulseaudio
+                    config_volume = device_config["vol"]
+                    device_volume = int(round(device.volume.value_flat * 100))
+
+                    # compare config value with pulseaudio value
+                    if config_volume != device_volume:
+                        command = f'volume {pulsem_device["device_type"]} {pulsem_device["device_id"]} {device_volume}'
+                        self.command_queue.put(('audio_server', None, command))
+                        device_config["vol"] = device_volume
+                        return
+                    
+                    config_mute = device_config["mute"]
+                    device_mute = bool(device.mute)
+
+                    if config_mute != device_mute:
+                        command = f'mute {pulsem_device["device_type"]} {pulsem_device["device_id"]} {device_mute}'
+                        self.command_queue.put(('audio_server', None, command))
+                        device_config["mute"] = device_mute
+                        return
+                    #TODO: Maybe add detection for connection changes
+
+        elif event.t in ['new', 'remove']:
+            index = event.index
+            facility = self.fa_enum_to_string(event.facility)
+            if event.t == 'new':
+                command = f'device-new {index} {facility}'
+            elif event.t == 'remove':
+                command = f'device-remove {index} {facility}'
+            self.command_queue.put(('audio_server', None, command))
+    
+    async def pulse_listener(self):
+        '''listener for pulseaudio events'''
+        async with self.audio_server.pulsectl_async as pulse:
+            async for event in pulse.subscribe_events('all'):
+                await self.pulse_listener_handler(event)
 
     def is_running(self):
         try:
@@ -161,7 +275,7 @@ class Server:
             # if pid of running instance
             if os.kill(pid, 0) is not False:
                 return True
-
+            
             # if pid is of a closed instance
             else:
                 # write pid to file
@@ -175,8 +289,9 @@ class Server:
                 f.write(f'{os.getpid()}\n')
             return False
 
-    # function to register as a signal handler to gracefully exit
+
     def handle_exit_signal(self, signum=None, frame=None):
+        '''function to register as a signal handler to gracefully exit'''
         self.command_queue.put(('exit',))
 
     # TODO: if the daemon should clean up its virtual devices on exit, do that here
@@ -187,8 +302,8 @@ class Server:
             self.audio_server.cleanup()
         self.closed = True
 
-    # this function handles the connection requests
     def query_clients(self):
+        '''handles connection requests'''
         # loop to get new connections
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
             s.settimeout(LISTENER_TIMEOUT)
@@ -208,7 +323,7 @@ class Server:
                     event_queue = SimpleQueue()
                     self.client_handler_connections[id] = conn
                     self.event_queues[id] = event_queue
-                    thread = threading.Thread(target=self.listen_to_client,
+                    thread = threading.Thread(target=self.listen_to_client, 
                             args=(conn, event_queue, id), daemon=True)
                     thread.start()
                     self.client_handler_threads[id] = thread
@@ -221,8 +336,8 @@ class Server:
                     if self.exit_flag:
                         break
 
-    # get data stream and pass it into command handling function
     def listen_to_client(self, conn, event_queue, id):
+        '''get data stream and pass it into command handling function'''
         with conn:
             while True:
                 try:
@@ -247,7 +362,9 @@ class Server:
                     self.client_exit_queue.put(id)
                     break
 
+    
     def handle_command(self, data):
+        '''handles incoming commands'''
         decoded_data = data.decode()
         msg = tuple(decoded_data.split(' '))
         str_args = re.sub(r'^.*?\ ', '', decoded_data)
@@ -265,22 +382,22 @@ class Server:
         try:
             # verify that command existes
             if command not in self.commands:
-                raise Exception('ERROR command not found')
+                raise Exception(f'[ERROR] command \'{command}\' not found')
 
             if not re.match(self.commands[command]['regex'], str_args):
-                raise Exception('ERROR invalid arguments')
+                raise Exception('[ERROR] invalid arguments')
 
             function = self.commands[command]['function']
             notify = self.commands[command]['notify']
             ret_msg = function(*args)
 
             if not ret_msg:
-                raise Exception('ERROR internal error')
+                raise Exception('[ERROR] internal error')
 
             return (ret_msg, notify,)
 
         except TypeError:
-            return ('ERROR invalid number of arguments', False)
+            return ('[ERROR] invalid number of arguments', False)
 
         except Exception as ex:
             return (str(ex), False)
@@ -291,7 +408,7 @@ class Server:
             try:
                 config = json.load(open(CONFIG_FILE))
             except Exception:
-                print('ERROR loading config file')
+                print('[ERROR] loading config file')
                 sys.exit(1)
 
             # if config is outdated it will try to add missing keys
@@ -330,6 +447,7 @@ class Server:
                 return config
             else:
                 return json.dumps(config, ensure_ascii=False)
+
 
     def save_config(self, config=None):
         if config is None: config = self.config
@@ -496,6 +614,18 @@ class Server:
                 'function': self.set_tray,
                 'notify': True,
                 'regex': f'{state}$'
+            },
+
+            'device-new': {
+                'function': self.audio_server.device_new,
+                'notify': True,
+                'regex': ''
+            },
+
+            'device-remove': {
+                'function': self.audio_server.device_remove,
+                'notify': True,
+                'regex': ''
             },
 
             # not ready

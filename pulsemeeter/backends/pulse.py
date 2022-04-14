@@ -3,11 +3,13 @@ import json
 import re
 import sys
 import subprocess
-import pulsectl
+import traceback
 
+import pulsectl
+import pulsectl_asyncio
 
 class Pulse:
-    def __init__(self, config, loglevel=0):
+    def __init__(self, config, loglevel=0, init=True):
         self.config = config
         self.loglevel = loglevel
 
@@ -22,24 +24,29 @@ class Pulse:
                          'side-right', 'aux0', 'aux1', 'aux2', 'aux3'
                          ]
         # self.read_config()
-        self.pulsectl = pulsectl.Pulse('pulsemeeter')
         # if init == 'cmd': return
-        command = ''
-        command += self.start_sinks()
-        command += self.start_sources()
-        command += self.start_eqs()
-        command += self.start_rnnoise()
-        command += self.start_connections()
-        command += self.start_primarys()
-        # command += self.start_mute()
 
+
+        self.pulsectl_async = pulsectl_asyncio.PulseAsync('pulsemeeter-listener')
+        self.pulsectl = pulsectl.Pulse('pulsemeeeter')
+
+        command = ''
+        if init is True:
+            command += self.start_sinks()
+            command += self.start_sources()
+            command += self.start_eqs()
+            command += self.start_rnnoise()
+            command += self.start_connections()
+            command += self.start_primarys()
+        
         # print(command)
 
         os.popen(command)
 
         # self.restart_window = False
+    
 
-    # get the correct device to connect to, e.g. include .monitor in a
+    # get the correct device to connect to, e.g. include .monitor in a 
     # virtual sink name, or use a ladspa sink for a hardware source
     def get_correct_device(self, index, conn_type):
 
@@ -93,6 +100,7 @@ class Pulse:
                     name = name + ".monitor"
                 return name
 
+
     # init virtual inputs
     def start_sinks(self):
         command = ''
@@ -103,7 +111,6 @@ class Pulse:
 
             # if device does not have a name
             if self.config['vi'][device_id]['name'] != '':
-
                 # external key means that the user is responsible for managing that sink
                 if self.config['vi'][device_id]['external'] is False:
 
@@ -156,8 +163,10 @@ class Pulse:
 
                     command += f"pmctl init {input_type} {source} {channels} {channel_map}\n"
 
+
         if self.loglevel > 1: print(command)
         return command
+
 
     # creates all ladspa sinks for eq plugin
     def start_eqs(self):
@@ -169,7 +178,7 @@ class Pulse:
                 if self.config[output_type][output_id]['use_eq'] is True:
 
                     # create eq sink
-                    command += self.eq(output_type, output_id, status=True,
+                    command += self.eq(output_type, output_id, status=True, 
                             reconnect=False, change_config=False, run_command=False)
 
         return command
@@ -184,7 +193,7 @@ class Pulse:
             if self.config[input_type][input_id]['use_rnnoise'] is True:
 
                 # create rnnoise sink
-                command += self.rnnoise(input_id, status=True,
+                command += self.rnnoise(input_id, status=True, 
                         reconnect=False, change_config=False, run_command=False)
         return command
 
@@ -204,7 +213,7 @@ class Pulse:
             for device_id in self.config[device_type]:
                 if self.config[device_type][device_id]['primary'] is True:
                     command += self.set_primary(device_type, device_id, run_command=False)
-
+                
         if self.loglevel > 1: print(command)
         return command
 
@@ -226,7 +235,7 @@ class Pulse:
         for hi_id in self.config['hi']:
             hi_config = self.config['hi'][hi_id]
             if hi_config['use_rnnoise']:
-                command += self.rnnoise(hi_id, status=False,
+                command += self.rnnoise(hi_id, status=False, 
                         reconnect=False, change_config=False, run_command=False)
 
         # remove eqs
@@ -235,7 +244,7 @@ class Pulse:
             for output_id in self.config[output_type]:
                 output_config = self.config[output_type][output_id]
                 if output_config['use_eq']:
-                    command += self.eq(output_type, output_id, status=False,
+                    command += self.eq(output_type, output_id, status=False, 
                             reconnect=False, change_config=False, run_command=False)
 
         # remove virtual devices
@@ -244,8 +253,25 @@ class Pulse:
             for device_id in self.config[device_type]:
                 command += self.toggle_virtual_device(device_type, device_id, status=False, disconnect=False, run_command=False)
 
+
         os.popen(command)
 
+
+    async def device_from_event(self, event):
+        '''
+        It searches in the facility for the specific device with the index and returns this device. (async function)
+        '''
+        if event.facility == 'sink':
+            dev_list = await self.pulsectl_async.sink_list()
+        elif event.facility == 'source':
+            dev_list = await self.pulsectl_async.source_list()
+        else:
+            return
+        
+        for device in dev_list:
+            if device.index == event.index:
+                return device
+    
     # creates a ladspa sink with rnnoise for a given hardware input
     def rnnoise(self, input_id, status=None, control=None, latency=None, reconnect=True,
             change_config=True, run_command=True, ladspa_sink=None):
@@ -259,7 +285,7 @@ class Pulse:
             latency = source_config['rnnoise_latency']
 
         if control is None:
-            control = source_config['rnnoise_control']
+            control = source_config['rnnoise_control'] 
             control == 95 if control == '' else int(control)
 
         # set name for the plugin sink
@@ -281,7 +307,7 @@ class Pulse:
         # create ladspa sink
         command = f'pmctl rnnoise {ladspa_sink} {source} {control} {conn_status} {latency}\n'
 
-        if change_config:
+        if change_config: 
             if status != 'set': source_config['use_rnnoise'] = status
             source_config['rnnoise_latency'] = int(latency)
             source_config['rnnoise_control'] = int(control)
@@ -330,6 +356,7 @@ class Pulse:
         sink_config = self.config[output_type][output_id]
         master = self.get_correct_device([output_type, output_id], 'sink')
 
+
         # set name for the plugin sink
         if ladspa_sink is None: ladspa_sink = f'{output_type}{output_id}_eq'
 
@@ -350,13 +377,13 @@ class Pulse:
         else:
             conn_status = str2bool(status)
 
-        if change_config:
+        if change_config: 
             if status != 'set': sink_config['use_eq'] = conn_status
             sink_config['eq_control'] = control
 
         if status == sink_config['use_eq'] is False:
             return f'eq {output_type} {output_id} {conn_status} {control}'
-
+        
         # create ladspa sink
         if conn_status:
             command = f'pmctl eq init {ladspa_sink} {master} {control}\n'
@@ -376,6 +403,7 @@ class Pulse:
                     if self.config[input_type][input_id][sink] is True:
                         vi = self.get_correct_device([input_type, input_id], 'source')
 
+
                         # disconnect source from sinks, then connect ladspa sink to sinks
                         if status == 'set' and conn_status:
                             command += f'pmctl disconnect {vi} {ladspa_sink}\n'
@@ -390,6 +418,7 @@ class Pulse:
                         else:
                             command += f'pmctl disconnect {vi} {ladspa_sink}\n'
                             command += f'pmctl connect {vi} {master}\n'
+
 
         if run_command:
             if self.loglevel > 1: print(command)
@@ -409,18 +438,18 @@ class Pulse:
         output_type = ''
         output_id = ''
 
-        # if trying to reset a sink
+        # if trying to reset a sink 
         if device_type in sinks:
             device_types = sources
             output_type = device_type
             output_id = device_id
 
-        # if trying to reset a source
+        # if trying to reset a source 
         elif device_type in sources:
             device_types = sinks
             input_type = device_type
             input_id = device_id
-
+        
         else: return 'invalid device'
 
         # reseting the values here just to be clear that they're different now
@@ -431,12 +460,12 @@ class Pulse:
         for device_type in device_types:
             for device_id in self.config[device_type]:
 
-                # if trying to reset a sink
+                # if trying to reset a sink 
                 if device_type in sources:
                     input_type = device_type
                     input_id = device_id
 
-                # if trying to reset a source
+                # if trying to reset a source 
                 else:
                     output_type = device_type
                     output_id = device_id
@@ -454,7 +483,7 @@ class Pulse:
         return command
 
     # connects an input to an output
-    def connect(self, input_type, input_id, output_type, output_id,
+    def connect(self, input_type, input_id, output_type, output_id, 
             status=None, latency=None, run_command=True, change_state=True, init=False):
 
         source_config = self.config[input_type][input_id]
@@ -592,17 +621,19 @@ class Pulse:
         # if chosen device is not an empty name
         if name != '':
             self.toggle_hardware_device(output_type, output_id, True)
-            # self.config[output_type][output_id]['jack'] = re.search('JACK:',
+            # self.config[output_type][output_id]['jack'] = re.search('JACK:', 
                     # new_device['description'])
-            # self.config[output_type][output_id]['jack'] = name in
+            # self.config[output_type][output_id]['jack'] = name in  
         else:
             name = None
 
         return f'change-hd {output_type} {output_id} {name}'
 
-    # this will cleanup a hardware device and will not affect the config
-    # useful when e.g. changing the device used in a hardware input/output strip
     def toggle_hardware_device(self, device_type, device_id, status, run_command=True):
+        '''
+        this will cleanup a hardware device and will not affect the config
+        useful when e.g. changing the device used in a hardware input/output strip
+        '''
         device_config = self.config[device_type][device_id]
         command = ''
         status = str2bool(status)
@@ -681,6 +712,7 @@ class Pulse:
         if not status:
             command += f'pmctl remove {name}\n'
 
+
         if self.loglevel > 1: print(command)
         if run_command: os.popen(command)
         return command
@@ -695,7 +727,7 @@ class Pulse:
             # return False
 
         if old_name != '':
-            command += self.toggle_virtual_device(device_type, device_id, status=False,
+            command += self.toggle_virtual_device(device_type, device_id, status=False, 
                     run_command=False)
 
         if new_name != '':
@@ -737,26 +769,30 @@ class Pulse:
 
     # get list of cards
     def get_hardware_devices(self, kind):
-        command = f"pmctl list {kind}"
-        devices = cmd(command)
         try:
-            jason = json.loads(devices)
-        except Exception:
-            print(f'ERROR: invalid json {devices}')
+            command = f"pmctl list {kind}"
+            devices = cmd(command)
+            try:
+                jason = json.loads(devices)
+            except:
+                print(f'ERROR: invalid json {devices}')
+                return 'empty'
 
-        # if using jack, also list groups
-        if self.config['jack']['enable'] is True:
-            group_type = 'input_groups' if kind == 'sources' else 'output_groups'
-            for group in self.config['jack'][group_type]:
-                channels = self.config['jack'][group_type][group]
-                jason.append({'name': group, 'description': f'JACK:{group}{channels}'})
-                # devices_concat.append()
+            # if using jack, also list groups
+            if self.config['jack']['enable'] == True:
+                group_type = 'input_groups' if kind == 'sources' else 'output_groups'
+                for group in self.config['jack'][group_type]:
+                    channels = self.config['jack'][group_type][group]
+                    jason.append({'name': group, 'description': f'JACK:{group}{channels}'})
+                    # devices_concat.append()
 
-        if kind == 'sources':
-            self.source_list = jason
-        else:
-            self.sink_list = jason
-        return json.dumps(jason, ensure_ascii=False)
+            if kind == 'sources':
+                self.source_list = jason
+            else:
+                self.sink_list = jason
+            return json.dumps(jason, ensure_ascii=False)
+        except:
+            traceback.print_exc()
 
     def mute(self, device_type, device_id, state=None, run_command=True):
         device_config = self.config[device_type][device_id]
@@ -778,28 +814,28 @@ class Pulse:
         conn_status = 1 if state else 0
         command = f"pmctl mute {device} {name} {conn_status}\n"
 
-        if run_command:
+        if run_command: 
             if self.loglevel > 1: print(command)
             os.popen(command)
             return f'mute {device_type} {device_id} {state}'
         else:
             return command
-
-    # set a device as primary (only vi and b)
+    
     def set_primary(self, device_type, device_id, run_command=True):
+        '''set a device as primary (only vi and b)'''
         name = self.config[device_type][device_id]['name']
         for i in self.config[device_type]:
             self.config[device_type][i]['primary'] = False if i != device_id else True
 
         device = 'sink' if device_type == 'vi' else 'source'
         command = f'pmctl set-primary {device} {name}\n'
-        if run_command:
+        if run_command: 
             os.popen(command)
             return f'primary {device_type} {device_id}'
         return command
 
-    # get volume from source outputs and sink inputs
     def get_app_stream_volume(self, id, stream_type):
+        '''get volume from source outputs and sink inputs'''
         command = f'pmctl get-{stream_type}-volume {id}'
         return cmd(command)
 
@@ -828,7 +864,7 @@ class Pulse:
 
         device_config['vol'] = val
         name = device_config['name']
-
+        
         # get device info from pulsectl
         if device_type in ['a', 'vi']:
             device = self.pulsectl.get_sink_by_name(name)
@@ -840,6 +876,18 @@ class Pulse:
         volume.value_flat = val / 100
         self.pulsectl.volume_set(device, volume)
         return f'volume {device_type} {device_id} {val}'
+    
+    def device_new(self, index, facility):
+        if index != 'None' and facility != 'None':
+            return f'device-new {index} {facility}'
+        else:
+            return ''
+    
+    def device_remove(self, index, facility):
+        if index != 'None' and facility != 'None':
+            return f'device-remove {index} {facility}'
+        else:
+            return ''
 
     # sink input and source output volumes
     def app_volume(self, id, val, stream_type):
@@ -849,10 +897,10 @@ class Pulse:
             # check if is an absolute number
             if val.isdigit():
                 val = int(val)
-            else:
+            else: 
                 return False
 
-            # if not an absolute number, add it to current volume
+            # if not an absolute number, add it to current volume 
             # else:
                 # cur_vol = cmd('pmctl get-{stream_type}-volume {id}')
                 # val = device_config['vol'] + int(val)
@@ -883,7 +931,7 @@ class Pulse:
             try:
                 json.loads(devices)
             except Exception:
-                print(f'ERROR: invalid json {devices}')
+                print(f'[ERROR] invalid json {devices}')
                 return 'ERROR: invalid json'
             return devices
         else: return '[]'
@@ -899,13 +947,13 @@ class Pulse:
         sys.stdout.flush()
         env = os.environ
         env['LC_ALL'] = 'C'
-        self.MyOut = subprocess.Popen(command, env=env,
-            stdout=subprocess.PIPE,
+        self.MyOut = subprocess.Popen(command, env=env, 
+            stdout=subprocess.PIPE, 
             stderr=subprocess.STDOUT,
             universal_newlines=True)
 
         for stdout_line in iter(self.MyOut.stdout.readline, ""):
-            yield stdout_line
+            yield stdout_line 
 
         self.MyOut.stdout.close()
         return_code = self.MyOut.wait()
@@ -918,17 +966,15 @@ class Pulse:
     def jack_get_ports(self):
         return cmd('pmctl jack-system-ports')
 
-
 def cmd(command):
     sys.stdout.flush()
-    p = subprocess.Popen(command.split(' '),
-        stdout=subprocess.PIPE,
+    p = subprocess.Popen(command.split(' '), 
+        stdout=subprocess.PIPE, 
         stderr=subprocess.STDOUT)
     stdout, stderr = p.communicate()
     if p.returncode:
         raise
     return stdout.decode()
-
 
 def str2bool(v):
     if type(v) == bool:

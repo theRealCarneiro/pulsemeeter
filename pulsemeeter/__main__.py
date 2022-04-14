@@ -5,12 +5,16 @@ import subprocess
 import argparse
 import re
 import platform
+import traceback
 from .settings import CONFIG_FILE, __version__
+
 from . import MainWindow
 from . import Client, Server
+
 from gi import require_version as gi_require_version
+
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk  # type: ignore
+from gi.repository import Gtk # type: ignore
 
 # change these to change all occurences of these values (also for checking)
 true_values = ('true', '1', 'on')
@@ -21,7 +25,6 @@ all_devices = ('hi', 'vi', 'a', 'b')
 
 all_get = ('volume', 'mute', 'primary', 'name', 'eq', 'rnnoise', 'connect')
 
-
 # PRETTY PRINT
 def pprint_bool_options(style='simple'):
     # pretty print boolean values
@@ -29,7 +32,6 @@ def pprint_bool_options(style='simple'):
         return ' | '.join(map(str, true_values)) + '\n' + ' | '.join(map(str, false_values))
     elif style == 'simple':
         return f'[{"|".join(map(str, true_values))}] | [{"|".join(map(str, false_values))}]'
-
 
 def pprint_device_options(allowed_devices=all_devices):
     # pretty print devices
@@ -54,6 +56,9 @@ class help:
         EQ = 'Turn on/off eq and change values. To toggle only include the device'
         RENAME = 'rename device'
         GET = 'eg. pulsemeeter get volume a1'
+        DAEMON = 'Start the server and open the tray.' 
+        INIT = 'Just start devices and connections.'
+        EXIT = 'Close the server and with that all clients (including the UI).'
 
     class usage:
         RNNOISE = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value]'
@@ -68,7 +73,6 @@ class help:
         RENAME = 'name'
         GET = 'value to get'
         GET_DEVICE2 = 'only used for connect'
-
 
 # COLORED TEXT
 class format:
@@ -225,7 +229,7 @@ def convert_device(args, parser, device_type='general',
             if con_in is None and con_out is None:
                 inputd = args.input
                 outputd = args.output
-            else:
+            else:  
                 inputd = con_in
                 outputd = con_out
             in_device = re.match(r'^(hi|vi)', inputd).group()
@@ -239,17 +243,14 @@ def convert_device(args, parser, device_type='general',
     else:
         parser.error(f'internal error: unknown device convert "{device_type}".')
 
-
 # PARSER GENERATORS
 device_arg = {'type': str}
-
 
 # generic device = device + [value]
 def parser_generic(parser, value_type, help='', device_help=all_devices):
     parser.add_argument('device', **device_arg, help=pprint_device_options(device_help))
     if value_type is not None:
         parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
-
 
 # source -> sink (only used for connect)
 def parser_source_to_sink(parser, value_type, help='',
@@ -259,7 +260,6 @@ def parser_source_to_sink(parser, value_type, help='',
     parser.add_argument('output', **device_arg, help=help_output)
     parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
-
 # only eq and rnnoise
 def parser_eq_rnnoise(parser, type):
     if type == 'eq':
@@ -268,10 +268,10 @@ def parser_eq_rnnoise(parser, type):
     elif type == 'rnnoise':
         parser.add_argument('device', **device_arg, help=pprint_device_options('hi'))
         value_help = 'Only needed when using set as state.'
+    parser.add_argument('state', type=str, choices=(*true_values, *false_values, 'set', None), default=None, nargs='?', help='')
     parser.add_argument('state', type=str, choices=(*true_values, *false_values, 'set', None),
             default=None, nargs='?', help='')
     parser.add_argument('value', type=str, default=None, nargs='?', help=value_help)
-
 
 def parser_get(parser, type):
     parser.add_argument('value', type=type, help=help.value.GET, choices=all_get)
@@ -283,6 +283,7 @@ def parser_get(parser, type):
 def create_parser_args():
     color = format()
 
+    parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s', description=(f'Use "{color.green("%(prog)s [command] -h")}" to get usage information. Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
     parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s',
             description=(f'Use "{color.green("%(prog)s [command] -h")}" to get usage information.',
                 'Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
@@ -294,9 +295,9 @@ def create_parser_args():
     subparsers = parser.add_subparsers(dest='command')
 
     # commands to only show in help menu
-    subparsers.add_parser('daemon')
-    subparsers.add_parser('init')
-    subparsers.add_parser('exit')
+    subparsers.add_parser('daemon', description=help.description.DAEMON)
+    subparsers.add_parser('init', description=help.description.INIT)
+    subparsers.add_parser('exit', description=help.description.EXIT)
 
     # get (retrieve values)
     parser_get(subparsers.add_parser('get', description=help.description.GET), str)
@@ -335,6 +336,7 @@ def arg_interpreter(args, parser):
             print(f'Pulseaudio: {color.green("running")}')
         except Exception:
             print(f'Pulseaudio: {color.red("not running")}')
+        
 
         try:
             audio_server = os.popen('pactl info | grep "Server Name"').read()
@@ -342,6 +344,7 @@ def arg_interpreter(args, parser):
             audio_server = audio_server.replace('\n', '')
         except Exception:
             audio_server = color.red('could not be determined')
+      
 
         print(f'audio server: {color.bold(audio_server)}')
         print(f'Pulsemeeter version: {color.bold(__version__)}')
@@ -353,7 +356,7 @@ def arg_interpreter(args, parser):
         # commands which need a client
         try:
             client = Client()
-        except Exception:
+        except:
             print(color.red('error: daemon is not started. Use "pulsemeeter daemon" to start it.'))
         else:
             # debug page
@@ -440,7 +443,8 @@ def start_server(server):
         server.start_server(daemon=True)
         time.sleep(0.1)
     except Exception:
-        print('Could not start server')
+        print(f'Could not start server because of:\n')
+        traceback.print_exc()
         sys.exit(1)
 
 
@@ -454,63 +458,69 @@ def main():
 
     server = None
     try:
-        server = Server()
+        # this supresses warnings coming from pmctl, which are not needed when just checking if the server is running
+        server = Server(init_audio_server=False)
         another_sv_running = False
 
     except ConnectionAbortedError:
         another_sv_running = True
 
-    except Exception as ex:
-        print(ex)
+    except Exception:
+        traceback.print_exc()
         return 1
 
     isserver = not another_sv_running
 
-    # none: Start Server (if not already started) and open window
+    # none: Start Server (if not already started) and open window 
     if len(sys.argv) == 1:
         trayonly = False
 
-    # daemon: disable application window creation for instance
-    elif sys.argv[1].lower() == 'daemon':
-        if another_sv_running:
-            print('The server is already running.')
-            return 1
-
-        trayonly = True
-
-    # init: Just start devices and connections
-    elif sys.argv[1] == 'init':
-        return 0
-
-    # exit: close server, all clients should close after they recive an exit
-    # signal from the server
-    elif sys.argv[1].lower() == 'exit':
-        try:
-            if another_sv_running:
-                print('closing server...')
-                print('It may take a few seconds...')
-                client = Client()
-                client.close_server()
-                return 0
-            else:
-                print('no instance is running')
+    elif len(sys.argv) == 2:
+        # daemon: disable application window creation for instance
+        if sys.argv[1].lower() == 'daemon':
+            if not isserver:
+                print('The server is already running.')
                 return 1
-        except Exception as ex:
-            print('unable to close server', ex)
-            return 1
+            
+            trayonly = True
 
-    else:
+        # init: Just start devices and connections
+        elif sys.argv[1] == 'init':
+            Server()
+            return 0
+        
+        # exit: close server, all clients should close after they recive an exit signal from
+        # the server
+        elif sys.argv[1].lower() == 'exit':
+            try:
+                if another_sv_running:
+                    print('closing server...')
+                    print('It may take a few seconds...')
+                    client = Client()
+                    client.close_server()
+                    return 0
+                else:
+                    print('no instance is running')
+                    return 1
+            except Exception:
+                print('unable to close server')
+                traceback.print_exc()
+                return 1
+        else:
+            create_parser_args()
+            return 0
+    else: 
         create_parser_args()
         return 0
-
+    
     # only no args and daemon arg reach this part of the code
 
     # start server if there's no server running
-    if server is not None: start_server(server)
-
-    # start gtk
+    if server is not None:
+        # new instance of server where init starts
+        server = Server()
+        start_server(server)
     start_app(isserver, trayonly)
-
     # close server if there's one running
     if server is not None: server.handle_exit_signal()
 
