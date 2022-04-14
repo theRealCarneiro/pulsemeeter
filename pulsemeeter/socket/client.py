@@ -83,7 +83,7 @@ class Client:
             return ret_msg
 
                 
-        except:
+        except Exception:
             print('closing socket')
             self.sock.close()
             raise
@@ -95,7 +95,7 @@ class Client:
         '''
         while True:
             try:
-                if self.exit_flag == True: break
+                if self.exit_flag is True: break
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise ConnectionError
                 try:
@@ -158,7 +158,7 @@ class Client:
                 if self.id == sender_id:
                     return event
 
-            except:
+            except Exception:
                 raise
 
 
@@ -318,8 +318,8 @@ class Client:
             return
            
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
-        if state is None: command += f' {state}'
-        if latency is None: command += f' {latency}'
+        if state is not None: command += f' {state}'
+        if latency is not None: command += f' {latency}'
         
         if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
             return
