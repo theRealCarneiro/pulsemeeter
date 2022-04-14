@@ -50,7 +50,7 @@ class Client:
         '''
         stops the listening thread if there is one.
         '''
-        if self.listen_thread != None: 
+        if self.listen_thread is not None: 
             self.exit_flag = True
             self.listen_thread.join()
     
