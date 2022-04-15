@@ -23,7 +23,6 @@ gi_require_version('Gtk', '3.0')
 gi_require_version('AppIndicator3', '0.1')
 from gi.repository import Gtk, GLib, AppIndicator3
 
-
 class MainWindow(Gtk.Window):
 
     def __init__(self, isserver=False, trayonly=False):
@@ -256,9 +255,6 @@ class MainWindow(Gtk.Window):
 
             sink_input_viewport.add(self.sink_input_box)
             source_output_viewport.add(self.source_output_box)
-
-            self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
-            self.subscribe_thread.start()
         except Exception as ex:
             print('App sinks returned an error, audio backend returned error')
             print(ex)
@@ -563,24 +559,20 @@ class MainWindow(Gtk.Window):
         # else:
             # self.source_output_box.load_application_list()
 
-    def listen_subscribe(self):
-        for i in self.client.subscribe():
-
-            if 'remove' in i:
-                id = i.split('#')[1].strip('\n')
-                if 'sink-input' in i:
-                    GLib.idle_add(self.sink_input_box.remove_app_dev, id)
-
-                elif 'source-output' in i:
-                    GLib.idle_add(self.source_output_box.remove_app_dev, id)
-
-            elif 'new' in i:
-                id = i.split('#')[1].strip('\n')
-                if 'sink-input' in i:
-                    GLib.idle_add(self.sink_input_box.load_application_list, id)
-
-                elif 'source-output' in i:
-                    GLib.idle_add(self.source_output_box.load_application_list, id)
+    # TODO: refresh while the UI is open
+    def device_new(self, index, facility):
+        # add event
+        if facility == 'sink-input':
+            GLib.idle_add(self.sink_input_box.load_application_list, index)
+        elif facility == 'source-output':
+            GLib.idle_add(self.source_output_box.load_application_list, index)
+    
+    def device_remove(self, index, facility):
+        # remove event
+        if facility == 'sink-input':
+            GLib.idle_add(self.sink_input_box.remove_app_dev, index)
+        elif facility == 'source-output':
+            GLib.idle_add(self.source_output_box.remove_app_dev, index)
 
     def listen_socket(self):
         self.client.set_callback_function('connect',
@@ -597,13 +589,16 @@ class MainWindow(Gtk.Window):
                 self.update_volume_slider)
         self.client.set_callback_function('change-hd',
                 self.update_comboboxes)
+        self.client.set_callback_function('device-new',
+                self.device_new)
+        self.client.set_callback_function('device-remove',
+                self.device_remove)
         self.client.set_callback_function('exit',
                 self.close_on_server_exit)
 
     def close_on_server_exit(self):
         if not self.trayonly:
             self.client.end_subscribe()
-            self.subscribe_thread.join()
             if self.enable_vumeters is True:
                 for i in ['hi', 'vi', 'a', 'b']:
                     for j in self.vu_list[i]:
@@ -730,11 +725,6 @@ class MainWindow(Gtk.Window):
     def delete_event(self, widget=None, event=None):
         if not self.trayonly:
             self.client.end_subscribe()
-            try:
-                self.subscribe_thread.join()
-            except Exception:
-                # when the application didnt manage to start the app list there is no thread.
-                print('Could not join subscribe_thread (maybe there is none)')
             if self.enable_vumeters is True:
                 for i in ['hi', 'vi', 'a', 'b']:
                     for j in self.vu_list[i]:
