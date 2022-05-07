@@ -1,17 +1,17 @@
 import os
-import sys
 import pathlib
 from setuptools import setup
 
-try:
-    import pulsemeeter
-except ImportError as ex:
-    print(f'ERROR: {ex.name} not installed, please run \'pip install requirements.txt\' inside source directory')
+with open('pulsemeeter/settings.py') as f:
+    for line in f:
+        if line.startswith('__version__'):
+            __version__ = line.replace("'", '').split()[2]
+            break
 
 
-VERSION = pulsemeeter.__version__
+VERSION = __version__
 README = (pathlib.Path(__file__).parent / "README.md").read_text()
-DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']),]
+DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']), ]
 REQUIREMENTS = []
 
 with open('requirements.txt') as file:
@@ -39,7 +39,7 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=['pulsemeeter'],
+    packages=['pulsemeeter', 'pulsemeeter.interface', 'pulsemeeter.socket', 'pulsemeeter.backends'],
     install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
     entry_points={

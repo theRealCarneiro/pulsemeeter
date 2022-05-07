@@ -6,7 +6,8 @@ from gi import require_version as gi_require_version
 # from ..backends import Pulse
 gi_require_version('Gtk', '3.0')
 
-from gi.repository import Gtk,Gdk,Gio,GLib
+from gi.repository import Gtk, GLib
+
 
 class Vumeter(Gtk.ProgressBar):
 
@@ -37,7 +38,7 @@ class Vumeter(Gtk.ProgressBar):
         command = ['pulse-vumeter', self.name, dev_type]
         sys.stdout.flush()
         self.process = subprocess.Popen(command,
-            stdout=subprocess.PIPE, 
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             shell=False,
             encoding='utf-8',
@@ -50,20 +51,21 @@ class Vumeter(Gtk.ProgressBar):
 
             # if pulse crashes, the vumeter will throw an error
             # but we don't want the ui to crash
-            except:
+            except Exception:
                 print(f'Could not start vumeter for {self.name}')
                 break
 
-            if peak <= 0.00 and self.get_sensitive == True:
+            if peak <= 0.00 and self.get_sensitive is True:
                 GLib.idle_add(self.set_fraction, 0)
                 GLib.idle_add(self.set_sensitive, False)
             else:
                 GLib.idle_add(self.set_sensitive, True)
                 GLib.idle_add(self.set_fraction, peak)
-            
+
         # close connection
         self.process.stdout.close()
-        return_code = self.process.wait()
+        self.process.wait()
+        # return_code = self.process.wait()
 
         # if return_code:
             # raise subprocess.CalledProcessError(return_code, command)
@@ -84,7 +86,7 @@ class Vumeter(Gtk.ProgressBar):
     def close(self):
         GLib.idle_add(self.set_fraction, 0)
         GLib.idle_add(self.set_sensitive, False)
-        if self.process != None:
+        if self.process is not None:
             self.process.terminate()
             self.thread.join()
         self.process = None

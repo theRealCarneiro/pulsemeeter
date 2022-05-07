@@ -4,7 +4,8 @@ from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
-from gi.repository import Gtk,Gdk
+from gi.repository import Gtk
+
 
 class RnnoisePopover():
     def __init__(self, button, sock, deivce_type, device_id):
@@ -49,10 +50,9 @@ class RnnoisePopover():
         control = int(self.rnnoise_threshold_adjust.get_value())
         # self.device_config['rnnoise_control'] = val
 
-        if self.device_config['use_rnnoise'] == False:
+        if self.device_config['use_rnnoise'] is False:
             return
 
         self.sock.rnnoise(device_id, 'set', control, latency)
         # sink_name = self.device_config['rnnoise_name']
         # print(command)
-
