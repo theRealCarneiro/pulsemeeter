@@ -287,9 +287,15 @@ def parser_get(parser, type):
 def create_parser_args():
     color = format()
 
-    parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s',
-            description=(f'Use "{color.green("%(prog)s [command] -h")}" to get usage information.',
-                'Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-nc] [-d] [-s] [command] ",
+            description='Replicating voicemeeter routing functionalities in linux with pulseaudio.')
+
+    # change the name in the help text
+    for grp in parser._action_groups:
+        if grp.title == 'positional arguments':
+            grp.title = color.bold('commands')
+        elif grp.title == 'options':
+            grp.title = color.bold('options')
 
     parser.add_argument('-nc', '--no-color', action='store_true', help=help.description.NO_COLOR)
     parser.add_argument('-d', '--debug', action='store_true', help=help.description.DEBUG)
