@@ -5,12 +5,8 @@ import sys
 import subprocess
 import traceback
 
-import pulsectl
-import pulsectl_asyncio
-
-
 class Pulse:
-    def __init__(self, config, loglevel=0, init=True):
+    def __init__(self, pulse_socket, config, loglevel=0, init=True):
         self.config = config
         self.loglevel = loglevel
 
@@ -28,8 +24,7 @@ class Pulse:
         # if init == 'cmd': return
 
 
-        self.pulsectl_async = pulsectl_asyncio.PulseAsync('pulsemeeter-listener')
-        self.pulsectl = pulsectl.Pulse('pulsemeeeter')
+        self.pulse_socket = pulse_socket
 
         command = ''
         if init is True:
@@ -254,19 +249,6 @@ class Pulse:
 
 
         os.popen(command)
-
-    # It searches in the facility for the specific device with the index and returns this device.
-    async def device_from_event(self, event):
-        if event.facility == 'sink':
-            dev_list = await self.pulsectl_async.sink_list()
-        elif event.facility == 'source':
-            dev_list = await self.pulsectl_async.source_list()
-        else:
-            return
-
-        for device in dev_list:
-            if device.index == event.index:
-                return device
 
     # creates a ladspa sink with rnnoise for a given hardware input
     def rnnoise(self, input_id, status=None, control=None, latency=None, reconnect=True,
@@ -860,14 +842,14 @@ class Pulse:
 
         # get device info from pulsectl
         if device_type in ['a', 'vi']:
-            device = self.pulsectl.get_sink_by_name(name)
+            device = self.pulse_socket.pulsectl.get_sink_by_name(name)
         else:
-            device = self.pulsectl.get_source_by_name(name)
+            device = self.pulse_socket.pulsectl.get_source_by_name(name)
 
         # set the volume
         volume = device.volume
         volume.value_flat = val / 100
-        self.pulsectl.volume_set(device, volume)
+        self.pulse_socket.pulsectl.volume_set(device, volume)
         return f'volume {device_type} {device_id} {val}'
 
     def device_new(self, index, facility):
@@ -906,13 +888,13 @@ class Pulse:
         chann = 2
 
         # set volume object
-        volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+        volume = self.pulse_socket.pulsectl.PulseVolumeInfo(val / 100, chann)
         id = int(id)
 
         if stream_type == 'sink-input':
-            self.pulsectl.sink_input_volume_set(id, volume)
+            self.pulse_socket.pulsectl.sink_input_volume_set(id, volume)
         else:
-            self.pulsectl.source_output_volume_set(id, volume)
+            self.pulse_socket.pulsectl.source_output_volume_set(id, volume)
 
         return f'app-volume {id} {val} {stream_type}'
 

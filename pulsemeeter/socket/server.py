@@ -12,7 +12,7 @@ from queue import SimpleQueue
 
 import asyncio
 
-from ..backends import Pulse
+from ..backends import Pulse, PulseSocket
 from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
 
 
@@ -38,8 +38,6 @@ class Server:
         self.config = self.read_config()
         # saves the timestamp of the last config change to check how long ago the last change was 
         self.last_config_change = 0
-        self.audio_server = audio_server(self.config, loglevel=0, init=init_audio_server)
-        self.create_command_dict()
 
 
         # the socket only needs to be seen by the listener thread
@@ -59,24 +57,22 @@ class Server:
         self.client_handler_threads = {}
         self.client_handler_connections = {}
 
+        self.pulse_socket = PulseSocket(self.command_queue, self.config)
+        self.audio_server = audio_server(self.pulse_socket, self.config, loglevel=0, init=init_audio_server)
+
+        self.create_command_dict()
+
     def start_server(self, daemon=False):
 
-        # the asyncio loop
-        self.async_loop = asyncio.get_event_loop()
+        self.main_loop_thread = threading.Thread(target=self.main_loop)
+        self.main_loop_thread.start()
 
         # Start listener thread
         self.listener_thread = threading.Thread(target=self.query_clients)
         self.listener_thread.start()
 
-        self.main_loop_thread = threading.Thread(target=self.main_loop)
-        self.main_loop_thread.start()
-
-        # add the async task to listen to pulseaudio events
-        self.pulse_listener_task = asyncio.run_coroutine_threadsafe(self.pulse_listener(), self.async_loop)
-
-        # run the async code in thread
-        self.pulse_listener_thread = threading.Thread(target=self.async_loop.run_forever, daemon=True)
-        self.pulse_listener_thread.start()
+        # start listening for Pulseaudio/Pipewire events
+        self.pulse_socket.start_listener()
 
         # Thread for saving the config changes
         # collects all changes and writes them together
@@ -151,9 +147,7 @@ class Server:
                 traceback.print_exc()
 
             try:
-                self.pulse_listener_task.cancel()
-                self.async_loop.stop()
-                self.pulse_listener_thread.join()
+                self.pulse_socket.stop_listener()
             except:
                 print('[ERROR] Could not close pulse listener')
                 traceback.print_exc()
@@ -195,82 +189,6 @@ class Server:
                 conn.sendall(encoded_msg)  # command
             except OSError:
                 print(f'client {sender_id} already disconnected, message not sent')
-
-    # searches for device with name(pulseaudio device) and returns tuple:
-    # - device_type
-    # - device_id
-    def config_device_from_name(self, name):
-        for device_type in ['a', 'b', 'hi', 'vi']:
-            # iterate through all devices (can scale with device count)
-            device_id_range = range(1, len(self.config[device_type])+1)
-            for device_id in device_id_range:
-                device_id = str(device_id)
-                device_config = self.config[device_type][device_id]
-                if device_config["name"] == name:
-                    return {
-                            "device_type": device_type,
-                            "device_id": device_id
-                            }
-        return
-
-    # thanks EnumValue
-    # facility EnumValue to native string
-    def fa_enum_to_string(self, argument):
-        case = {
-            'client',
-            'sink_input',
-            'source_output',
-            'module',
-            'sink',
-            'source'
-        }
-        for case in case:
-            if argument == case: return case
-
-    # handles incoming events from the pulseaudio listener
-    # (updates config if needed and alerts clients)
-    async def pulse_listener_handler(self, event):
-        if event.t == 'change':
-            device = await self.audio_server.device_from_event(event)
-            if device is not None:
-                pulsem_device = self.config_device_from_name(device.name)
-                if pulsem_device is not None:
-                    device_config = self.config[pulsem_device["device_type"]][pulsem_device["device_id"]]
-                    # read the volume data from config and from pulseaudio
-                    config_volume = device_config["vol"]
-                    device_volume = int(round(device.volume.value_flat * 100))
-
-                    # compare config value with pulseaudio value
-                    if config_volume != device_volume:
-                        command = f'volume {pulsem_device["device_type"]} {pulsem_device["device_id"]} {device_volume}'
-                        self.command_queue.put(('audio_server', None, command))
-                        device_config["vol"] = device_volume
-                        return
-
-                    config_mute = device_config["mute"]
-                    device_mute = bool(device.mute)
-
-                    if config_mute != device_mute:
-                        command = f'mute {pulsem_device["device_type"]} {pulsem_device["device_id"]} {device_mute}'
-                        self.command_queue.put(('audio_server', None, command))
-                        device_config["mute"] = device_mute
-                        return
-                    #TODO: Maybe add detection for connection changes
-
-        elif event.t in ['new', 'remove']:
-            index = event.index
-            facility = self.fa_enum_to_string(event.facility)
-            if event.t == 'new':
-                command = f'device-new {index} {facility}'
-            elif event.t == 'remove':
-                command = f'device-remove {index} {facility}'
-            self.command_queue.put(('audio_server', None, command))
-
-    # listener for pulseaudio events
-    async def pulse_listener(self):
-        async with self.audio_server.pulsectl_async as pulse:
-            async for event in pulse.subscribe_events('all'):
-                await self.pulse_listener_handler(event)
 
     def is_running(self):
         try:
@@ -465,7 +383,7 @@ class Server:
         else:
             # gracefully exit the thread
             self._stop_config_changes_thread()
-            self.config_changes_thread.join()
+            if self.config_changes_thread.is_alive(): self.config_changes_thread.join()
             self._write_config(config)
 
     # handles writing the config to the file
@@ -488,6 +406,7 @@ class Server:
     def _wait_for_config_changes(self):
         while True:
             if self.stop_changes_thread == True:
+                self.stop_changes_thread = False
                 break
             # check if the last config change is over 15 secs ago
             if (time.time() - self.last_config_change) > 15:
