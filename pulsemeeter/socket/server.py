@@ -7,6 +7,7 @@ import signal
 import threading
 import codecs
 import traceback
+import time
 from queue import SimpleQueue
 
 import asyncio
@@ -16,7 +17,6 @@ from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __v
 
 
 LISTENER_TIMEOUT = 2
-
 
 class Server:
     def __init__(self, init_audio_server=True):
@@ -36,6 +36,8 @@ class Server:
         audio_server = Pulse
 
         self.config = self.read_config()
+        # saves the timestamp of the last config change to check how long ago the last change was 
+        self.last_config_change = 0
         self.audio_server = audio_server(self.config, loglevel=0, init=init_audio_server)
         self.create_command_dict()
 
@@ -75,6 +77,10 @@ class Server:
         # run the async code in thread
         self.pulse_listener_thread = threading.Thread(target=self.async_loop.run_forever, daemon=True)
         self.pulse_listener_thread.start()
+
+        # Thread for saving the config changes
+        # collects all changes and writes them together
+        self.config_changes_thread = threading.Thread(target=self._wait_for_config_changes)
 
         # Register signal handlers
         if daemon:
@@ -140,15 +146,16 @@ class Server:
             try:
                 self.listener_thread.join()
             except:
-                print('Could not exit client listener')
+                print('[ERROR] Could not close client listener')
+                traceback.print_exc()
 
             try:
                 self.pulse_listener_task.cancel()
                 self.async_loop.stop()
                 self.pulse_listener_thread.join()
             except:
-                print('could not exit pulse listener')
-
+                print('[ERROR] Could not close pulse listener')
+                traceback.print_exc()
 
             # Call any code to clean up virtual devices or similar
             self.close_server()
@@ -159,7 +166,7 @@ class Server:
         elif type(s) is str or (sys.version_info[0] < 3 and type(s) is unicode):
             return codecs.encode(s, 'utf-8')
         else:
-            raise TypeError("Expected bytes or string, but got %s." % type(s))
+            raise TypeError(f"[ERROR] [function: to_bytes()@{__name__}] Expected bytes or string, but got {type(s)}.")
 
     def send_message(self, ret_message, message, sender_id, notify_all):
         encoded_msg = self.to_bytes(ret_message)
@@ -293,7 +300,7 @@ class Server:
     # TODO: if the daemon should clean up its virtual devices on exit, do that here
     def close_server(self):
         # self.audio_server
-        self.save_config()
+        self.save_config(buffer=False)
         if self.config['cleanup']:
             self.audio_server.cleanup()
         self.closed = True
@@ -384,10 +391,14 @@ class Server:
 
             function = self.commands[command]['function']
             notify = self.commands[command]['notify']
+            save_to_config = self.commands[command]['save_config']
             ret_msg = function(*args)
 
             if not ret_msg:
                 raise Exception('[ERROR] internal error')
+
+            if save_to_config:
+                self.save_config();
 
             return (ret_msg, notify,)
 
@@ -443,12 +454,42 @@ class Server:
             else:
                 return json.dumps(config, ensure_ascii=False)
 
-    def save_config(self, config=None):
+    # change buffer to not wait for other changes
+    def save_config(self, config=None, buffer=True):
+        # the buffer is there to wait for all other changes in a time of 20 secs to be made and then write them all together
+        if buffer is True:
+            self.last_config_change = time.time()
+            if self.config_changes_thread.is_alive() is False:
+                self.config_changes_thread.start()
+        else:
+            self._write_config(config)
+
+    # handles writing the config to the file
+    def _write_config(self, config=None):
+        # interupt the changes thread because config gets saved now anyways
+        # it also checks if the config_changes_thread is not saving the config (so it does not join itself)
+        if self.config_changes_thread.is_alive() and threading.current_thread() != self.config_changes_thread:
+            self.config_changes_thread.join()
+        # save the config
         if config is None: config = self.config
         if not os.path.isdir(CONFIG_DIR):
             os.mkdir(CONFIG_DIR)
+        print("writing config")
         with open(CONFIG_FILE, 'w') as outfile:
             json.dump(config, outfile, indent='\t', separators=(',', ': '))
+
+
+    # This function is used to save the config when there were no changes for the set amount of time
+    # This is useful for optimizing the performance and disk usage
+    def _wait_for_config_changes(self, config=None):
+        while True:
+            # check if the last config change is over 15 secs ago
+            if (time.time() - self.last_config_change) > 15:
+                self._write_config()
+                break
+            # this sleep just generally improves performance as we don't need very accurate time 
+            # if not done the thread will use 100% performance
+            time.sleep(1)
 
     def set_tray(self, state):
         if type(state) == str:
@@ -471,6 +512,7 @@ class Server:
             'connect': {
                 'function': self.audio_server.connect,
                 'notify': True,
+                'save_config': True,
                 'regex': f'(vi|hi) [0-9]+( (a|b) [0-9]+)?( ({state}))?( [0-9]+)?$'
             },
 
@@ -479,6 +521,7 @@ class Server:
             'mute': {
                 'function': self.audio_server.mute,
                 'notify': True,
+                'save_config': True,
                 'regex': f'(vi|hi|a|b) [0-9]+( ({state}))?$'
             },
 
@@ -486,6 +529,7 @@ class Server:
             'primary': {
                 'function': self.audio_server.set_primary,
                 'notify': True,
+                'save_config': True,
                 'regex': r'(vi|hi|a|b) [0-9]+$'
             },
 
@@ -494,6 +538,7 @@ class Server:
             'rnnoise': {
                 'function': self.audio_server.rnnoise,
                 'notify': True,
+                'save_config': True,
                 'regex': f'[0-9]+( ({state}|(set [0-9]+ [0-9]+)))?$'
             },
 
@@ -503,6 +548,7 @@ class Server:
             'eq': {
                 'function': self.audio_server.eq,
                 'notify': True,
+                'save_config': True,
                 'regex': r'(a|b) [0-9]+( ((True|False|1|0|on|off|true|false)|(set ([0-9]+(\.[0-9]+)?)(,[0-9]+(\.[0-9]+)?){{14}})))?$'
             },
 
@@ -513,6 +559,7 @@ class Server:
             'toggle-hd': {
                 'function': self.audio_server.toggle_hardware_device,
                 'notify': False,
+                'save_config': False,
                 'regex': f'(hi|a) [0-9]+( {state})?$'
             },
 
@@ -522,6 +569,7 @@ class Server:
             'toggle-vd': {
                 'function': self.audio_server.toggle_virtual_device,
                 'notify': False,
+                'save_config': False,
                 'regex': f'(vi|b) [0-9]+( {state})?$'
             },
 
@@ -539,6 +587,7 @@ class Server:
             'change_hd': {
                 'function': self.audio_server.change_hardware_device,
                 'notify': True,
+                'save_config': True,
                 'regex': r'(a|hi) [0-9]+ \w([\w\.-]+)?$'
             },
 
@@ -548,6 +597,7 @@ class Server:
             'volume': {
                 'function': self.audio_server.volume,
                 'notify': True,
+                'save_config': True,
                 'regex': '(a|b|hi|vi) [0-9]+ [+-]?[0-9]+$'
             },
 
@@ -556,6 +606,7 @@ class Server:
             'app-volume': {
                 'function': self.audio_server.app_volume,
                 'notify': True,
+                'save_config': False,
                 'regex': '[0-9]+ [0-9]+ (sink-input|source-output)$'
             },
 
@@ -563,6 +614,7 @@ class Server:
             'move-app-device': {
                 'function': self.audio_server.move_app_device,
                 'notify': True,
+                'save_config': False,
                 'regex': r'[0-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
             },
 
@@ -570,6 +622,7 @@ class Server:
             'get-stream-volume': {
                 'function': self.audio_server.get_app_stream_volume,
                 'notify': False,
+                'save_config': False,
                 'regex': '[0-9]+ (sink-input|source-output)$'
             },
 
@@ -577,48 +630,57 @@ class Server:
             'get-app-list': {
                 'function': self.audio_server.get_app_streams,
                 'notify': False,
+                'save_config': False,
                 'regex': '(sink-input|source-output)$'
             },
 
             'get-config': {
                 'function': self.get_config,
                 'notify': False,
+                'save_config': False,
                 'regex': ''
             },
 
             'save_config': {
                 'function': self.save_config,
                 'notify': False,
+                # already saves the config without the waiting
+                'save_config': False,
                 'regex': ''
             },
 
             'set-layout': {
                 'function': self.audio_server.change_layout,
                 'notify': True,
+                'save_config': False,
                 'regex': '[aA-zZ]+$'
             },
 
             'set-cleanup': {
                 'function': self.audio_server.set_cleanup,
                 'notify': True,
+                'save_config': False,
                 'regex': f'{state}$'
             },
 
             'set-tray': {
                 'function': self.set_tray,
                 'notify': True,
+                'save_config': True,
                 'regex': f'{state}$'
             },
 
             'device-new': {
                 'function': self.audio_server.device_new,
                 'notify': True,
+                'save_config': False,
                 'regex': ''
             },
 
             'device-remove': {
                 'function': self.audio_server.device_remove,
                 'notify': True,
+                'save_config': False,
                 'regex': ''
             },
 
@@ -626,22 +688,26 @@ class Server:
             'get-vd': {
                 'function': self.audio_server.get_virtual_devices,
                 'notify': False,
+                'save_config': False,
                 'regex': ''
             },
             'get-hd': {
                 'function':
                 self.audio_server.get_hardware_devices,
                 'notify': False,
+                'save_config': False,
                 'regex': ''
             },
             'list-apps': {
                 'function': self.audio_server.get_virtual_devices,
                 'notify': False,
+                'save_config': False,
                 'regex': ''
             },
             'rename': {
                 'function': self.audio_server.rename,
                 'notify': True,
+                'save_config': False,
                 'regex': ''
             },
 
