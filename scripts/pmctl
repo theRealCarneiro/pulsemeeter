@@ -157,7 +157,7 @@ list (){
 
 	device_type=$1
 
-	if [ "$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')" -lt 17 ]; then
+	if [ "$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')" -lt 16 ]; then
 		case $device_type in
 
 			"sinks")
