@@ -18,7 +18,6 @@ from ..socket import Client
 
 from gi import require_version as gi_require_version
 
-# from pulsectl import Pulse
 gi_require_version('Gtk', '3.0')
 gi_require_version('AppIndicator3', '0.1')
 from gi.repository import Gtk, GLib, AppIndicator3
@@ -91,11 +90,13 @@ class MainWindow(Gtk.Window):
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
+        sources = self.client.list('sources')
+        sinks = self.client.list('sinks')
         self.devices = {}
-        self.devices['a'] = self.client.list_hardware_devices('sinks')
-        self.devices['hi'] = self.client.list_hardware_devices('sources')
-        # self.devices['b'] = self.client.list_virtual_devices('sources')
-        # self.devices['vi'] = self.client.list_virtual_devices('sinks')
+        self.devices['a'] = sinks['a']
+        self.devices['hi'] = sources['hi']
+        self.devices['b'] = sources['b']
+        self.devices['vi'] = sinks['vi']
 
         self.hardware_comboboxes = {}
         self.primary_buttons = {}
@@ -250,22 +251,22 @@ class MainWindow(Gtk.Window):
         # this is probably not the best solution but it handles the pactl errors fine
         sink_input_viewport = self.builder.get_object('sink_input_viewport')
         source_output_viewport = self.builder.get_object('source_output_viewport')
-        try:
-            self.sink_input_box = AppList('sink-input', self.client)
-            self.source_output_box = AppList('source-output', self.client)
+        # try:
+        self.sink_input_box = AppList('sink-input', self.client)
+        self.source_output_box = AppList('source-output', self.client)
 
-            sink_input_viewport.add(self.sink_input_box)
-            source_output_viewport.add(self.source_output_box)
+        sink_input_viewport.add(self.sink_input_box)
+        source_output_viewport.add(self.source_output_box)
 
-            self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
-            self.subscribe_thread.start()
-        except Exception as ex:
-            print('App sinks returned an error, audio backend returned error')
-            print(ex)
-            if self.windowinstance is not None:
-                self.windowinstance.destroy()
-            self.delete_event()
-            sys.exit(1)
+        self.subscribe_thread = threading.Thread(target=self.listen_subscribe, args=())
+        self.subscribe_thread.start()
+        # except Exception as ex:
+            # print('App sinks returned an error, audio backend returned error')
+            # print(ex)
+            # if self.windowinstance is not None:
+                # self.windowinstance.destroy()
+            # self.delete_event()
+            # sys.exit(1)
 
     def start_hardware_comboboxes(self):
         for device_type in ['hi', 'a']:
@@ -283,7 +284,11 @@ class MainWindow(Gtk.Window):
                 combobox.append_text('')
 
                 for i in range(0, len(devices)):
-                    text = devices[i]['description'][:name_size]
+                    device = devices[i]
+                    if 'properties' in device:
+                        device = device['properties']
+
+                    text = device['alsa.card_name'][:name_size]
                     if len(text) == name_size:
                         text = text + '...'
                     combobox.append_text(text)

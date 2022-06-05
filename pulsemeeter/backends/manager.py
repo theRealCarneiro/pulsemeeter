@@ -1,15 +1,17 @@
 import os
-import json
 import re
 import sys
 import subprocess
 import pulsectl
+from . import pmctl
 
 
-class Pulse:
+class AudioServer:
+
     def __init__(self, config, loglevel=0):
         self.config = config
-        self.loglevel = loglevel
+        self.loglevel = 2
+        self.audio_server = 'Pipewire'
 
         # check if pulseaudio is running
         try:
@@ -21,9 +23,9 @@ class Pulse:
                          'rear-right', 'front-center', 'lfe', 'side-left',
                          'side-right', 'aux0', 'aux1', 'aux2', 'aux3'
                          ]
-        # self.read_config()
+
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
-        # if init == 'cmd': return
+
         command = ''
         command += self.start_sinks()
         command += self.start_sources()
@@ -31,7 +33,6 @@ class Pulse:
         command += self.start_rnnoise()
         command += self.start_connections()
         command += self.start_primarys()
-        # command += self.start_mute()
 
         # print(command)
 
@@ -43,14 +44,13 @@ class Pulse:
     # virtual sink name, or use a ladspa sink for a hardware source
     def get_correct_device(self, index, conn_type):
 
+        name = self.config[index[0]][index[1]]['name']
+
         # for virtual inputs
         if index[0] == 'vi':
-            name = self.config[index[0]][index[1]]['name']
 
-            if conn_type == "source":
-                return name + ".monitor"
-            else:
-                return name
+            if conn_type == "source" and self.audio_server != 'Pipewire':
+                name += ".monitor"
 
         # for hardware inputs
         if index[0] == 'hi':
@@ -58,11 +58,9 @@ class Pulse:
             # return ladspa sink with rnnoise plugin
             if self.config[index[0]][index[1]]['use_rnnoise'] is True:
                 name = f'{index[0]}{index[1]}_rnnoise'
-                return name + ".monitor"
 
-            else:
-                name = self.config[index[0]][index[1]]['name']
-                return name
+                if self.audio_server != 'Pipewire':
+                    name += ".monitor"
 
         # for hardware outputs
         if index[0] == 'a':
@@ -70,11 +68,6 @@ class Pulse:
             # return ladspa sink with eq plugin
             if self.config[index[0]][index[1]]['use_eq'] is True:
                 name = f'{index[0]}{index[1]}_eq'
-                return name
-
-            else:
-                name = self.config[index[0]][index[1]]['name']
-                return name
 
         # virtual outputs need an aux sink to route audio into it
         if index[0] == 'b':
@@ -82,16 +75,17 @@ class Pulse:
             # return ladspa sink with eq plugin
             if self.config[index[0]][index[1]]['use_eq'] is True:
                 name = f'{index[0]}{index[1]}_eq'
-                if conn_type == 'source':
-                    name = name + ".monitor"
-                return name
+                if conn_type == 'source' and self.audio_server != 'Pipewire':
+                    name += '.monitor'
 
             # return aux sink
             else:
-                name = self.config[index[0]][index[1]]['name'] + "_sink"
-                if conn_type == 'source':
-                    name = name + ".monitor"
-                return name
+                if self.audio_server != 'Pipewire':
+                    name += '_sink'
+                    if conn_type == 'source':
+                        name += '.monitor'
+
+        return name
 
     # init virtual inputs
     def start_sinks(self):
@@ -112,18 +106,7 @@ class Pulse:
 
                         # set sink properties
                         sink = self.config['vi'][device_id]['name']
-                        channels = ''
-                        channel_map = ''
-                        output_type = 'sink'
-
-                        # for jack sinks
-                        if self.config['jack']['enable'] is True:
-                            channels = self.config['vi'][device_id]['channels']
-                            channel_map = self.config['vi'][device_id]['channel_map']
-                            channel_map = ','.join(channel_map) if len(channel_map) > 0 else ','.join(self.channels[:channels])
-                            output_type = 'jack-sink'
-
-                        command += f"pmctl init {output_type} {sink} {channels} {channel_map}\n"
+                        command += pmctl.init('sink', sink)
 
         if self.loglevel > 1: print(command)
         return command
@@ -143,18 +126,7 @@ class Pulse:
 
                     # set source properties
                     source = self.config['b'][device_id]['name']
-                    channels = ''
-                    channel_map = ''
-                    input_type = 'source'
-
-                    # for jack sources
-                    if self.config['jack']['enable'] is True:
-                        channels = self.config['hi'][device_id]['channels']
-                        channel_map = self.config['hi'][device_id]['channel_map']
-                        channel_map = ','.join(channel_map) if len(channel_map) > 0 else ','.join(self.channels[:channels])
-                        input_type = 'jack-source'
-
-                    command += f"pmctl init {input_type} {source} {channels} {channel_map}\n"
+                    command += pmctl.init('source', source)
 
         if self.loglevel > 1: print(command)
         return command
@@ -298,21 +270,22 @@ class Pulse:
                     if source_config[sink] is True:
                         sink_name = self.get_correct_device([output_type, output_id], 'sink')
                         latency = source_config[sink + '_latency']
+                        ls = f'{ladspa_sink}.monitor' if self.audio_server != 'Pipewire' else ladspa_sink
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
                         if status == 'set' and conn_status:
-                            command += f'pmctl disconnect {ladspa_sink}.monitor {sink_name}\n'
-                            command += f'pmctl connect {ladspa_sink}.monitor {sink_name} {latency}\n'
+                            command += pmctl.disconnect(ls, sink_name)
+                            command += pmctl.connect(ls, sink_name, latency=latency)
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
                         elif status is True:
-                            command += f'pmctl disconnect {source} {sink_name}\n'
-                            command += f'pmctl connect {ladspa_sink}.monitor {sink_name} {latency}\n'
+                            command += pmctl.disconnect(source, sink_name)
+                            command += pmctl.connect(ls, sink_name, latency=latency)
 
                         # disconnect ladspa sink from sinks, then connect source to sinks
                         elif status is False:
-                            command += f'pmctl disconnect {ladspa_sink}.monitor {sink_name} {latency}\n'
-                            command += f'pmctl connect {source} {sink_name} {latency}\n'
+                            command += pmctl.disconnect(ls, sink_name)
+                            command += pmctl.connect(source, sink_name, latency=latency)
 
         if run_command is True:
             if self.loglevel > 1: print(command)
@@ -378,18 +351,18 @@ class Pulse:
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
                         if status == 'set' and conn_status:
-                            command += f'pmctl disconnect {vi} {ladspa_sink}\n'
-                            command += f'pmctl connect {vi} {master}\n'
+                            command += pmctl.disconnect(vi, ladspa_sink)
+                            command += pmctl.connect(vi, ladspa_sink)
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
                         if conn_status:
-                            command = command + f'pmctl disconnect {vi} {master}\n'
-                            command = command + f'pmctl connect {vi} {ladspa_sink}\n'
+                            command += pmctl.disconnect(vi, master)
+                            command += pmctl.connect(vi, ladspa_sink)
 
                         # disconnect ladspa sink from sinks, then connect source to sinks
                         else:
-                            command += f'pmctl disconnect {vi} {ladspa_sink}\n'
-                            command += f'pmctl connect {vi} {master}\n'
+                            command += pmctl.disconnect(vi, ladspa_sink)
+                            command += pmctl.connect(vi, master)
 
         if run_command:
             if self.loglevel > 1: print(command)
@@ -458,8 +431,7 @@ class Pulse:
             status=None, latency=None, run_command=True, change_state=True, init=False):
 
         source_config = self.config[input_type][input_id]
-        sink_config = self.config[output_type][output_id]
-        jack_config = self.config['jack']
+        # sink_config = self.config[output_type][output_id]
         cur_conn_status = source_config[output_type + output_id]
 
         # toggle connection status
@@ -467,8 +439,6 @@ class Pulse:
             status = not cur_conn_status
         else:
             status = str2bool(status)
-
-        conn_status = 'connect' if status else 'disconnect'
 
         # if trying to set the same state
         if (init is False and latency is None) and ((cur_conn_status and status) or
@@ -478,14 +448,6 @@ class Pulse:
         # if true, will change the config status
         if change_state is True:
             source_config[output_type + output_id] = status
-
-        # if using jack
-        if (jack_config['enable'] is True and
-                ((sink_config['jack'] is True and output_type == 'a') or
-                (source_config['jack'] is True and input_type == 'hi') or
-                (input_type == 'vi' and output_type == 'b'))):
-            return self.connect_jack(conn_status, [input_type, input_id],
-                                     [output_type, output_id])
 
         # get name and latency of devices
         source = self.get_correct_device([input_type, input_id], 'source')
@@ -500,12 +462,8 @@ class Pulse:
         #    return ''
 
         device_exists = source != '' and sink != ''
-        # device_exists = self.config[input_type][output_id]['name'] != ''
 
-        if device_exists is True:
-            command = f'pmctl {conn_status} {source} {sink} {latency}\n'
-        else:
-            command = ''
+        command = pmctl.connect(source, sink, status, latency, run_command=False) if device_exists else ''
 
         if run_command is True:
             if device_exists:
@@ -514,69 +472,6 @@ class Pulse:
             return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
         else:
             return command
-
-    # needs commenting
-    def connect_jack(self, state, source_index, sink_index, init=None):
-        source_config = self.config[source_index[0]][source_index[1]]
-        sink_config = self.config[sink_index[0]][sink_index[1]]
-        jack_config = self.config['jack']
-
-        dev_name = sink_config['name']
-        if dev_name == '': return ''
-
-        jack_map = f'{sink_index[0]}{sink_index[1]}_jack_map'
-        port_group = f'{sink_index[0]}{sink_index[1]}_port_group'
-        command = ''
-        source = source_config['name']
-        if source_config[port_group] is False:
-            for channel in source_config[jack_map]:
-                for system_chan in source_config[jack_map][channel]:
-                    sink = ''
-                    if sink_index[0] == 'a':
-                        system_chan = f'playback_{system_chan}'
-                        sink = 'system'
-                    if source_index[0] == 'hi':
-                        channel = f'capture_{channel}'
-                        source = 'system'
-                    if sink_index[0] == 'b':
-                        sink = sink_config['name']
-                    command += f"pmctl jack-{state} {source} {channel} {sink} {system_chan}\n"
-                    # command += f"jack-{state} {source} {channel} {system_chan}\n"
-        else:
-            if source_config['jack'] is False or source_index[0] == 'vi':
-                source_channels = source_config['channel_map']
-                len_source_channels = source_config['channels']
-            else:
-                source_channels = jack_config['input_groups'][source_config['name']]
-                len_source_channels = len(source_channels)
-            if sink_index[0] == 'a':
-                channel_group = jack_config['output_groups'][dev_name]
-            else:
-                channel_group = sink_config['channel_map']
-            len_sink_channels = len(channel_group)
-            min_len = min(len_sink_channels, len_source_channels)
-            if len(source_channels) == 0:
-                source_channels = self.channels[:len_source_channels]
-            for channel_num in range(min_len):
-                channel = source_channels[channel_num]
-                sink_channel = channel_group[channel_num]
-                sink = ''
-                if source_index[0] == 'hi':
-                    channel = f'capture_{channel}'
-                    source = 'system'
-                if sink_index[0] == 'a':
-                    sink = 'system'
-                    sink_channel = f'playback_{sink_channel}'
-
-                if sink_index[0] == 'b':
-                    sink = sink_config['name']
-
-                command += f"pmctl jack-{state} {source} {channel} {sink} {sink_channel}\n"
-        if self.loglevel > 1:
-            print(command)
-        if init != 'init' and init != 'disconnect_init':
-            os.popen(command)
-        return command
 
     def change_hardware_device(self, output_type, output_id, name):
         if name in ['None', None]: name = ''
@@ -671,7 +566,7 @@ class Pulse:
         conn_type = 'sink' if device_type == 'vi' else 'source'
 
         if status:
-            command += f'pmctl init {conn_type} {name}\n'
+            command += pmctl.init(conn_type, name)
             if device_config['primary']:
                 command += self.set_primary(device_type, device_id, run_command=False)
 
@@ -679,7 +574,7 @@ class Pulse:
             command += self.reconnect(device_type, device_id, status=status, run_command=False)
 
         if not status:
-            command += f'pmctl remove {name}\n'
+            command += pmctl.remove(name)
 
         if self.loglevel > 1: print(command)
         if run_command: os.popen(command)
@@ -706,57 +601,6 @@ class Pulse:
             os.popen(command)
 
         return f'rename {device_type} {device_id} {new_name}'
-
-    def change_layout(self, layout):
-        self.config['layout'] = layout
-        return f'layout {layout}'
-
-    def set_cleanup(self, state):
-        state = str2bool(state)
-        self.config['cleanup'] = state
-        ret = f'cleanup {state}'
-        return ret
-
-    # get a dict list of inputs
-    def get_virtual_devices(self, kind):
-        command = f"pmctl list-virtual-{kind}"
-        devices = cmd(command)
-        if devices == '':
-            devices = '[]'
-        # jason = []
-        # try:
-            # jason = json.loads(devices)
-        # except:
-            # print(f'ERROR: invalid json {devices}')
-
-        # if kind == 'sources':
-            # self.virtual_source_list = jason
-        # else:
-            # self.virtual_sink_list = jason
-        return devices
-
-    # get list of cards
-    def get_hardware_devices(self, kind):
-        command = f"pmctl list {kind}"
-        devices = cmd(command)
-        try:
-            jason = json.loads(devices)
-        except Exception:
-            print(f'ERROR: invalid json {devices}')
-
-        # if using jack, also list groups
-        if self.config['jack']['enable'] is True:
-            group_type = 'input_groups' if kind == 'sources' else 'output_groups'
-            for group in self.config['jack'][group_type]:
-                channels = self.config['jack'][group_type][group]
-                jason.append({'name': group, 'description': f'JACK:{group}{channels}'})
-                # devices_concat.append()
-
-        if kind == 'sources':
-            self.source_list = jason
-        else:
-            self.sink_list = jason
-        return json.dumps(jason, ensure_ascii=False)
 
     def mute(self, device_type, device_id, state=None, run_command=True):
         device_config = self.config[device_type][device_id]
@@ -792,16 +636,11 @@ class Pulse:
             self.config[device_type][i]['primary'] = False if i != device_id else True
 
         device = 'sink' if device_type == 'vi' else 'source'
-        command = f'pmctl set-primary {device} {name}\n'
+        command = pmctl.set_primary(device, name)
         if run_command:
             os.popen(command)
             return f'primary {device_type} {device_id}'
         return command
-
-    # get volume from source outputs and sink inputs
-    def get_app_stream_volume(self, id, stream_type):
-        command = f'pmctl get-{stream_type}-volume {id}'
-        return cmd(command)
 
     def volume(self, device_type, device_id, val):
         device_config = self.config[device_type][device_id]
@@ -874,19 +713,6 @@ class Pulse:
             self.pulsectl.source_output_volume_set(id, volume)
 
         return f'app-volume {id} {val} {stream_type}'
-
-    # get a list of application
-    def get_app_streams(self, dev_type):
-        command = f'pmctl list-{dev_type}s'
-        devices = cmd(command)
-        if devices != '':
-            try:
-                json.loads(devices)
-            except Exception:
-                print(f'ERROR: invalid json {devices}')
-                return 'ERROR: invalid json'
-            return devices
-        else: return '[]'
 
     def move_app_device(self, app, name, stream_type):
         command = f'pmctl move-{stream_type} {app} {name}'

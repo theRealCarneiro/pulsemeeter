@@ -51,9 +51,11 @@ class Vumeter(Gtk.ProgressBar):
 
             # if pulse crashes, the vumeter will throw an error
             # but we don't want the ui to crash
-            except Exception:
+            except Exception as ex:
                 print(f'Could not start vumeter for {self.name}')
-                break
+                print(ex)
+                continue
+                # break
 
             if peak <= 0.00 and self.get_sensitive is True:
                 GLib.idle_add(self.set_fraction, 0)
