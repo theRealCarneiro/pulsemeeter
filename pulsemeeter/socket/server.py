@@ -80,6 +80,7 @@ class Server:
 
         # Thread for saving the config changes
         # collects all changes and writes them together
+        self.stop_changes_thread = False
         self.config_changes_thread = threading.Thread(target=self._wait_for_config_changes)
 
         # Register signal handlers
@@ -462,6 +463,9 @@ class Server:
             if self.config_changes_thread.is_alive() is False:
                 self.config_changes_thread.start()
         else:
+            # gracefully exit the thread
+            self._stop_config_changes_thread()
+            self.config_changes_thread.join()
             self._write_config(config)
 
     # handles writing the config to the file
@@ -481,8 +485,10 @@ class Server:
 
     # This function is used to save the config when there were no changes for the set amount of time
     # This is useful for optimizing the performance and disk usage
-    def _wait_for_config_changes(self, config=None):
+    def _wait_for_config_changes(self):
         while True:
+            if self.stop_changes_thread == True:
+                break
             # check if the last config change is over 15 secs ago
             if (time.time() - self.last_config_change) > 15:
                 self._write_config()
@@ -490,6 +496,10 @@ class Server:
             # this sleep just generally improves performance as we don't need very accurate time 
             # if not done the thread will use 100% performance
             time.sleep(1)
+
+    # this just lets the config changes thread decide if it should stop 
+    def _stop_config_changes_thread(self):
+        self.stop_changes_thread = True
 
     def set_tray(self, state):
         if type(state) == str:
