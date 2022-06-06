@@ -5,9 +5,12 @@ import sys
 import os
 import signal
 import threading
+import codecs
+import traceback
+import time
 from queue import SimpleQueue
 
-from ..backends import AudioServer
+from ..backends import AudioServer, PulseSocket
 from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
 
 
@@ -15,7 +18,7 @@ LISTENER_TIMEOUT = 2
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, init_audio_server=True):
 
         # delete socket file if exists
         try:
@@ -31,8 +34,8 @@ class Server:
         audio_server = AudioServer
 
         self.config = self.read_config()
-        self.audio_server = audio_server(self.config, loglevel=0)
-        self.create_command_dict()
+        # saves the timestamp of the last config change to check how long ago the last change was
+        self.last_config_change = 0
 
         # the socket only needs to be seen by the listener thread
         # self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -51,14 +54,27 @@ class Server:
         self.client_handler_threads = {}
         self.client_handler_connections = {}
 
+        self.pulse_socket = PulseSocket(self.command_queue, self.config)
+        self.audio_server = audio_server(self.pulse_socket, self.config, loglevel=0, init=init_audio_server)
+
+        self.create_command_dict()
+
     def start_server(self, daemon=False):
+
+        self.main_loop_thread = threading.Thread(target=self.main_loop)
+        self.main_loop_thread.start()
 
         # Start listener thread
         self.listener_thread = threading.Thread(target=self.query_clients)
         self.listener_thread.start()
 
-        self.main_loop_thread = threading.Thread(target=self.main_loop)
-        self.main_loop_thread.start()
+        # start listening for Pulseaudio/Pipewire events
+        self.pulse_socket.start_listener()
+
+        # Thread for saving the config changes
+        # collects all changes and writes them together
+        self.stop_changes_thread = False
+        self.config_changes_thread = threading.Thread(target=self._wait_for_config_changes)
 
         # Register signal handlers
         if daemon:
@@ -105,7 +121,6 @@ class Server:
             # TODO: maybe here would be the spot to sent an event signifying that the daemon is shutting down
             # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
             # And maybe wait a bit for that to happen
-
             # Close connections and join threads
             print('closing client handler threads...')
             for conn in self.client_handler_connections.values():
@@ -120,15 +135,34 @@ class Server:
 
         finally:
             # Set the exit flag and wait for the listener thread to timeout
-            print(f'sending exit signal to listener thread, it should exit within {LISTENER_TIMEOUT} seconds...')
+            print(f'sending exit signal to listener threads, they should exit within {LISTENER_TIMEOUT} seconds...')
             self.exit_flag = True
-            self.listener_thread.join()
+            try:
+                self.listener_thread.join()
+            except:
+                print('[ERROR] Could not close client listener')
+                traceback.print_exc()
+
+            try:
+                self.pulse_socket.stop_listener()
+            except:
+                print('[ERROR] Could not close pulse listener')
+                traceback.print_exc()
 
             # Call any code to clean up virtual devices or similar
             self.close_server()
 
+    def to_bytes(self, s):
+        if type(s) is bytes:
+            return s
+        elif type(s) is str:
+            return codecs.encode(s, 'utf-8')
+        else:
+            raise TypeError(f"[ERROR] [function: to_bytes()@{__name__}] Expected bytes or string, but got {type(s)}.")
+
     def send_message(self, ret_message, message, sender_id, notify_all):
-        encoded_msg = ret_message.encode()
+        encoded_msg = self.to_bytes(ret_message)
+        # encoded_msg = ret_message.encode()
 
         # notify observers
         client_list = []
@@ -182,12 +216,12 @@ class Server:
     # TODO: if the daemon should clean up its virtual devices on exit, do that here
     def close_server(self):
         # self.audio_server
-        self.save_config()
+        self.save_config(buffer=False)
         if self.config['cleanup']:
             self.audio_server.cleanup()
         self.closed = True
 
-    # this function handles the connection requests
+    # handles connection requests
     def query_clients(self):
         # loop to get new connections
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
@@ -247,6 +281,7 @@ class Server:
                     self.client_exit_queue.put(id)
                     break
 
+    # handles incoming commands
     def handle_command(self, data):
         decoded_data = data.decode()
         msg = tuple(decoded_data.split(' '))
@@ -265,22 +300,26 @@ class Server:
         try:
             # verify that command existes
             if command not in self.commands:
-                raise Exception('ERROR command not found')
+                raise Exception(f'[ERROR] command \'{command}\' not found')
 
             if not re.match(self.commands[command]['regex'], str_args):
-                raise Exception('ERROR invalid arguments')
+                raise Exception('[ERROR] invalid arguments')
 
             function = self.commands[command]['function']
             notify = self.commands[command]['notify']
+            save_to_config = self.commands[command]['save_config']
             ret_msg = function(*args)
 
             if not ret_msg:
-                raise Exception('ERROR internal error')
+                raise Exception('[ERROR] internal error')
+
+            if save_to_config:
+                self.save_config()
 
             return (ret_msg, notify,)
 
         except TypeError:
-            return ('ERROR invalid number of arguments', False)
+            return ('[ERROR] invalid number of arguments', False)
 
         except Exception as ex:
             return (str(ex), False)
@@ -291,7 +330,7 @@ class Server:
             try:
                 config = json.load(open(CONFIG_FILE))
             except Exception:
-                print('ERROR loading config file')
+                print('[ERROR] loading config file')
                 sys.exit(1)
 
             # if config is outdated it will try to add missing keys
@@ -331,12 +370,52 @@ class Server:
             else:
                 return json.dumps(config, ensure_ascii=False)
 
-    def save_config(self, config=None):
+    # change buffer to not wait for other changes
+    def save_config(self, config=None, buffer=True):
+        # the buffer is there to wait for all other changes in a time of 20 secs to be made and then write them all together
+        if buffer is True:
+            self.last_config_change = time.time()
+            if self.config_changes_thread.is_alive() is False:
+                self.config_changes_thread.start()
+        else:
+            # gracefully exit the thread
+            self._stop_config_changes_thread()
+            if self.config_changes_thread.is_alive(): self.config_changes_thread.join()
+            self._write_config(config)
+
+    # handles writing the config to the file
+    def _write_config(self, config=None):
+        # interupt the changes thread because config gets saved now anyways
+        # it also checks if the config_changes_thread is not saving the config (so it does not join itself)
+        if self.config_changes_thread.is_alive() and threading.current_thread() != self.config_changes_thread:
+            self.config_changes_thread.join()
+        # save the config
         if config is None: config = self.config
         if not os.path.isdir(CONFIG_DIR):
             os.mkdir(CONFIG_DIR)
+        print("writing config")
         with open(CONFIG_FILE, 'w') as outfile:
             json.dump(config, outfile, indent='\t', separators=(',', ': '))
+
+
+    # This function is used to save the config when there were no changes for the set amount of time
+    # This is useful for optimizing the performance and disk usage
+    def _wait_for_config_changes(self):
+        while True:
+            if self.stop_changes_thread == True:
+                self.stop_changes_thread = False
+                break
+            # check if the last config change is over 15 secs ago
+            if (time.time() - self.last_config_change) > 15:
+                self._write_config()
+                break
+            # this sleep just generally improves performance as we don't need very accurate time 
+            # if not done the thread will use 100% performance
+            time.sleep(1)
+
+    # this just lets the config changes thread decide if it should stop 
+    def _stop_config_changes_thread(self):
+        self.stop_changes_thread = True
 
     def set_tray(self, state):
         if type(state) == str:
@@ -369,6 +448,7 @@ class Server:
             'connect': {
                 'function': self.audio_server.connect,
                 'notify': True,
+                'save_config': True,
                 'regex': f'(vi|hi) [0-9]+( (a|b) [0-9]+)?( ({state}))?( [0-9]+)?$'
             },
 
@@ -377,6 +457,7 @@ class Server:
             'mute': {
                 'function': self.audio_server.mute,
                 'notify': True,
+                'save_config': True,
                 'regex': f'(vi|hi|a|b) [0-9]+( ({state}))?$'
             },
 
@@ -384,6 +465,7 @@ class Server:
             'primary': {
                 'function': self.audio_server.set_primary,
                 'notify': True,
+                'save_config': True,
                 'regex': r'(vi|hi|a|b) [0-9]+$'
             },
 
@@ -392,6 +474,7 @@ class Server:
             'rnnoise': {
                 'function': self.audio_server.rnnoise,
                 'notify': True,
+                'save_config': True,
                 'regex': f'[0-9]+( ({state}|(set [0-9]+ [0-9]+)))?$'
             },
 
@@ -401,6 +484,7 @@ class Server:
             'eq': {
                 'function': self.audio_server.eq,
                 'notify': True,
+                'save_config': True,
                 'regex': r'(a|b) [0-9]+( ((True|False|1|0|on|off|true|false)|(set ([0-9]+(\.[0-9]+)?)(,[0-9]+(\.[0-9]+)?){{14}})))?$'
             },
 
@@ -411,6 +495,7 @@ class Server:
             'toggle-hd': {
                 'function': self.audio_server.toggle_hardware_device,
                 'notify': False,
+                'save_config': False,
                 'regex': f'(hi|a) [0-9]+( {state})?$'
             },
 
@@ -420,6 +505,7 @@ class Server:
             'toggle-vd': {
                 'function': self.audio_server.toggle_virtual_device,
                 'notify': False,
+                'save_config': False,
                 'regex': f'(vi|b) [0-9]+( {state})?$'
             },
 
@@ -435,6 +521,7 @@ class Server:
             'change_hd': {
                 'function': self.audio_server.change_hardware_device,
                 'notify': True,
+                'save_config': True,
                 'regex': r'(a|hi) [0-9]+ \w([\w\.-]+)?$'
             },
 
@@ -444,6 +531,7 @@ class Server:
             'volume': {
                 'function': self.audio_server.volume,
                 'notify': True,
+                'save_config': True,
                 'regex': '(a|b|hi|vi) [0-9]+ [+-]?[0-9]+$'
             },
 
@@ -452,6 +540,7 @@ class Server:
             'app-volume': {
                 'function': self.audio_server.app_volume,
                 'notify': True,
+                'save_config': False,
                 'regex': '[0-9]+ [0-9]+ (sink-input|source-output)$'
             },
 
@@ -459,24 +548,29 @@ class Server:
             'move-app-device': {
                 'function': self.audio_server.move_app_device,
                 'notify': True,
+                'save_config': False,
                 'regex': r'[0-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
             },
 
             'get-config': {
                 'function': self.get_config,
                 'notify': False,
+                'save_config': False,
                 'regex': ''
             },
 
             'save_config': {
                 'function': self.save_config,
                 'notify': False,
+                # already saves the config without the waiting
+                'save_config': False,
                 'regex': ''
             },
 
             'set-cleanup': {
                 'function': self.set_cleanup,
                 'notify': True,
+                'save_config': False,
                 'regex': f'{state}$'
             },
 
@@ -489,9 +583,23 @@ class Server:
             'set-tray': {
                 'function': self.set_tray,
                 'notify': True,
+                'save_config': True,
                 'regex': f'{state}$'
             },
 
+            'device-new': {
+                'function': self.audio_server.device_new,
+                'notify': True,
+                'save_config': False,
+                'regex': ''
+            },
+
+            'device-remove': {
+                'function': self.audio_server.device_remove,
+                'notify': True,
+                'save_config': False,
+                'regex': ''
+            },
         }
 
 

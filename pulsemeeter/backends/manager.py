@@ -7,8 +7,7 @@ from . import pmctl
 
 
 class AudioServer:
-
-    def __init__(self, config, loglevel=0):
+    def __init__(self, pulse_socket, config, loglevel=0, init=True):
         self.config = config
         self.loglevel = 2
         self.audio_server = 'Pipewire'
@@ -25,6 +24,7 @@ class AudioServer:
                          ]
 
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
+        self.pulse_socket = pulse_socket
 
         command = ''
         command += self.start_sinks()
@@ -670,15 +670,27 @@ class AudioServer:
 
         # get device info from pulsectl
         if device_type in ['a', 'vi']:
-            device = self.pulsectl.get_sink_by_name(name)
+            device = self.pulse_socket.pulsectl.get_sink_by_name(name)
         else:
-            device = self.pulsectl.get_source_by_name(name)
+            device = self.pulse_socket.pulsectl.get_source_by_name(name)
 
         # set the volume
         volume = device.volume
         volume.value_flat = val / 100
-        self.pulsectl.volume_set(device, volume)
+        self.pulse_socket.pulsectl.volume_set(device, volume)
         return f'volume {device_type} {device_id} {val}'
+
+    def device_new(self, index, facility):
+        if index != 'None' and facility != 'None':
+            return f'device-new {index} {facility}'
+        else:
+            return ''
+
+    def device_remove(self, index, facility):
+        if index != 'None' and facility != 'None':
+            return f'device-remove {index} {facility}'
+        else:
+            return ''
 
     # sink input and source output volumes
     def app_volume(self, id, val, stream_type):
@@ -704,13 +716,13 @@ class AudioServer:
         chann = 2
 
         # set volume object
-        volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+        volume = self.pulse_socket.pulsectl.PulseVolumeInfo(val / 100, chann)
         id = int(id)
 
         if stream_type == 'sink-input':
-            self.pulsectl.sink_input_volume_set(id, volume)
+            self.pulse_socket.pulsectl.sink_input_volume_set(id, volume)
         else:
-            self.pulsectl.source_output_volume_set(id, volume)
+            self.pulse_socket.pulsectl.source_output_volume_set(id, volume)
 
         return f'app-volume {id} {val} {stream_type}'
 

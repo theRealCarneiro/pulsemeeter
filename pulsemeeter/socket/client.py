@@ -1,4 +1,4 @@
-from ..settings import SOCK_FILE
+from ..settings import SOCK_FILE, __version__
 import subprocess
 import socket
 import threading
@@ -22,6 +22,7 @@ class Client:
         self.return_queue = SimpleQueue()
         self.can_listen = listen
         self.noconfig = noconfig
+        self.VERSION = __version__
 
         # connect to server
         try:
@@ -38,17 +39,28 @@ class Client:
 
     # start listen thread
     def start_listen(self, print_event=False):
+        '''
+        starts the listening thread.
+        (starts if listen=True in Client class)
+        '''
         self.stop_listen()
         self.listen_thread = threading.Thread(target=self.listen, args=(print_event,))
         self.listen_thread.start()
 
     # stop listen thread
     def stop_listen(self):
+        '''
+        stops the listening thread if there is one.
+        '''
         if self.listen_thread is not None:
             self.exit_flag = True
             self.listen_thread.join()
 
     def send_command(self, command, nowait=False):
+        '''
+        Send command manually to server.
+        (only for advanced users)
+        '''
         try:
 
             # encode message ang get it's length
@@ -78,6 +90,9 @@ class Client:
             raise
 
     def listen(self, print_event=True):
+        '''
+        Starts to listen to server events. (gets called by start_listen)
+        '''
         while True:
             try:
                 if self.exit_flag is True: break
@@ -138,6 +153,7 @@ class Client:
                 if not event: raise
                 event = event.decode()
 
+
                 if self.id == sender_id:
                     return event
 
@@ -146,9 +162,29 @@ class Client:
 
     # set a callback function to a command
     def set_callback_function(self, command, function):
+        '''
+        Set a callback so Pulsemeeter can call the function you specified if values change.
+
+        available commands:
+        - "connect":        ARGS(input_type, input_id, output_type, output_id, status, latency)
+        - "mute":           ARGS(device_type, device_id, state)
+        - "primary":        ARGS(device_type, device_id)
+        - "rnnoise":        ARGS(input_id, status, control)
+        - "eq":             ARGS(output_type, output_id, status, control)
+        - "volume":         ARGS(device_type, device_id, val)
+        - "primary":        ARGS(device_type, device_id, run_command)
+        - "change-hd":      ARGS(output_type, output_id, name)
+        - "device-new":     ARGS(index, facility)
+        - "device-remove":  ARGS(index, facility)
+        - "exit":           ARGS()
+        '''
         self.callback_dict[command] = function
 
     def handle_callback(self, event):
+        '''
+        Handles calling callback functions.
+        Only for internal use.
+        '''
         command = event.split(' ')
         if command[0] not in self.callback_dict:
             return
@@ -157,8 +193,8 @@ class Client:
         args = tuple(command[1:])
         function(*args)
 
-    # update the config
     def assert_config(self, event):
+        '''update the config'''
         event = event.split(' ')
         command = event[0]
         args = event[1:]
@@ -267,7 +303,13 @@ class Client:
         return True
 
     def connect(self, input_type, input_id, output_type, output_id, state=None, latency=None):
+        '''
+        Connect two devices.
+        if state is empty, it gets toggled.
+        latency can be empty.
 
+        input → output
+        '''
         if (not self.verify_device(input_type, input_id, 'input') or
                 not self.verify_device(output_type, output_id, 'output')):
             return
@@ -283,7 +325,10 @@ class Client:
         return self.send_command(command)
 
     def mute(self, device_type, device_id, state=None):
-
+        '''
+        Mute/unmute a device.
+        When the state is empty, it gets toggled.
+        '''
         if not self.verify_device(device_type, device_id, 'any'):
             return
 
@@ -296,7 +341,10 @@ class Client:
         return self.send_command(command)
 
     def primary(self, device_type, device_id):
-
+        '''
+        Select a primary device.
+        device_type: virtual devices ("vi", "b")
+        '''
         if not self.verify_device(device_type, device_id, 'any'):
             return
 
@@ -307,7 +355,15 @@ class Client:
         return self.send_command(command)
 
     def rnnoise(self, input_id, state=None, control=None, latency=None):
+        '''
+        Turn rnnoise on or off and change values.
+        state: boolean or "set"
+        device_type: hardware_input ("hi")
 
+        if state is "set":
+            control: <value>
+            latency (can be empty): <value>
+        '''
         if not input_id.isdigit():
             return 'invalid device index'
 
@@ -321,6 +377,14 @@ class Client:
         return self.send_command(command)
 
     def eq(self, output_type, output_id, state=None, control=None):
+        '''
+        Turn eq on or off and change values.
+        device_type: output ("a", "b")
+        state: boolean or "set"
+
+        if state is "set":
+            control: "<value1>,<value2>,<value3>,<...>"
+        '''
 
         if not self.verify_device(output_type, output_id, 'output'):
             return
@@ -342,13 +406,16 @@ class Client:
         return self.send_command(command)
 
     def volume(self, device_type, device_id, vol):
-
+        '''
+        change volume of a device
+        vol: +<value> | -<value> | <value>
+        '''
         if not self.verify_device(device_type, device_id, 'any'):
             return
         if type(vol) == str:
-            if not re.match('[+-]?[1-9]+$', vol):
+            if not re.match('[+-]?\d+$', vol):
                 return 'invalid volume'
-            if re.match('^[1-9]+$', vol):
+            if re.match('^\d+$', vol):
                 if self.config[device_type][device_id]['vol'] == int(vol):
                     return
 
@@ -358,7 +425,7 @@ class Client:
         return self.send_command(command)
 
     def rename(self, device_type, device_id, name):
-
+        '''rename a virtual input'''
         if not self.verify_device(device_type, device_id, 'virtual'):
             return
 
@@ -368,7 +435,12 @@ class Client:
         return self.send_command(command)
 
     def change_hardware_device(self, device_type, device_id, device):
+        '''
+        Change the device of an input/output.
 
+        Disclaimer:
+        For this you need to specify the pulseaudio device name not the short name shown in the UI.
+        '''
         if device == self.config[device_type][device_id]['name']:
             return
 
@@ -384,6 +456,9 @@ class Client:
         return self.send_command(command)
 
     def list(self, device_type, hardware=False, virtual=False, all=False):
+        '''
+        returns json of hardware devices.
+        '''
 
         devl = pmctl.list(device_type)
 
@@ -425,6 +500,9 @@ class Client:
         return self.send_command(command)
 
     def set_layout(self, layout):
+        '''
+        Changes the layout of the UI.
+        '''
         if layout == self.config['layout']:
             return
 
@@ -432,6 +510,9 @@ class Client:
         return self.send_command(command)
 
     def set_tray(self, state):
+        '''
+        Specifies if the tray should be used.
+        '''
         if type(state) == str:
             state = state.lower() == 'true'
 
@@ -455,9 +536,19 @@ class Client:
         self.sock.shutdown(socket.SHUT_RDWR)
 
     def close_server(self):
+        '''
+        Closes the Pulsemeeter server (also closes UI).
+        '''
         self.send_command('exit')
 
     def subscribe(self):
+        '''
+        Listen to Pulseaudio event.
+
+        Disclaimer:
+        Pulsemeeter already includes a Pulseaudio event listener and you can use the callback functions for that.
+        '''
+
         self.sub_proc = pmctl.subscribe()
 
         for stdout_line in iter(self.sub_proc.stdout.readline, ""):

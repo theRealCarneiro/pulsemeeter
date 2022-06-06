@@ -5,12 +5,13 @@ import subprocess
 import argparse
 import re
 import platform
+import traceback
 from .settings import CONFIG_FILE, __version__
 from . import MainWindow
 from . import Client, Server
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk  # type: ignore
+from gi.repository import Gtk # type: ignore
 
 # change these to change all occurences of these values (also for checking)
 true_values = ('true', '1', 'on')
@@ -54,6 +55,9 @@ class help:
         EQ = 'Turn on/off eq and change values. To toggle only include the device'
         RENAME = 'rename device'
         GET = 'eg. pulsemeeter get volume a1'
+        DAEMON = 'Start the server and open the tray.'
+        INIT = 'Just start devices and connections.'
+        EXIT = 'Close the server and with that all clients (including the UI).'
 
     class usage:
         RNNOISE = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value]'
@@ -283,9 +287,15 @@ def parser_get(parser, type):
 def create_parser_args():
     color = format()
 
-    parser = argparse.ArgumentParser(prog='pulsemeeter', usage='%(prog)s',
-            description=(f'Use "{color.green("%(prog)s [command] -h")}" to get usage information.',
-                'Replicating voicemeeter routing functionalities in linux with pulseaudio.'))
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-nc] [-d] [-s] [command] ",
+            description='Replicating voicemeeter routing functionalities in linux with pulseaudio.')
+
+    # change the name in the help text
+    for grp in parser._action_groups:
+        if grp.title == 'positional arguments':
+            grp.title = color.bold('commands')
+        elif grp.title == 'options':
+            grp.title = color.bold('options')
 
     parser.add_argument('-nc', '--no-color', action='store_true', help=help.description.NO_COLOR)
     parser.add_argument('-d', '--debug', action='store_true', help=help.description.DEBUG)
@@ -294,9 +304,9 @@ def create_parser_args():
     subparsers = parser.add_subparsers(dest='command')
 
     # commands to only show in help menu
-    subparsers.add_parser('daemon')
-    subparsers.add_parser('init')
-    subparsers.add_parser('exit')
+    subparsers.add_parser('daemon', description=help.description.DAEMON)
+    subparsers.add_parser('init', description=help.description.INIT)
+    subparsers.add_parser('exit', description=help.description.EXIT)
 
     # get (retrieve values)
     parser_get(subparsers.add_parser('get', description=help.description.GET), str)
@@ -330,11 +340,13 @@ def arg_interpreter(args, parser):
         else:
             print(f'Server: {color.red("not running")}')
 
+
         try:
             subprocess.check_call('pmctl')
             print(f'Pulseaudio: {color.green("running")}')
         except Exception:
             print(f'Pulseaudio: {color.red("not running")}')
+
 
         try:
             audio_server = os.popen('pactl info | grep "Server Name"').read()
@@ -342,6 +354,7 @@ def arg_interpreter(args, parser):
             audio_server = audio_server.replace('\n', '')
         except Exception:
             audio_server = color.red('could not be determined')
+
 
         print(f'audio server: {color.bold(audio_server)}')
         print(f'Pulsemeeter version: {color.bold(__version__)}')
@@ -440,7 +453,8 @@ def start_server(server):
         server.start_server(daemon=True)
         time.sleep(0.1)
     except Exception:
-        print('Could not start server')
+        print(f'Could not start server because of:\n')
+        traceback.print_exc()
         sys.exit(1)
 
 
@@ -454,14 +468,15 @@ def main():
 
     server = None
     try:
-        server = Server()
+        # this supresses warnings coming from pmctl, which are not needed when just checking if the server is running
+        server = Server(init_audio_server=False)
         another_sv_running = False
 
     except ConnectionAbortedError:
         another_sv_running = True
 
-    except Exception as ex:
-        print(ex)
+    except Exception:
+        traceback.print_exc()
         return 1
 
     isserver = not another_sv_running
@@ -470,35 +485,40 @@ def main():
     if len(sys.argv) == 1:
         trayonly = False
 
-    # daemon: disable application window creation for instance
-    elif sys.argv[1].lower() == 'daemon':
-        if another_sv_running:
-            print('The server is already running.')
-            return 1
-
-        trayonly = True
-
-    # init: Just start devices and connections
-    elif sys.argv[1] == 'init':
-        return 0
-
-    # exit: close server, all clients should close after they recive an exit
-    # signal from the server
-    elif sys.argv[1].lower() == 'exit':
-        try:
-            if another_sv_running:
-                print('closing server...')
-                print('It may take a few seconds...')
-                client = Client()
-                client.close_server()
-                return 0
-            else:
-                print('no instance is running')
+    elif len(sys.argv) == 2:
+        # daemon: disable application window creation for instance
+        if sys.argv[1].lower() == 'daemon':
+            if not isserver:
+                print('The server is already running.')
                 return 1
-        except Exception as ex:
-            print('unable to close server', ex)
-            return 1
 
+            trayonly = True
+
+        # init: Just start devices and connections
+        elif sys.argv[1] == 'init':
+            Server()
+            return 0
+
+        # exit: close server, all clients should close after they recive an exit signal from
+        # the server
+        elif sys.argv[1].lower() == 'exit':
+            try:
+                if another_sv_running:
+                    print('closing server...')
+                    print('It may take a few seconds...')
+                    client = Client()
+                    client.close_server()
+                    return 0
+                else:
+                    print('no instance is running')
+                    return 1
+            except Exception:
+                print('unable to close server')
+                traceback.print_exc()
+                return 1
+        else:
+            create_parser_args()
+            return 0
     else:
         create_parser_args()
         return 0
@@ -506,12 +526,13 @@ def main():
     # only no args and daemon arg reach this part of the code
 
     # start server if there's no server running
-    if server is not None: start_server(server)
-
-    # start gtk
+    if server is not None:
+        # new instance of server where init starts
+        server = Server()
+        start_server(server)
     start_app(isserver, trayonly)
 
-    # close server if there's one running
+    # close server if there was a server started
     if server is not None: server.handle_exit_signal()
 
     return 0
