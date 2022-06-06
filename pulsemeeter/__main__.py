@@ -528,7 +528,6 @@ def main():
     # start server if there's no server running
     if server is not None:
         # new instance of server where init starts
-        server = Server()
         start_server(server)
     start_app(isserver, trayonly)
 
