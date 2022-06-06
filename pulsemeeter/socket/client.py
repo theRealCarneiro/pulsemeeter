@@ -7,6 +7,7 @@ import sys
 import os
 import re
 from queue import SimpleQueue
+from ..backends import pmctl
 
 
 class Client:
@@ -454,35 +455,36 @@ class Client:
             return
         return self.send_command(command)
 
-    def list_hardware_devices(self, device_type):
+    def list(self, device_type, hardware=False, virtual=False, all=False):
         '''
         returns json of hardware devices.
         '''
-        if device_type not in ['sinks', 'sources']:
-            return
 
-        ret = self.send_command(f'get-hd {device_type}')
-        # return is 'empty' if there are no devices
-        if ret != 'empty':
-            return json.loads(ret)
+        devl = pmctl.list(device_type)
 
-    def list_virtual_devices(self, device_type):
-        if device_type not in ['sinks', 'sources']:
-            return
+        # all for for returning the entire json
+        if all: return devl
 
-        ret = self.send_command(f'get-vd {device_type}')
-        return json.loads(ret)
+        devices = {}
 
-    # get sink-input and source-output list
-    def list_apps(self, device_type):
-        command = f'get-app-list {device_type}'
-        try:
-            ret_message = self.send_command(command)
-            return json.loads(ret_message)
-        except Exception:
-            print('invalid json from server')
-            return False
-            raise
+        h, v = ('a', 'vi') if device_type == 'sinks' else ('hi', 'b')
+
+        devices[h] = []
+        devices[v] = []
+
+        for i in devl:
+            if 'properties' not in i or 'alsa.card_name' in i['properties']:
+                devices[h].append(i)
+            else:
+                devices[v].append(i)
+
+        if hardware is True:
+            return devices[h]
+
+        if virtual is True:
+            return devices[v]
+
+        return devices
 
     # change application device
     def move_app_device(self, app_id, device, stream_type):
@@ -546,14 +548,8 @@ class Client:
         Disclaimer:
         Pulsemeeter already includes a Pulseaudio event listener and you can use the callback functions for that.
         '''
-        command = ['pactl', 'subscribe']
-        sys.stdout.flush()
-        env = os.environ
-        env['LC_ALL'] = 'C'
-        self.sub_proc = subprocess.Popen(command, env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True)
+
+        self.sub_proc = pmctl.subscribe()
 
         for stdout_line in iter(self.sub_proc.stdout.readline, ""):
             yield stdout_line
@@ -561,7 +557,7 @@ class Client:
         self.sub_proc.stdout.close()
         return_code = self.sub_proc.wait()
         if return_code:
-            raise subprocess.CalledProcessError(return_code, command)
+            raise subprocess.CalledProcessError(return_code, ['pmctl', 'subscribe'])
 
     def end_subscribe(self):
         if self.sub_proc is not None:

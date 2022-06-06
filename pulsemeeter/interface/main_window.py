@@ -18,7 +18,6 @@ from ..socket import Client
 
 from gi import require_version as gi_require_version
 
-# from pulsectl import Pulse
 gi_require_version('Gtk', '3.0')
 gi_require_version('AppIndicator3', '0.1')
 from gi.repository import Gtk, GLib, AppIndicator3
@@ -90,11 +89,13 @@ class MainWindow(Gtk.Window):
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
+        sources = self.client.list('sources')
+        sinks = self.client.list('sinks')
         self.devices = {}
-        self.devices['a'] = self.client.list_hardware_devices('sinks')
-        self.devices['hi'] = self.client.list_hardware_devices('sources')
-        # self.devices['b'] = self.client.list_virtual_devices('sources')
-        # self.devices['vi'] = self.client.list_virtual_devices('sinks')
+        self.devices['a'] = sinks['a']
+        self.devices['hi'] = sources['hi']
+        self.devices['b'] = sources['b']
+        self.devices['vi'] = sinks['vi']
 
         self.hardware_comboboxes = {}
         self.primary_buttons = {}
@@ -279,7 +280,11 @@ class MainWindow(Gtk.Window):
                 combobox.append_text('')
 
                 for i in range(0, len(devices)):
-                    text = devices[i]['description'][:name_size]
+                    device = devices[i]
+                    if 'properties' in device:
+                        device = device['properties']
+
+                    text = device['alsa.card_name'][:name_size]
                     if len(text) == name_size:
                         text = text + '...'
                     combobox.append_text(text)

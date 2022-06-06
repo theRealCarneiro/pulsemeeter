@@ -1,7 +1,8 @@
-from .pulse import Pulse
 from .pulse_socket import PulseSocket
+from .manager import AudioServer
 
 __all__ = [
-    'Pulse',
-    'PulseSocket'
+    'AudioServer',
+    'PulseSocket',
+    'pmctl',
 ]

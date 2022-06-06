@@ -21,7 +21,7 @@ class AppList(Gtk.VBox):
         if id is None and len(self.box_list) > 0:
             self.remove_app_dev()
 
-        app_list = self.client.list_apps(self.dev_type)
+        app_list = self.client.list(self.dev_type + 's', all=True)
 
         if len(app_list) == 0:
             return
@@ -29,18 +29,28 @@ class AppList(Gtk.VBox):
         dev_list = self.get_device_list()
 
         for i in app_list:
+            if 'properties' in i and ('application.name' not in i['properties'] or
+                    i['properties']['application.name'] == 'Console Meter' or
+                    'application.id' in i['properties'] and
+                    i['properties']['application.id'] == 'org.PulseAudio.pavucontrol'):
+                continue
+
+            if 'properties' not in i:
+                if 'icon' in i:
+                    i['properties'] = {'application.icon': i['icon']}
+
             if id is not None:
-                if str(id) != str(i['id']):
+                if str(id) != str(i['index']):
                     continue
 
-            if 'icon' not in i:
-                i['icon'] = 'audio-card'
+            if 'application.icon_name' not in i['properties']:
+                i['properties']['application.icon_name'] = 'audio-card'
 
-            icon = Gio.ThemedIcon(name=i['icon'])
+            icon = Gio.ThemedIcon(name=i['properties']['application.icon_name'])
             image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
             image.set_margin_left(10)
 
-            label = Gtk.Label(i['name'])
+            label = Gtk.Label(i['properties']['application.name'])
             label.props.halign = Gtk.Align.START
 
             combobox = Gtk.ComboBoxText()
@@ -51,14 +61,16 @@ class AppList(Gtk.VBox):
             except Exception:
                 index = 0
             combobox.set_active(index)
-            combobox.connect('changed', self.app_combo_change, i['id'])
+            combobox.connect('changed', self.app_combo_change, i['index'])
             combobox.props.halign = Gtk.Align.END
             combobox.set_hexpand(True)
             combobox.set_margin_right(10)
 
+            # value = int(next(iter(i['volume']))[0]['value_percent'].strip('%'))
+            value = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
             adjust = Gtk.Adjustment(lower=0, upper=153, step_increment=1, page_increment=10)
-            adjust.set_value(self.client.get_app_volume(i['id'], self.dev_type))
-            adjust.connect('value_changed', self.volume_change, i['id'], self.dev_type)
+            adjust.set_value(value)
+            adjust.connect('value_changed', self.volume_change, i['index'], self.dev_type)
 
             scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adjust)
             scale.set_hexpand(True)
@@ -83,7 +95,7 @@ class AppList(Gtk.VBox):
             vbox.pack_start(scale, expand=False, fill=False, padding=0)
             vbox.pack_start(separator_bottom, expand=False, fill=False, padding=0)
 
-            self.box_list.append([vbox, i['id']])
+            self.box_list.append([vbox, i['index']])
             self.pack_start(vbox, expand=False, fill=True, padding=0)
 
             self.show_all()

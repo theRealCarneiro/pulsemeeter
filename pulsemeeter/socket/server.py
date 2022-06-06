@@ -10,13 +10,12 @@ import traceback
 import time
 from queue import SimpleQueue
 
-import asyncio
-
-from ..backends import Pulse, PulseSocket
+from ..backends import AudioServer, PulseSocket
 from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
 
 
 LISTENER_TIMEOUT = 2
+
 
 class Server:
     def __init__(self, init_audio_server=True):
@@ -30,15 +29,13 @@ class Server:
             if os.path.exists(SOCK_FILE):
                 raise
 
-
         # audio server can be pulse or pipe, so just use a generic name
         self.closed = False
-        audio_server = Pulse
+        audio_server = AudioServer
 
         self.config = self.read_config()
-        # saves the timestamp of the last config change to check how long ago the last change was 
+        # saves the timestamp of the last config change to check how long ago the last change was
         self.last_config_change = 0
-
 
         # the socket only needs to be seen by the listener thread
         # self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -158,7 +155,7 @@ class Server:
     def to_bytes(self, s):
         if type(s) is bytes:
             return s
-        elif type(s) is str or (sys.version_info[0] < 3 and type(s) is unicode):
+        elif type(s) is str:
             return codecs.encode(s, 'utf-8')
         else:
             raise TypeError(f"[ERROR] [function: to_bytes()@{__name__}] Expected bytes or string, but got {type(s)}.")
@@ -317,7 +314,7 @@ class Server:
                 raise Exception('[ERROR] internal error')
 
             if save_to_config:
-                self.save_config();
+                self.save_config()
 
             return (ret_msg, notify,)
 
@@ -427,6 +424,16 @@ class Server:
         ret_msg = f'tray {state}'
         return ret_msg
 
+    def change_layout(self, layout):
+        self.config['layout'] = layout
+        return f'layout {layout}'
+
+    def set_cleanup(self, state):
+        state = str2bool(state)
+        self.config['cleanup'] = state
+        ret = f'cleanup {state}'
+        return ret
+
     def create_command_dict(self):
 
         # some useful regex
@@ -502,14 +509,12 @@ class Server:
                 'regex': f'(vi|b) [0-9]+( {state})?$'
             },
 
-            # ARGS: [hi|vi] id
-            # wont affect config
-            # 'reconnect': {
-            # 'function': self.audio_server.reconnect,
-            # 'notify': False,
-            # 'regex': ''
-            # },
-
+            # ARGS: [a|b|vi|hi] id NEW_NAME
+            'rename': {
+                'function': self.audio_server.rename,
+                'notify': True,
+                'regex': ''
+            },
 
             # ARGS: [a|hi] id NEW_DEVICE
             # NEW_DEVICE is the name of the device
@@ -547,22 +552,6 @@ class Server:
                 'regex': r'[0-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
             },
 
-            # ARGS: id [sink-input|source-output]
-            'get-stream-volume': {
-                'function': self.audio_server.get_app_stream_volume,
-                'notify': False,
-                'save_config': False,
-                'regex': '[0-9]+ (sink-input|source-output)$'
-            },
-
-            # ARGS: [sink-input|source-output]
-            'get-app-list': {
-                'function': self.audio_server.get_app_streams,
-                'notify': False,
-                'save_config': False,
-                'regex': '(sink-input|source-output)$'
-            },
-
             'get-config': {
                 'function': self.get_config,
                 'notify': False,
@@ -578,18 +567,17 @@ class Server:
                 'regex': ''
             },
 
-            'set-layout': {
-                'function': self.audio_server.change_layout,
-                'notify': True,
-                'save_config': False,
-                'regex': '[aA-zZ]+$'
-            },
-
             'set-cleanup': {
-                'function': self.audio_server.set_cleanup,
+                'function': self.set_cleanup,
                 'notify': True,
                 'save_config': False,
                 'regex': f'{state}$'
+            },
+
+            'set-layout': {
+                'function': self.change_layout,
+                'notify': True,
+                'regex': '[aA-zZ]+$'
             },
 
             'set-tray': {
@@ -612,32 +600,11 @@ class Server:
                 'save_config': False,
                 'regex': ''
             },
-
-            # not ready
-            'get-vd': {
-                'function': self.audio_server.get_virtual_devices,
-                'notify': False,
-                'save_config': False,
-                'regex': ''
-            },
-            'get-hd': {
-                'function':
-                self.audio_server.get_hardware_devices,
-                'notify': False,
-                'save_config': False,
-                'regex': ''
-            },
-            'list-apps': {
-                'function': self.audio_server.get_virtual_devices,
-                'notify': False,
-                'save_config': False,
-                'regex': ''
-            },
-            'rename': {
-                'function': self.audio_server.rename,
-                'notify': True,
-                'save_config': False,
-                'regex': ''
-            },
-
         }
+
+
+def str2bool(v):
+    if type(v) == bool:
+        return v
+    else:
+        return v.lower() in ['connect', 'true', 'on', '1']
