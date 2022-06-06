@@ -463,6 +463,7 @@ class AudioServer:
 
         device_exists = source != '' and sink != ''
 
+        print(status)
         command = pmctl.connect(source, sink, status, latency, run_command=False) if device_exists else ''
 
         if run_command is True:
@@ -620,7 +621,7 @@ class AudioServer:
         device_config['mute'] = state
 
         conn_status = 1 if state else 0
-        command = f"pmctl mute {device} {name} {conn_status}\n"
+        command = pmctl.mute(device, name, conn_status)
 
         if run_command:
             if self.loglevel > 1: print(command)
@@ -651,8 +652,6 @@ class AudioServer:
             # check if is an absolute number or + and -
             if val.isdigit():
                 val = int(val)
-            # if re.match('[1-9]', val):
-            #    val = int(val)
 
             # if not an absolute number, add it to current volume
             else:
@@ -661,6 +660,7 @@ class AudioServer:
         # limit volume at 153
         if val > 153:
             val = 153
+
         # limit volume at 0
         elif val < 0:
             val = 0

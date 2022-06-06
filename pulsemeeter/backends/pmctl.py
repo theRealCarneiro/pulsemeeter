@@ -55,6 +55,14 @@ def disconnect(input, output, run_command=False):
     return command
 
 
+def mute(device_type, device, state, run_command=False):
+
+    command = f'pmctl mute {device_type} {device} {state}'
+
+    if run_command is True: os.popen(command)
+    return command
+
+
 def set_primary(device_type, device_name, run_command=False):
 
     command = f'pmctl set-primary {device_type} {device_name}\n'
