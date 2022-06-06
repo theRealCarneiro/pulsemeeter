@@ -10,7 +10,7 @@ init (){
 			"sink")
 				pactl list sinks short >/dev/null 2>&1 | grep $device && exit
 				pactl load-module module-null-sink \
-					sink_name=$sink \
+					sink_name=$device \
 					sink_properties="device.description="$device"" >/dev/null 2>&1 || 
 						printf "Error creating virtual input $device\n" >&2
 			;;
