@@ -496,7 +496,7 @@ def main():
 
         # init: Just start devices and connections
         elif sys.argv[1] == 'init':
-            Server()
+            # Server()
             return 0
 
         # exit: close server, all clients should close after they recive an exit signal from
@@ -528,6 +528,7 @@ def main():
     # start server if there's no server running
     if server is not None:
         # new instance of server where init starts
+        server = Server()
         start_server(server)
     start_app(isserver, trayonly)
 

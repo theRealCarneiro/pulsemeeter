@@ -5,8 +5,8 @@ import subprocess
 
 
 # todo: channel mapping
-def init(device_type, device, run_command=False):
-    command = f'pmctl init {device_type} {device}\n'
+def init(device_type, device, channel_map=None, run_command=False):
+    command = f'pmctl init {device_type} {device} "{channel_map}"\n'
 
     if run_command is True: os.popen(command)
     return command

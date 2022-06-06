@@ -6,9 +6,7 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false,
-			"jack": false,
-			"jack_channels": []
+			"use_eq": false
 		},
 		"2": {
 			"name": "",
@@ -16,9 +14,7 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false,
-			"jack": false,
-			"jack_channels": []
+			"use_eq": false
 		},
 		"3": {
 			"name": "",
@@ -26,9 +22,7 @@
 			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
-			"use_eq": false,
-			"jack": false,
-			"jack_channels": []
+			"use_eq": false
 		}
 	},
 	"b": {
@@ -37,6 +31,7 @@
 			"primary": false,
 			"vol": 100,
 			"mute": false,
+			"channel_map": "1",
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false
@@ -46,6 +41,7 @@
 			"primary": false,
 			"vol": 100,
 			"mute": false,
+			"channel_map": "1",
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false
@@ -55,6 +51,7 @@
 			"primary": false,
 			"vol": 100,
 			"mute": false,
+			"channel_map": "1",
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false
@@ -65,103 +62,187 @@
 			"name": "Virtual_Input_1",
 			"primary": false,
 			"external": false,
-			"a1": false,
-			"a2": false,
-			"a3": false,
-			"b1": false,
-			"b2": false,
-			"b3": false,
-			"a1_latency": 200,
-			"a2_latency": 200,
-			"a3_latency": 200,
-			"b1_latency": 200,
-			"b2_latency": 200,
-			"b3_latency": 200,
+			"a1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false,
+				"port_map": []
+			},
+			"a2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
-			"channels": 2,
-			"channel_map": [
-				"front-left",
-				"front-right"
-			]
+			"channel_map": "2"
 		},
 		"2": {
 			"name": "Virtual_Input_2",
 			"primary": false,
 			"external": false,
-			"a1": false,
-			"a2": false,
-			"a3": false,
-			"b1": false,
-			"b2": false,
-			"b3": false,
-			"a1_latency": 200,
-			"a2_latency": 200,
-			"a3_latency": 200,
-			"b1_latency": 200,
-			"b2_latency": 200,
-			"b3_latency": 200,
+			"a1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
-			"channels": 2,
-			"channel_map": [
-				"front-left",
-				"front-right"
-			]
+			"channel_map": "2"
 		},
 		"3": {
 			"name": "Virtual_Input_3",
 			"primary": false,
-			"external": true,
-			"a1": false,
-			"a2": false,
-			"a3": false,
-			"b1": false,
-			"b2": false,
-			"b3": false,
-			"a1_latency": 200,
-			"a2_latency": 200,
-			"a3_latency": 200,
-			"b1_latency": 200,
-			"b2_latency": 200,
-			"b3_latency": 200,
+			"external": false,
+			"a1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
-			"channels": 2,
-			"channel_map": [
-				"front-left",
-				"front-right"
-			]
+			"channel_map": "2"
 		}
 	},
 	"hi": {
 		"1": {
 			"name": "",
-			"a1": false,
-			"a2": false,
-			"a3": false,
-			"b1": false,
-			"b2": false,
-			"b3": false,
-			"a1_latency": 200,
-			"a2_latency": 200,
-			"a3_latency": 200,
-			"b1_latency": 200,
-			"b2_latency": 200,
-			"b3_latency": 200,
-			"mute": false,
+			"a1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -175,19 +256,42 @@
 		},
 		"2": {
 			"name": "",
-			"a1": false,
-			"a2": false,
-			"a3": false,
-			"b1": false,
-			"b2": false,
-			"b3": false,
-			"a1_latency": 200,
-			"a2_latency": 200,
-			"a3_latency": 200,
-			"b1_latency": 200,
-			"b2_latency": 200,
-			"b3_latency": 200,
-			"mute": false,
+			"a1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -201,19 +305,42 @@
 		},
 		"3": {
 			"name": "",
-			"a1": false,
-			"a2": false,
-			"a3": false,
-			"b1": false,
-			"b2": false,
-			"b3": false,
-			"a1_latency": 200,
-			"a2_latency": 200,
-			"a3_latency": 200,
-			"b1_latency": 200,
-			"b2_latency": 200,
-			"b3_latency": 200,
-			"mute": false,
+			"a1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"a3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b1": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b2": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
+			"b3": {
+				"status": false,
+				"latency": 200,
+				"auto_ports": false, 
+				"port_map": []
+			},
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -231,8 +358,8 @@
 		"output_groups": {
 		}
 	},
-	"enable_vumeters": true,
+	"enable_vumeters": false,
 	"cleanup": false,
-	"tray": true,
+	"tray": false,
 	"layout":"default"
 }

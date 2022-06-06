@@ -4,7 +4,6 @@ import socket
 import threading
 import json
 import sys
-import os
 import re
 from queue import SimpleQueue
 from ..backends import pmctl
@@ -204,10 +203,10 @@ class Client:
             input_id = args[1]
             sink = args[2] + args[3]
             state = args[4].lower() == 'true'
-            self.config[input_type][input_id][sink] = state
+            self.config[input_type][input_id][sink]['status'] = state
             if len(args) > 4:
                 latency = int(args[5])
-                self.config[input_type][input_id][f'{sink}_latency'] = int(latency)
+                self.config[input_type][input_id][sink]['latency'] = int(latency)
 
         elif command == 'mute':
             device_type = args[0]
@@ -318,7 +317,7 @@ class Client:
         if state is not None: command += f' {state}'
         if latency is not None: command += f' {latency}'
 
-        if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
+        if self.config[input_type][input_id][f'{output_type}{output_id}']['status'] == state:
             return
 
         print(command)

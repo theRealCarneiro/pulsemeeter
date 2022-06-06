@@ -6,11 +6,36 @@ import pulsectl
 from . import pmctl
 
 
+CHANNELS = {
+    "Pipewire": {
+        '1': 'MONO',
+        '2': 'FL FR',
+        '4': 'FL FR RL RR',
+        '5': 'FL FR FC RL RR',
+        '5.1': 'FL FR FC LFE RL RR',
+        '7': 'FL FR FC RL RR SL SR',
+        '7.1': 'FL FR FC LFE RL RR SL SR'
+    },
+
+    "Pulseaudio": {
+        '1': 'Mono',
+        '2': 'front-left front-right',
+        '4': 'front-left front-right rear-left rear-right',
+        '5': 'front-left front-right front-center rear-left rear-right',
+        '5.1': 'front-left front-right front-center lfe rear-left rear-right',
+        '7': 'front-left front-right front-center rear-left rear-right side-left side-right',
+        '7.1': 'front-left front-right front-center lfe rear-left rear-right side-left side-right'
+    }
+}
+
+
 class AudioServer:
     def __init__(self, pulse_socket, config, loglevel=0, init=True):
+        print('aq')
         self.config = config
         self.loglevel = 2
         self.audio_server = 'Pipewire'
+        self.pulse_socket = pulse_socket
 
         # check if pulseaudio is running
         try:
@@ -18,25 +43,21 @@ class AudioServer:
         except Exception:
             sys.exit(1)
 
-        self.channels = ['front-left', 'front-right', 'rear-left',
-                         'rear-right', 'front-center', 'lfe', 'side-left',
-                         'side-right', 'aux0', 'aux1', 'aux2', 'aux3'
-                         ]
 
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
-        self.pulse_socket = pulse_socket
 
-        command = ''
-        command += self.start_sinks()
-        command += self.start_sources()
-        command += self.start_eqs()
-        command += self.start_rnnoise()
-        command += self.start_connections()
-        command += self.start_primarys()
+        if init is True:
+            command = ''
+            command += self.start_sinks()
+            command += self.start_sources()
+            command += self.start_eqs()
+            command += self.start_rnnoise()
+            command += self.start_connections()
+            command += self.start_primarys()
 
-        # print(command)
+            # print(command)
 
-        os.popen(command)
+            os.popen(command)
 
         # self.restart_window = False
 
@@ -94,19 +115,21 @@ class AudioServer:
 
         # itarate between all devices
         for device_id in self.config['vi']:
+            device_config = self.config['vi'][device_id]
 
             # if device does not have a name
-            if self.config['vi'][device_id]['name'] != '':
+            if device_config['name'] != '':
 
                 # external key means that the user is responsible for managing that sink
-                if self.config['vi'][device_id]['external'] is False:
+                if device_config['external'] is False:
 
                     # if device is available on pulse
-                    if not re.search(self.config['vi'][device_id]['name'], sink_list):
+                    if not re.search(device_config['name'], sink_list):
 
                         # set sink properties
-                        sink = self.config['vi'][device_id]['name']
-                        command += pmctl.init('sink', sink)
+                        sink = device_config['name']
+                        channel_map = CHANNELS[self.audio_server][device_config['channel_map']]
+                        command += pmctl.init('sink', sink, channel_map)
 
         if self.loglevel > 1: print(command)
         return command
@@ -117,16 +140,18 @@ class AudioServer:
         source_list = cmd("pactl list sources short")
         # itarate between all devices
         for device_id in self.config['b']:
+            device_config = self.config['b'][device_id]
 
             # if device does not have a name
-            if self.config['b'][device_id]['name'] != '':
+            if device_config['name'] != '':
 
                 # if device is available on pulse
-                if not re.search(self.config['b'][device_id]['name'], source_list):
+                if not re.search(device_config['name'], source_list):
 
                     # set source properties
-                    source = self.config['b'][device_id]['name']
-                    command += pmctl.init('source', source)
+                    source = device_config['name']
+                    channel_map = CHANNELS[self.audio_server][device_config['channel_map']]
+                    command += pmctl.init('source', source, channel_map)
 
         if self.loglevel > 1: print(command)
         return command
@@ -267,9 +292,9 @@ class AudioServer:
                     sink = output_type + output_id
 
                     # if the source is connected to that device
-                    if source_config[sink] is True:
+                    if source_config[sink]['status'] is True:
                         sink_name = self.get_correct_device([output_type, output_id], 'sink')
-                        latency = source_config[sink + '_latency']
+                        latency = source_config[sink]['latency']
                         ls = f'{ladspa_sink}.monitor' if self.audio_server != 'Pipewire' else ladspa_sink
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
@@ -346,7 +371,7 @@ class AudioServer:
                 for input_id in self.config[input_type]:
 
                     # if the source is connected to that device
-                    if self.config[input_type][input_id][sink] is True:
+                    if self.config[input_type][input_id][sink]['status'] is True:
                         vi = self.get_correct_device([input_type, input_id], 'source')
 
                         # disconnect source from sinks, then connect ladspa sink to sinks
@@ -416,7 +441,7 @@ class AudioServer:
 
                 sink = output_type + output_id
                 # connection status check
-                if self.config[input_type][input_id][sink] is True:
+                if self.config[input_type][input_id][sink]['status'] is True:
                     command += self.connect(input_type, input_id, output_type, output_id,
                             status=status, change_state=False, run_command=False, init=True)
 
@@ -432,7 +457,7 @@ class AudioServer:
 
         source_config = self.config[input_type][input_id]
         # sink_config = self.config[output_type][output_id]
-        cur_conn_status = source_config[output_type + output_id]
+        cur_conn_status = source_config[output_type + output_id]['status']
 
         # toggle connection status
         if status is None:
@@ -447,15 +472,15 @@ class AudioServer:
 
         # if true, will change the config status
         if change_state is True:
-            source_config[output_type + output_id] = status
+            source_config[output_type + output_id]['status'] = status
 
         # get name and latency of devices
         source = self.get_correct_device([input_type, input_id], 'source')
         sink = self.get_correct_device([output_type, output_id], 'sink')
         if latency is None:
-            latency = source_config[f'{output_type}{output_id}_latency']
+            latency = source_config[f'{output_type}{output_id}']['latency']
         else:
-            source_config[f'{output_type}{output_id}_latency'] = int(latency)
+            source_config[f'{output_type}{output_id}']['latency'] = int(latency)
 
         # check if device exists
         # if (source == '' or sink == ''):
@@ -538,7 +563,7 @@ class AudioServer:
                     output_id = target_num
                     sink = f'{output_type}{output_id}'
 
-                if self.config[input_type][input_id][sink] is True:
+                if self.config[input_type][input_id][sink]['status'] is True:
                     command += self.connect(input_type, input_id, output_type, output_id,
                             status=status, run_command=False, change_state=False, init=True)
 

@@ -2,8 +2,8 @@ import os
 import re
 import signal
 import shutil
-import threading
 import sys
+import traceback
 
 from .app_list_widget import AppList
 from .eq_popover import EqPopover
@@ -21,6 +21,7 @@ from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 gi_require_version('AppIndicator3', '0.1')
 from gi.repository import Gtk, GLib, AppIndicator3
+
 
 class MainWindow(Gtk.Window):
 
@@ -115,7 +116,7 @@ class MainWindow(Gtk.Window):
         self.start_inputs()
         self.start_outputs()
         self.start_vumeters()
-        self.start_app_list()
+        # self.start_app_list()
         self.start_menu_items()
         # self.start_layout_combobox()
 
@@ -292,7 +293,7 @@ class MainWindow(Gtk.Window):
                         found = True
                         combobox.set_active(i + 1)
 
-                if found is False and device_config['jack'] is False:
+                if found is False:
                     device_config['name'] = ''
 
                 combobox.connect('changed', self.on_combo_changed, device_type,
@@ -387,7 +388,7 @@ class MainWindow(Gtk.Window):
                     for output_id in self.config[output_type]:
                         sink = output_type + output_id
                         button = self.builder.get_object(f'{input_type}_{input_id}_{sink}')
-                        button.set_active(source_config[sink])
+                        button.set_active(source_config[sink]['status'])
                         self.loopback_buttons[input_type][input_id][sink] = button
                         button.connect('clicked', self.toggle_loopback, input_type,
                                        input_id, output_type, output_id)
@@ -540,7 +541,8 @@ class MainWindow(Gtk.Window):
         name = device[model - 1]['name'] if model > 0 else ''
 
         self.client.change_hardware_device(output_type, output_id, name)
-        self.vu_list[output_type][output_id].restart()
+        if self.client.config['enable_vumeters'] is True:
+            self.vu_list[output_type][output_id].restart()
 
         # if re.search('JACK:', device[model - 1]['description']):
             # self.pulse.config[device_type][device_id]['jack'] = True
@@ -571,7 +573,7 @@ class MainWindow(Gtk.Window):
             GLib.idle_add(self.sink_input_box.load_application_list, index)
         elif facility == 'source-output':
             GLib.idle_add(self.source_output_box.load_application_list, index)
-    
+
     def device_remove(self, index, facility):
         # remove event
         if facility == 'sink-input':

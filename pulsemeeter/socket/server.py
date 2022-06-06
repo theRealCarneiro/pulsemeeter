@@ -31,8 +31,8 @@ class Server:
 
         # audio server can be pulse or pipe, so just use a generic name
         self.closed = False
-        audio_server = AudioServer
 
+        self.config_changes_thread = None
         self.config = self.read_config()
         # saves the timestamp of the last config change to check how long ago the last change was
         self.last_config_change = 0
@@ -55,7 +55,7 @@ class Server:
         self.client_handler_connections = {}
 
         self.pulse_socket = PulseSocket(self.command_queue, self.config)
-        self.audio_server = audio_server(self.pulse_socket, self.config, loglevel=0, init=init_audio_server)
+        self.audio_server = AudioServer(self.pulse_socket, self.config, loglevel=0, init=init_audio_server)
 
         self.create_command_dict()
 
@@ -74,7 +74,7 @@ class Server:
         # Thread for saving the config changes
         # collects all changes and writes them together
         self.stop_changes_thread = False
-        self.config_changes_thread = threading.Thread(target=self._wait_for_config_changes)
+        # self.config_changes_thread = threading.Thread(target=self._wait_for_config_changes)
 
         # Register signal handlers
         if daemon:
@@ -375,19 +375,24 @@ class Server:
         # the buffer is there to wait for all other changes in a time of 20 secs to be made and then write them all together
         if buffer is True:
             self.last_config_change = time.time()
-            if self.config_changes_thread.is_alive() is False:
+            if self.config_changes_thread is not None and \
+                    self.config_changes_thread.is_alive() is False:
                 self.config_changes_thread.start()
         else:
             # gracefully exit the thread
             self._stop_config_changes_thread()
-            if self.config_changes_thread.is_alive(): self.config_changes_thread.join()
+            if self.config_changes_thread is not None and \
+                    self.config_changes_thread.is_alive():
+                self.config_changes_thread.join()
             self._write_config(config)
 
     # handles writing the config to the file
     def _write_config(self, config=None):
         # interupt the changes thread because config gets saved now anyways
         # it also checks if the config_changes_thread is not saving the config (so it does not join itself)
-        if self.config_changes_thread.is_alive() and threading.current_thread() != self.config_changes_thread:
+        if (self.config_changes_thread is not None and
+                self.config_changes_thread.is_alive() and
+                threading.current_thread() != self.config_changes_thread):
             self.config_changes_thread.join()
         # save the config
         if config is None: config = self.config
@@ -397,23 +402,22 @@ class Server:
         with open(CONFIG_FILE, 'w') as outfile:
             json.dump(config, outfile, indent='\t', separators=(',', ': '))
 
-
     # This function is used to save the config when there were no changes for the set amount of time
     # This is useful for optimizing the performance and disk usage
     def _wait_for_config_changes(self):
         while True:
-            if self.stop_changes_thread == True:
+            if self.stop_changes_thread is True:
                 self.stop_changes_thread = False
                 break
             # check if the last config change is over 15 secs ago
             if (time.time() - self.last_config_change) > 15:
                 self._write_config()
                 break
-            # this sleep just generally improves performance as we don't need very accurate time 
+            # this sleep just generally improves performance as we don't need very accurate time
             # if not done the thread will use 100% performance
             time.sleep(1)
 
-    # this just lets the config changes thread decide if it should stop 
+    # this just lets the config changes thread decide if it should stop
     def _stop_config_changes_thread(self):
         self.stop_changes_thread = True
 
