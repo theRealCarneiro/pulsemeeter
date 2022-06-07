@@ -3,9 +3,10 @@
 init (){
 	device_type=$1
 	device=$2
+	channel_map="$3"
 
 	# pulse
-	if which pulseaudio 2>/dev/null 1>&2; then
+	if [ $is_pulse = true ]; then
 		case $device_type in
 			"sink")
 				pactl list sinks short >/dev/null 2>&1 | grep $device && exit
@@ -43,6 +44,7 @@ init (){
 			node.name=$device
 			node.description=$device
 			media.class=Audio/$class
+			audio.position=[ $channel_map ]
 			object.linger=true
 		}" >/dev/null || printf "Error creating $device_type $device\n" >&2
 	fi
@@ -52,7 +54,7 @@ remove (){
 	device=$1
 
 	# pulse
-	if which pulseaudio 2>/dev/null 1>&2; then
+	if [ $is_pulse = true ]; then
 		index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index 
 		
@@ -73,7 +75,7 @@ connect (){
 	[ -z "$input" -o -z "$output" ] && exit
 
 	# pulse
-	if which pulseaudio 2>/dev/null 1>&2; then
+	if [ $is_pulse = true ]; then
 		index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
 			printf "Error disconnecting $input $2 to System:$3\n" >&2
@@ -95,7 +97,7 @@ disconnect (){
 	[ -z "$input" -o -z "$output" ] && exit
 
 	# pulse
-	if which pulseaudio 2>/dev/null 1>&2; then
+	if [ $is_pulse = true ]; then
 		index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
 			printf "Error disconnecting $input $2 to System:$3\n" >&2
@@ -157,7 +159,7 @@ list (){
 
 	device_type=$1
 
-	if [ "$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')" -lt 17 ]; then
+	if [ "$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')" -lt 16 ]; then
 		case $device_type in
 
 			"sinks")
@@ -363,14 +365,10 @@ rnnoise() {
 
 	# pipewire doesn't remove devices that depend on others,
 	# so we have to remove them by hand
-	if ! [ which pulseaudio 2>/dev/null 1>&2 ]; then
+	if [ $is_pulse = false ]; then
 		# unload sink that will filter data
 		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] ||  pactl unload-module $index
-
-		# loopback from source to ladspa sink
-		#index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" source=$master" | grep Module | sed 's/.*#//g')"
-		#[ -z "$index" ] || pactl unload-module $index
 	fi
 
 		if [ "$status" = "connect" ]; then
@@ -385,7 +383,7 @@ rnnoise() {
 				echo "Error loading rnnoise ladspa sink $sink_name for $master"
 
 			# pulse
-			if which pulseaudio 2>/dev/null 1>&2; then
+			if [ $is_pulse = true ]; then
 				# loopback from source to ladspa sink
 				pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true >/dev/null 2>&1 ||
 					echo "Error loading rnnoise loopback for $master"
@@ -474,9 +472,12 @@ if ! pactl info >/dev/null 2>&1; then
 	exit 1
 fi
 
+
+which pulseaudio 2>/dev/null 1>&2 && is_pulse=true || is_pulse=false
+
 case $1 in
 	"init")
-		init $2 $3 $4 $5
+		init $2 $3 "$4"
 	;;
 
 	"set-primary")
