@@ -28,6 +28,7 @@ class PortSelectPopover():
         self.input_id = input_id
         self.output_type = output_type
         self.output_id = output_id
+        self.output = f'{output_type}{output_id}'
 
         try:
             self.builder.add_objects_from_file(
@@ -117,10 +118,11 @@ class PortSelectPopover():
                 if self.button_list[iport][oport].get_active() is True:
                     port_map[iport].append(oport)
 
+        self.client.set_port_map(self.input_type, self.input_id, self.output, port_map)
         print(port_map)
 
     def toggle_grouping(self, widget):
-        # self.pulse.config[index[0]][index[1]][f'{index[2][0]}{index[2][1]}_port_group'] = widget.get_active()
+        self.client.config[self.input_type][self.input_id][self.output]['auto_ports'] = widget.get_active()
         if widget.get_active() is False:
             self.channel_box.set_sensitive(True)
             self.create_port_list()

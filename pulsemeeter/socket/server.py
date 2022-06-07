@@ -556,6 +556,20 @@ class Server:
                 'regex': r'[0-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
             },
 
+            'port-map': {
+                'function': self.audio_server.set_port_map,
+                'notify': True,
+                'save_config': False,
+                'regex': '(vi|hi) [0-9]+ (a|b)[0-9]+'
+            },
+
+            'auto-ports': {
+                'function': self.audio_server.set_auto_ports,
+                'notify': True,
+                'save_config': False,
+                'regex': f'(vi|hi) [0-9]+ (a|b)[0-9]+ {state}'
+            },
+
             'get-config': {
                 'function': self.get_config,
                 'notify': False,

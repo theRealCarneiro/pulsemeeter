@@ -485,6 +485,14 @@ class Client:
 
         return devices
 
+    def set_port_map(self, input_type, input_id, output, port_map):
+        command = f'port-map {input_type} {input_id} {output} {port_map}'
+        return self.send_command(command)
+
+    def set_auto_ports(self, input_type, input_id, output, status):
+        command = f'auto-ports {input_type} {input_id} {output} {status}'
+        return self.send_command(command)
+
     # change application device
     def move_app_device(self, app_id, device, stream_type):
         command = f'move-app-device {app_id} {device} {stream_type}'

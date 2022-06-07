@@ -4,29 +4,18 @@ import json
 import sys
 import subprocess
 import pulsectl
+import shutil
 from . import pmctl
 
 
 CHANNELS = {
-    "Pipewire": {
-        '1': 'MONO',
-        '2': 'FL FR',
-        '4': 'FL FR RL RR',
-        '5': 'FL FR FC RL RR',
-        '5.1': 'FL FR FC LFE RL RR',
-        '7': 'FL FR FC RL RR SL SR',
-        '7.1': 'FL FR FC LFE RL RR SL SR'
-    },
-
-    "Pulseaudio": {
-        '1': 'Mono',
-        '2': 'front-left front-right',
-        '4': 'front-left front-right rear-left rear-right',
-        '5': 'front-left front-right front-center rear-left rear-right',
-        '5.1': 'front-left front-right front-center lfe rear-left rear-right',
-        '7': 'front-left front-right front-center rear-left rear-right side-left side-right',
-        '7.1': 'front-left front-right front-center lfe rear-left rear-right side-left side-right'
-    }
+    '1': 'MONO',
+    '2': 'FL FR',
+    '4': 'FL FR RL RR',
+    '5': 'FL FR FC RL RR',
+    '5.1': 'FL FR FC LFE RL RR',
+    '7': 'FL FR FC RL RR SL SR',
+    '7.1': 'FL FR FC LFE RL RR SL SR'
 }
 
 
@@ -34,7 +23,7 @@ class AudioServer:
     def __init__(self, pulse_socket, config, loglevel=0, init=True):
         self.config = config
         self.loglevel = 2
-        self.audio_server = 'Pipewire'
+        self.audio_server = 'Pulseaudio' if shutil.which('pulseaudio') else 'Pipewire'
         self.pulse_socket = pulse_socket
 
         # check if pulseaudio is running
@@ -42,7 +31,6 @@ class AudioServer:
             subprocess.check_call('pmctl')
         except Exception:
             sys.exit(1)
-
 
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
 
@@ -128,7 +116,7 @@ class AudioServer:
 
                         # set sink properties
                         sink = device_config['name']
-                        channel_map = CHANNELS[self.audio_server][device_config['channel_map']]
+                        channel_map = CHANNELS[device_config['channel_map']]
                         command += pmctl.init('sink', sink, channel_map)
 
         if self.loglevel > 1: print(command)
@@ -150,7 +138,7 @@ class AudioServer:
 
                     # set source properties
                     source = device_config['name']
-                    channel_map = CHANNELS[self.audio_server][device_config['channel_map']]
+                    channel_map = CHANNELS[device_config['channel_map']]
                     command += pmctl.init('source', source, channel_map)
 
         if self.loglevel > 1: print(command)
@@ -527,6 +515,13 @@ class AudioServer:
     def set_port_map(self, input_type, input_id, output, port_map):
         input_config = self.config[input_type][input_id]
         input_config[output]['port_map'] = json.loads(port_map)
+        return f'port-map {input_type} {input_id} {output} {port_map}'
+
+    def set_auto_ports(self, input_type, input_id, output, status):
+        status = str2bool(status)
+        input_config = self.config[input_type][input_id]
+        input_config[output]['auto_ports'] = status
+        return f'auto-ports {input_type} {input_id} {output} {status}'
 
     # this will cleanup a hardware device and will not affect the config
     # useful when e.g. changing the device used in a hardware input/output strip
