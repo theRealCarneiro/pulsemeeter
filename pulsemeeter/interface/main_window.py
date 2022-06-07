@@ -393,13 +393,13 @@ class MainWindow(Gtk.Window):
                         button.connect('clicked', self.toggle_loopback, input_type,
                                        input_id, output_type, output_id)
 
-                        if self.config['jack']['enable'] is False:
+                        # #########DONT FORGET TO REMOVE NOT
+                        if self.config['jack']['enable'] is not False:
                             button.connect('button_press_event', self.latency_popover,
                                        LatencyPopover, input_type, input_id, output_type, output_id)
                         else:
-                            button.connect('button_press_event',
-                                       self.open_popover, PortSelectPopover,
-                                       [input_type, input_id, sink])
+                            button.connect('button_press_event', self.port_select_popover,
+                                       PortSelectPopover, input_type, input_id, output_type, output_id)
 
     # start output devices
     def start_outputs(self):
@@ -495,6 +495,13 @@ class MainWindow(Gtk.Window):
         if event.button == 3:
             if self.config[device_type][device_id]['name'] != '':
                 popover(button, self.client, device_type, device_id)
+
+    def port_select_popover(self, button, event, popover, input_type, input_id,
+            output_type, output_id):
+        if event.button == 3:
+            if self.config[input_type][input_id]['name'] != '':
+                PortSelectPopover(button, self.client, input_type, input_id,
+                        output_type, output_id)
 
     def latency_popover(self, button, event, popover, input_type, input_id,
             output_type, output_id):

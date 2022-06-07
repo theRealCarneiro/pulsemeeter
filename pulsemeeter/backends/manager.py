@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import sys
 import subprocess
 import pulsectl
@@ -31,7 +32,6 @@ CHANNELS = {
 
 class AudioServer:
     def __init__(self, pulse_socket, config, loglevel=0, init=True):
-        print('aq')
         self.config = config
         self.loglevel = 2
         self.audio_server = 'Pipewire'
@@ -488,8 +488,11 @@ class AudioServer:
 
         device_exists = source != '' and sink != ''
 
-        print(status)
-        command = pmctl.connect(source, sink, status, latency, run_command=False) if device_exists else ''
+        port_map = None
+        if source_config[f'{output_type}{output_id}']['auto_ports'] is False:
+            port_map = source_config[f'{output_type}{output_id}']['port_map']
+
+        command = pmctl.connect(source, sink, status, latency, port_map=port_map, run_command=False) if device_exists else ''
 
         if run_command is True:
             if device_exists:
@@ -520,6 +523,10 @@ class AudioServer:
             name = None
 
         return f'change-hd {output_type} {output_id} {name}'
+
+    def set_port_map(self, input_type, input_id, output, port_map):
+        input_config = self.config[input_type][input_id]
+        input_config[output]['port_map'] = json.loads(port_map)
 
     # this will cleanup a hardware device and will not affect the config
     # useful when e.g. changing the device used in a hardware input/output strip

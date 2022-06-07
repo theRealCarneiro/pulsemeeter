@@ -6,15 +6,28 @@ gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
+CHANNELS = {
+    '1': 'MONO',
+    '2': 'FL FR',
+    '4': 'FL FR RL RR',
+    '5': 'FL FR FC RL RR',
+    '5.1': 'FL FR FC LFE RL RR',
+    '7': 'FL FR FC RL RR SL SR',
+    '7.1': 'FL FR FC LFE RL RR SL SR'
+}
+
 
 class PortSelectPopover():
-    def __init__(self, button, pulse, index):
+    def __init__(self, button, client, input_type, input_id, output_type, output_id):
 
-        self.config = pulse.config
         self.builder = Gtk.Builder()
-        self.layout = pulse.config['layout']
-        self.pulse = pulse
-        self.index = index
+        self.layout = client.config['layout']
+        self.client = client
+
+        self.input_type = input_type
+        self.input_id = input_id
+        self.output_type = output_type
+        self.output_id = output_id
 
         try:
             self.builder.add_objects_from_file(
@@ -32,94 +45,91 @@ class PortSelectPopover():
             print('Error building main window!\n{}'.format(ex))
             sys.exit(1)
 
-        output = f'{self.index[2][0]}{self.index[2][1]}'
-        # jack_ports = f'{output}_jack_map'
-        port_group = f'{output}_port_group'
-        if port_group not in self.pulse.config[self.index[0]][self.index[1]]:
-            self.pulse.config[self.index[0]][self.index[1]][port_group] = True
+        output = self.output_type + self.output_id
+
+        self.port_select_popover = self.builder.get_object('portselect_popover')
+        self.port_select_popover.set_relative_to(button)
+
+        self.toggle_grouping_setting = self.builder.get_object('portselect_grouping_toggle')
+        self.toggle_grouping_setting.set_active(client.config[self.input_type][self.input_id][output]['auto_ports'])
+        self.toggle_grouping_setting.connect('toggled', self.toggle_grouping)
 
         self.apply_port_button = self.builder.get_object('apply_port_button')
         self.apply_port_button.connect('pressed', self.apply)
-        self.PortSelect_Popover = self.builder.get_object('portselect_popover')
-        self.PortSelect_Popover.set_relative_to(button)
-        self.channel_box = self.builder.get_object('channel_box')
-        self.toggle_grouping_setting = self.builder.get_object('portselect_grouping_toggle')
-        self.create_port_list()
-        self.toggle_grouping_setting.set_active(self.pulse.config[index[0]][index[1]][port_group])
-        self.channel_box.set_sensitive(not self.pulse.config[index[0]][index[1]][port_group])
-        self.toggle_grouping_setting.connect('toggled', self.toggle_grouping, index, pulse)
 
-        self.PortSelect_Popover.popup()
+        self.channel_box = self.builder.get_object('channel_box')
+        self.channel_box.set_sensitive(not client.config[self.input_type][self.input_id][output]['auto_ports'])
+
+        self.create_port_list()
+
+        self.port_select_popover.popup()
 
     def create_port_list(self, default=False):
-        channel_group = self.pulse.config[self.index[2][0]][self.index[2][1]]['name']
-        if self.index[2][0] == 'a':
-            ports = self.pulse.config['jack']['output_groups'][channel_group]
-        else:
-            ports = self.pulse.config['b'][self.index[2][1:]]['channel_map']
-        # port_num = len(ports)
-        sink_channel_num = self.pulse.config[self.index[0]][self.index[1]]['channels']
-        if self.index[0] != 'hi':
-            sink_channel_map = self.pulse.config[self.index[0]][self.index[1]]['channel_map']
-        else:
-            group = self.pulse.config[self.index[0]][self.index[1]]['name']
-            sink_channel_map = self.pulse.config['jack']['input_groups'][group]
-        if len(sink_channel_map) == 0:
-            sink_channel_map = self.pulse.channels[:sink_channel_num]
+        input_config = self.client.config[self.input_type][self.input_id]
+        output_config = self.client.config[self.output_type][self.output_id]
 
-        output = self.index[2]
-        jack_ports = f'{output}_jack_map'
-        port_group = f'{output}_port_group'
+        output = f'{self.output_type}{self.output_id}'
+        output_port_name = 'playback' if self.output_type == 'a' else 'input'
+        input_port_name = 'monitor' if self.input_type == 'vi' else 'capture'
+        output_ports = CHANNELS[output_config['channel_map']].split(' ')
+        input_ports = CHANNELS[input_config['channel_map']].split(' ')
+
+        port_map = input_config[output]['port_map']
+
+        # clear channel box
         for i in self.channel_box:
             self.channel_box.remove(i)
+
+        icount = 0
         self.button_list = {}
-        for channel in sink_channel_map:
-            hbox = Gtk.HBox(spacing=5)
-            label = Gtk.Label(label=channel)
-            label.set_size_request(100, 0)
+        for iport in input_ports:
+            hbox = Gtk.HBox(spacing=1)
+            label = Gtk.Label(label=f'{iport}:')
+            label.set_size_request(50, 0)
             hbox.pack_start(label, True, True, 0)
-            count = 0
-            self.button_list[channel] = {}
-            for i in ports:
-                self.button_list[channel][i] = Gtk.CheckButton(label=i)
-                if self.pulse.config[self.index[0]][self.index[1]][port_group] is True or default is True:
-                    if count == sink_channel_map.index(channel):
-                        self.button_list[channel][i].set_active(True)
-                else:
-                    if jack_ports not in self.pulse.config[self.index[0]][self.index[1]]:
-                        self.pulse.config[self.index[0]][self.index[1]][jack_ports] = {}
-                    if channel in self.pulse.config[self.index[0]][self.index[1]][jack_ports]:
-                        # print(self.pulse.config[self.index[0]][self.index[1]][jack_ports][channel])
-                        if i in self.pulse.config[self.index[0]][self.index[1]][jack_ports][channel]:
-                            self.button_list[channel][i].set_active(True)
-                hbox.pack_start(self.button_list[channel][i], True, True, 0)
-                count += 1
+            self.button_list[f'{input_port_name}_{iport}'] = {}
+            ocount = 0
+            for oport in output_ports:
+                button = Gtk.CheckButton(label=oport)
+
+                # set button as active or not
+                if f'{output_port_name}_{oport}' in port_map[f'{input_port_name}_{iport}'] or (
+                        default is True and icount == ocount):
+                    button.set_active(True)
+
+                self.button_list[f'{input_port_name}_{iport}'][f'{output_port_name}_{oport}'] = button
+                hbox.pack_start(button, True, True, 0)
+                ocount += 1
             self.channel_box.pack_start(hbox, True, True, 0)
 
         self.channel_box.show_all()
 
     def apply(self, widget):
-        jack_ports = f'{self.index[2][0]}{self.index[2][1]}_jack_map'
+        port_map = {}
+
         if self.toggle_grouping_setting.get_active() is True:
-            try:
-                del self.pulse.config[self.index[0]][self.index[1]][jack_ports]
-            except Exception:
-                pass
-            return
+            pass
 
-        self.pulse.config[self.index[0]][self.index[1]][jack_ports] = {}
-        for source_port in self.button_list:
-            self.pulse.config[self.index[0]][self.index[1]][jack_ports][source_port] = []
-            for system_port in self.button_list[source_port]:
-                if self.button_list[source_port][system_port].get_active() is True:
-                    self.pulse.config[self.index[0]][self.index[1]][jack_ports][source_port].append(system_port)
-        # self.button_list.clear()
+        for iport in self.button_list:
+            port_map[iport] = []
+            for oport in self.button_list[iport]:
 
-    def toggle_grouping(self, widget, index, pulse):
-        self.pulse.config[index[0]][index[1]][f'{index[2][0]}{index[2][1]}_port_group'] = widget.get_active()
+                if self.button_list[iport][oport].get_active() is True:
+                    port_map[iport].append(oport)
+
+        print(port_map)
+
+    def toggle_grouping(self, widget):
+        # self.pulse.config[index[0]][index[1]][f'{index[2][0]}{index[2][1]}_port_group'] = widget.get_active()
         if widget.get_active() is False:
             self.channel_box.set_sensitive(True)
             self.create_port_list()
         else:
-            self.create_port_list(default=True)
+            ic = 0
+            for iport in self.button_list:
+                oc = 0
+                for oport in self.button_list[iport]:
+                    self.button_list[iport][oport].set_active(True if ic == oc else False)
+                    oc += 1
+                ic += 1
             self.channel_box.set_sensitive(False)

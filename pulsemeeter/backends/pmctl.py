@@ -19,20 +19,22 @@ def remove(device, run_command=False):
     return command
 
 
-def connect(input, output, status=True, latency=200, run_command=False):
-
-    conn_status = 'connect' if status else 'disconnect'
-
-    if type(input) == str:
-        input = [input]
-
-    if type(output) == str:
-        output = [output]
+def connect(input, output, status=True, latency=200, port_map=None, run_command=False):
 
     command = ''
-    for i in input:
-        for o in output:
-            command += f'pmctl {conn_status} {i} {o} {latency}\n'
+    conn_status = 'connect' if status else 'disconnect'
+
+    # command = [[f'pmctl {conn_status} {i} {o} {latency}\n' for o in port_map[i]] for i in port_map]
+
+    # auto port mapping
+    if port_map is None:
+        command = f'pmctl {conn_status} {input} {output} {latency}\n'
+
+    # manual port mapping
+    else:
+        for iport in port_map:
+            for oport in port_map[iport]:
+                command += f'pmctl {conn_status} {input}:{iport} {output}:{oport} {latency}\n'
 
     if run_command is True: os.popen(command)
     return command
