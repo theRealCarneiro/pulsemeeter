@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import json
 import subprocess
 
@@ -32,10 +33,22 @@ def connect(input, output, status=True, latency=200, port_map=None, run_command=
 
     # manual port mapping
     else:
-        for iport in port_map:
-            for oport in port_map[iport]:
-                command += f'pmctl {conn_status} {input}:{iport} {output}:{oport} {latency}\n'
 
+        # get port names
+        input_ports = cmd(f'pmctl get-ports output {input}').split('\n')
+        output_ports = cmd(f'pmctl get-ports input {output}').split('\n')
+        print(f'pmctl get-ports output {input}')
+        print(input_ports)
+        print(f'pmctl get-ports input {output}')
+        print(output_ports)
+
+        for i in range(len(port_map)):
+            for j in port_map[i]:
+                inport = f'{input}:{input_ports[i]}'
+                outport = f'{output}:{output_ports[j]}'
+                command += f'pmctl {conn_status} {inport} {outport}\n'
+
+    print(command)
     if run_command is True: os.popen(command)
     return command
 
@@ -74,11 +87,16 @@ def set_primary(device_type, device_name, run_command=False):
     return command
 
 
-def list(device_type):
+def list(device_type, device_name=None):
     command = f'pmctl list {device_type}'
 
     try:
         devices = json.loads(cmd(command))
+        if device_name is not None:
+            for i in devices:
+                if i['name'] == device_name:
+                    devices = i
+                    break
     except Exception:
         devices = []
 
@@ -109,11 +127,10 @@ def cmd(command):
     return stdout.decode()
 
 
-# def main():
-    # connect(['a', 'b'], 'ca', True)
-    # list('sinks')
-    # return 0
+def main():
+    connect('Main', 'alsa_output.usb-Behringer_BCD3000-00.analog-surround-40', status=True, port_map=[[2], [3]])
+    return 0
 
 
-# if __name__ == '__main__':
-    # sys.exit(main())
+if __name__ == '__main__':
+    sys.exit(main())

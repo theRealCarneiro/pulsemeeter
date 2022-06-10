@@ -306,6 +306,7 @@ class Server:
                 raise Exception('[ERROR] invalid arguments')
 
             function = self.commands[command]['function']
+
             notify = self.commands[command]['notify']
             save_to_config = self.commands[command]['save_config']
             ret_msg = function(*args)
@@ -322,6 +323,7 @@ class Server:
             return ('[ERROR] invalid number of arguments', False)
 
         except Exception as ex:
+            print('aq')
             return (str(ex), False)
 
     def read_config(self):
@@ -559,7 +561,7 @@ class Server:
             'port-map': {
                 'function': self.audio_server.set_port_map,
                 'notify': True,
-                'save_config': False,
+                'save_config': True,
                 'regex': '(vi|hi) [0-9]+ (a|b)[0-9]+'
             },
 

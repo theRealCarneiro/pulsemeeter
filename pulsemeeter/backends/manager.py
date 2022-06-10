@@ -10,12 +10,12 @@ from . import pmctl
 
 CHANNELS = {
     '1': 'MONO',
-    '2': 'FL FR',
-    '4': 'FL FR RL RR',
-    '5': 'FL FR FC RL RR',
-    '5.1': 'FL FR FC LFE RL RR',
-    '7': 'FL FR FC RL RR SL SR',
-    '7.1': 'FL FR FC LFE RL RR SL SR'
+    '2': 'FL,FR',
+    '4': 'FL,FR,RL,RR',
+    '5': 'FL,FR,FC,RL,RR',
+    '5.1': 'FL,FR,FC,LFE,RL,RR',
+    '7': 'FL,FR,FC,RL,RR,SL,SR',
+    '7.1': 'FL,FR,FC,LFE,RL,RR,SL,SR'
 }
 
 
@@ -116,8 +116,9 @@ class AudioServer:
 
                         # set sink properties
                         sink = device_config['name']
-                        channel_map = CHANNELS[device_config['channel_map']]
-                        command += pmctl.init('sink', sink, channel_map)
+                        # channel_map = CHANNELS[device_config['channel_map']]
+                        channels = device_config['channels']
+                        command += pmctl.init('sink', sink, channels)
 
         if self.loglevel > 1: print(command)
         return command
@@ -138,8 +139,9 @@ class AudioServer:
 
                     # set source properties
                     source = device_config['name']
-                    channel_map = CHANNELS[device_config['channel_map']]
-                    command += pmctl.init('source', source, channel_map)
+                    # channel_map = CHANNELS[device_config['channel_map']]
+                    channels = device_config['channels']
+                    command += pmctl.init('source', source, channels)
 
         if self.loglevel > 1: print(command)
         return command
@@ -498,15 +500,17 @@ class AudioServer:
         # if device its not an empty name
         if device_config['name'] != '':
             self.toggle_hardware_device(output_type, output_id, False)
+            device_type = 'sinks' if output_type == 'a' else 'sources'
+            device = pmctl.list(device_type, device_config['name'])
+            if 'properties' in device:
+                channel_num = int(device['properties']['audio.position'])
+                device_config['channels'] = channel_num
 
         device_config['name'] = name
 
         # if chosen device is not an empty name
         if name != '':
             self.toggle_hardware_device(output_type, output_id, True)
-            # self.config[output_type][output_id]['jack'] = re.search('JACK:',
-                    # new_device['description'])
-            # self.config[output_type][output_id]['jack'] = name in
         else:
             name = None
 

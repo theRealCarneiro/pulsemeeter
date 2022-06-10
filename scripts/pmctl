@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 init (){
-	device_type=$1
-	device=$2
-	channel_map="$3"
+	local device_type=$1
+	local device=$2
+	local channels="$3"
 
 	# pulse
 	if [ $is_pulse = true ]; then
@@ -44,14 +44,16 @@ init (){
 			node.name=$device
 			node.description=$device
 			media.class=Audio/$class
-			audio.position=[ $channel_map ]
+			audio.channels=$channels
 			object.linger=true
 		}" >/dev/null || printf "Error creating $device_type $device\n" >&2
+
+		#audio.position=[ $channel_map ]
 	fi
 }
 
 remove (){
-	device=$1
+	local device=$1
 
 	# pulse
 	if [ $is_pulse = true ]; then
@@ -68,9 +70,9 @@ remove (){
 }
 
 connect (){
-	input=$1
-	output=$2
-	latency=${3:-200}
+	local input=$1
+	local output=$2
+	local latency=${3:-200}
 
 	[ -z "$input" -o -z "$output" ] && exit
 
@@ -91,8 +93,8 @@ connect (){
 }
 
 disconnect (){
-	input=$1
-	output=$2
+	local input=$1
+	local output=$2
 
 	[ -z "$input" -o -z "$output" ] && exit
 
@@ -109,16 +111,16 @@ disconnect (){
 }
 
 set_primary () {
-	device=$1
-	name=$2
+	local device=$1
+	local name=$2
 	pactl set-default-$device $name >/dev/null 2>&1 || 
 		echo "Error setting $device $name as primary" >&2
 }
 
 mute (){
-	device_type=$1
-	device=$2
-	status=$3
+	local device_type=$1
+	local device=$2
+	local status=$3
 
 	pactl set-$device_type-mute $device $status
 }
@@ -134,8 +136,8 @@ get_source_by_id() {
 }
 
 move_sink_input_master (){
-	sink_name=$1
-	master=$2
+	local sink_name=$1
+	local master=$2
 	index=$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m" | grep Module | sed 's/.*#//g')
 	[ -z "$index" ] && exit
 	id=$(LC_ALL=C pactl list sink-inputs | grep -B 2 $index | grep '#' | sed 's/.*#//g')
@@ -157,7 +159,7 @@ move_source_output () {
 
 list (){
 
-	device_type=$1
+	local device_type=$1
 
 	if [ "$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')" -lt 16 ]; then
 		case $device_type in
@@ -191,6 +193,22 @@ list (){
 	else
 		pactl -f json list $device_type 2>/dev/null
 	fi
+}
+
+get_port_name() {
+	type=$1
+	device=$2
+	for i in 'capture' 'monitor' 'playback' 'input'; do
+		pw-link --$type | grep "$device:$i" >/dev/null && port_name=$i
+	done
+	printf "%s" "$port_name"
+}
+
+get_ports() {
+	type=$1
+	device=$2
+	ports=$(pw-link --$type | grep "$device" | cut -d ':' -f2)
+	printf "%s" "$ports"
 }
 
 # for version < 16.0
@@ -294,42 +312,49 @@ eq (){
 	sink_name=$2
 	master=$3
 	control=$4
+	map=$5
 	label=mbeq
 	plugin=mbeq_1197
 
-	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
-		[ -f "$i/$plugin.so" ] && found=1
+	for lib in '64' ''; do
+		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do
+			[ -f "$i/$plugin.so" ] && found=1
+		done
 	done
 
 	[ -z "$found" ] && exit
 
-	info="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$sink_name m")"
-	if [ "$status" = "remove" ];then
-		index=$(echo "$info" | grep Module | sed 's/.*#//g')
-		[ -z "$index" ] || pactl unload-module $index >/dev/null 2>&1  ||
-				echo "Error unloading eq module in $sink_name"
-		exit
-	fi
+	ladspa $status sink $master $sink_name $label $plugin $control $map
 
-	# update module if control is different
-	if ! [ -z "$info" ]; then
-		index=$(echo "$info" | grep Module | sed 's/.*#//g')
-		if ! [ -z "$index" ]; then
-			old_control=$(echo "$info" | grep control | sed 's/.*control=//g')
-			[ "$control" = "$old_control" ] && [ "$master" != 'remove' ] && exit
-			pactl unload-module $index  >/dev/null 2>&1 ||
-				echo "Error unloading eq module in $sink_name"
-		fi
-	fi
+	#info="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$sink_name m")"
+	#if [ "$status" = "remove" ]; then
+		#index=$(echo "$info" | grep Module | sed 's/.*#//g')
+		#[ -z "$index" ] || pactl unload-module $index >/dev/null 2>&1  ||
+				#echo "Error unloading eq module in $sink_name"
+		#exit
+	#fi
 
+	## update module if control is different
+	#if ! [ -z "$info" ]; then
+		#index=$(echo "$info" | grep Module | sed 's/.*#//g')
+		#if ! [ -z "$index" ]; then
+			#old_control=$(echo "$info" | grep control | sed 's/.*control=//g')
+			#[ "$control" = "$old_control" ] && [ "$master" != 'remove' ] && exit
+			#remove $sink_name
+			##pactl unload-module $index  >/dev/null 2>&1 ||
+				##echo "Error unloading eq module in $sink_name"
+		#fi
+	#fi
 
-	pactl load-module module-ladspa-sink \
-		sink_name=$sink_name	\
-		master=$master			\
-		plugin=mbeq_1197		\
-		label=mbeq				\
-		control=$control 2>/dev/null || 
-			printf "%s" "Error loading eq in $sink_name, control: $control\n" >&2
+	#remove $sink_name
+
+	#pactl load-module module-ladspa-sink \
+		#sink_name=$sink_name	\
+		#master=$master			\
+		#plugin=mbeq_1197		\
+		#label=mbeq				\
+		#control=$control 2>/dev/null || 
+			#printf "%s" "Error loading eq in $sink_name, control: $control\n" >&2
 
 		#sink_properties=device.description=$sink_name 
 }
@@ -339,112 +364,105 @@ rnnoise() {
 	master=$2
 	control=$3
 	status=$4
-	latency=${5:-200}
+	lat_or_map=$5
 
 
 	label=noise_suppressor_mono
 	plugin=librnnoise_ladspa
  
-	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
-		if [ -f "$i/rnnoise_ladspa.so" ]; then
-			label=noisetorch
-			plugin=rnnoise_ladspa
-			#found=1
-			break
-		#elif [ -f "$i/$plugin.so" ]; then
-			#found=1
-			#break
-		fi
+	for lib in '64' ''; do
+		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do
+			if [ -f "$i/rnnoise_ladspa.so" ]; then
+				label=noisetorch
+				plugin=rnnoise_ladspa
+				break
+			elif [ -f "$i/$plugin.so" ]; then
+				found=1
+				break
+			fi
+		done
 	done
 	
-	#[ -z "$found" ] && exit 1
+	[ -z "$found" ] && exit 1
 
-	# unload sink that will recive filtered data
-	index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name$" | grep Module | sed 's/.*#//g')"
-	[ -z "$index" ] || pactl unload-module $index
-
-	# pipewire doesn't remove devices that depend on others,
-	# so we have to remove them by hand
-	if [ $is_pulse = false ]; then
-		# unload sink that will filter data
-		index="$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name"_in" m" | grep Module | sed 's/.*#//g')"
-		[ -z "$index" ] ||  pactl unload-module $index
-	fi
-
-		if [ "$status" = "connect" ]; then
-			pactl list sinks short 2>/dev/null | grep "$sink_name" > /dev/null && exit
-			
-			# sink that will recive filtered data
-			pactl load-module module-null-sink sink_name=$sink_name >/dev/null 2>&1 ||
-				echo "Error loading rnnoise null sink $sink_name for $master"
-
-			# sink that will filter data
-			pactl load-module module-ladspa-sink sink_name=$sink_name"_in" master=$sink_name label=$label plugin=$plugin control=$control >/dev/null 2>&1 ||
-				echo "Error loading rnnoise ladspa sink $sink_name for $master"
-
-			# pulse
-			if [ $is_pulse = true ]; then
-				# loopback from source to ladspa sink
-				pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true >/dev/null 2>&1 ||
-					echo "Error loading rnnoise loopback for $master"
-
-			# pipewire
-			else
-				connect $master $sink_name"_in"
-			fi
-		fi
-
+	ladspa $status source $master $sink_name $label $plugin $control $lat_or_map
 }
 
-compressor (){
-	sink_name=$1
-	master=$2
-	control=$3
-
-	#LC_ALL=C pactl list modules | grep "$sink_name" >/dev/null || \
-	index=$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m" | grep Module | sed 's/.*#//g')
-	[ -z "$index" ] || pactl unload-module $index
-
-	[ "$master" = "remove" ] && exit
-
-	pactl load-module module-ladspa-sink \
-		sink_properties=device.description=$sink_name \
-		sink_name=$sink_name	\
-		master=$master			\
-		plugin=sc4m_1916		\
-		label=sc4m				\
-		control=$control
-}
+#compressor (){
+		##plugin=sc4m_1916		\
+		##label=sc4m				\
+#}
 
 ladspa() {
-	master=$1
-	sink_name=$2
-	control=$3
-	status=$4
-	latency=${5:-200}
-	label=$6
-	plugin=$7
 
-	for i in '/usr/lib/ladspa' '/usr/local/lib/ladspa'; do
-		[ -f "$i/$plugin.so" ] && found=1
+	local status=$1
+	local device_type=$2
+	local master=$3
+	local sink_name=$4
+	local label=$5
+	local plugin=$6
+	local control=$7
+
+	# latency for pulse, channel map for pipewire
+	local latency=$8
+	local map=$8
+
+	# check if plugin existis in file system
+	for lib in '64' ''; do
+		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do
+			if [ -f "$i/$plugin.so" ]; then
+				found=1
+				break
+			fi
+		done
 	done
 
 	[ -z "$found" ] && exit 1
 
+	## remove old sinks
+	# sources need one extra sink, so we need to remove it
+	remove $sink_name"_in"
+	remove $sink_name
+
+	## create devices
 	if [ "$status" = "connect" ]; then
-		pactl list sinks short | grep "$sink_name.*null" > /dev/null && exit
-		pactl load-module module-null-sink sink_name=$sink_name
 
-		pactl load-module module-ladspa-sink master=$sink_name sink_name=$sink_name"_in" label=$label plugin=$plugin control=$control
-		pactl load-module module-loopback sink=$sink_name"_in" source=$master latency_msec=$latency source_dont_move=true sink_dont_move=true
-	else
-		index=$(LC_ALL=C pactl list modules | grep -B 2 $label | grep -B 2 -A 1 ladspa | grep Module | sed 's/.*#//g')
-		[ -z "$index" ] || pactl unload-module $index
+		# sources need an extra sink to work
+		if [ "$device_type" = "source" ]; then
+			init sink $sink_name $map
+			input=$master
+			master=$sink_name
+			sink_name+='_in'
+			channel_num=$(( $(echo "$map" | grep "," -o | tr -d '\n' | wc -c) + 1 ))
+			channels="channels=$channel_num"
 
-		#index=$(LC_ALL=C pactl list modules | awk '/Module/{print $0} /Name:/ {print $0} /Argument/' | grep -B 2 $sink_name | grep -B 1 null | grep Module | sed 's/.*#//g')
-		#[ -z "$index" ] || pactl unload-module $index
+		elif [ $is_pulse = false ]; then
+
+			# pipewire wont allow ladspa sinks to connect directly to virtual sources, 
+			# so we need to add a middleground sink
+			if ! pactl list sinks short | grep $master; then
+				init sink $sink_name $map
+				connect $sink_name $master
+				master=$sink_name
+				sink_name+='_in'
+				channel_num=$(( $(echo "$map" | grep "," -o | tr -d '\n' | wc -c) + 1 ))
+				channels="channels=$channel_num"
+			fi
+		fi
+
+		# create ladspa sink
+		pactl load-module module-ladspa-sink \
+			master=$master \
+			sink_name=$sink_name \
+			label=$label \
+			plugin=$plugin \
+			control=$control $channels channels=4 ||
+				echo "Error loading $label ladspa sink $sink_name for $master"
+
+
+		# we need to connect our source to the filter
+		[ "$device_type" = "source" ] && connect $input $sink_name $latency
 	fi
-
 }
 
 get_sink_input_chann_num (){
@@ -521,7 +539,7 @@ case $1 in
 	;;
 
 	"eq")
-		eq $2 $3 $4 $5
+		eq $2 $3 $4 $5 $6
 	;;
 
 	"compressor")
@@ -533,7 +551,7 @@ case $1 in
 	;;
 
 	"ladspa")
-		ladspa $2 $3 $4 $5 $6 $7 $8
+		ladspa $2 $3 $4 $5 $6 $7 $8 $9
 	;;
 
 	"list-virtual-sinks")
@@ -574,6 +592,13 @@ case $1 in
 
 	"get-source-output-volume")
 		get_source_output_volume $2
+	;;
+	"get-port-name")
+		get_port_name $2 $3
+	;;
+
+	"get-ports")
+		get_ports $2 $3
 	;;
 
 	"*") echo "command not found";;

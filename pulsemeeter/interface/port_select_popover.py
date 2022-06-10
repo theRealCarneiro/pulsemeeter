@@ -6,15 +6,15 @@ gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
-CHANNELS = {
-    '1': 'MONO',
-    '2': 'FL FR',
-    '4': 'FL FR RL RR',
-    '5': 'FL FR FC RL RR',
-    '5.1': 'FL FR FC LFE RL RR',
-    '7': 'FL FR FC RL RR SL SR',
-    '7.1': 'FL FR FC LFE RL RR SL SR'
-}
+CHANNELS = [
+    'MONO',
+    'FL FR',
+    'FL FR RL RR',
+    'FL FR FC RL RR',
+    'FL FR FC LFE RL RR',
+    'FL FR FC RL RR SL SR',
+    'FL FR FC LFE RL RR SL SR'
+]
 
 
 class PortSelectPopover():
@@ -52,6 +52,7 @@ class PortSelectPopover():
         self.port_select_popover.set_relative_to(button)
 
         self.toggle_grouping_setting = self.builder.get_object('portselect_grouping_toggle')
+        self.toggle_grouping_setting.set_active(client.config[input_type][input_id][output]['auto_ports'])
         self.toggle_grouping_setting.set_active(client.config[self.input_type][self.input_id][output]['auto_ports'])
         self.toggle_grouping_setting.connect('toggled', self.toggle_grouping)
 
@@ -70,10 +71,10 @@ class PortSelectPopover():
         output_config = self.client.config[self.output_type][self.output_id]
 
         output = f'{self.output_type}{self.output_id}'
-        output_port_name = 'playback' if self.output_type == 'a' else 'input'
-        input_port_name = 'monitor' if self.input_type == 'vi' else 'capture'
-        output_ports = CHANNELS[output_config['channel_map']].split(' ')
-        input_ports = CHANNELS[input_config['channel_map']].split(' ')
+        output_ports = output_config['channels']
+        # output_port_name = 'playback' if self.output_type == 'a' else 'input'
+        # input_port_name = 'monitor' if self.input_type == 'vi' else 'capture'
+        input_ports = input_config['channels']
 
         port_map = input_config[output]['port_map']
 
@@ -82,23 +83,21 @@ class PortSelectPopover():
             self.channel_box.remove(i)
 
         icount = 0
-        self.button_list = {}
-        for iport in input_ports:
+        self.button_list = [[None for j in range(output_ports)] for i in range(input_ports)]
+        for iport in range(input_ports):
             hbox = Gtk.HBox(spacing=1)
-            label = Gtk.Label(label=f'{iport}:')
+            label = Gtk.Label(label=iport + 1)
             label.set_size_request(50, 0)
             hbox.pack_start(label, True, True, 0)
-            self.button_list[f'{input_port_name}_{iport}'] = {}
             ocount = 0
-            for oport in output_ports:
-                button = Gtk.CheckButton(label=oport)
+            for oport in range(output_ports):
+                button = Gtk.CheckButton(label=oport + 1)
 
                 # set button as active or not
-                if f'{output_port_name}_{oport}' in port_map[f'{input_port_name}_{iport}'] or (
-                        default is True and icount == ocount):
+                if oport in port_map[iport] or (default is True and icount == ocount):
                     button.set_active(True)
 
-                self.button_list[f'{input_port_name}_{iport}'][f'{output_port_name}_{oport}'] = button
+                self.button_list[iport][oport] = button
                 hbox.pack_start(button, True, True, 0)
                 ocount += 1
             self.channel_box.pack_start(hbox, True, True, 0)
@@ -106,20 +105,21 @@ class PortSelectPopover():
         self.channel_box.show_all()
 
     def apply(self, widget):
-        port_map = {}
 
-        if self.toggle_grouping_setting.get_active() is True:
-            pass
+        status = self.toggle_grouping_setting.get_active()
+        self.client.set_auto_ports(self.input_type, self.input_id, self.output, status)
 
-        for iport in self.button_list:
-            port_map[iport] = []
-            for oport in self.button_list[iport]:
+        port_map = []
+
+        for iport in range(len(self.button_list)):
+            ports = []
+            for oport in range(len(self.button_list[iport])):
 
                 if self.button_list[iport][oport].get_active() is True:
-                    port_map[iport].append(oport)
+                    ports.append(oport)
+            port_map.append(ports)
 
         self.client.set_port_map(self.input_type, self.input_id, self.output, port_map)
-        print(port_map)
 
     def toggle_grouping(self, widget):
         self.client.config[self.input_type][self.input_id][self.output]['auto_ports'] = widget.get_active()
@@ -128,10 +128,10 @@ class PortSelectPopover():
             self.create_port_list()
         else:
             ic = 0
-            for iport in self.button_list:
+            for button_list in self.button_list:
                 oc = 0
-                for oport in self.button_list[iport]:
-                    self.button_list[iport][oport].set_active(True if ic == oc else False)
+                for button in button_list:
+                    button.set_active(True if ic == oc else False)
                     oc += 1
                 ic += 1
             self.channel_box.set_sensitive(False)

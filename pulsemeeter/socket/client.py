@@ -229,6 +229,20 @@ class Client:
             vol = int(args[2])
             self.config[device_type][device_id]['vol'] = vol
 
+        elif command == 'port-map':
+            input_type = args[0]
+            input_id = args[1]
+            output = args[2]
+            port_map = args[3]
+            self.config[input_type][input_id][output]['port_map'] = json.loads(port_map)
+
+        elif command == 'auto-ports':
+            input_type = args[0]
+            input_id = args[1]
+            output = args[2]
+            status = args[3] == 'true'
+            self.config[input_type][input_id][output]['auto_ports'] = status
+
         elif command == 'rename' or command == 'change-hd':
             device_type = args[0]
             device_id = args[1]
@@ -486,6 +500,7 @@ class Client:
         return devices
 
     def set_port_map(self, input_type, input_id, output, port_map):
+        port_map = json.dumps(port_map).replace(" ", "")
         command = f'port-map {input_type} {input_id} {output} {port_map}'
         return self.send_command(command)
 
