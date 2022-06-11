@@ -20,7 +20,8 @@ def remove(device, run_command=False):
     return command
 
 
-def connect(input, output, status=True, latency=200, port_map=None, run_command=False):
+def connect(input, output, status=True, latency=200, port_map=None,
+            input_ports=None, output_ports=None, run_command=False):
 
     command = ''
     conn_status = 'connect' if status else 'disconnect'
@@ -33,15 +34,6 @@ def connect(input, output, status=True, latency=200, port_map=None, run_command=
 
     # manual port mapping
     else:
-
-        # get port names
-        input_ports = cmd(f'pmctl get-ports output {input}').split('\n')
-        output_ports = cmd(f'pmctl get-ports input {output}').split('\n')
-        print(f'pmctl get-ports output {input}')
-        print(input_ports)
-        print(f'pmctl get-ports input {output}')
-        print(output_ports)
-
         for i in range(len(port_map)):
             for j in port_map[i]:
                 inport = f'{input}:{input_ports[i]}'
@@ -83,7 +75,16 @@ def set_primary(device_type, device_name, run_command=False):
     command = f'pmctl set-primary {device_type} {device_name}\n'
 
     if run_command: os.popen(command)
+    return command
 
+
+def ladspa(status, device_type, name, sink_name, label, plugin, control,
+        chann_or_lat, run_command=False):
+
+    status = 'connect' if status else 'disconnect'
+    command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}'
+
+    if run_command: os.popen(command)
     return command
 
 

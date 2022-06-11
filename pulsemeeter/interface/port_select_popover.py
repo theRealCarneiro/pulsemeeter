@@ -66,7 +66,7 @@ class PortSelectPopover():
 
         self.port_select_popover.popup()
 
-    def create_port_list(self, default=False):
+    def create_port_list(self):
         input_config = self.client.config[self.input_type][self.input_id]
         output_config = self.client.config[self.output_type][self.output_id]
 
@@ -94,13 +94,15 @@ class PortSelectPopover():
                 button = Gtk.CheckButton(label=oport + 1)
 
                 # set button as active or not
-                if oport in port_map[iport] or (default is True and icount == ocount):
+                if (len(port_map) != 0 and oport in port_map[iport]) or (
+                        (self.toggle_grouping_setting.get_active() is True and icount == ocount)):
                     button.set_active(True)
 
                 self.button_list[iport][oport] = button
                 hbox.pack_start(button, True, True, 0)
                 ocount += 1
             self.channel_box.pack_start(hbox, True, True, 0)
+            icount += 1
 
         self.channel_box.show_all()
 

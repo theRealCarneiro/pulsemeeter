@@ -195,6 +195,14 @@ class AudioServer:
         if self.loglevel > 1: print(command)
         return command
 
+    # def start_hardware_devices(self):
+        # inputs = pmctl.list('sources')
+        # outputs = pmctl.list('sinks')
+        # names = []
+        # for device_type in ['hi', 'a']:
+            # for device_id in self.config[device_type]:
+                # names.append()
+
     def stop_connections(self, run_command=True):
         command = ''
         for input_type in ['vi', 'hi']:
@@ -243,7 +251,9 @@ class AudioServer:
         source = source_config['name']
 
         if latency is None:
-            latency = source_config['rnnoise_latency']
+            chann_lat = source_config['rnnoise_latency']
+            if self.audio_server == 'Pipewire':
+                chann_lat = source_config['channels']
 
         if control is None:
             control = source_config['rnnoise_control']
@@ -267,6 +277,7 @@ class AudioServer:
 
         # create ladspa sink
         command = f'pmctl rnnoise {ladspa_sink} {source} {control} {conn_status} {latency}\n'
+        command = pmctl.ladspa(conn_status, 'source', source, ladspa_sink, '', '', control, chann_lat)
 
         if change_config:
             if status != 'set': source_config['use_rnnoise'] = status
@@ -446,7 +457,7 @@ class AudioServer:
             status=None, latency=None, run_command=True, change_state=True, init=False):
 
         source_config = self.config[input_type][input_id]
-        # sink_config = self.config[output_type][output_id]
+        sink_config = self.config[output_type][output_id]
         cur_conn_status = source_config[output_type + output_id]['status']
 
         # toggle connection status
@@ -478,11 +489,33 @@ class AudioServer:
 
         device_exists = source != '' and sink != ''
 
+        # port map
         port_map = None
+        input_ports = None
+        output_ports = None
         if source_config[f'{output_type}{output_id}']['auto_ports'] is False:
             port_map = source_config[f'{output_type}{output_id}']['port_map']
 
-        command = pmctl.connect(source, sink, status, latency, port_map=port_map, run_command=False) if device_exists else ''
+            input_port_type = 'monitor' if input_type == 'vi' else 'capture'
+            if input_type == 'hi' and source_config['rnnoise'] is False:
+                input_ports = source_config['channel_map'].split(',')
+            else:
+                input_ports = range(source_config['channels'])
+            input_ports = [f'{input_port_type}_{i}' for i in input_ports]
+
+            output_port_type = 'playback' if output_type == 'a' else 'input'
+            if output_type == 'a' and sink_config['eq'] is False:
+                output_ports = sink_config['channel_map'].split(',')
+            else:
+                output_ports = range(sink_config['channels'])
+            output_ports = [f'{output_port_type}_{i}' for i in output_ports]
+
+        if device_exists:
+            command = pmctl.connect(source, sink, status, latency,
+                                    port_map=port_map, input_ports=input_ports,
+                                    output_ports=output_ports, run_command=False)
+        else:
+            command = ''
 
         if run_command is True:
             if device_exists:
@@ -503,8 +536,8 @@ class AudioServer:
             device_type = 'sinks' if output_type == 'a' else 'sources'
             device = pmctl.list(device_type, device_config['name'])
             if 'properties' in device:
-                channel_num = int(device['properties']['audio.position'])
-                device_config['channels'] = channel_num
+                device_config['channel_map'] = device['properties']['audio.position']
+                device_config['channels'] = int(device['properties']['audio.channels'])
 
         device_config['name'] = name
 
