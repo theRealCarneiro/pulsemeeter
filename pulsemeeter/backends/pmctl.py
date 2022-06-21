@@ -26,8 +26,6 @@ def connect(input, output, status=True, latency=200, port_map=None,
     command = ''
     conn_status = 'connect' if status else 'disconnect'
 
-    # command = [[f'pmctl {conn_status} {i} {o} {latency}\n' for o in port_map[i]] for i in port_map]
-
     # auto port mapping
     if port_map is None:
         command = f'pmctl {conn_status} {input} {output} {latency}\n'
@@ -40,7 +38,6 @@ def connect(input, output, status=True, latency=200, port_map=None,
                 outport = f'{output}:{output_ports[j]}'
                 command += f'pmctl {conn_status} {inport} {outport}\n'
 
-    print(command)
     if run_command is True: os.popen(command)
     return command
 
@@ -64,7 +61,7 @@ def disconnect(input, output, run_command=False):
 
 def mute(device_type, device, state, run_command=False):
 
-    command = f'pmctl mute {device_type} {device} {state}'
+    command = f'pmctl mute {device_type} {device} {state}\n'
 
     if run_command is True: os.popen(command)
     return command
@@ -79,10 +76,11 @@ def set_primary(device_type, device_name, run_command=False):
 
 
 def ladspa(status, device_type, name, sink_name, label, plugin, control,
-        chann_or_lat, run_command=False):
+        chann_or_lat, channel_map=None, run_command=False):
 
     status = 'connect' if status else 'disconnect'
-    command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}'
+
+    command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}\n'
 
     if run_command: os.popen(command)
     return command
@@ -102,6 +100,10 @@ def list(device_type, device_name=None):
         devices = []
 
     return devices
+
+
+def get_ports(device, device_type):
+    return cmd(f'pmctl get-ports {device_type} {device}').split('\n')
 
 
 def subscribe():
@@ -128,10 +130,10 @@ def cmd(command):
     return stdout.decode()
 
 
-def main():
-    connect('Main', 'alsa_output.usb-Behringer_BCD3000-00.analog-surround-40', status=True, port_map=[[2], [3]])
-    return 0
+# def main():
+    # print(get_ports('Main', 'output'))
+    # return 0
 
 
-if __name__ == '__main__':
-    sys.exit(main())
+# if __name__ == '__main__':
+    # sys.exit(main())

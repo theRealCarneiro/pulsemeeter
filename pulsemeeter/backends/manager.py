@@ -260,59 +260,36 @@ class AudioServer:
             control == 95 if control == '' else int(control)
 
         # set name for the plugin sink
-        if ladspa_sink is None: ladspa_sink = f'{input_type}{input_id}_rnnoise'
+        ladspa_sink = f'{input_type}{input_id}_rnnoise'
 
         # status = None -> toggle state
         if status is None:
             status = not source_config['use_rnnoise']
-            conn_status = 'connect' if status else 'disconnect'
 
         # if only changing control
         elif status == 'set':
-            conn_status = 'connect' if source_config['use_rnnoise'] else 'disconnect'
+            status = source_config['use_rnnoise']
 
         else:
             status = str2bool(status)
-            conn_status = 'connect' if status else 'disconnect'
 
         # create ladspa sink
-        command = f'pmctl rnnoise {ladspa_sink} {source} {control} {conn_status} {latency}\n'
-        command = pmctl.ladspa(conn_status, 'source', source, ladspa_sink, '', '', control, chann_lat)
-
-        if change_config:
-            if status != 'set': source_config['use_rnnoise'] = status
-            source_config['rnnoise_latency'] = int(latency)
-            source_config['rnnoise_control'] = int(control)
+        command = pmctl.ladspa(status, 'source', source, ladspa_sink, 'noise_suppressor_mono', 'librnnoise_ladspa', control, chann_lat)
 
         # recreates all loopbacks from the device
         if reconnect:
+            command += self.reconnect('hi', input_id, False, run_command=False)
 
-            # itarate in all output devices
-            for output_type in ['a', 'b']:
-                for output_id in self.config[output_type]:
-                    sink = output_type + output_id
+        if change_config:
+            if status != 'set': source_config['use_rnnoise'] = status
+            source_config['rnnoise_control'] = int(control)
+            if self.audio_server != 'Pipewire':
+                source_config['rnnoise_latency'] = chann_lat
 
-                    # if the source is connected to that device
-                    if source_config[sink]['status'] is True:
-                        sink_name = self.get_correct_device([output_type, output_id], 'sink')
-                        latency = source_config[sink]['latency']
-                        ls = f'{ladspa_sink}.monitor' if self.audio_server != 'Pipewire' else ladspa_sink
+        if reconnect:
+            command += self.reconnect('hi', input_id, True, run_command=False)
 
-                        # disconnect source from sinks, then connect ladspa sink to sinks
-                        if status == 'set' and conn_status:
-                            command += pmctl.disconnect(ls, sink_name)
-                            command += pmctl.connect(ls, sink_name, latency=latency)
-
-                        # disconnect source from sinks, then connect ladspa sink to sinks
-                        elif status is True:
-                            command += pmctl.disconnect(source, sink_name)
-                            command += pmctl.connect(ls, sink_name, latency=latency)
-
-                        # disconnect ladspa sink from sinks, then connect source to sinks
-                        elif status is False:
-                            command += pmctl.disconnect(ls, sink_name)
-                            command += pmctl.connect(source, sink_name, latency=latency)
-
+        print(command)
         if run_command is True:
             if self.loglevel > 1: print(command)
             os.popen(command)
@@ -449,7 +426,6 @@ class AudioServer:
         if run_command:
             if self.loglevel > 1: print(command)
             os.popen(command)
-        # print(command)
         return command
 
     # connects an input to an output
@@ -457,7 +433,7 @@ class AudioServer:
             status=None, latency=None, run_command=True, change_state=True, init=False):
 
         source_config = self.config[input_type][input_id]
-        sink_config = self.config[output_type][output_id]
+        # sink_config = self.config[output_type][output_id]
         cur_conn_status = source_config[output_type + output_id]['status']
 
         # toggle connection status
@@ -490,25 +466,13 @@ class AudioServer:
         device_exists = source != '' and sink != ''
 
         # port map
-        port_map = None
-        input_ports = None
-        output_ports = None
-        if source_config[f'{output_type}{output_id}']['auto_ports'] is False:
+        input_ports, output_ports, port_map = (None, None, None)
+        if (source_config[f'{output_type}{output_id}']['auto_ports'] is False and
+                self.audio_server == 'Pipewire'):
             port_map = source_config[f'{output_type}{output_id}']['port_map']
-
-            input_port_type = 'monitor' if input_type == 'vi' else 'capture'
-            if input_type == 'hi' and source_config['rnnoise'] is False:
-                input_ports = source_config['channel_map'].split(',')
-            else:
-                input_ports = range(source_config['channels'])
-            input_ports = [f'{input_port_type}_{i}' for i in input_ports]
-
-            output_port_type = 'playback' if output_type == 'a' else 'input'
-            if output_type == 'a' and sink_config['eq'] is False:
-                output_ports = sink_config['channel_map'].split(',')
-            else:
-                output_ports = range(sink_config['channels'])
-            output_ports = [f'{output_port_type}_{i}' for i in output_ports]
+            # input_port_type = 'input' if input_type == 'hi' and source_config['use_rnnoise'] is False else 'output'
+            input_ports = pmctl.get_ports(source, 'output')
+            output_ports = pmctl.get_ports(sink, 'input')
 
         if device_exists:
             command = pmctl.connect(source, sink, status, latency,
@@ -816,9 +780,6 @@ class AudioServer:
 
     def end_subscribe(self):
         self.MyOut.terminate()
-
-    def jack_get_ports(self):
-        return cmd('pmctl jack-system-ports')
 
 
 def cmd(command):

@@ -456,7 +456,7 @@ ladspa() {
 			sink_name=$sink_name \
 			label=$label \
 			plugin=$plugin \
-			control=$control $channels channels=4 ||
+			control=$control channels=4 ||
 				echo "Error loading $label ladspa sink $sink_name for $master"
 
 

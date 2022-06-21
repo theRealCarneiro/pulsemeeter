@@ -309,6 +309,7 @@ class Server:
 
             notify = self.commands[command]['notify']
             save_to_config = self.commands[command]['save_config']
+            print(command)
             ret_msg = function(*args)
 
             if not ret_msg:
@@ -323,7 +324,7 @@ class Server:
             return ('[ERROR] invalid number of arguments', False)
 
         except Exception as ex:
-            print('aq')
+            print('deu ruim', ex)
             return (str(ex), False)
 
     def read_config(self):
