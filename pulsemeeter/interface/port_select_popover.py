@@ -48,23 +48,26 @@ class PortSelectPopover():
 
         output = self.output_type + self.output_id
 
-        self.port_select_popover = self.builder.get_object('portselect_popover')
-        self.port_select_popover.set_relative_to(button)
+        input_name = self.client.config[input_type][input_id]['name']
+        output_name = self.client.config[output_type][output_id]['name']
+        if input_name != '' and output_name != '':
+            self.port_select_popover = self.builder.get_object('portselect_popover')
+            self.port_select_popover.set_relative_to(button)
 
-        self.toggle_grouping_setting = self.builder.get_object('portselect_grouping_toggle')
-        self.toggle_grouping_setting.set_active(client.config[input_type][input_id][output]['auto_ports'])
-        self.toggle_grouping_setting.set_active(client.config[self.input_type][self.input_id][output]['auto_ports'])
-        self.toggle_grouping_setting.connect('toggled', self.toggle_grouping)
+            self.toggle_grouping_setting = self.builder.get_object('portselect_grouping_toggle')
+            self.toggle_grouping_setting.set_active(client.config[input_type][input_id][output]['auto_ports'])
+            self.toggle_grouping_setting.set_active(client.config[self.input_type][self.input_id][output]['auto_ports'])
+            self.toggle_grouping_setting.connect('toggled', self.toggle_grouping)
 
-        self.apply_port_button = self.builder.get_object('apply_port_button')
-        self.apply_port_button.connect('pressed', self.apply)
+            self.apply_port_button = self.builder.get_object('apply_port_button')
+            self.apply_port_button.connect('pressed', self.apply)
 
-        self.channel_box = self.builder.get_object('channel_box')
-        self.channel_box.set_sensitive(not client.config[self.input_type][self.input_id][output]['auto_ports'])
+            self.channel_box = self.builder.get_object('channel_box')
+            self.channel_box.set_sensitive(not client.config[self.input_type][self.input_id][output]['auto_ports'])
 
-        self.create_port_list()
+            self.create_port_list()
 
-        self.port_select_popover.popup()
+            self.port_select_popover.popup()
 
     def create_port_list(self):
         input_config = self.client.config[self.input_type][self.input_id]

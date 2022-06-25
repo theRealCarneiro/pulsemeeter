@@ -466,18 +466,18 @@ class AudioServer:
         device_exists = source != '' and sink != ''
 
         # port map
-        input_ports, output_ports, port_map = (None, None, None)
+        # input_ports, output_ports, port_map = (None, None, None)
+        port_map = None
         if (source_config[f'{output_type}{output_id}']['auto_ports'] is False and
                 self.audio_server == 'Pipewire'):
             port_map = source_config[f'{output_type}{output_id}']['port_map']
-            # input_port_type = 'input' if input_type == 'hi' and source_config['use_rnnoise'] is False else 'output'
-            input_ports = pmctl.get_ports(source, 'output')
-            output_ports = pmctl.get_ports(sink, 'input')
+            # # input_port_type = 'input' if input_type == 'hi' and source_config['use_rnnoise'] is False else 'output'
+            # input_ports = pmctl.get_ports(source, 'output')
+            # output_ports = pmctl.get_ports(sink, 'input')
 
         if device_exists:
             command = pmctl.connect(source, sink, status, latency,
-                                    port_map=port_map, input_ports=input_ports,
-                                    output_ports=output_ports, run_command=False)
+                                    port_map=port_map, run_command=False)
         else:
             command = ''
 
@@ -493,16 +493,22 @@ class AudioServer:
         if name in ['None', None]: name = ''
         # print(f'{output_type} {output_id} {name}')
         device_config = self.config[output_type][output_id]
+        channel_map = None
+        channels = None
 
         # if device its not an empty name
         if device_config['name'] != '':
             self.toggle_hardware_device(output_type, output_id, False)
-            device_type = 'sinks' if output_type == 'a' else 'sources'
-            device = pmctl.list(device_type, device_config['name'])
-            if 'properties' in device:
-                device_config['channel_map'] = device['properties']['audio.position']
-                device_config['channels'] = int(device['properties']['audio.channels'])
 
+        if name != '':
+            device = pmctl.list('sinks' if output_type == 'a' else 'sources', name)
+
+            if 'properties' in device:
+                channel_map = device['properties']['audio.position']
+                channels = int(device['properties']['audio.channels'])
+
+        device_config['channel_map'] = channel_map
+        device_config['channels'] = channels
         device_config['name'] = name
 
         # if chosen device is not an empty name
@@ -511,7 +517,7 @@ class AudioServer:
         else:
             name = None
 
-        return f'change-hd {output_type} {output_id} {name}'
+        return f'change-hd {output_type} {output_id} {name} {channel_map} {channels}'
 
     def set_port_map(self, input_type, input_id, output, port_map):
         input_config = self.config[input_type][input_id]
@@ -535,18 +541,16 @@ class AudioServer:
         if device_type == 'a':
             device_list = ['hi', 'vi']
 
-            if status:
-                if device_config['use_eq']:
-                    command += self.eq(device_type, device_id, status=True,
-                            reconnect=False, change_config=False, run_command=False)
+            if status and device_config['use_eq']:
+                command += self.eq(device_type, device_id, status=True,
+                        reconnect=False, change_config=False, run_command=False)
 
         else:
             device_list = ['a', 'b']
 
-            if status:
-                if device_type == 'hi' and device_config['use_rnnoise']:
-                    command += self.rnnoise(device_id, status=True,
-                            reconnect=False, change_config=False, run_command=False)
+            if status and device_type == 'hi' and device_config['use_rnnoise']:
+                command += self.rnnoise(device_id, status=True,
+                        reconnect=False, change_config=False, run_command=False)
 
         # set connections
         for target_type in device_list:

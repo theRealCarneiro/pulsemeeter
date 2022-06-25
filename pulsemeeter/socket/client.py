@@ -243,12 +243,29 @@ class Client:
             status = args[3] == 'true'
             self.config[input_type][input_id][output]['auto_ports'] = status
 
-        elif command == 'rename' or command == 'change-hd':
+        elif command == 'rename':
             device_type = args[0]
             device_id = args[1]
             name = args[2]
             if name == 'None':
                 name = ''
+            self.config[device_type][device_id]['name'] = name
+
+        elif command == 'change-hd':
+            device_type = args[0]
+            device_id = args[1]
+            name = args[2]
+            channel_map = args[3]
+            channels = args[4]
+            if name == 'None':
+                name = ''
+
+            if channels != 'None':
+                self.config[device_type][device_id]['channels'] = int(channels)
+
+            if channel_map != 'None':
+                self.config[device_type][device_id]['channel_map'] = channel_map
+
             self.config[device_type][device_id]['name'] = name
 
         elif command == 'eq':

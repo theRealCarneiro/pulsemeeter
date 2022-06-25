@@ -88,7 +88,23 @@ connect (){
 
 	# pipewire
 	else
-		pw-link $input $output 2> /dev/null
+		local port_map="$3"
+		local input_ports=$(get_ports output $input)
+		local output_ports=$(get_ports input $output)
+
+		if [ -z "$port_map" ]; then
+			pw-link $input $output 2> /dev/null
+		else
+			for i in $(echo "$port_map"); do
+				input_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f1) + 1 ))
+				output_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f2) + 1 ))
+
+				input_port=$(printf "%s" "$input_ports" | head -$input_port_index | tail -1)
+				output_port=$(printf "%s" "$output_ports" | head -$output_port_index | tail -1)
+
+				pw-link $input:$input_port $output:$output_port 2> /dev/null
+			done
+		fi
 	fi
 }
 
@@ -503,7 +519,7 @@ case $1 in
 	;;
 
 	"connect") 
-		connect $2 $3 $4
+		connect $2 $3 "$4"
 	;;
 
 	"disconnect")
