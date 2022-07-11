@@ -2412,7 +2412,7 @@ KHz</property>
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Virtual Inputs</property>
+                <property name="label" translatable="yes">Hardware Inputs</property>
               </object>
               <packing>
                 <property name="position">4</property>
@@ -3295,7 +3295,7 @@ KHz</property>
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Hardware Inputs</property>
+                <property name="label" translatable="yes">Virtual Inputs</property>
               </object>
               <packing>
                 <property name="position">4</property>
