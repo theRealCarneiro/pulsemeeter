@@ -496,7 +496,7 @@ def main():
 
         # init: Just start devices and connections
         elif sys.argv[1] == 'init':
-            # Server()
+            Server()
             return 0
 
         # exit: close server, all clients should close after they recive an exit signal from

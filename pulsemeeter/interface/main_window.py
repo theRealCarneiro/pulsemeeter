@@ -11,6 +11,7 @@ from .latency_popover import LatencyPopover
 from .rnnoise_popover import RnnoisePopover
 from .groups_popover import JackGroupsPopover
 from .port_select_popover import PortSelectPopover
+from .portmap_popover import PortMapPopover
 from .vumeter_widget import Vumeter
 
 from ..settings import LAYOUT_DIR
@@ -120,6 +121,11 @@ class MainWindow(Gtk.Window):
         self.start_menu_items()
         # self.start_layout_combobox()
 
+        for device_type in ['a']:
+            for device_id in self.client.config[device_type]:
+                event_label = self.builder.get_object(f'{device_type}{device_id}_event_box')
+                event_label.connect('button_press_event', self.port_select_popover, device_type, device_id)
+
         self.window = self.builder.get_object('window')
         # self.add_window(self.window)
         # super().__init__(self.window)
@@ -170,17 +176,6 @@ class MainWindow(Gtk.Window):
             i += 1
         self.layout_combobox.connect('changed', self.change_layout)
 
-        # self.jack_toggle_button = self.builder.get_object('jack_toggle')
-        # self.jack_toggle_button.set_active(self.pulse.config['jack']['enable'])
-        # self.jack_toggle_button.connect('toggled', self.toggle_jack)
-        # self.jack_toggle_button.set_sensitive(False)
-
-        # self.test = self.builder.get_object('test')
-        # self.test.connect('pressed', self.open_group_popover)
-        # self.jack_gp_popover = self.builder.get_object('jack_group_popover')
-        # self.jack_gp_popover.set_relative_to(self.test)
-        # self.jack_toggle_button.connect('toggled', self.toggle_jack)
-
     def toggle_tray(self, widget):
         state = widget.get_active()
         self.client.set_tray(state)
@@ -216,7 +211,8 @@ class MainWindow(Gtk.Window):
         if not shutil.which('pulse-vumeter'):
             return
         self.enable_vumeters = widget.get_active()
-        self.config['enable_vumeters'] = widget.get_active()
+        self.client.set_vumeter(self.enable_vumeters)
+        # self.config['enable_vumeters'] = widget.get_active()
         for device_type in ['hi', 'vi', 'a', 'b']:
             for device_id in self.config[device_type]:
                 # if self.config[device_type][device_id]['name'] != '':
@@ -285,7 +281,7 @@ class MainWindow(Gtk.Window):
                     if 'properties' in device:
                         device = device['properties']
 
-                    text = device['alsa.card_name'][:name_size]
+                    text = device['device.description'][:name_size]
                     if len(text) == name_size:
                         text = text + '...'
                     combobox.append_text(text)
@@ -398,8 +394,8 @@ class MainWindow(Gtk.Window):
                             button.connect('button_press_event', self.latency_popover,
                                        LatencyPopover, input_type, input_id, output_type, output_id)
                         else:
-                            button.connect('button_press_event', self.port_select_popover,
-                                       PortSelectPopover, input_type, input_id, output_type, output_id)
+                            button.connect('button_press_event', self.port_map_popover,
+                                       input_type, input_id, output_type, output_id)
 
     # start output devices
     def start_outputs(self):
@@ -427,8 +423,7 @@ class MainWindow(Gtk.Window):
                     self.primary_buttons['b'][output_id] = primary
 
                     label = self.builder.get_object(f'b{output_id}_label')
-                    if label is not None:
-                        label.set_text(f'B{output_id} - {sink_config["name"]}')
+                    label.set_text(f'B{output_id} - {sink_config["name"]}')
 
                 # volume slider and adjustment
                 adjust = self.builder.get_object(f'{output_type}_{output_id}_adjust')
@@ -496,12 +491,18 @@ class MainWindow(Gtk.Window):
             if self.config[device_type][device_id]['name'] != '':
                 popover(button, self.client, device_type, device_id)
 
-    def port_select_popover(self, button, event, popover, input_type, input_id,
+    def port_map_popover(self, button, event, input_type, input_id,
             output_type, output_id):
         if event.button == 3:
             if self.config[input_type][input_id]['name'] != '':
-                PortSelectPopover(button, self.client, input_type, input_id,
+                PortMapPopover(button, self.client, input_type, input_id,
                         output_type, output_id)
+
+    def port_select_popover(self, button, event, device_type, device_id):
+        if event.button == 1:
+            if self.config[device_type][device_id]['name'] != '':
+                PortSelectPopover(button, self.client, device_type, device_id)
+
 
     def latency_popover(self, button, event, popover, input_type, input_id,
             output_type, output_id):

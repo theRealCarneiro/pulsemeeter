@@ -441,6 +441,12 @@ class Server:
         ret = f'cleanup {state}'
         return ret
 
+    def set_vumeters(self, state):
+        state = str2bool(state)
+        self.config['enable_vumeters'] = state
+        ret = f'vumeter {state}'
+        return ret
+
     def create_command_dict(self):
 
         # some useful regex
@@ -590,6 +596,13 @@ class Server:
 
             'set-cleanup': {
                 'function': self.set_cleanup,
+                'notify': True,
+                'save_config': False,
+                'regex': f'{state}$'
+            },
+
+            'set-vumeter': {
+                'function': self.set_vumeters,
                 'notify': True,
                 'save_config': False,
                 'regex': f'{state}$'

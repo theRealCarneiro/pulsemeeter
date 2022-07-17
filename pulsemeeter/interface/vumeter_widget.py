@@ -19,7 +19,7 @@ class Vumeter(Gtk.ProgressBar):
         self.name = config[device_type][device_id]['name']
         self.process = None
 
-        if vertical:
+        if vertical and device_type not in ['a', 'b']:
             self.set_orientation(Gtk.Orientation.VERTICAL)
             self.set_margin_bottom(8)
             self.set_margin_top(8)
@@ -27,6 +27,8 @@ class Vumeter(Gtk.ProgressBar):
             self.set_inverted(True)
         else:
             self.set_orientation(Gtk.Orientation.HORIZONTAL)
+            self.set_margin_start(8)
+            self.set_margin_end(8)
 
         self.set_vexpand(True)
         self.set_hexpand(True)

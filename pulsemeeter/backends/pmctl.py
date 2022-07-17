@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 import json
 import subprocess
 
@@ -32,13 +31,7 @@ def connect(input, output, status=True, latency=200, port_map=None,
 
     # manual port mapping
     else:
-        ports = ''
-        for i in range(len(port_map)):
-            for o in port_map[i]:
-                ports += f'{i}:{o} '
-        ports = ports[:-1]
-
-        command = f'pmctl {conn_status} {input} {output} "{ports}"\n'
+        command = f'pmctl {conn_status} {input} {output} "{port_map}"\n'
 
     if run_command is True: os.popen(command)
     return command

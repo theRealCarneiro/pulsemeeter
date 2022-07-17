@@ -255,16 +255,16 @@ class Client:
             device_type = args[0]
             device_id = args[1]
             name = args[2]
-            channel_map = args[3]
-            channels = args[4]
+            # channel_map = args[3]
+            channels = args[3]
             if name == 'None':
                 name = ''
 
             if channels != 'None':
                 self.config[device_type][device_id]['channels'] = int(channels)
 
-            if channel_map != 'None':
-                self.config[device_type][device_id]['channel_map'] = channel_map
+            # if channel_map != 'None':
+                # self.config[device_type][device_id]['channel_map'] = channel_map
 
             self.config[device_type][device_id]['name'] = name
 
@@ -285,6 +285,10 @@ class Client:
         elif command == 'cleanup':
             state = args[0]
             self.config['cleanup'] = state.lower() == 'true'
+
+        elif command == 'vumeter':
+            state = args[0]
+            self.config['enable_vumeters'] = state.lower() == 'true'
 
         elif command == 'tray':
             state = args[0]
@@ -503,7 +507,8 @@ class Client:
         devices[v] = []
 
         for i in devl:
-            if 'properties' not in i or 'alsa.card_name' in i['properties']:
+            # if 'properties' not in i or 'alsa.card_name' in i['properties']:
+            if 'HARDWARE' in i['flags']:
                 devices[h].append(i)
             else:
                 devices[v].append(i)
@@ -569,6 +574,16 @@ class Client:
             return
 
         command = f'set-cleanup {state}'
+        return self.send_command(command)
+
+    def set_vumeter(self, state):
+        if type(state) == str:
+            state = state.lower() == 'true'
+
+        if state == self.config['enable_vumeters']:
+            return
+
+        command = f'set-vumeter {state}'
         return self.send_command(command)
 
     def close_connection(self):

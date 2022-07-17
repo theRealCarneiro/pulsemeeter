@@ -2,13 +2,6 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkWindow">
-    <property name="can-focus">False</property>
-    <property name="type-hint">dialog</property>
-    <child>
-      <placeholder/>
-    </child>
-  </object>
   <object class="GtkAdjustment" id="a_1_adjust">
     <property name="upper">153</property>
     <property name="step-increment">1</property>
@@ -1239,76 +1232,6 @@ KHz</property>
                 <property name="can-focus">False</property>
                 <property name="hexpand">True</property>
                 <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="margin-start">10</property>
-                    <property name="label" translatable="yes">A1</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">0</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="margin-start">20</property>
-                    <property name="label" translatable="yes">A2</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">2</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="margin-start">20</property>
-                    <property name="label" translatable="yes">A3</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">4</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBoxText" id="a_3_combobox">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="margin-end">10</property>
-                    <property name="hexpand">True</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">5</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBoxText" id="a_2_combobox">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="hexpand">True</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">3</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBoxText" id="a_1_combobox">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="hexpand">True</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">1</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkButton" id="menu_button">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
@@ -1328,6 +1251,24 @@ KHz</property>
                     <property name="left-attach">6</property>
                     <property name="top-attach">0</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
               </object>
               <packing>
@@ -3524,7 +3465,7 @@ KHz</property>
                 <property name="hexpand">False</property>
                 <property name="vexpand">False</property>
                 <child>
-                  <!-- n-columns=5 n-rows=4 -->
+                  <!-- n-columns=3 n-rows=6 -->
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -3532,94 +3473,25 @@ KHz</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">False</property>
                     <child>
-                      <!-- n-columns=1 n-rows=3 -->
+                      <!-- n-columns=2 n-rows=2 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-top">5</property>
+                        <property name="margin-bottom">5</property>
                         <property name="hexpand">False</property>
                         <child>
                           <!-- n-columns=1 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <child>
-                              <object class="GtkToggleButton" id="a_2_mute">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="receives-default">True</property>
-                                <property name="tooltip-text" translatable="yes">Mute</property>
-                                <property name="hexpand">True</property>
-                                <child>
-                                  <object class="GtkImage">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="icon-name">audio-volume-muted</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkToggleButton" id="a_2_eq">
-                                <property name="label" translatable="yes">EQ</property>
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="receives-default">True</property>
-                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">A2</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <!-- n-columns=2 n-rows=1 -->
-                          <object class="GtkGrid">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
-                            <property name="column-homogeneous">True</property>
-                            <child>
-                              <object class="GtkScale" id="a_2_vol">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">a_2_adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
                             <child>
                               <!-- n-columns=1 n-rows=1 -->
-                              <object class="GtkGrid" id="a_2_vumeter">
+                              <object class="GtkGrid" id="a_1_vumeter">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
@@ -3633,25 +3505,28 @@ KHz</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
+                            <child>
+                              <object class="GtkScale" id="a_1_vol">
+                                <property name="width-request">200</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="adjustment">a_1_adjust</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
-                      </object>
-                      <packing>
-                        <property name="left-attach">2</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <!-- n-columns=1 n-rows=3 -->
-                      <object class="GtkGrid">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-end">3</property>
-                        <property name="hexpand">False</property>
                         <child>
                           <!-- n-columns=1 n-rows=2 -->
                           <object class="GtkGrid">
@@ -3693,18 +3568,7 @@ KHz</property>
                             </child>
                           </object>
                           <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">A1</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
+                            <property name="left-attach">1</property>
                             <property name="top-attach">1</property>
                           </packing>
                         </child>
@@ -3713,21 +3577,12 @@ KHz</property>
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="column-homogeneous">True</property>
                             <child>
-                              <object class="GtkScale" id="a_1_vol">
-                                <property name="height-request">120</property>
+                              <object class="GtkComboBoxText" id="a_1_combobox">
+                                <property name="height-request">30</property>
                                 <property name="visible">True</property>
-                                <property name="can-focus">True</property>
+                                <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">a_1_adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -3735,8 +3590,120 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
+                              <object class="GtkEventBox" id="a1_event_box">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="margin-start">8</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="label" translatable="yes">A1</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Hardware Outputs</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">10</property>
+                        <property name="margin-end">5</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">0</property>
+                        <property name="height">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">10</property>
+                        <property name="margin-bottom">5</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">0</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">5</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">2</property>
+                        <property name="top-attach">0</property>
+                        <property name="height">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">10</property>
+                        <property name="margin-bottom">10</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">5</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <!-- n-columns=2 n-rows=2 -->
+                      <object class="GtkGrid">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-top">5</property>
+                        <property name="margin-bottom">5</property>
+                        <property name="hexpand">False</property>
+                        <child>
+                          <!-- n-columns=1 n-rows=2 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="column-homogeneous">True</property>
+                            <child>
                               <!-- n-columns=1 n-rows=1 -->
-                              <object class="GtkGrid" id="a_1_vumeter">
+                              <object class="GtkGrid" id="a_2_vumeter">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
@@ -3750,32 +3717,36 @@ KHz</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
+                            <child>
+                              <object class="GtkScale" id="a_2_vol">
+                                <property name="width-request">200</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="adjustment">a_2_adjust</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
-                      </object>
-                      <packing>
-                        <property name="left-attach">1</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <!-- n-columns=1 n-rows=3 -->
-                      <object class="GtkGrid">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-start">3</property>
-                        <property name="hexpand">False</property>
                         <child>
                           <!-- n-columns=1 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
+                            <property name="valign">end</property>
                             <child>
-                              <object class="GtkToggleButton" id="a_3_mute">
+                              <object class="GtkToggleButton" id="a_2_mute">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
@@ -3795,7 +3766,7 @@ KHz</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkToggleButton" id="a_3_eq">
+                              <object class="GtkToggleButton" id="a_2_eq">
                                 <property name="label" translatable="yes">EQ</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -3809,18 +3780,7 @@ KHz</property>
                             </child>
                           </object>
                           <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">A3</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
+                            <property name="left-attach">1</property>
                             <property name="top-attach">1</property>
                           </packing>
                         </child>
@@ -3829,26 +3789,68 @@ KHz</property>
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
-                            <property name="column-homogeneous">True</property>
                             <child>
-                              <object class="GtkScale" id="a_3_vol">
+                              <object class="GtkComboBoxText" id="a_2_combobox">
+                                <property name="height-request">30</property>
                                 <property name="visible">True</property>
-                                <property name="can-focus">True</property>
+                                <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">a_3_adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
+                            <child>
+                              <object class="GtkEventBox" id="a2_event_box">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="margin-start">8</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="label" translatable="yes">A2</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <!-- n-columns=2 n-rows=2 -->
+                      <object class="GtkGrid">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-top">5</property>
+                        <property name="margin-bottom">5</property>
+                        <property name="hexpand">False</property>
+                        <child>
+                          <!-- n-columns=1 n-rows=2 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="column-homogeneous">True</property>
                             <child>
                               <!-- n-columns=1 n-rows=1 -->
                               <object class="GtkGrid" id="a_3_vumeter">
@@ -3865,79 +3867,120 @@ KHz</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
+                            <child>
+                              <object class="GtkScale" id="a_3_vol">
+                                <property name="width-request">200</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="adjustment">a_3_adjust</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
+                            <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=1 n-rows=2 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="valign">end</property>
+                            <child>
+                              <object class="GtkToggleButton" id="a_3_eq">
+                                <property name="label" translatable="yes">EQ</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings (needs retoggle to take effect)</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="a_3_mute">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Mute</property>
+                                <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkComboBoxText" id="a_3_combobox">
+                                <property name="height-request">30</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEventBox" id="a3_event_box">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="margin-start">8</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="label" translatable="yes">A3</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">2</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="left-attach">3</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hardware Outputs</property>
-                      </object>
-                      <packing>
                         <property name="left-attach">1</property>
-                        <property name="top-attach">1</property>
-                        <property name="width">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-start">10</property>
-                        <property name="margin-end">5</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">0</property>
-                        <property name="height">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-start">10</property>
-                        <property name="margin-bottom">5</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">0</property>
-                        <property name="width">5</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-start">5</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">4</property>
-                        <property name="top-attach">0</property>
-                        <property name="height">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-start">10</property>
-                        <property name="margin-bottom">10</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">3</property>
-                        <property name="width">5</property>
+                        <property name="top-attach">4</property>
                       </packing>
                     </child>
                   </object>
@@ -3960,7 +4003,7 @@ KHz</property>
                   </packing>
                 </child>
                 <child>
-                  <!-- n-columns=5 n-rows=4 -->
+                  <!-- n-columns=3 n-rows=6 -->
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -3968,13 +4011,64 @@ KHz</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">False</property>
                     <child>
-                      <!-- n-columns=1 n-rows=3 -->
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Virtual Outputs</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-bottom">10</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">0</property>
+                        <property name="height">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-end">10</property>
+                        <property name="margin-bottom">5</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">0</property>
+                        <property name="width">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-end">10</property>
+                        <property name="margin-bottom">10</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">5</property>
+                        <property name="width">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <!-- n-columns=2 n-rows=2 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-start">3</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-top">5</property>
+                        <property name="margin-bottom">5</property>
                         <child>
                           <!-- n-columns=2 n-rows=2 -->
                           <object class="GtkGrid">
@@ -4036,46 +4130,17 @@ KHz</property>
                             </child>
                           </object>
                           <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">B1</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
+                            <property name="left-attach">1</property>
                             <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=2 n-rows=1 -->
+                          <!-- n-columns=1 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="hexpand">True</property>
-                            <property name="vexpand">True</property>
                             <property name="column-homogeneous">True</property>
-                            <child>
-                              <object class="GtkScale" id="b_1_vol">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">b_1_adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
                             <child>
                               <!-- n-columns=1 n-rows=1 -->
                               <object class="GtkGrid" id="b_1_vumeter">
@@ -4091,10 +4156,41 @@ KHz</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
+                            <child>
+                              <object class="GtkScale" id="b_1_vol">
+                                <property name="width-request">200</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">False</property>
+                                <property name="adjustment">b_1_adjust</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
+                            <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="b1_label">
+                            <property name="height-request">30</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="halign">start</property>
+                            <property name="margin-start">8</property>
+                            <property name="label" translatable="yes">B1</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">2</property>
                           </packing>
                         </child>
                       </object>
@@ -4104,148 +4200,42 @@ KHz</property>
                       </packing>
                     </child>
                     <child>
-                      <!-- n-columns=1 n-rows=3 -->
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">10</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">2</property>
+                        <property name="top-attach">0</property>
+                        <property name="height">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <!-- n-columns=2 n-rows=2 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-start">4</property>
-                        <property name="margin-end">3</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-top">5</property>
+                        <property name="margin-bottom">5</property>
                         <child>
-                          <!-- n-columns=2 n-rows=2 -->
-                          <object class="GtkGrid">
+                          <object class="GtkLabel" id="b2_label">
+                            <property name="height-request">30</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <child>
-                              <object class="GtkToggleButton" id="b_3_mute">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="receives-default">True</property>
-                                <property name="tooltip-text" translatable="yes">Mute</property>
-                                <property name="hexpand">False</property>
-                                <child>
-                                  <object class="GtkImage">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="icon-name">audio-volume-muted</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkToggleButton" id="b_3_eq">
-                                <property name="label" translatable="yes">EQ</property>
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="receives-default">True</property>
-                                <property name="tooltip-text" translatable="yes">Right click to edit settings</property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                                <property name="width">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkToggleButton" id="b_3_primary">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="receives-default">True</property>
-                                <property name="tooltip-text" translatable="yes">Set as primary</property>
-                                <property name="hexpand">False</property>
-                                <child>
-                                  <object class="GtkImage">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="icon-name">emblem-default</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">1</property>
-                              </packing>
-                            </child>
+                            <property name="halign">start</property>
+                            <property name="margin-start">8</property>
+                            <property name="label" translatable="yes">B2</property>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">0</property>
+                            <property name="width">2</property>
                           </packing>
                         </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">B3</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <!-- n-columns=2 n-rows=1 -->
-                          <object class="GtkGrid">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="vexpand">True</property>
-                            <child>
-                              <!-- n-columns=1 n-rows=1 -->
-                              <object class="GtkGrid" id="b_3_vumeter">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkScale" id="b_3_vol">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">b_3_adjust</property>
-                                <property name="inverted">True</property>
-                                <property name="round-digits">0</property>
-                                <property name="digits">0</property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left-attach">3</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <!-- n-columns=1 n-rows=3 -->
-                      <object class="GtkGrid">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
                         <child>
                           <!-- n-columns=2 n-rows=2 -->
                           <object class="GtkGrid">
@@ -4307,23 +4297,12 @@ KHz</property>
                             </child>
                           </object>
                           <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">B2</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
+                            <property name="left-attach">1</property>
                             <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=2 n-rows=1 -->
+                          <!-- n-columns=1 n-rows=2 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -4334,7 +4313,7 @@ KHz</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
+                                <property name="vexpand">False</property>
                                 <property name="column-homogeneous">True</property>
                                 <child>
                                   <placeholder/>
@@ -4347,95 +4326,169 @@ KHz</property>
                             </child>
                             <child>
                               <object class="GtkScale" id="b_2_vol">
+                                <property name="width-request">200</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="hexpand">True</property>
-                                <property name="vexpand">True</property>
-                                <property name="orientation">vertical</property>
+                                <property name="vexpand">False</property>
                                 <property name="adjustment">b_2_adjust</property>
-                                <property name="inverted">True</property>
                                 <property name="round-digits">0</property>
                                 <property name="digits">0</property>
                               </object>
                               <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="left-attach">2</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Virtual Outputs</property>
-                      </object>
-                      <packing>
                         <property name="left-attach">1</property>
-                        <property name="top-attach">1</property>
-                        <property name="width">3</property>
+                        <property name="top-attach">3</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-end">5</property>
-                        <property name="margin-bottom">10</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">0</property>
-                        <property name="height">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-end">10</property>
-                        <property name="margin-bottom">5</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">0</property>
-                        <property name="width">5</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
+                      <!-- n-columns=2 n-rows=2 -->
+                      <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="margin-start">5</property>
-                        <property name="margin-end">10</property>
+                        <property name="margin-end">5</property>
+                        <property name="margin-top">5</property>
+                        <property name="margin-bottom">5</property>
+                        <child>
+                          <object class="GtkLabel" id="b3_label">
+                            <property name="height-request">30</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="halign">start</property>
+                            <property name="margin-start">8</property>
+                            <property name="label" translatable="yes">B3</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=1 n-rows=2 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="vexpand">False</property>
+                            <child>
+                              <!-- n-columns=1 n-rows=1 -->
+                              <object class="GtkGrid" id="b_3_vumeter">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">False</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScale" id="b_3_vol">
+                                <property name="width-request">200</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">False</property>
+                                <property name="adjustment">b_3_adjust</property>
+                                <property name="round-digits">0</property>
+                                <property name="digits">0</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=2 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkToggleButton" id="b_3_mute">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Mute</property>
+                                <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">audio-volume-muted</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="b_3_eq">
+                                <property name="label" translatable="yes">EQ</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Right click to edit settings</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                                <property name="width">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="b_3_primary">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Set as primary</property>
+                                <property name="hexpand">False</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">emblem-default</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">1</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
-                        <property name="left-attach">4</property>
-                        <property name="top-attach">0</property>
-                        <property name="height">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-end">10</property>
-                        <property name="margin-bottom">10</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">3</property>
-                        <property name="width">5</property>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">4</property>
                       </packing>
                     </child>
                   </object>
@@ -4792,19 +4845,6 @@ KHz</property>
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="test">
-            <property name="label" translatable="yes">button</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="no-show-all">True</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">3</property>
           </packing>
         </child>
       </object>

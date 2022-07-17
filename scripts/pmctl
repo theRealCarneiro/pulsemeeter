@@ -45,6 +45,7 @@ init (){
 			node.description=$device
 			media.class=Audio/$class
 			audio.channels=$channels
+			monitor.channel-volumes = true
 			object.linger=true
 		}" >/dev/null || printf "Error creating $device_type $device\n" >&2
 
@@ -92,7 +93,7 @@ connect (){
 		local input_ports=$(get_ports output $input)
 		local output_ports=$(get_ports input $output)
 
-		if [ -z "$port_map" ]; then
+		if [ -z "$port_map" -o "$3" = 'None' ]; then
 			pw-link $input $output 2> /dev/null
 		else
 			for i in $(echo "$port_map"); do
@@ -122,7 +123,23 @@ disconnect (){
 	
 	# pipewire
 	else
-		pw-link -d $input $output 2> /dev/null
+		local port_map="$3"
+		local input_ports=$(get_ports output $input)
+		local output_ports=$(get_ports input $output)
+
+		if [ -z "$port_map" -o "$3" = 'None' ]; then
+			pw-link $input $output 2> /dev/null
+		else
+			for i in $(echo "$port_map"); do
+				input_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f1) + 1 ))
+				output_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f2) + 1 ))
+
+				input_port=$(printf "%s" "$input_ports" | head -$input_port_index | tail -1)
+				output_port=$(printf "%s" "$output_ports" | head -$output_port_index | tail -1)
+
+				pw-link -d $input:$input_port $output:$output_port 2> /dev/null
+			done
+		fi
 	fi
 }
 
@@ -449,8 +466,7 @@ ladspa() {
 			input=$master
 			master=$sink_name
 			sink_name+='_in'
-			channel_num=$(( $(echo "$map" | grep "," -o | tr -d '\n' | wc -c) + 1 ))
-			channels="channels=$channel_num"
+			channels="channels=$map"
 
 		elif [ $is_pulse = false ]; then
 
@@ -461,21 +477,22 @@ ladspa() {
 				connect $sink_name $master
 				master=$sink_name
 				sink_name+='_in'
-				channel_num=$(( $(echo "$map" | grep "," -o | tr -d '\n' | wc -c) + 1 ))
-				channels="channels=$channel_num"
+				channels="channels=$map"
 			fi
 		fi
 
+		#echo $channels
 		# create ladspa sink
 		pactl load-module module-ladspa-sink \
 			master=$master \
 			sink_name=$sink_name \
 			label=$label \
 			plugin=$plugin \
-			control=$control channels=4 ||
+			control=$control $channels ||
 				echo "Error loading $label ladspa sink $sink_name for $master"
 
 
+		[ $is_pulse = false ] && latency=''
 		# we need to connect our source to the filter
 		[ "$device_type" = "source" ] && connect $input $sink_name $latency
 	fi
@@ -523,7 +540,7 @@ case $1 in
 	;;
 
 	"disconnect")
-		disconnect $2 $3 $4
+		disconnect $2 $3 "$4"
 	;;
 
 	"remove")

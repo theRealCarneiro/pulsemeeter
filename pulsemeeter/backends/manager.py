@@ -433,7 +433,7 @@ class AudioServer:
             status=None, latency=None, run_command=True, change_state=True, init=False):
 
         source_config = self.config[input_type][input_id]
-        # sink_config = self.config[output_type][output_id]
+        sink_config = self.config[output_type][output_id]
         cur_conn_status = source_config[output_type + output_id]['status']
 
         # toggle connection status
@@ -466,18 +466,44 @@ class AudioServer:
         device_exists = source != '' and sink != ''
 
         # port map
-        # input_ports, output_ports, port_map = (None, None, None)
         port_map = None
-        if (source_config[f'{output_type}{output_id}']['auto_ports'] is False and
-                self.audio_server == 'Pipewire'):
-            port_map = source_config[f'{output_type}{output_id}']['port_map']
-            # # input_port_type = 'input' if input_type == 'hi' and source_config['use_rnnoise'] is False else 'output'
-            # input_ports = pmctl.get_ports(source, 'output')
-            # output_ports = pmctl.get_ports(sink, 'input')
+        if self.audio_server == 'Pipewire':
+
+            # get selected ports
+            if input_type == 'hi' and 'selected_channels' in source_config:
+                iselports = source_config['selected_channels']
+                iselports = [i for i in range(len(iselports)) if iselports[i] is True]
+            else:
+                iselports = list(range(source_config['channels']))
+
+            if output_type == 'a' and 'selected_channels' in sink_config:
+                oselports = sink_config['selected_channels']
+                oselports = [i for i in range(len(oselports)) if oselports[i] is True]
+            else:
+                oselports = list(range(sink_config['channels']))
+
+            # manual port mapping
+            if source_config[f'{output_type}{output_id}']['auto_ports'] is False:
+                port_map = source_config[f'{output_type}{output_id}']['port_map']
+
+                ports = ''
+                for i in range(len(port_map)):
+                    for o in port_map[i]:
+                        ports += f'{iselports[i]}:{o} '
+                ports = ports[:-1]
+
+            # auto ports
+            else:
+                ports = ''
+                cnum = min(source_config['channels'], sink_config['channels'])
+
+                for i in range(cnum):
+                    ports += f'{iselports[i]}:{oselports[i]} '
 
         if device_exists:
-            command = pmctl.connect(source, sink, status, latency,
-                                    port_map=port_map, run_command=False)
+            command = pmctl.connect(source, sink, status,
+                                    latency=latency if self.audio_server != 'Pipewire' else None,
+                                    port_map=ports, run_command=False)
         else:
             command = ''
 
@@ -493,7 +519,7 @@ class AudioServer:
         if name in ['None', None]: name = ''
         # print(f'{output_type} {output_id} {name}')
         device_config = self.config[output_type][output_id]
-        channel_map = None
+        # channel_map = None
         channels = None
 
         # if device its not an empty name
@@ -504,11 +530,15 @@ class AudioServer:
             device = pmctl.list('sinks' if output_type == 'a' else 'sources', name)
 
             if 'properties' in device:
-                channel_map = device['properties']['audio.position']
-                channels = int(device['properties']['audio.channels'])
+                # channel_map = device['properties']['audio.position']
+                if 'audio.channels' in device['properties']:
+                    channels = int(device['properties']['audio.channels'])
+                else:
+                    channels = device['channel_map'].count(',') + 1
 
-        device_config['channel_map'] = channel_map
+        # device_config['channel_map'] = channel_map
         device_config['channels'] = channels
+        device_config['selected_channels'] = [True for _ in range(channels)]
         device_config['name'] = name
 
         # if chosen device is not an empty name
@@ -517,7 +547,7 @@ class AudioServer:
         else:
             name = None
 
-        return f'change-hd {output_type} {output_id} {name} {channel_map} {channels}'
+        return f'change-hd {output_type} {output_id} {name} {channels}'
 
     def set_port_map(self, input_type, input_id, output, port_map):
         input_config = self.config[input_type][input_id]
