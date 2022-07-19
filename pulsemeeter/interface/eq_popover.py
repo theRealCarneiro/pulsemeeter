@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+import traceback
 from ..settings import LAYOUT_DIR
 
 from gi import require_version as gi_require_version
@@ -7,6 +9,7 @@ gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
+LOG = logging.getLogger("generic")
 
 class EqPopover():
 
@@ -42,7 +45,7 @@ class EqPopover():
                 ]
             )
         except Exception as ex:
-            print('Error building main window!\n{}'.format(ex))
+            LOG.error('could not build main window!\n{traceback.format_exc()}')
             sys.exit(1)
 
         for i in range(1, 16):
