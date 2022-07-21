@@ -689,7 +689,7 @@ class AudioServer:
         command = pmctl.mute(device, name, conn_status)
 
         if run_command:
-            LOG.deug(command)
+            LOG.debug(command)
             os.popen(command)
             return f'mute {device_type} {device_id} {state}'
         else:
