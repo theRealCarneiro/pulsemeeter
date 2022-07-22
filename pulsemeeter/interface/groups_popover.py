@@ -1,12 +1,15 @@
 import os
 import re
 import sys
+import logging
+import traceback
 from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk, Gio
 
+LOG = logging.getLogger("generic")
 
 class JackGroupsPopover():
     def __init__(self, button, pulse):
@@ -28,7 +31,7 @@ class JackGroupsPopover():
                 ]
             )
         except Exception as ex:
-            print('Error building main window!\n{}'.format(ex))
+            LOG.error(f'could not build main window!\n{traceback.format_exc()}')
             sys.exit(1)
 
         self.jack_group_popover = self.builder.get_object('jack_group_popover')

@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+import traceback
 from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
@@ -15,6 +17,8 @@ CHANNELS = [
     'FL FR FC RL RR SL SR',
     'FL FR FC LFE RL RR SL SR'
 ]
+
+LOG = logging.getLogger("generic")
 
 
 class PortMapPopover():
@@ -43,7 +47,7 @@ class PortMapPopover():
                 ]
             )
         except Exception as ex:
-            print('Error building main window!\n{}'.format(ex))
+            LOG.error(f'could not build main window!\n{traceback.format_exc()}')
             sys.exit(1)
 
         output = self.output_type + self.output_id

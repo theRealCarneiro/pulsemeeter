@@ -1,9 +1,12 @@
 import asyncio
 import threading
 import traceback
+import logging
 
 import pulsectl
 import pulsectl_asyncio
+
+LOG = logging.getLogger("generic")
 
 class PulseSocket():
     '''
@@ -23,7 +26,7 @@ class PulseSocket():
         starts the listener for Pulseaudio/Pipewire changes (restarts if ran again)
         '''
         if self.pulse_listener_thread.is_alive():
-            print("restarting listener")
+            LOG.info("restarting listener")
             self.pulse_listener_thread.join()
 
         self.pulse_listener_task = asyncio.run_coroutine_threadsafe(self._pulse_listener(), self.async_loop)

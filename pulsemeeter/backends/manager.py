@@ -5,6 +5,7 @@ import sys
 import subprocess
 import pulsectl
 import shutil
+import logging
 from . import pmctl
 
 
@@ -18,9 +19,11 @@ CHANNELS = {
     '7.1': 'FL,FR,FC,LFE,RL,RR,SL,SR'
 }
 
+LOG = logging.getLogger("generic")
+
 
 class AudioServer:
-    def __init__(self, pulse_socket, config, loglevel=0, init=True):
+    def __init__(self, pulse_socket, config, init=True):
         self.config = config
         self.loglevel = 2
         self.audio_server = 'Pulseaudio' if shutil.which('pulseaudio') else 'Pipewire'
@@ -29,7 +32,7 @@ class AudioServer:
         # check if pulseaudio is running
         try:
             subprocess.check_call('pmctl')
-        except Exception:
+        except subprocess.CalledProcessError:
             sys.exit(1)
 
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
@@ -120,7 +123,7 @@ class AudioServer:
                         channels = device_config['channels']
                         command += pmctl.init('sink', sink, channels)
 
-        if self.loglevel > 1: print(command)
+        LOG.debug(command)
         return command
 
     # init virtual outputs
@@ -143,7 +146,7 @@ class AudioServer:
                     channels = device_config['channels']
                     command += pmctl.init('source', source, channels)
 
-        if self.loglevel > 1: print(command)
+        LOG.debug(command)
         return command
 
     # creates all ladspa sinks for eq plugin
@@ -192,7 +195,7 @@ class AudioServer:
                 if self.config[device_type][device_id]['primary'] is True:
                     command += self.set_primary(device_type, device_id, run_command=False)
 
-        if self.loglevel > 1: print(command)
+        LOG.debug(command)
         return command
 
     # def start_hardware_devices(self):
@@ -289,9 +292,9 @@ class AudioServer:
         if reconnect:
             command += self.reconnect('hi', input_id, True, run_command=False)
 
-        print(command)
+        LOG.debug(command)
         if run_command is True:
-            if self.loglevel > 1: print(command)
+            LOG.debug(command)
             os.popen(command)
             return f'rnnoise {input_id} {status} {control}'
         else:
@@ -368,7 +371,7 @@ class AudioServer:
                             command += pmctl.connect(vi, master)
 
         if run_command:
-            if self.loglevel > 1: print(command)
+            LOG.debug(command)
             os.popen(command)
             return f'eq {output_type} {output_id} {status} {control}'
         else:
@@ -424,7 +427,7 @@ class AudioServer:
                             status=status, change_state=False, run_command=False, init=True)
 
         if run_command:
-            if self.loglevel > 1: print(command)
+            LOG.debug(command)
             os.popen(command)
         return command
 
@@ -509,7 +512,7 @@ class AudioServer:
 
         if run_command is True:
             if device_exists:
-                if self.loglevel > 1: print(command)
+                LOG.debug(command)
                 os.popen(command)
             return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
         else:
@@ -613,7 +616,7 @@ class AudioServer:
                 command += self.rnnoise(device_id, status=False,
                         reconnect=False, change_config=False, run_command=False)
 
-        if self.loglevel > 1: print(command)
+        LOG.debug(command)
         if run_command: os.popen(command)
 
     def toggle_virtual_device(self, device_type, device_id, status=False, disconnect=True, run_command=True):
@@ -639,7 +642,7 @@ class AudioServer:
         if not status:
             command += pmctl.remove(name)
 
-        if self.loglevel > 1: print(command)
+        LOG.debug(command)
         if run_command: os.popen(command)
         return command
 
@@ -686,7 +689,7 @@ class AudioServer:
         command = pmctl.mute(device, name, conn_status)
 
         if run_command:
-            if self.loglevel > 1: print(command)
+            LOG.debug(command)
             os.popen(command)
             return f'mute {device_type} {device_id} {state}'
         else:

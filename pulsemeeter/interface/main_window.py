@@ -4,6 +4,7 @@ import signal
 import shutil
 import sys
 import traceback
+import logging
 
 from .app_list_widget import AppList
 from .eq_popover import EqPopover
@@ -22,6 +23,8 @@ from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 gi_require_version('AppIndicator3', '0.1')
 from gi.repository import Gtk, GLib, AppIndicator3
+
+LOG = logging.getLogger("generic")
 
 
 class MainWindow(Gtk.Window):
@@ -88,7 +91,7 @@ class MainWindow(Gtk.Window):
                 component_list
             )
         except Exception as ex:
-            print('Error building main window!\n{}'.format(ex))
+            LOG.error(f'could not build main window!\n{traceback.format_exc()}')
             sys.exit(1)
 
         sources = self.client.list('sources')
@@ -238,8 +241,7 @@ class MainWindow(Gtk.Window):
                         try:
                             vumeter.start()
                         except Exception:
-                            print('Could not start vumeter for',
-                                  '{device_type}{device_id}')
+                            LOG.warning(f'Could not start vumeter for {device_type}{device_id}')
 
                 self.vu_list[device_type][device_id] = vumeter
 
@@ -254,8 +256,8 @@ class MainWindow(Gtk.Window):
             sink_input_viewport.add(self.sink_input_box)
             source_output_viewport.add(self.source_output_box)
         except Exception as ex:
-            print('App sinks returned an error, audio backend returned error')
-            print(ex)
+            LOG.error('App sinks returned an error, audio backend returned error')
+            LOG.error(traceback.format_exc())
             if self.windowinstance is not None:
                 self.windowinstance.destroy()
             self.delete_event()

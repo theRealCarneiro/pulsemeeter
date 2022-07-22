@@ -1,5 +1,7 @@
 import os
 import sys
+import traceback
+import logging
 from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
@@ -15,6 +17,8 @@ CHANNELS = [
     'FL FR FC RL RR SL SR',
     'FL FR FC LFE RL RR SL SR'
 ]
+
+LOG = logging.getLogger("generic")
 
 
 class PortSelectPopover():
@@ -39,7 +43,7 @@ class PortSelectPopover():
                 ]
             )
         except Exception as ex:
-            print('Error building main window!\n{}'.format(ex))
+            LOG.error(f'could not build main window!\n{traceback.format_exc()}')
             sys.exit(1)
 
         device_name = self.device_config['name']
@@ -68,7 +72,7 @@ class PortSelectPopover():
 
         device_ports = device_config['channels']
         if 'selected_channels' not in device_config:
-            print(device_type, device_id)
+            LOG.debug(f'{device_type} {device_id}')
         selected_ports = device_config['selected_channels']
 
         if len(selected_ports) == 0:

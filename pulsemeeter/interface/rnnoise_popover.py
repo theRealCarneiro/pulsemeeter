@@ -1,11 +1,14 @@
 import os
 import sys
+import logging
+import traceback
 from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
+LOG = logging.getLogger("generic")
 
 class RnnoisePopover():
     def __init__(self, button, sock, deivce_type, device_id):
@@ -26,7 +29,7 @@ class RnnoisePopover():
                 ]
             )
         except Exception as ex:
-            print('Error building main window!\n{}'.format(ex))
+            LOG.error(f'could not build main window!\n{traceback.format_exc()}')
             sys.exit(1)
 
         self.rnnoise_popover = self.builder.get_object('rnnoise_popover')

@@ -43,7 +43,8 @@ def pprint_device_options(allowed_devices=all_devices):
 # HELP MESSAGES
 class help:
     class description:
-        DEBUG = 'go into debug mode'
+        DEBUG = 'show debug messages'
+        CLIENT = 'send messages to the server as a client or listen to the server'
         STATUS = 'status information'
         NO_COLOR = 'deactivate colors for the executed command'
         CONNECT = 'connect input to output'
@@ -298,7 +299,8 @@ def create_parser_args():
             grp.title = color.bold('options')
 
     parser.add_argument('-nc', '--no-color', action='store_true', help=help.description.NO_COLOR)
-    parser.add_argument('-d', '--debug', action='store_true', help=help.description.DEBUG)
+    # parser.add_argument('-d', '--debug', action='store_true', help=help.description.DEBUG)
+    parser.add_argument('-c', '--client', action='store_true', help=help.description.CLIENT)
     parser.add_argument('-s', '--status', action='store_true', help=help.description.STATUS)
 
     subparsers = parser.add_subparsers(dest='command')
@@ -370,7 +372,7 @@ def arg_interpreter(args, parser):
             print(color.red('error: daemon is not started. Use "pulsemeeter daemon" to start it.'))
         else:
             # debug page
-            if args.debug:
+            if args.client:
                 print(f'You are entering the {color.red("debug mode")}.')
                 print(f'While in INPUT mode type "{color.bold("listen")}" to switch to the LISTEN mode.')
                 print(f'While in LISTEN mode use {color.bold("ctrl+c")} to switch back to INPUT mode.')

@@ -1,12 +1,15 @@
 import sys
 import subprocess
 import threading
+import logging
+import traceback
 from gi import require_version as gi_require_version
 
 gi_require_version('Gtk', '3.0')
 
 from gi.repository import Gtk, GLib
 
+LOG = logging.getLogger("generic")
 
 class Vumeter(Gtk.ProgressBar):
 
@@ -53,8 +56,8 @@ class Vumeter(Gtk.ProgressBar):
             # if pulse crashes, the vumeter will throw an error
             # but we don't want the ui to crash
             except Exception as ex:
-                print(f'Could not start vumeter for {self.name}')
-                print(ex)
+                LOG.warning(f'Could not start vumeter for {self.name}')
+                LOG.debug(traceback.format_exc())
                 continue
                 # break
 

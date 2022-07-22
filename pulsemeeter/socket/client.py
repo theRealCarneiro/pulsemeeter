@@ -1,5 +1,7 @@
 from ..settings import SOCK_FILE, __version__
 import subprocess
+import logging
+import traceback
 import socket
 import threading
 import json
@@ -8,6 +10,7 @@ import re
 from queue import SimpleQueue
 from ..backends import pmctl
 
+LOG = logging.getLogger("generic")
 
 class Client:
 
@@ -28,7 +31,7 @@ class Client:
             self.sock.connect(SOCK_FILE)
             self.id = int(self.sock.recv(4))
         except socket.error as msg:
-            print(msg)
+            LOG.error(traceback.format_exc())
             sys.exit(1)
 
         self.config = json.loads(self.send_command('get-config', nowait=True))
@@ -84,7 +87,7 @@ class Client:
             return ret_msg
 
         except Exception:
-            print('closing socket')
+            LOG.info('closing socket')
             self.sock.close()
             raise
 
@@ -117,14 +120,14 @@ class Client:
                     continue
 
                 if not self.noconfig: self.assert_config(event)
-                if print_event: print(event)
+                if print_event: LOG.debug(event)
                 if sender_id != self.id:
                     self.handle_callback(event)
                 else:
                     self.return_queue.put(event)
 
             except ConnectionError:
-                print('closing socket')
+                LOG.info('closing socket')
                 break
 
             # except Exception as ex:
@@ -307,31 +310,31 @@ class Client:
 
         if dev == 'virtual':
             if device_type not in ['vi', 'b']:
-                print(f'input type {device_type} not found')
+                LOG.error(f'input type {device_type} not found')
                 return False
 
         if dev == 'hardware':
             if device_type not in ['a', 'hi']:
-                print(f'input type {device_type} not found')
+                LOG.error(f'input type {device_type} not found')
                 return False
 
         if dev == 'input':
             if device_type not in ['hi', 'vi']:
-                print(f'input type {device_type} not found')
+                LOG.error(f'input type {device_type} not found')
                 return False
 
         if dev == 'output':
             if device_type not in ['a', 'b']:
-                print(f'output type {device_type} not found')
+                LOG.error(f'output type {device_type} not found')
                 return False
 
         if dev == 'any':
             if device_type not in ['hi', 'vi', 'a', 'b']:
-                print(f'output type {device_type} not found')
+                LOG.error(f'output type {device_type} not found')
                 return False
 
         if not device_id.isdigit() or not device_id.isdigit():
-            print(f'invalid device index {device_id}')
+            LOG.error(f'invalid device index {device_id}')
             return False
 
         return True
@@ -355,7 +358,7 @@ class Client:
         if self.config[input_type][input_id][f'{output_type}{output_id}']['status'] == state:
             return
 
-        print(command)
+        LOG.debug(command)
         return self.send_command(command)
 
     def mute(self, device_type, device_id, state=None):

@@ -1,4 +1,5 @@
 import socket
+import logging
 import re
 import json
 import sys
@@ -16,6 +17,7 @@ from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __v
 
 LISTENER_TIMEOUT = 2
 
+LOG = logging.getLogger("generic")
 
 class Server:
     def __init__(self, init_audio_server=True):
@@ -55,7 +57,7 @@ class Server:
         self.client_handler_connections = {}
 
         self.pulse_socket = PulseSocket(self.command_queue, self.config)
-        self.audio_server = AudioServer(self.pulse_socket, self.config, loglevel=0, init=init_audio_server)
+        self.audio_server = AudioServer(self.pulse_socket, self.config, init=init_audio_server)
 
         self.create_command_dict()
 
@@ -122,7 +124,7 @@ class Server:
             # TODO: if we do that, have those client handlers close by themselves instead of shutting down their connections
             # And maybe wait a bit for that to happen
             # Close connections and join threads
-            print('closing client handler threads...')
+            LOG.info('closing client handler threads...')
             for conn in self.client_handler_connections.values():
                 # only close open connections
                 if conn.fileno() != -1:
@@ -135,19 +137,19 @@ class Server:
 
         finally:
             # Set the exit flag and wait for the listener thread to timeout
-            print(f'sending exit signal to listener threads, they should exit within {LISTENER_TIMEOUT} seconds...')
+            LOG.info(f'sending exit signal to listener threads, they should exit within {LISTENER_TIMEOUT} seconds...')
             self.exit_flag = True
             try:
                 self.listener_thread.join()
-            except:
-                print('[ERROR] Could not close client listener')
-                traceback.print_exc()
+            except Exception:
+                LOG.error('Could not close client listener')
+                LOG.error(traceback.format_exc())
 
             try:
                 self.pulse_socket.stop_listener()
-            except:
-                print('[ERROR] Could not close pulse listener')
-                traceback.print_exc()
+            except Exception:
+                LOG.error('Could not close pulse listener')
+                LOG.error(traceback.format_exc())
 
             # Call any code to clean up virtual devices or similar
             self.close_server()
@@ -185,7 +187,7 @@ class Server:
                 conn.sendall(msg_len.encode())  # message len
                 conn.sendall(encoded_msg)  # command
             except OSError:
-                print(f'client {sender_id} already disconnected, message not sent')
+                LOG.info(f'client {sender_id} already disconnected, message not sent')
 
     def is_running(self):
         try:
@@ -300,20 +302,23 @@ class Server:
         try:
             # verify that command existes
             if command not in self.commands:
-                raise Exception(f'[ERROR] command \'{command}\' not found')
+                LOG.error(f"command \'{command}\' not found")
+                return 1
 
             if not re.match(self.commands[command]['regex'], str_args):
-                raise Exception('[ERROR] invalid arguments')
+                LOG.error("invalid arguments")
+                return 1
 
             function = self.commands[command]['function']
 
             notify = self.commands[command]['notify']
             save_to_config = self.commands[command]['save_config']
-            print(command)
+            LOG.debug(command)
             ret_msg = function(*args)
 
             if not ret_msg:
-                raise Exception('[ERROR] internal error')
+                LOG.error("internal errror")
+                return 1
 
             if save_to_config:
                 self.save_config()
@@ -321,10 +326,10 @@ class Server:
             return (ret_msg, notify,)
 
         except TypeError:
-            return ('[ERROR] invalid number of arguments', False)
+            return ('invalid number of arguments', False)
 
         except Exception as ex:
-            print('deu ruim', ex)
+            LOG.error(traceback.format_exc())
             return (str(ex), False)
 
     def read_config(self):
@@ -333,7 +338,7 @@ class Server:
             try:
                 config = json.load(open(CONFIG_FILE))
             except Exception:
-                print('[ERROR] loading config file')
+                LOG.error('could not load config file')
                 sys.exit(1)
 
             # if config is outdated it will try to add missing keys
@@ -401,7 +406,7 @@ class Server:
         if config is None: config = self.config
         if not os.path.isdir(CONFIG_DIR):
             os.mkdir(CONFIG_DIR)
-        print("writing config")
+        LOG.debug("writing config")
         with open(CONFIG_FILE, 'w') as outfile:
             json.dump(config, outfile, indent='\t', separators=(',', ': '))
 
