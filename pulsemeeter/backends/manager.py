@@ -539,9 +539,9 @@ class AudioServer:
                 else:
                     channels = device['channel_map'].count(',') + 1
 
-        # device_config['channel_map'] = channel_map
-        device_config['channels'] = channels
-        device_config['selected_channels'] = [True for _ in range(channels)]
+                # device_config['channel_map'] = channel_map
+                device_config['channels'] = channels
+                device_config['selected_channels'] = [True for _ in range(channels)]
         device_config['name'] = name
 
         # if chosen device is not an empty name
