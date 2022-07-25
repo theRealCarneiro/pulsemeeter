@@ -8,9 +8,10 @@ import json
 import sys
 import re
 from queue import SimpleQueue
-from ..backends import pmctl
+import pulsemeeter.backends.pmctl as pmctl
 
 LOG = logging.getLogger("generic")
+
 
 class Client:
 
@@ -30,7 +31,7 @@ class Client:
         try:
             self.sock.connect(SOCK_FILE)
             self.id = int(self.sock.recv(4))
-        except socket.error as msg:
+        except socket.error:
             LOG.error(traceback.format_exc())
             sys.exit(1)
 

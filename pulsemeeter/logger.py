@@ -2,7 +2,7 @@ import logging
 import sys
 import threading
 import traceback
-from .settings import LOGGING_FORMAT, LOGGING_FORMAT_DEBUG, DEBUG
+from pulsemeeter.settings import LOGGING_FORMAT, LOGGING_FORMAT_DEBUG, DEBUG
 
 def init_log(name):
     """

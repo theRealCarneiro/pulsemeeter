@@ -440,6 +440,8 @@ ladspa() {
 	local latency=$8
 	local map=$8
 
+	pactl list "$device_type"s short 2>&1 | grep $master >/dev/null || exit
+
 	# check if plugin existis in file system
 	for lib in '64' ''; do
 		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do

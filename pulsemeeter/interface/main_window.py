@@ -6,17 +6,17 @@ import sys
 import traceback
 import logging
 
-from .app_list_widget import AppList
-from .eq_popover import EqPopover
-from .latency_popover import LatencyPopover
-from .rnnoise_popover import RnnoisePopover
-from .groups_popover import JackGroupsPopover
-from .port_select_popover import PortSelectPopover
-from .portmap_popover import PortMapPopover
-from .vumeter_widget import Vumeter
+from pulsemeeter.interface.app_list_widget import AppList
+from pulsemeeter.interface.eq_popover import EqPopover
+from pulsemeeter.interface.latency_popover import LatencyPopover
+from pulsemeeter.interface.rnnoise_popover import RnnoisePopover
+from pulsemeeter.interface.groups_popover import JackGroupsPopover
+from pulsemeeter.interface.port_select_popover import PortSelectPopover
+from pulsemeeter.interface.portmap_popover import PortMapPopover
+from pulsemeeter.interface.vumeter_widget import Vumeter
+from pulsemeeter.socket.client import Client
 
-from ..settings import LAYOUT_DIR
-from ..socket import Client
+from pulsemeeter.settings import LAYOUT_DIR
 
 from gi import require_version as gi_require_version
 

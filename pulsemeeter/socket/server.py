@@ -11,13 +11,14 @@ import traceback
 import time
 from queue import SimpleQueue
 
-from ..backends import AudioServer, PulseSocket
-from ..settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
+from pulsemeeter.backends import AudioServer, PulseSocket
+from pulsemeeter.settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, SOCK_FILE, __version__, PIDFILE
 
 
 LISTENER_TIMEOUT = 2
 
 LOG = logging.getLogger("generic")
+
 
 class Server:
     def __init__(self, init_audio_server=True):

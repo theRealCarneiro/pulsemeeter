@@ -11,6 +11,7 @@ from gi.repository import Gtk, GLib
 
 LOG = logging.getLogger("generic")
 
+
 class Vumeter(Gtk.ProgressBar):
 
     def __init__(self, device_type, device_id, config, vertical=True):

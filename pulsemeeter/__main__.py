@@ -6,12 +6,14 @@ import argparse
 import re
 import platform
 import traceback
-from .settings import CONFIG_FILE, __version__
-from . import MainWindow
-from . import Client, Server
+
+from pulsemeeter.settings import CONFIG_FILE, __version__
+from pulsemeeter.interface import MainWindow
+from pulsemeeter.socket import Client, Server
+
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk # type: ignore
+from gi.repository import Gtk  # type: ignore
 
 # change these to change all occurences of these values (also for checking)
 true_values = ('true', '1', 'on')

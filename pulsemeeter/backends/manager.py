@@ -6,7 +6,7 @@ import subprocess
 import pulsectl
 import shutil
 import logging
-from . import pmctl
+import pulsemeeter.backends.pmctl as pmctl
 
 
 CHANNELS = {
