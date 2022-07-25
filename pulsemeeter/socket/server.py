@@ -626,19 +626,31 @@ class Server:
                 'regex': f'{state}$'
             },
 
-            'device-new': {
-                'function': self.audio_server.device_new,
+            'device-plugged-in': {
+                'function': self.audio_server.device_plugged_in,
                 'notify': True,
                 'save_config': False,
                 'regex': ''
             },
 
-            'device-remove': {
-                'function': self.audio_server.device_remove,
+            'device-unplugged': {
+                'function': self.audio_server.device_unplugged,
                 'notify': True,
                 'save_config': False,
                 'regex': ''
             },
+            'create-device': {
+                'function': self.audio_server.create_device,
+                'notify': True,
+                'save_config': True,
+                'regex': '(hi|vi|a|b)'
+            },
+            'remove-device': {
+                'function': self.audio_server.remove_device,
+                'notify': True,
+                'save_config': True,
+                'regex': '(hi|vi|a|b) [0-9]+'
+                }
         }
 
 

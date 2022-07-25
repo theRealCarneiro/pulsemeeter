@@ -32,10 +32,13 @@ def pprint_bool_options(style='simple'):
         return f'[{"|".join(map(str, true_values))}] | [{"|".join(map(str, false_values))}]'
 
 
-def pprint_device_options(allowed_devices=all_devices):
+def pprint_device_options(allowed_devices=all_devices, no_numbers=False):
     # pretty print devices
     if type(allowed_devices) == str:
-        return f'{allowed_devices}[number]'
+        if no_numbers is False:
+            return f'{allowed_devices}[number]'
+        else:
+            return f'{allowed_devices}'
     else:
         return f'{"[number] | ".join(map(str, allowed_devices))}[number]'
 
@@ -59,6 +62,8 @@ class help:
         DAEMON = 'Start the server and open the tray.'
         INIT = 'Just start devices and connections.'
         EXIT = 'Close the server and with that all clients (including the UI).'
+        CREATE_DEVICE = 'Create a new device (slot)'
+        REMOVE_DEVICE = 'Remove a device (slot)'
 
     class usage:
         RNNOISE = f'%(prog)s [device] ({pprint_bool_options()} | [set]) [value]'
@@ -73,6 +78,8 @@ class help:
         RENAME = 'name'
         GET = 'value to get'
         GET_DEVICE2 = 'only used for connect'
+        CREATE_DEVICE = f'{pprint_device_options()}'
+        REMOVE_DEVICE = f'{pprint_device_options()}'
 
 
 # COLORED TEXT
@@ -250,8 +257,8 @@ device_arg = {'type': str}
 
 
 # generic device = device + [value]
-def parser_generic(parser, value_type, help='', device_help=all_devices):
-    parser.add_argument('device', **device_arg, help=pprint_device_options(device_help))
+def parser_generic(parser, value_type, help='', device_help=all_devices, help_no_number=False):
+    parser.add_argument('device', **device_arg, help=pprint_device_options(device_help, no_numbers=help_no_number))
     if value_type is not None:
         parser.add_argument('value', type=value_type, default=None, nargs='?', help=help)
 
@@ -322,6 +329,8 @@ def create_parser_args():
     parser_generic(subparsers.add_parser('change-hardware-device', description=help.description.CHANGE_HARDWARE_DEVICE), str, help.value.CHANGE_HARDWARE_DEVICE, ('vi', 'b'))
     parser_generic(subparsers.add_parser('rename', description=help.description.RENAME), str, help.value.RENAME, ('vi', 'b'))
     parser_generic(subparsers.add_parser('volume', description=help.description.VOLUME), str, help.value.VOLUME)
+    parser_generic(subparsers.add_parser('create-device', description=help.description.CREATE_DEVICE), None, device_help="hi | vi | a | b", help_no_number=True)
+    parser_generic(subparsers.add_parser('remove-device', description=help.description.REMOVE_DEVICE), None, help.value.REMOVE_DEVICE)
 
     # eq or rnnoise (allows state)
     parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage=help.usage.RNNOISE, description=help.description.RNNOISE), 'rnnoise')
@@ -428,6 +437,15 @@ def arg_interpreter(args, parser):
             elif args.command == 'change-hardware-device':
                 client.change_hardware_device(*convert_device(args, parser, allowed_devices=('a', 'hi')), value)
 
+            elif args.command == 'create-device':
+                if args.device in ('hi', 'vi', 'a', 'b'):
+                    client.create_device(args.device)
+                else:
+                    parser.error(f'please use one of these devices: {pprint_device_options(no_numbers=True)}')
+
+            elif args.command == 'remove-device':
+                client.remove_device(*convert_device(args, parser, allowed_devices=all_devices))
+
             elif args.command == 'volume':
                 device_args = convert_device(args, parser)
                 if args.value is not None:
@@ -436,8 +454,7 @@ def arg_interpreter(args, parser):
                     else:
                         parser.error(f'value has to be assigned like this: {color.bold("+[number] | -[number] | [number]")}')
                 else:
-                    # do not blame me. I dont know how to insert the "" into the string
-                    text = '"pulsemeeter get volume [device]"'
+                    text = '\"pulsemeeter get volume [device]\"'
                     parser.error(f'the following arguments are required: value\n{color.grey("tip: To retrieve the volume use ")+color.grey(text)}')
 
             elif args.command == 'eq':

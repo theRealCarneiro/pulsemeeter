@@ -1,4 +1,5 @@
 import os
+import traceback
 import re
 import json
 import sys
@@ -695,6 +696,110 @@ class AudioServer:
         else:
             return command
 
+    # create a new device (slot)
+    def create_device(self, device_type):
+
+        # get current highest device
+        highest_number = max(self.config[f"{device_type}"], key=int)
+
+        # get the right number for the device
+        device_number = int(highest_number)+1
+
+        self.config[f"{device_type}"][f"{device_number}"] = {}
+        new_device = self.config[f"{device_type}"][f"{device_number}"]
+
+        # insert standard device config here
+        # I let it so long cause it kind of represents the json
+        # maybe we could also just create a json for "standard devices" which could get copied
+        if device_type == "hi":
+            new_device["name"] = ""
+            new_device["vol"] = 100
+            new_device["mute"] = False
+            new_device["jack"] = False
+            new_device["use_rnnoise"] = False
+            new_device["rnnoise_name"] = ""
+            new_device["rnnoise_control"] = 95
+            new_device["rnnoise_latency"] = 200
+        elif device_type == "a":
+            new_device["name"] = ""
+            new_device["vol"] = 100
+            new_device["mute"] = False
+            new_device["eq_control"] = ""
+            new_device["eq_name"] = ""
+            new_device["use_eq"] = False
+        elif device_type == "vi":
+            new_device["name"] = f"Virtual_Input_{device_number}"
+            new_device["primary"] = False
+            new_device["external"] = False
+            new_device["mute"] = False
+            new_device["vol"] = 100
+            new_device["channels"] = 2
+        elif device_type == "b":
+            new_device["name"] = f"Virtual_Output_B{device_number}"
+            new_device["primary"] = False
+            new_device["vol"] = 100
+            new_device["mute"] = False
+            new_device["eq_control"] = ""
+            new_device["eq_name"] = ""
+            new_device["use_eq"] = False
+            new_device["channels"] = 1
+            new_device["channel_map"] = "1"
+
+        # generate ports for THIS device
+        if device_type in ("b", "vi", "hi"):
+            for port in ("a", "b"):
+                highest_number = max(self.config[port], key=int)
+                for i in range(1, int(highest_number)+1):
+                    # create device
+                    new_device[f"{port}{i}"] = {}
+                    # add new values
+                    p = new_device[f"{port}{i}"]
+                    p["status"] = False
+                    p["latency"] = 200
+                    p["auto_ports"] = True
+                    p["port_map"] = []
+
+        # update ports FOR EVERY device
+        if device_type in ("a", "b"):
+            # update port mapping for each device
+            if device_type == "a":
+                new_port = f"a{device_number}"
+            else:
+                new_port = f"b{device_number}"
+
+            for category in (self.config["vi"], self.config["b"], self.config["hi"]):
+                for device in category:
+                    print(device)
+                    # create device
+                    category[device][new_port] = {}
+                    # add new values
+                    p = category[device][new_port]
+                    p["status"] = False
+                    p["latency"] = 200
+                    p["auto_ports"] = True
+                    p["port_map"] = []
+
+        return f"create-device {device_type}"
+
+    # remove a device (slot)
+    # use -1 as device id to delete the last one
+    def remove_device(self, device_type, device_id):
+
+        # check if there is at least one device left
+        if len(self.config[device_type]) <= 1:
+            LOG.info("Cannot remove device because there has to be at least one device")
+            return False
+
+        # delete the device with the highest num
+        if device_id == -1:
+            highest_num = max(self.config[device_type], key=int)
+            del self.config[device_type][f"{highest_num}"]
+            return f"remove-device {device_type} {highest_num}"
+
+        # delete the specified device
+        del self.config[device_type][f"{device_id}"]
+        return f"remove-device {device_type} {device_id}"
+
     # set a device as primary (only vi and b)
     def set_primary(self, device_type, device_id, run_command=True):
         name = self.config[device_type][device_id]['name']
@@ -745,15 +850,15 @@ class AudioServer:
         self.pulse_socket.pulsectl.volume_set(device, volume)
         return f'volume {device_type} {device_id} {val}'
 
-    def device_new(self, index, facility):
+    def device_plugged_in(self, index, facility):
         if index != 'None' and facility != 'None':
-            return f'device-new {index} {facility}'
+            return f'device-plugged-in {index} {facility}'
         else:
             return ''
 
-    def device_remove(self, index, facility):
+    def device_unplugged(self, index, facility):
         if index != 'None' and facility != 'None':
-            return f'device-remove {index} {facility}'
+            return f'device-unplugged {index} {facility}'
         else:
             return ''
 

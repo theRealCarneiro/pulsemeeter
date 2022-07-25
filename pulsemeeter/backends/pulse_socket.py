@@ -72,9 +72,9 @@ class PulseSocket():
             index = event.index
             facility = self._fa_enum_to_string(event.facility)
             if event.t == 'new':
-                command = f'device-new {index} {facility}'
+                command = f'device-plugged-in {index} {facility}'
             elif event.t == 'remove':
-                command = f'device-remove {index} {facility}'
+                command = f'device-unplugged {index} {facility}'
             self.command_queue.put(('audio_server', None, command))
 
         # listener for pulseaudio events
