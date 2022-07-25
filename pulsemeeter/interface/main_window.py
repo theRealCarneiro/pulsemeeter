@@ -120,7 +120,7 @@ class MainWindow(Gtk.Window):
         self.start_inputs()
         self.start_outputs()
         self.start_vumeters()
-        # self.start_app_list()
+        self.start_app_list()
         self.start_menu_items()
         # self.start_layout_combobox()
 
