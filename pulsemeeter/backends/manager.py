@@ -540,9 +540,9 @@ class AudioServer:
                 else:
                     channels = device['channel_map'].count(',') + 1
 
-        # device_config['channel_map'] = channel_map
-        device_config['channels'] = channels
-        device_config['selected_channels'] = [True for _ in range(channels)]
+                # device_config['channel_map'] = channel_map
+                device_config['channels'] = channels
+                device_config['selected_channels'] = [True for _ in range(channels)]
         device_config['name'] = name
 
         # if chosen device is not an empty name
@@ -690,7 +690,7 @@ class AudioServer:
         command = pmctl.mute(device, name, conn_status)
 
         if run_command:
-            LOG.deug(command)
+            LOG.debug(command)
             os.popen(command)
             return f'mute {device_type} {device_id} {state}'
         else:

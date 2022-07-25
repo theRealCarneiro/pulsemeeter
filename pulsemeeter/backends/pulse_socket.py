@@ -6,7 +6,7 @@ import logging
 import pulsectl
 import pulsectl_asyncio
 
-logging.getLogger("generic")
+LOG = logging.getLogger("generic")
 
 class PulseSocket():
     '''
