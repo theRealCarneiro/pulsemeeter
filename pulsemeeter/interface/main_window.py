@@ -120,7 +120,7 @@ class MainWindow(Gtk.Window):
         self.start_inputs()
         self.start_outputs()
         self.start_vumeters()
-        # self.start_app_list()
+        self.start_app_list()
         self.start_menu_items()
         # self.start_layout_combobox()
 
@@ -579,16 +579,17 @@ class MainWindow(Gtk.Window):
     # TODO: refresh while the UI is open
     def device_new(self, index, facility):
         # add event
-        if facility == 'sink-input':
+        if facility == 'sink_input':
+            print(index, facility)
             GLib.idle_add(self.sink_input_box.load_application_list, index)
-        elif facility == 'source-output':
+        elif facility == 'source_output':
             GLib.idle_add(self.source_output_box.load_application_list, index)
 
     def device_remove(self, index, facility):
         # remove event
-        if facility == 'sink-input':
+        if facility == 'sink_input':
             GLib.idle_add(self.sink_input_box.remove_app_dev, index)
-        elif facility == 'source-output':
+        elif facility == 'source_output':
             GLib.idle_add(self.source_output_box.remove_app_dev, index)
 
     def listen_socket(self):
