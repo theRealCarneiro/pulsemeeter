@@ -212,9 +212,6 @@
 
 			"mute": false,
 			"vol": 100,
-			"eq_control": "",
-			"eq_name": "",
-			"use_eq": false,
 			"channels": 2
 		},
 		"2": {
@@ -260,9 +257,6 @@
 
 			"mute": false,
 			"vol": 100,
-			"eq_control": "",
-			"eq_name": "",
-			"use_eq": false,
 			"channels": 2
 		},
 		"3": {
@@ -308,9 +302,6 @@
 
 			"mute": false,
 			"vol": 100,
-			"eq_control": "",
-			"eq_name": "",
-			"use_eq": false,
 			"channels": 2
 		}
 	},
@@ -353,12 +344,8 @@
 				"auto_ports": true, 
 				"port_map": []
 			},
-
 			"vol": 100,
 			"mute": false,
-			"eq_control": "",
-			"eq_name": "",
-			"use_eq": false,
 			"jack": false,
 			"use_rnnoise": false,
 			"rnnoise_name": "",
@@ -405,9 +392,6 @@
 			},
 			"vol": 100,
 			"mute": false,
-			"eq_control": "",
-			"eq_name": "",
-			"use_eq": false,
 			"jack": false,
 			"use_rnnoise": false,
 			"rnnoise_name": "",
@@ -454,9 +438,6 @@
 			},
 			"vol": 100,
 			"mute": false,
-			"eq_control": "",
-			"eq_name": "",
-			"use_eq": false,
 			"jack": false,
 			"use_rnnoise": false,
 			"rnnoise_name": "",

@@ -1,4 +1,3 @@
-from ..settings import SOCK_FILE, __version__
 import subprocess
 import logging
 import traceback
@@ -9,6 +8,7 @@ import sys
 import re
 from queue import SimpleQueue
 import pulsemeeter.backends.pmctl as pmctl
+from pulsemeeter.settings import SOCK_FILE, __version__
 
 LOG = logging.getLogger("generic")
 
@@ -33,7 +33,8 @@ class Client:
             self.id = int(self.sock.recv(4))
         except socket.error:
             LOG.error(traceback.format_exc())
-            sys.exit(1)
+            LOG.error("Could not connect to server")
+            return False
 
         self.config = json.loads(self.send_command('get-config', nowait=True))
 
@@ -162,6 +163,7 @@ class Client:
 
             except Exception:
                 raise
+
 
     # set a callback function to a command
     def set_callback_function(self, command, function):
@@ -307,7 +309,10 @@ class Client:
                 control = args[2]
                 self.config['hi'][device_id]['rnnoise_control'] = control
 
-    def verify_device(self, device_type, device_id, dev):
+    def verify_device(self, device_type, device_id="0", dev="all"):
+        """
+        see if device name and device_id is correct
+        """
 
         if dev == 'virtual':
             if device_type not in ['vi', 'b']:
@@ -334,7 +339,7 @@ class Client:
                 LOG.error(f'output type {device_type} not found')
                 return False
 
-        if not device_id.isdigit() or not device_id.isdigit():
+        if not device_id.isdigit():
             LOG.error(f'invalid device index {device_id}')
             return False
 
@@ -358,6 +363,30 @@ class Client:
 
         if self.config[input_type][input_id][f'{output_type}{output_id}']['status'] == state:
             return
+
+        LOG.debug(command)
+        return self.send_command(command)
+
+    def create_device(self, device_type):
+        """
+        create a new device (slot)
+        """
+        if self.verify_device(device_type) is not True:
+            return
+
+        command = f"create-device {device_type}"
+
+        LOG.debug(command)
+        return self.send_command(command)
+
+    def remove_device(self, device_type, device_id=-1):
+        """
+        remove a device (slot)
+        """
+        if self.verify_device(device_type) is not True:
+            return
+
+        command = f"remove-device {device_type} {device_id}"
 
         LOG.debug(command)
         return self.send_command(command)
