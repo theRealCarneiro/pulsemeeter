@@ -190,6 +190,11 @@ move_source_output () {
 	pactl move-source-output $app $master
 }
 
+get_pactl_version () {
+	version=$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')
+	printf "%d" "$version"
+}
+
 list (){
 
 	local device_type=$1
@@ -634,6 +639,10 @@ case $1 in
 
 	"get-ports")
 		get_ports $2 $3
+	;;
+
+	"get-pactl-version")
+		get_pactl_version
 	;;
 
 	"*") echo "command not found";;
