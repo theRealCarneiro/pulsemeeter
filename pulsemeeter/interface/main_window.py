@@ -607,9 +607,9 @@ class MainWindow(Gtk.Window):
                 self.update_volume_slider)
         self.client.set_callback_function('change-hd',
                 self.update_comboboxes)
-        self.client.set_callback_function('device-new',
+        self.client.set_callback_function('device-plugged-in',
                 self.device_new)
-        self.client.set_callback_function('device-remove',
+        self.client.set_callback_function('device-unplugged',
                 self.device_remove)
         self.client.set_callback_function('exit',
                 self.close_on_server_exit)

@@ -127,7 +127,6 @@ class AppList(Gtk.VBox):
             self.box_list.clear()
             return
 
-            print(id)
         self.remove(self.box_list[id])
         del self.box_list[id]
         self.show_all()
