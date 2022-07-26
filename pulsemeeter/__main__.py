@@ -331,8 +331,8 @@ def create_parser_args():
     parser_generic(subparsers.add_parser('change-hardware-device', description=help.description.CHANGE_HARDWARE_DEVICE), str, help.value.CHANGE_HARDWARE_DEVICE, ('vi', 'b'))
     parser_generic(subparsers.add_parser('rename', description=help.description.RENAME), str, help.value.RENAME, ('vi', 'b'))
     parser_generic(subparsers.add_parser('volume', description=help.description.VOLUME), str, help.value.VOLUME)
-    parser_generic(subparsers.add_parser('create-device', description=help.description.CREATE_DEVICE), None, device_help="hi | vi | a | b", help_no_number=True)
-    parser_generic(subparsers.add_parser('remove-device', description=help.description.REMOVE_DEVICE), None, help.value.REMOVE_DEVICE)
+    # parser_generic(subparsers.add_parser('create-device', description=help.description.CREATE_DEVICE), None, device_help="hi | vi | a | b", help_no_number=True)
+    # parser_generic(subparsers.add_parser('remove-device', description=help.description.REMOVE_DEVICE), None, help.value.REMOVE_DEVICE)
 
     # eq or rnnoise (allows state)
     parser_eq_rnnoise(subparsers.add_parser('rnnoise', usage=help.usage.RNNOISE, description=help.description.RNNOISE), 'rnnoise')
