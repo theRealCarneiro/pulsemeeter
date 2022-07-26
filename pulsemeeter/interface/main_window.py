@@ -505,7 +505,6 @@ class MainWindow(Gtk.Window):
             if self.config[device_type][device_id]['name'] != '':
                 PortSelectPopover(button, self.client, device_type, device_id)
 
-
     def latency_popover(self, button, event, popover, input_type, input_id,
             output_type, output_id):
         if event.button == 3:
