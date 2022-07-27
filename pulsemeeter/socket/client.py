@@ -540,7 +540,7 @@ class Client:
         devices[v] = []
 
         for i in devl:
-            if pmctl.get_pactl_version < 16:
+            if pmctl.get_pactl_version() < 16:
                 # LEGACY
                 if 'properties' not in i or 'alsa.card_name' in i['properties']:
                     devices[h].append(i)
