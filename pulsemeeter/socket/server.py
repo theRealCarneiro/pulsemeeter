@@ -344,6 +344,8 @@ class Server:
 
             # if config is outdated it will try to add missing keys
             if 'version' not in config or config['version'] != __version__:
+                LOG.debug("Updating config")
+
                 config_orig = json.load(open(ORIG_CONFIG_FILE))
                 config['version'] = __version__
 
@@ -356,8 +358,35 @@ class Server:
                         for k in config_orig[i][j]:
                             if k not in config[i][j]:
                                 config[i][j][k] = config_orig[i][j][k]
-                self.save_config(config)
+
+                # update legacy connection ...
+                for i in (config['b'], config['hi'], config['vi']):
+                    for num in i:
+                        for key in ('a1', 'a2', 'a3', 'b1', 'b2', 'b3'):
+                            if isinstance(i[num].get(key), bool):
+
+                                if i[num].get(key) is not None:
+                                    status = i[num][key]
+                                    del i[num][key]
+                                else:
+                                    status = False
+
+                                if i[num].get(f"{key}_latency") is not None:
+                                    latency = i[num][f"{key}_latency"]
+                                    del i[num][f"{key}_latency"]
+                                else:
+                                    latency = 200
+
+                                i[num][key] = {}
+                                conn = i[num][key]
+                                conn["status"] = status
+                                conn["latency"] = latency
+                                conn["auto_ports"] = True
+                                conn["port_map"] = []
+
+            self.save_config(config)
         else:
+            LOG.debug("Copying config file")
             config = json.load(open(ORIG_CONFIG_FILE))
             config['version'] = __version__
             self.save_config(config)

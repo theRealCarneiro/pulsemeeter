@@ -720,6 +720,7 @@ class AudioServer:
             new_device["rnnoise_name"] = ""
             new_device["rnnoise_control"] = 95
             new_device["rnnoise_latency"] = 200
+            new_device["channels"] = 1
         elif device_type == "a":
             new_device["name"] = ""
             new_device["vol"] = 100
@@ -727,6 +728,7 @@ class AudioServer:
             new_device["eq_control"] = ""
             new_device["eq_name"] = ""
             new_device["use_eq"] = False
+            new_device["channels"] = 2
         elif device_type == "vi":
             new_device["name"] = f"Virtual_Input_{device_number}"
             new_device["primary"] = False

@@ -353,7 +353,8 @@
 			"use_rnnoise": false,
 			"rnnoise_name": "",
 			"rnnoise_control": 95,
-			"rnnoise_latency": 200
+			"rnnoise_latency": 200,
+			"channels": 1
 		},
 		"2": {
 			"name": "",
@@ -399,7 +400,8 @@
 			"use_rnnoise": false,
 			"rnnoise_name": "",
 			"rnnoise_control": 95,
-			"rnnoise_latency": 200
+			"rnnoise_latency": 200,
+			"channels": 1
 		},
 		"3": {
 			"name": "",
@@ -445,7 +447,8 @@
 			"use_rnnoise": false,
 			"rnnoise_name": "",
 			"rnnoise_control": 95,
-			"rnnoise_latency": 200
+			"rnnoise_latency": 200,
+			"channels": 1
 		}
 	},
 	"jack": {

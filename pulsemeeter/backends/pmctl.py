@@ -101,7 +101,7 @@ def get_ports(device, device_type):
     return cmd(f'pmctl get-ports {device_type} {device}').split('\n')
 
 def get_pactl_version():
-    return cmd('pmctl get-pactl-version')
+    return int(cmd('pmctl get-pactl-version'))
 
 
 def subscribe():
