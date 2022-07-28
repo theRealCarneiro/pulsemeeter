@@ -1,11 +1,11 @@
 # import sys
 # from ..settings import GLADEFILE
+from gi.repository import Gtk, Gio
+from gi import require_version as gi_require_version
+from pulsemeeter.backends.pmctl import get_pactl_version
 import logging
 
-from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio
-from pulsemeeter.backends.pmctl import get_pactl_version
 
 LOG = logging.getLogger("generic")
 
@@ -91,7 +91,7 @@ class AppList(Gtk.VBox):
 
         dev_list = self.get_device_list()
 
-        if pactl_get_version() < 16:
+        if get_pactl_version() < 16:
             index_key = 'id'
         else:
             index_key = 'index'
