@@ -127,8 +127,10 @@ class AppList(Gtk.VBox):
             self.box_list.clear()
             return
 
-        self.remove(self.box_list[id])
-        del self.box_list[id]
+        if id in self.box_list:
+            self.remove(self.box_list[id])
+            del self.box_list[id]
+
         self.show_all()
 
     def insert_app(self, id, app):
