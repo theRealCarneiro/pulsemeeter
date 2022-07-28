@@ -78,7 +78,7 @@ jobs:
               --max-statements 50 \
               --max-parents 7 \
               --max-attributes 7 \
-              --fail-under=8 \
+              --fail-under 8 \
               $file
             fi
           done
@@ -110,7 +110,7 @@ jobs:
               --max-statements 50 \
               --max-parents 7 \
               --max-attributes 7 \
-              --fail-under=8 \
+              --fail-under 8 \
               $file
             fi
           done
