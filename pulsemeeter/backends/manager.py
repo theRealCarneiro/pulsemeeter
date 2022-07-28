@@ -624,7 +624,7 @@ class AudioServer:
         command = ''
         device_config = self.config[device_type][device_id]
 
-        if device_config['external'] is True:
+        if device_config.get('external') is True:
             return ''
 
         name = device_config["name"]

@@ -14,6 +14,7 @@ from pulsemeeter.interface.groups_popover import JackGroupsPopover
 from pulsemeeter.interface.port_select_popover import PortSelectPopover
 from pulsemeeter.interface.portmap_popover import PortMapPopover
 from pulsemeeter.interface.vumeter_widget import Vumeter
+from pulsemeeter.backends.pmctl import get_pactl_version
 from pulsemeeter.socket.client import Client
 
 from pulsemeeter.settings import LAYOUT_DIR
@@ -283,7 +284,11 @@ class MainWindow(Gtk.Window):
                     if 'properties' in device:
                         device = device['properties']
 
-                    text = device['device.description'][:name_size]
+                    if get_pactl_version() < 16:
+                        text = device['alsa.card_name'][:name_size]
+                    else:
+                        text = device['device.description'][:name_size]
+
                     if len(text) == name_size:
                         text = text + '...'
                     combobox.append_text(text)
