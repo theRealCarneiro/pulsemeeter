@@ -1,6 +1,6 @@
 name: Pylint
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -58,7 +58,6 @@ jobs:
 
 
       run: |
-          echo "event name:" ${{ github.event_name }}
           for file in ${{ steps.changed-files-else.outputs.all_changed_files }}; do
             if [[ $file == *.py ]]; then
               echo
@@ -91,7 +90,6 @@ jobs:
       if: ${{ github.event_name == 'pull_request' }}
 
       run: |          
-          echo "event name:" ${{ github.event_name }}
           for file in ${{ steps.changed-files-pr.outputs.all_changed_files }}; do
             if [[ $file == *.py ]]; then
               echo
