@@ -360,7 +360,7 @@ class Server:
                                 config[i][j][k] = config_orig[i][j][k]
 
                 # update legacy connection ...
-                for i in (config['b'], config['hi'], config['vi']):
+                for i in (config['hi'], config['vi']):
                     for num in i:
                         for key in ('a1', 'a2', 'a3', 'b1', 'b2', 'b3'):
                             if isinstance(i[num].get(key), bool):

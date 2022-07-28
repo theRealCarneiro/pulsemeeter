@@ -32,42 +32,6 @@
 		"1": {
 			"name": "Virtual_Output_B1",
 			"primary": false,
-			"a1": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true,
-				"port_map": []
-			},
-			"a2": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"a3": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b1": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b2": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b3": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
 			"vol": 100,
 			"mute": false,
 			"channel_map": "1",
@@ -79,42 +43,6 @@
 		"2": {
 			"name": "Virtual_Output_B2",
 			"primary": false,
-			"a1": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true,
-				"port_map": []
-			},
-			"a2": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"a3": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b1": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b2": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b3": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
 			"vol": 100,
 			"mute": false,
 			"channel_map": "1",
@@ -126,42 +54,6 @@
 		"3": {
 			"name": "Virtual_Output_B3",
 			"primary": false,
-			"a1": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true,
-				"port_map": []
-			},
-			"a2": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"a3": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b1": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b2": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
-			"b3": {
-				"status": false,
-				"latency": 200,
-				"auto_ports": true, 
-				"port_map": []
-			},
 			"vol": 100,
 			"mute": false,
 			"channel_map": "1",
