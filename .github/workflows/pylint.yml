@@ -68,7 +68,6 @@ jobs:
               --load-plugins perflint \
               --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321 \
               --output-format colorized \
-              --reports y \
               --max-line-length 80 \
               --max-module-lines 2000 \
               --notes TODO \
@@ -100,7 +99,6 @@ jobs:
               --load-plugins perflint \
               --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321 \
               --output-format colorized \
-              --reports y \
               --max-line-length 80 \
               --max-module-lines 2000 \
               --notes TODO \
