@@ -42,7 +42,7 @@ jobs:
     #
       run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [ $file == *.py ]; then
+            if [[ $file == *.py ]]; then
               echo
               echo "-------[ $file ]-------"
               echo
