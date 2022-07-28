@@ -21,27 +21,44 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint
         pip install perflint
-    - name: Get changed files
-      id: changed-files
+        
+      # if is pr get the sha of the pr
+    - name: get pull-request files
+      if: ${{ github.event_name == 'pull_request' }}
+      id: changed-files-pr
       uses: tj-actions/changed-files@v24
-    - name: Analysing the code with pylint and perflint
-    #
-    # W8201 = loop-invariant-statement
-    # W8205 = dotted-import-in-loop
-    # W0212 = Accessing protected attribute of client class
-    # W0613 = Unused argument
-    # R0903 = Too few public methods
-    # C0301 = Line too long
-    # C0103 = Invalid name
-    # R0914 = Too many local variables
-    # F0401 = Unable to import module
-    # W0402 = Uses of a deprecated module
-    # W0614 = Unused import from wildcard
-    # C0111 = Missing docstring
-    # C0321 multiple statements on one line
-    #
-      run: |
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+      with:
+        sha: ${{ github.event.pull_request.head.sha }}
+        
+      # if not pr get the last sha
+    - name: get commit files
+      if: ${{ github.event_name != 'pull_request' }}
+      id: changed-files-else
+      uses: tj-actions/changed-files@v24
+      
+      # W8201 = loop-invariant-statement
+      # W8205 = dotted-import-in-loop
+      # W0212 = Accessing protected attribute of client class
+      # W0613 = Unused argument
+      # R0903 = Too few public methods
+      # C0301 = Line too long
+      # C0103 = Invalid name
+      # R0914 = Too many local variables
+      # F0401 = Unable to import module
+      # W0402 = Uses of a deprecated module
+      # W0614 = Unused import from wildcard
+      # C0111 = Missing docstring
+      # C0321 multiple statements on one line
+      
+      # ----
+      # COMMIT OR OTHER PUSH
+      # ----
+    - name: check code (OUTPUT)
+      if: ${{ github.event_name != 'pull_request' }}
+
+
+      run: |          
+          for file in ${{ steps.changed-files-else.outputs.all_changed_files }}; do
             if [[ $file == *.py ]]; then
               echo
               echo "-------[ $file ]-------"
@@ -65,4 +82,37 @@ jobs:
               $file
             fi
           done
+          
+      # ----
+      # PULL REQUEST
+      # ----
+    - name: check PR (OUTPUT)
+      if: ${{ github.event_name == 'pull_request' }}
+
+      run: |          
+          for file in ${{ steps.changed-files-pr.outputs.all_changed_files }}; do
+            if [[ $file == *.py ]]; then
+              echo
+              echo "-------[ $file ]-------"
+              echo
+          
+              pylint \
+              --load-plugins perflint \
+              --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321 \
+              --output-format colorized \
+              --reports y \
+              --max-line-length 80 \
+              --max-module-lines 2000 \
+              --notes TODO \
+              --init-import n \
+              --max-args 5 \
+              --max-locals 15 \
+              --max-returns 10 \
+              --max-statements 50 \
+              --max-parents 7 \
+              --max-attributes 7 \
+              $file
+            fi
+          done
+          
         
