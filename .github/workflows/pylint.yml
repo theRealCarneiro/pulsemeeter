@@ -42,7 +42,7 @@ jobs:
     #
       run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [ $file == *.py ]
+            if [ $file == *.py ]; then
               echo "-------[ $file ]-------"
           
               pylint \
@@ -61,5 +61,6 @@ jobs:
               --max-parents 7 \
               --max-attributes 7 \
               $file
+            fi
           done
         
