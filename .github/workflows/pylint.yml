@@ -1,0 +1,116 @@
+name: Pylint
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+            fetch-depth: 0
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+        pip install perflint
+        
+      # if is pr get the sha of the pr
+    - name: get pull-request files
+      if: ${{ github.event_name == 'pull_request' }}
+      id: changed-files-pr
+      uses: tj-actions/changed-files@v24
+      with:
+        sha: ${{ github.event.pull_request.head.sha }}
+        
+      # if not pr get the last sha
+    - name: get commit files
+      if: ${{ github.event_name != 'pull_request' }}
+      id: changed-files-else
+      uses: tj-actions/changed-files@v24
+      
+      # W8201 = loop-invariant-statement
+      # W8205 = dotted-import-in-loop
+      # W0212 = Accessing protected attribute of client class
+      # W0613 = Unused argument
+      # R0903 = Too few public methods
+      # C0301 = Line too long
+      # C0103 = Invalid name
+      # R0914 = Too many local variables
+      # F0401 = Unable to import module
+      # W0402 = Uses of a deprecated module
+      # W0614 = Unused import from wildcard
+      # C0111 = Missing docstring
+      # C0321 multiple statements on one line
+      
+      # ----
+      # COMMIT OR OTHER PUSH
+      # ----
+    - name: check code (OUTPUT)
+      if: ${{ github.event_name != 'pull_request' }}
+
+
+      run: |
+          for file in ${{ steps.changed-files-else.outputs.all_changed_files }}; do
+            if [[ $file == *.py ]]; then
+              echo
+              echo "-------[ $file ]-------"
+              echo
+          
+              pylint \
+              --load-plugins perflint \
+              --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321 \
+              --output-format colorized \
+              --max-module-lines 2000 \
+              --notes TODO \
+              --init-import n \
+              --max-args 5 \
+              --max-locals 15 \
+              --max-returns 10 \
+              --max-statements 50 \
+              --max-parents 7 \
+              --max-attributes 7 \
+              --fail-under 8 \
+              $file
+            fi
+          done
+          
+      # ----
+      # PULL REQUEST
+      # ----
+    - name: check PR (OUTPUT)
+      if: ${{ github.event_name == 'pull_request' }}
+
+      run: |          
+          for file in ${{ steps.changed-files-pr.outputs.all_changed_files }}; do
+            if [[ $file == *.py ]]; then
+              echo
+              echo "-------[ $file ]-------"
+              echo
+          
+              pylint \
+              --load-plugins perflint \
+              --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321 \
+              --output-format colorized \
+              --max-module-lines 2000 \
+              --notes TODO \
+              --init-import n \
+              --max-args 5 \
+              --max-locals 15 \
+              --max-returns 10 \
+              --max-statements 50 \
+              --max-parents 7 \
+              --max-attributes 7 \
+              --fail-under 8 \
+              $file
+            fi
+          done
+          
+        

@@ -1,10 +1,11 @@
 # import sys
 # from ..settings import GLADEFILE
+from gi.repository import Gtk, Gio
+from gi import require_version as gi_require_version
+from pulsemeeter.backends.pmctl import get_pactl_version
 import logging
 
-from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio
 
 LOG = logging.getLogger("generic")
 
@@ -90,6 +91,11 @@ class AppList(Gtk.VBox):
 
         dev_list = self.get_device_list()
 
+        if get_pactl_version() < 16:
+            index_key = 'id'
+        else:
+            index_key = 'index'
+
         for i in app_list:
             if 'properties' in i and ('application.name' not in i['properties'] or
                     i['properties']['application.name'] == 'Console Meter' or
@@ -102,11 +108,11 @@ class AppList(Gtk.VBox):
                     i['properties'] = {'application.icon': i['icon']}
 
             if id is not None:
-                if str(id) != str(i['index']):
+                if str(id) != str(i[index_key]):
                     continue
 
             if id is None:
-                id = i['index']
+                id = i[index_key]
             if 'application.icon_name' not in i['properties']:
                 i['properties']['application.icon_name'] = 'audio-card'
             if 'device' not in i:

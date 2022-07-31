@@ -747,8 +747,8 @@ class AudioServer:
             new_device["channels"] = 1
             new_device["channel_map"] = "1"
 
-        # generate ports for THIS device
-        if device_type in ("b", "vi", "hi"):
+        # generate connections for THIS device
+        if device_type in ("vi", "hi"):
             for port in ("a", "b"):
                 highest_number = max(self.config[port], key=int)
                 for i in range(1, int(highest_number)+1):
@@ -761,15 +761,15 @@ class AudioServer:
                     p["auto_ports"] = True
                     p["port_map"] = []
 
-        # update ports FOR EVERY device
+        # update connections FOR EVERY device
         if device_type in ("a", "b"):
-            # update port mapping for each device
+            # update connections for each device
             if device_type == "a":
                 new_port = f"a{device_number}"
             else:
                 new_port = f"b{device_number}"
 
-            for category in (self.config["vi"], self.config["b"], self.config["hi"]):
+            for category in (self.config["vi"], self.config["hi"]):
                 for device in category:
                     print(device)
                     # create device
