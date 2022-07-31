@@ -1,11 +1,11 @@
 # import sys
 # from ..settings import GLADEFILE
-from gi.repository import Gtk, Gio
 from gi import require_version as gi_require_version
+gi_require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gio
 from pulsemeeter.backends.pmctl import get_pactl_version
 import logging
 
-gi_require_version('Gtk', '3.0')
 
 LOG = logging.getLogger("generic")
 
