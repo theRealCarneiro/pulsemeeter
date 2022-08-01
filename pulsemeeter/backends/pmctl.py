@@ -106,7 +106,7 @@ def get_pactl_version():
     return int(cmd('pmctl get-pactl-version'))
 
 def get_stream_volume(stream_type, app_id):
-    return cmd(f'pmctl get-{stream_type}-volume {app_id}')
+    return int(cmd(f'pmctl get-{stream_type}-volume {app_id}'))
 
 
 def subscribe():
