@@ -561,6 +561,7 @@ class Server:
             'rename': {
                 'function': self.audio_server.rename,
                 'notify': True,
+                'save_config': True,
                 'regex': ''
             },
 
@@ -646,6 +647,7 @@ class Server:
             'set-layout': {
                 'function': self.change_layout,
                 'notify': True,
+                'save_config': True,
                 'regex': '[aA-zZ]+$'
             },
 
@@ -669,18 +671,20 @@ class Server:
                 'save_config': False,
                 'regex': ''
             },
+
             'create-device': {
                 'function': self.audio_server.create_device,
                 'notify': True,
                 'save_config': True,
                 'regex': '(hi|vi|a|b)'
             },
+
             'remove-device': {
                 'function': self.audio_server.remove_device,
                 'notify': True,
                 'save_config': True,
                 'regex': '(hi|vi|a|b) [0-9]+'
-                }
+            },
         }
 
 

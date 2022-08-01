@@ -576,8 +576,7 @@ class Client:
         return self.send_command(command)
 
     def get_app_volume(self, app_id, stream_type):
-        command = f'get-stream-volume {app_id} {stream_type}'
-        return int(self.send_command(command))
+        return int(pmctl.get_stream_volume(stream_type, app_id))
 
     def set_app_volume(self, app_id, vol, stream_type):
         command = f'app-volume {app_id} {vol} {stream_type}'
