@@ -2,7 +2,9 @@ import sys
 import os
 import json
 import subprocess
+import logging
 
+LOG = logging.getLogger('generic')
 
 # todo: channel mapping
 def init(device_type, device, channel_map=None, run_command=False):
