@@ -2,7 +2,9 @@ import sys
 import os
 import json
 import subprocess
+import logging
 
+LOG = logging.getLogger('generic')
 
 # todo: channel mapping
 def init(device_type, device, channel_map=None, run_command=False):
@@ -103,6 +105,9 @@ def get_ports(device, device_type):
 def get_pactl_version():
     return int(cmd('pmctl get-pactl-version'))
 
+def get_stream_volume(stream_type, app_id):
+    return cmd(f'pmctl get-{stream_type}-volume {app_id}')
+
 
 def subscribe():
     command = ['pactl', 'subscribe']
@@ -124,7 +129,7 @@ def cmd(command):
         stderr=subprocess.STDOUT)
     stdout, stderr = p.communicate()
     if p.returncode:
-        raise
+        LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
     return stdout.decode()
 
 

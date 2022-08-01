@@ -86,6 +86,7 @@ class AppList(Gtk.VBox):
         if id is None and len(self.box_list) > 0:
             self.remove_app_dev()
 
+
         app_list = self.client.list(self.dev_type + 's', all=True)
 
         if len(app_list) == 0:
@@ -100,6 +101,13 @@ class AppList(Gtk.VBox):
 
         for i in app_list:
 
+            if id is not None:
+                if str(id) != str(i[index_key]):
+                    continue
+
+            if id is None:
+                id = i[index_key]
+
             if 'properties' not in i:
                 # PACTL < 16 (old)
                 i['properties'] = {}
@@ -110,7 +118,7 @@ class AppList(Gtk.VBox):
                     i['properties']['application.icon_name'] = 'audio-card'
 
                 i['properties']['application.name'] = i['name']
-                i['volume'] = self.client.get_app_volume(i[index_key], self.dev_type)
+                i['volume'] = self.client.get_app_volume(id, self.dev_type)
             else:
                 # PACTL >= 16 (new)
                 if (('application.name' not in i['properties'])
@@ -124,12 +132,6 @@ class AppList(Gtk.VBox):
 
                 i['volume'] = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
 
-            if id is not None:
-                if str(id) != str(i[index_key]):
-                    continue
-
-            if id is None:
-                id = i[index_key]
 
             if 'device' not in i:
                 i['device'] = 0
