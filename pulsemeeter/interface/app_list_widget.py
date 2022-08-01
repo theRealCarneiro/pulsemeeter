@@ -113,7 +113,8 @@ class AppList(Gtk.VBox):
 
             if id is None:
                 id = i[index_key]
-            if 'application.icon_name' not in i['properties']:
+            if (('properties' not in i)
+                    or ('application.icon_name' not in i.get('properties'))):
                 i['properties']['application.icon_name'] = 'audio-card'
             if 'device' not in i:
                 i['device'] = 0
