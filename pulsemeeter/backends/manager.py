@@ -903,29 +903,6 @@ class AudioServer:
         os.popen(command)
         return f'app {app} {name} {stream_type}'
 
-    # subscribe to pulseaudio events
-    def subscribe(self):
-        command = ['pactl', 'subscribe']
-        sys.stdout.flush()
-        env = os.environ
-        env['LC_ALL'] = 'C'
-        self.MyOut = subprocess.Popen(command, env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True)
-
-        for stdout_line in iter(self.MyOut.stdout.readline, ""):
-            yield stdout_line
-
-        self.MyOut.stdout.close()
-        return_code = self.MyOut.wait()
-        if return_code:
-            raise subprocess.CalledProcessError(return_code, command)
-
-    def end_subscribe(self):
-        self.MyOut.terminate()
-
-
 def cmd(command):
     sys.stdout.flush()
     p = subprocess.Popen(command.split(' '),
@@ -933,7 +910,8 @@ def cmd(command):
         stderr=subprocess.STDOUT)
     stdout, stderr = p.communicate()
     if p.returncode:
-        raise
+        LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
+        return
     return stdout.decode()
 
 
