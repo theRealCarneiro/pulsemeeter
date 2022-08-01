@@ -584,7 +584,6 @@ class MainWindow(Gtk.Window):
     def device_new(self, index, facility):
         # add event
         if facility == 'sink_input':
-            print(index, facility)
             GLib.idle_add(self.sink_input_box.load_application_list, index)
         elif facility == 'source_output':
             GLib.idle_add(self.source_output_box.load_application_list, index)
