@@ -97,15 +97,27 @@ class AppList(Gtk.VBox):
             index_key = 'index'
 
         for i in app_list:
-            if 'properties' in i and ('application.name' not in i['properties'] or
-                    i['properties']['application.name'] == 'Console Meter' or
-                    'application.id' in i['properties'] and
-                    i['properties']['application.id'] == 'org.PulseAudio.pavucontrol'):
-                continue
 
             if 'properties' not in i:
+                # PACTL < 16 (old)
+                i['properties'] = {}
+
                 if 'icon' in i:
-                    i['properties'] = {'application.icon': i['icon']}
+                    i['properties']['application.icon_name'] = i['icon']
+                else:
+                    i['properties']['application.icon_name'] = 'audio-card'
+
+                i['properties']['application.name'] = i['name']
+            else:
+                # PACTL >= 16 (new)
+                if (('application.name' not in i['properties'])
+                        or (i['properties']['application.name'] == 'Console Meter')
+                        or ('application.id' in i['properties'])
+                        and (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
+                    continue
+
+                if 'application.icon_name' not in i['properties']:
+                    i['properties']['application.icon_name'] = 'audio-card'
 
             if id is not None:
                 if str(id) != str(i[index_key]):
@@ -113,9 +125,7 @@ class AppList(Gtk.VBox):
 
             if id is None:
                 id = i[index_key]
-            if (('properties' not in i)
-                    or ('application.icon_name' not in i.get('properties'))):
-                i['properties']['application.icon_name'] = 'audio-card'
+
             if 'device' not in i:
                 i['device'] = 0
 
