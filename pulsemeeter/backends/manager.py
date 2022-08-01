@@ -888,7 +888,7 @@ class AudioServer:
         chann = 2
 
         # set volume object
-        volume = self.pulse_socket.pulsectl.PulseVolumeInfo(val / 100, chann)
+        volume = self.pulse_socket.volume_info(val / 100, chann)
         id = int(id)
 
         if stream_type == 'sink-input':

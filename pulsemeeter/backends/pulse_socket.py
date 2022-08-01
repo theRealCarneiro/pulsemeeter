@@ -21,6 +21,7 @@ class PulseSocket():
         self.async_loop = asyncio.get_event_loop()
         self.pulse_listener_thread = threading.Thread(target=self.async_loop.run_forever, daemon=True)
 
+
     def start_listener(self):
         '''
         starts the listener for Pulseaudio/Pipewire changes (restarts if ran again)
@@ -82,6 +83,9 @@ class PulseSocket():
         async with self.pulsectl_asyncio as pulse:
             async for event in pulse.subscribe_events('all'):
                 await self._pulse_listener_handler(event)
+
+    def volume_info(self, val, chann):
+        return pulsectl.PulseVolumeInfo(val, chann)
 
         # searches for device with name(pulseaudio device) and returns tuple:
     # - device_type

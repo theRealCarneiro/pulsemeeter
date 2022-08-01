@@ -11,8 +11,10 @@ LOG = logging.getLogger("generic")
 
 class App(Gtk.VBox):
 
-    def __init__(self, id, label, icon, volume, device, dev_type, dev_list):
+    def __init__(self, id, client, label, icon, volume, device, dev_type, dev_list):
         super(App, self).__init__(spacing=0)
+        self.client = client
+        self.dev_type = dev_type
         icon = Gio.ThemedIcon(name=icon)
         image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
         image.set_margin_left(10)
@@ -108,6 +110,7 @@ class AppList(Gtk.VBox):
                     i['properties']['application.icon_name'] = 'audio-card'
 
                 i['properties']['application.name'] = i['name']
+                i['volume'] = self.client.get_app_volume(i[index_key], self.dev_type)
             else:
                 # PACTL >= 16 (new)
                 if (('application.name' not in i['properties'])
@@ -118,6 +121,8 @@ class AppList(Gtk.VBox):
 
                 if 'application.icon_name' not in i['properties']:
                     i['properties']['application.icon_name'] = 'audio-card'
+
+                i['volume'] = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
 
             if id is not None:
                 if str(id) != str(i[index_key]):
@@ -132,9 +137,9 @@ class AppList(Gtk.VBox):
             icon = i['properties']['application.icon_name']
             label = i['properties']['application.name']
             device = i['device']
-            volume = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
+            volume = i['volume']
 
-            app = App(id, label, icon, volume, device, self.dev_type, dev_list)
+            app = App(id, self.client, label, icon, volume, device, self.dev_type, dev_list)
             self.insert_app(id, app)
 
     def remove_app_dev(self, id=None):
