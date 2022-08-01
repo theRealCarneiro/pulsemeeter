@@ -127,7 +127,7 @@ def cmd(command):
         stderr=subprocess.STDOUT)
     stdout, stderr = p.communicate()
     if p.returncode:
-        raise
+        LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
     return stdout.decode()
 
 
