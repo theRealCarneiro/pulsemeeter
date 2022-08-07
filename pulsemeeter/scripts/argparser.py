@@ -1,19 +1,13 @@
-import os
-import time
-import sys
 import subprocess
-import argparse
-import re
 import platform
-import traceback
+import argparse
+import sys
+import re
+import os
 
 from pulsemeeter.settings import CONFIG_FILE, __version__
-from pulsemeeter.interface import MainWindow
-from pulsemeeter.socket import Client, Server
+from pulsemeeter.api.audio_client import AudioClient
 
-from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk  # type: ignore
 
 # change these to change all occurences of these values (also for checking)
 true_values = ('true', '1', 'on')
@@ -360,14 +354,12 @@ def arg_interpreter(args, parser):
         except Exception:
             print(f'Pulseaudio: {color.red("not running")}')
 
-
         try:
             audio_server = os.popen('pactl info | grep "Server Name"').read()
             audio_server = audio_server.split(': ')[1]
             audio_server = audio_server.replace('\n', '')
         except Exception:
             audio_server = color.red('could not be determined')
-
 
         print(f'audio server: {color.bold(audio_server)}')
         print(f'Pulsemeeter version: {color.bold(__version__)}')
@@ -378,7 +370,7 @@ def arg_interpreter(args, parser):
     else:
         # commands which need a client
         try:
-            client = Client()
+            client = AudioClient()
         except Exception:
             print(color.red('error: daemon is not started. Use "pulsemeeter daemon" to start it.'))
         else:
@@ -467,93 +459,3 @@ def arg_interpreter(args, parser):
 
             elif args.command == 'rename':
                 client.rename(*convert_device(args, parser), args.value)
-
-
-def start_server(server):
-    try:
-        server.start_server(daemon=True)
-        time.sleep(0.1)
-    except Exception:
-        print(f'Could not start server because of:\n')
-        traceback.print_exc()
-        sys.exit(1)
-
-
-def start_app(isserver, trayonly):
-    MainWindow(isserver=isserver, trayonly=trayonly)
-    Gtk.main()
-
-
-def main():
-    global another_sv_running
-
-    server = None
-    try:
-        # this supresses warnings coming from pmctl, which are not needed when just checking if the server is running
-        server = Server(init_audio_server=False)
-        another_sv_running = False
-
-    except ConnectionAbortedError:
-        another_sv_running = True
-
-    except Exception:
-        traceback.print_exc()
-        return 1
-
-    isserver = not another_sv_running
-
-    # none: Start Server (if not already started) and open window
-    if len(sys.argv) == 1:
-        trayonly = False
-
-    elif len(sys.argv) == 2:
-        # daemon: disable application window creation for instance
-        if sys.argv[1].lower() == 'daemon':
-            if not isserver:
-                print('The server is already running.')
-                return 1
-
-            trayonly = True
-
-        # init: Just start devices and connections
-        elif sys.argv[1] == 'init':
-            Server()
-            return 0
-
-        # exit: close server, all clients should close after they recive an exit signal from
-        # the server
-        elif sys.argv[1].lower() == 'exit':
-            try:
-                if another_sv_running:
-                    print('closing server...')
-                    print('It may take a few seconds...')
-                    client = Client()
-                    client.close_server()
-                    return 0
-                else:
-                    print('no instance is running')
-                    return 1
-            except Exception:
-                print('unable to close server')
-                traceback.print_exc()
-                return 1
-        else:
-            create_parser_args()
-            return 0
-    else:
-        create_parser_args()
-        return 0
-
-    # only no args and daemon arg reach this part of the code
-
-    # start server if there's no server running
-    if server is not None:
-        # new instance of server where init starts
-        server = Server()
-        start_server(server)
-    start_app(isserver, trayonly)
-
-    # close server if there was a server started
-    if server is not None: server.handle_exit_signal()
-
-    return 0

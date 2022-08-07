@@ -21,7 +21,7 @@ LOG = logging.getLogger("generic")
 
 class AudioServer(Server):
 
-    def __init__(self, init_audio=False, init_server=True):
+    def __init__(self, init_server=True):
 
         # check if pulseaudio is running
         try:
@@ -35,24 +35,30 @@ class AudioServer(Server):
         # read config file
         self.read_config()
 
-        # start audio devices and connections
-        if init_audio: self.init_audio()
-
+        # create a dict with the commands and functions
         self.create_command_dict()
 
-        # create and server
-        super(AudioServer, self).__init__()
+        # call server __init__
+        super(AudioServer, self).__init__(init_server)
+
+        if init_server: self.start_server()
+
+    def start_server(self, daemon=False):
+
+        # start audio devices and connections
+        self.init_audio()
 
         # start pulsectl client
         self.pulsectl = pulsectl.Pulse('pulsemeeter')
         self.pulse_socket = PulseSocket(self.command_queue, self.config)
         self.pulse_socket.start_listener()
 
+        self.start_query()
         self.main_loop_thread = threading.Thread(target=self.main_loop)
         self.main_loop_thread.start()
 
         # Register signal handlers
-        if init_server:
+        if daemon:
             signal.signal(signal.SIGINT, self.stop_server)
             signal.signal(signal.SIGTERM, self.stop_server)
 
