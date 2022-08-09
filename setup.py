@@ -44,11 +44,11 @@ setup(
     data_files=DATA_FILES,
     entry_points={
         "console_scripts": [
-            "pulsemeeter = pulsemeeter.__main__:main",
+            "pulsemeeter = pulsemeeter.main:main",
         ],
     },
 
-    python_requires=">=3.5",
+    python_requires=">=3.10",
     scripts=[
         'scripts/pmctl',
     ],
