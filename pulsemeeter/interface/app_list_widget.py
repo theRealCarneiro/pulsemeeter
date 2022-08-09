@@ -9,6 +9,7 @@ import logging
 
 LOG = logging.getLogger("generic")
 
+
 class App(Gtk.VBox):
 
     def __init__(self, id, client, label, icon, volume, device, dev_type, dev_list):
@@ -85,7 +86,6 @@ class AppList(Gtk.VBox):
     def load_application_list(self, id=None):
         if id is None and len(self.box_list) > 0:
             self.remove_app_dev()
-
 
         app_list = self.client.list(self.dev_type + 's', all=True)
 

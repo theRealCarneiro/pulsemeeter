@@ -1,16 +1,12 @@
+import pulsemeeter.scripts.argparser as argparser
 import traceback
 import logging
 import time
 import sys
 
-import pulsemeeter.scripts.argparser as argparser
-from pulsemeeter.interface_old.main_window import MainWindow
+from pulsemeeter.controller.window_controller import WindowController
 from pulsemeeter.api.audio_server import AudioServer
 from pulsemeeter.api.audio_client import AudioClient
-
-from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk  # type: ignore
 
 LOG = logging.getLogger("generic")
 
@@ -23,11 +19,6 @@ def start_server(server):
         print('Could not start server because of:\n')
         traceback.print_exc()
         sys.exit(1)
-
-
-def start_app(isserver, trayonly):
-    MainWindow(isserver=isserver, trayonly=trayonly)
-    Gtk.main()
 
 
 def main():
@@ -45,7 +36,6 @@ def main():
 
         # no args: open window
         case []:
-            print('aq')
             trayonly = False
 
         # daemon: start only the server
@@ -81,7 +71,7 @@ def main():
 
     # start server if there's no server running
     if isserver: start_server(server)
-    start_app(isserver, trayonly)
+    WindowController(isserver, trayonly)
 
     # close server if there was a server started
     if isserver: server.stop_server()
