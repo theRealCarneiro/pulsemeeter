@@ -377,8 +377,11 @@ class AudioServer(Server):
         else:
             status = str2bool(status)
 
+        label, plugin = 'noisetorch', 'rnnoise_ladspa'
+        # label, plugin = 'noise_suppressor_mono', 'librnnoise_ladspa'
+
         # create ladspa sink
-        command = pmctl.ladspa(status, 'source', source, ladspa_sink, 'noise_suppressor_mono', 'librnnoise_ladspa', control, chann_lat)
+        command = pmctl.ladspa(status, 'source', source, ladspa_sink, label, plugin, control, chann_lat)
 
         # recreates all loopbacks from the device
         if reconnect:
@@ -598,8 +601,18 @@ class AudioServer(Server):
 
             # auto ports
             else:
+                try:
+                    input_port_size = source_config['selected_channels'].count(True)
+                except Exception:
+                    input_port_size = source_config['channels']
+
+                try:
+                    output_port_size = sink_config['selected_channels'].count(True)
+                except Exception:
+                    output_port_size = sink_config['channels']
+
                 ports = ''
-                cnum = min(source_config['channels'], sink_config['channels'])
+                cnum = min(input_port_size, output_port_size)
 
                 for i in range(cnum):
                     ports += f'{iselports[i]}:{oselports[i]} '
@@ -1209,7 +1222,7 @@ class AudioServer(Server):
             'volume': {
                 'function': self.volume,
                 'notify': True,
-                'save_config': True,
+                'save_config': False,
                 'regex': '(a|b|hi|vi) [0-9]+ [+-]?[0-9]+$'
             },
 
