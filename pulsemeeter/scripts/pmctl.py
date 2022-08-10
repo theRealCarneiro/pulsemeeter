@@ -6,6 +6,7 @@ import logging
 
 LOG = logging.getLogger('generic')
 
+
 # todo: channel mapping
 def init(device_type, device, channel_map=None, run_command=False):
     command = f'pmctl init {device_type} {device} "{channel_map}"\n'
@@ -78,6 +79,17 @@ def ladspa(status, device_type, name, sink_name, label, plugin, control,
     status = 'connect' if status else 'disconnect'
 
     command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}\n'
+
+    if run_command: os.popen(command)
+    return command
+
+
+def rnnoise(status, name, sink_name, control,
+        chann_or_lat, run_command=False):
+
+    status = 'connect' if status else 'disconnect'
+
+    command = f'pmctl rnnoise {sink_name} {name} {control} {status} "{chann_or_lat}"\n'
 
     if run_command: os.popen(command)
     return command

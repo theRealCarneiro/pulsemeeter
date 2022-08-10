@@ -355,9 +355,15 @@ class AudioServer(Server):
         source = source_config['name']
 
         if latency is None:
-            chann_lat = source_config['rnnoise_latency']
             if self.audio_server == 'Pipewire':
-                chann_lat = source_config['channels']
+                pmap = source_config['selected_channels']
+                chann_lat = ''
+                for i in range(len(pmap)):
+                    if pmap[i] is True:
+                        chann_lat += f'{i}:0 '
+                chann_lat = chann_lat[:-1]
+            else:
+                chann_lat = source_config['rnnoise_latency']
 
         if control is None:
             control = source_config['rnnoise_control']
@@ -377,11 +383,12 @@ class AudioServer(Server):
         else:
             status = str2bool(status)
 
-        label, plugin = 'noisetorch', 'rnnoise_ladspa'
+        # label, plugin = 'noisetorch', 'rnnoise_ladspa'
         # label, plugin = 'noise_suppressor_mono', 'librnnoise_ladspa'
 
         # create ladspa sink
-        command = pmctl.ladspa(status, 'source', source, ladspa_sink, label, plugin, control, chann_lat)
+        # command = pmctl.ladspa(status, 'source', source, ladspa_sink, label, plugin, control, chann_lat)
+        command = pmctl.rnnoise(status, source, ladspa_sink, control, chann_lat)
 
         # recreates all loopbacks from the device
         if reconnect:
@@ -578,6 +585,8 @@ class AudioServer(Server):
 
             # get selected ports
             if input_type == 'hi' and 'selected_channels' in source_config:
+                if source_config['use_rnnoise']:
+                    iselports = [0]
                 iselports = source_config['selected_channels']
                 iselports = [i for i in range(len(iselports)) if iselports[i] is True]
             else:
@@ -594,7 +603,8 @@ class AudioServer(Server):
                 port_map = source_config[f'{output_type}{output_id}']['port_map']
 
                 ports = ''
-                for i in range(len(port_map)):
+                n = len(port_map) if input_type != 'hi' else 1
+                for i in range(n):
                     for o in port_map[i]:
                         ports += f'{iselports[i]}:{o} '
                 ports = ports[:-1]
