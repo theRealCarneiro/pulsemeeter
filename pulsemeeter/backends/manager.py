@@ -509,7 +509,7 @@ class AudioServer:
                                     sink,
                                     status,
                                     latency=latency if self.audio_server != 'Pipewire' else None,
-                                    port_map=ports if self.audio_server == 'Pipewire' else '',
+                                    port_map=ports if self.audio_server == 'Pipewire' else None,
                                     run_command=False)
         else:
             command = ''
