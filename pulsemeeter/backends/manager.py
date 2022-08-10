@@ -505,9 +505,12 @@ class AudioServer:
                     ports += f'{iselports[i]}:{oselports[i]} '
 
         if device_exists:
-            command = pmctl.connect(source, sink, status,
+            command = pmctl.connect(source,
+                                    sink,
+                                    status,
                                     latency=latency if self.audio_server != 'Pipewire' else None,
-                                    port_map=ports, run_command=False)
+                                    port_map=ports if self.audio_server == 'Pipewire' else '',
+                                    run_command=False)
         else:
             command = ''
 
