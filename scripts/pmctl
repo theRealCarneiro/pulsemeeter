@@ -403,7 +403,7 @@ rnnoise() {
 	control=$3
 	status=$4
 	lat_or_map=$5
-
+	map="$5"
 
 	label=noise_suppressor_mono
 	plugin=librnnoise_ladspa
@@ -413,6 +413,7 @@ rnnoise() {
 			if [ -f "$i/rnnoise_ladspa.so" ]; then
 				label=noisetorch
 				plugin=rnnoise_ladspa
+				found=1
 				break
 			elif [ -f "$i/$plugin.so" ]; then
 				found=1
@@ -422,8 +423,12 @@ rnnoise() {
 	done
 	
 	[ -z "$found" ] && exit 1
+	if [ $is_pulse = false ]; then
+		lat_or_map=1
+	fi
 
 	ladspa $status source $master $sink_name $label $plugin $control $lat_or_map
+	connect $input "$sink_name"_in "$map"
 }
 
 #compressor (){
@@ -495,13 +500,13 @@ ladspa() {
 			sink_name=$sink_name \
 			label=$label \
 			plugin=$plugin \
-			control=$control $channels ||
+			control=$control "$channels" ||
 				echo "Error loading $label ladspa sink $sink_name for $master"
 
 
 		[ $is_pulse = false ] && latency=''
 		# we need to connect our source to the filter
-		[ "$device_type" = "source" ] && connect $input $sink_name $latency
+		#[ "$device_type" = "source" ] && connect $input $sink_name '$latency'
 	fi
 }
 
@@ -587,7 +592,7 @@ case $1 in
 	;;
 
 	"rnnoise")
-		rnnoise $2 $3 $4 $5 $6
+		rnnoise $2 $3 $4 $5 "$6"
 	;;
 
 	"ladspa")
