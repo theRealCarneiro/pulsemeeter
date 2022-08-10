@@ -24,12 +24,14 @@ class MainWindow():
         self.window = self.builder.get_object('window')
 
     def create_device(self, device_type, device):
-
         self.device_box_dict[device_type].pack_start(device, True, True, 0)
 
     def remove_device(self, device_type, device):
         box = self.device_box_dict[device_type]
         box.remove(device)
+
+    def add_app(self, id, name, icon):
+        pass
 
     # def create_virtual_input(self, name, mute, volume, primary):
         # device = VirtualInput(name, mute, volume, primary)

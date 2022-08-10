@@ -51,20 +51,21 @@ class WindowController():
             device = VirtualOutput(name, mute, volume, primary, eq)
             device.primary.connect('button_press_event', self.primary_click,
                     device_type, device_id)
+            device.eq.connect('button_press_event', self.eq_click,
+                    device_type, device_id)
 
         elif device_type == 'hi':
             rnnoise = device_config['use_rnnoise']
             device = HardwareInput(name, mute, volume, rnnoise)
             self.create_route_buttons(device, device_type, device_id)
-            # device.rnnoise.connect('button_press_event', self.volume_change,
-                    # device_type, device_id)
+            device.rnnoise.connect('button_press_event', self.rnnoise_click, device_id)
 
         elif device_type == 'a':
             eq = device_config['use_eq']
             name = device_config['nick']
             device = HardwareOutput(name, mute, volume, eq)
-            # device.eq.connect('button_press_event', self.volume_change,
-                    # device_type, device_id)
+            device.eq.connect('button_press_event', self.eq_click,
+                    device_type, device_id)
 
         device.volume.connect('value-changed', self.volume_change,
                 device_type, device_id)
@@ -99,7 +100,6 @@ class WindowController():
 
         if event.button == 1:
             state = not button.get_active()
-            print(input_type, input_id, output_type, output_id, state)
             self.client.connect(input_type, input_id,
                     output_type, output_id, state)
 
@@ -112,8 +112,7 @@ class WindowController():
             return
 
         state = not self.mute.get_active()
-        print(state)
-        # self.client.mute(self.device_type, self.device_id, state)
+        self.client.mute(self.device_type, self.device_id, state)
 
     def primary_click(self, button, event, device_type, device_id):
         if not event.button == 1:
@@ -130,18 +129,32 @@ class WindowController():
                 primary.set_state(False)
                 primary.set_sensitive(True)
 
+    def rnnoise_click(self, button, event, input_id):
+        if event.button == 1:
+            state = not button.get_active()
+            self.client.rnnoise(input_id, state)
+
+    def eq_click(self, button, event, output_type, output_id):
+        if event.button == 1:
+            state = not button.get_active()
+            self.client.eq(output_type, output_id, state)
+
     def update_conect(self, input_type, input_id, output_type,
             output_id, state, latency=None):
 
         state = state == 'True'
         device = self.devices[input_type][input_id]
         button = device.route_dict[output_type][output_id]
-        GLib.idle_add(button.set_active, state)
+        curr_state = button.get_active()
+        if state != curr_state:
+            GLib.idle_add(button.set_active, state)
 
     def update_mute(self, device_type, device_id, state):
         state = state == 'True'
         button = self.devices[device_type][device_id].mute
-        GLib.idle_add(button.set_active, state)
+        curr_state = button.get_active()
+        if state != curr_state:
+            GLib.idle_add(button.set_active, state)
 
     def update_primary(self, device_type, device_id):
         for id, button in self.devices[device_type]:
@@ -152,7 +165,9 @@ class WindowController():
     def update_volume(self, device_type, device_id, value):
         value = int(value)
         slider = self.devices[device_type][device_id].volume
-        GLib.idle_add(slider.set_value, value)
+        curval = slider.get_value()
+        if value != curval:
+            GLib.idle_add(slider.set_value, value)
 
     def set_client_callbacks(self):
         cb = self.client.set_callback_function
