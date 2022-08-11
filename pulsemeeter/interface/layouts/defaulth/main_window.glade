@@ -396,7 +396,7 @@
                   <object class="GtkBox" id="virtual_input_box">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="hexpand">True</property>
+                    <property name="hexpand">False</property>
                     <property name="orientation">vertical</property>
                     <child>
                       <placeholder/>
@@ -857,7 +857,14 @@
                                 <property name="vscroll-policy">natural</property>
                                 <property name="shadow-type">out</property>
                                 <child>
-                                  <placeholder/>
+                                  <object class="GtkBox" id="sink-input-box">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="orientation">vertical</property>
+                                    <child>
+                                      <placeholder/>
+                                    </child>
+                                  </object>
                                 </child>
                               </object>
                             </child>
@@ -966,7 +973,14 @@
                                 <property name="can-focus">False</property>
                                 <property name="vscroll-policy">natural</property>
                                 <child>
-                                  <placeholder/>
+                                  <object class="GtkBox" id="source_output_box">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="orientation">vertical</property>
+                                    <child>
+                                      <placeholder/>
+                                    </child>
+                                  </object>
                                 </child>
                               </object>
                             </child>

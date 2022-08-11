@@ -21,7 +21,7 @@ LOG = logging.getLogger("generic")
 
 class AudioServer(Server):
 
-    def __init__(self, init_server=True):
+    def __init__(self, init_server=False):
 
         # check if pulseaudio is running
         try:
@@ -416,7 +416,6 @@ class AudioServer(Server):
             reconnect=True, change_config=True, run_command=True):
 
         # get information about the device
-        sink = output_type + output_id
         sink_config = self.config[output_type][output_id]
         master = self.get_correct_device([output_type, output_id], 'sink')
 
@@ -440,46 +439,22 @@ class AudioServer(Server):
         else:
             conn_status = str2bool(status)
 
-        if change_config:
-            if status != 'set': sink_config['use_eq'] = conn_status
-            sink_config['eq_control'] = control
-
         if status == sink_config['use_eq'] is False:
             return f'eq {output_type} {output_id} {conn_status} {control}'
 
         # create ladspa sink
-        if conn_status:
-            command = f'pmctl eq init {ladspa_sink} {master} {control}\n'
+        command = pmctl.ladspa(status, 'sink', master, ladspa_sink, 'mbeq', 'mbeq_1197', control, '')
 
-        # removes ladspa sink
-        else:
-            command = f'pmctl eq remove {ladspa_sink}\n'
+        if reconnect:
+            command += self.reconnect(output_type, output_id, False, run_command=False)
+
+        if change_config:
+            if status != 'set': sink_config['use_eq'] = conn_status
+            sink_config['eq_control'] = control
 
         # recreates all loopbacks from the device
         if reconnect:
-
-            # itarate in all output devices
-            for input_type in ['hi', 'vi']:
-                for input_id in self.config[input_type]:
-
-                    # if the source is connected to that device
-                    if self.config[input_type][input_id][sink]['status'] is True:
-                        vi = self.get_correct_device([input_type, input_id], 'source')
-
-                        # disconnect source from sinks, then connect ladspa sink to sinks
-                        if status == 'set' and conn_status:
-                            command += pmctl.disconnect(vi, ladspa_sink)
-                            command += pmctl.connect(vi, ladspa_sink)
-
-                        # disconnect source from sinks, then connect ladspa sink to sinks
-                        if conn_status:
-                            command += pmctl.disconnect(vi, master)
-                            command += pmctl.connect(vi, ladspa_sink)
-
-                        # disconnect ladspa sink from sinks, then connect source to sinks
-                        else:
-                            command += pmctl.disconnect(vi, ladspa_sink)
-                            command += pmctl.connect(vi, master)
+            command += self.reconnect(output_type, output_id, True, run_command=False)
 
         if run_command:
             LOG.debug(command)

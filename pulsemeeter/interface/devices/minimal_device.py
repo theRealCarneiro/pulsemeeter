@@ -1,6 +1,8 @@
 # import sys
 # import os
 
+from pulsemeeter.interface.vumeter_widget import Vumeter
+
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -21,8 +23,10 @@ class MinimalDevice(Gtk.Grid):
         self.mute = builder.get_object('mute')
         self.adjust = builder.get_object('adjust')
         self.volume = builder.get_object('volume')
-        self.vumeter_grid = builder.get_object('vumeter')
+        self.vumeter_grid = builder.get_object('vumeter_grid')
+        self.vumeter = Vumeter()
 
+        self.vumeter_grid.add(self.vumeter)
         self.label.set_text(name)
         self.mute.set_active(mute)
         self.adjust.set_value(volume)

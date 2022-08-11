@@ -16,7 +16,6 @@
         <property name="height-request">30</property>
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="valign">start</property>
         <property name="margin-start">5</property>
         <property name="margin-end">5</property>
         <property name="margin-top">5</property>

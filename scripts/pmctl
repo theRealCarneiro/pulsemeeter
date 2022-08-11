@@ -450,7 +450,7 @@ ladspa() {
 	local latency=$8
 	local map=$8
 
-	pactl list "$device_type"s short 2>&1 | grep $master >/dev/null || exit
+	#pactl list "$device_type"s short 2>&1 | grep $master >/dev/null || exit
 
 	# check if plugin existis in file system
 	for lib in '64' ''; do
@@ -467,6 +467,7 @@ ladspa() {
 	## remove old sinks
 	# sources need one extra sink, so we need to remove it
 	remove $sink_name"_in"
+	remove $sink_name"_out"
 	remove $sink_name
 
 	## create devices
@@ -485,11 +486,11 @@ ladspa() {
 			# pipewire wont allow ladspa sinks to connect directly to virtual sources, 
 			# so we need to add a middleground sink
 			if ! pactl list sinks short | grep $master; then
-				init sink $sink_name $map
-				connect $sink_name $master
-				master=$sink_name
-				sink_name+='_in'
-				channels="channels=$map"
+				init sink "$sink_name"_out $map
+				connect "$sink_name"_out $master
+				master="$sink_name"_out
+				#sink_name+='_in'
+				#channels="channels=$map"
 			fi
 		fi
 
@@ -508,6 +509,12 @@ ladspa() {
 		# we need to connect our source to the filter
 		#[ "$device_type" = "source" ] && connect $input $sink_name '$latency'
 	fi
+}
+
+get_device_by_id (){
+	dev_type=$1
+	id=$2
+	printf "%s" "$(pactl list $dev_type short | grep $id | awk '{print $2}')" 2>/dev/null
 }
 
 get_sink_input_chann_num (){
@@ -648,6 +655,10 @@ case $1 in
 
 	"get-pactl-version")
 		get_pactl_version
+	;;
+
+	"get-device-by-id")
+		get_device_by_id $2 $3
 	;;
 
 	"*") echo "command not found";;

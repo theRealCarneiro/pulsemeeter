@@ -95,7 +95,7 @@ def rnnoise(status, name, sink_name, control,
     return command
 
 
-def list(device_type, device_name=None):
+def listobj(device_type, device_name=None):
     command = f'pmctl list {device_type}'
 
     try:
@@ -111,11 +111,60 @@ def list(device_type, device_name=None):
     return devices
 
 
+def get_app_list(device_type, id=None):
+    app_list = listobj(device_type)
+    index_key = 'id' if get_pactl_version() < 16 else 'index'
+    obj_list = []
+    for i in app_list:
+
+        if id is not None:
+            if str(id) != str(i[index_key]):
+                continue
+
+        if id is None:
+            id = i[index_key]
+
+        if 'properties' not in i:
+            # PACTL < 16 (old)
+            icon = 'audio-card' if 'icon' not in i else i['icon']
+            label = i['name']
+            volume = 100
+            # volume = self.client.get_app_volume(id, self.dev_type)
+        else:
+            # PACTL >= 16 (new)
+            if (('application.name' not in i['properties']) or
+                    (i['properties']['application.name'] == 'Console Meter') or
+                    ('application.id' in i['properties']) and
+                    (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
+                continue
+
+            if 'application.icon_name' not in i['properties']:
+                i['properties']['application.icon_name'] = 'audio-card'
+
+            i['volume'] = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
+            icon = i['properties']['application.icon_name']
+            label = i['properties']['application.name']
+            volume = i['volume']
+
+        if 'device' not in i:
+            d = 'sinks' if device_type == 'sink-inputs' else 'sources'
+            print(f'pmctl get-device-by-id {d} {i["sink"]}')
+            device = cmd(f'pmctl get-device-by-id {d} {i["sink"]}')
+        else:
+            device = i['device']
+
+        obj_list.append((id, label, icon, volume, device))
+
+    return obj_list
+
+
 def get_ports(device, device_type):
     return cmd(f'pmctl get-ports {device_type} {device}').split('\n')
 
+
 def get_pactl_version():
     return int(cmd('pmctl get-pactl-version'))
+
 
 def get_stream_volume(stream_type, app_id):
     return int(cmd(f'pmctl get-{stream_type}-volume {app_id}'))

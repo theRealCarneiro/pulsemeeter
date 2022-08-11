@@ -2,6 +2,7 @@ import subprocess
 import threading
 import logging
 import json
+import sys
 import re
 
 import pulsemeeter.scripts.pmctl as pmctl
@@ -294,7 +295,7 @@ class AudioClient(Client):
         returns json of hardware devices.
         '''
 
-        devl = pmctl.list(device_type)
+        devl = pmctl.listobj(device_type)
 
         # all for for returning the entire json
         if all: return devl
@@ -327,6 +328,9 @@ class AudioClient(Client):
             return devices[v]
 
         return devices
+
+    def get_app_list(self, device_type, id=None):
+        return pmctl.get_app_list(device_type, id)
 
     def set_port_map(self, input_type, input_id, output, port_map):
         port_map = json.dumps(port_map).replace(" ", "")
@@ -419,6 +423,23 @@ class AudioClient(Client):
     def end_subscribe(self):
         if self.sub_proc is not None:
             self.sub_proc.terminate()
+
+    def listen_peak(self, device_name, device_type):
+        if device_name == '': return
+        dev_type = '0' if device_type == 'vi' or device_type == 'a' else '1'
+        command = ['pulse-vumeter', self.name, dev_type]
+        sys.stdout.flush()
+        self.process = subprocess.Popen(command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=False,
+            encoding='utf-8',
+            universal_newlines=False)
+
+        # return piped values
+
+        for stdout_line in iter(self.process.stdout.readline, ""):
+            yield stdout_line
 
     def assert_config(self, event):
         '''update the config'''

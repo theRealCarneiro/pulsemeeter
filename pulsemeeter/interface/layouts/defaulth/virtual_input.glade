@@ -82,7 +82,7 @@
                     <property name="vexpand">False</property>
                     <child>
                       <object class="GtkScale" id="volume">
-                        <property name="width-request">250</property>
+                        <property name="width-request">100</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="hexpand">True</property>
