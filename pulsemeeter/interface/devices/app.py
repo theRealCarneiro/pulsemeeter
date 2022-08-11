@@ -32,9 +32,10 @@ class App(Gtk.VBox):
         combobox.set_active(index)
         # combobox.connect('changed', self.app_combo_change, id)
 
-        # value = int(volume)
+        print(volume)
+        value = int(volume)
         adjust = Gtk.Adjustment(lower=0, upper=153, step_increment=1, page_increment=10)
-        adjust.set_value(volume)
+        adjust.set_value(value)
         # adjust.connect('value_changed', self.volume_change, id, dev_type)
 
         scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adjust)
@@ -43,6 +44,7 @@ class App(Gtk.VBox):
         scale.set_digits(0)
         scale.add_mark(100, Gtk.PositionType.BOTTOM, '')
         scale.set_margin_left(10)
+        scale.set_size_request(300, -1)
 
         separator_top = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         separator_top.set_margin_bottom(5)
@@ -54,6 +56,13 @@ class App(Gtk.VBox):
         box.pack_start(label, expand=False, fill=False, padding=0)
         box.pack_start(combobox, expand=False, fill=True, padding=0)
 
+        self.label = label
+        self.icon = icon
+        self.combobox = combobox
+        self.adjust = adjust
+        self.volume = scale
+
+        self.set_valign(Gtk.Align.START)
         self.pack_start(separator_top, expand=False, fill=False, padding=0)
         self.pack_start(box, expand=False, fill=False, padding=0)
         self.pack_start(scale, expand=False, fill=False, padding=0)

@@ -857,9 +857,10 @@
                                 <property name="vscroll-policy">natural</property>
                                 <property name="shadow-type">out</property>
                                 <child>
-                                  <object class="GtkBox" id="sink-input-box">
+                                  <object class="GtkBox" id="sink_input_box">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
+                                    <property name="valign">start</property>
                                     <property name="orientation">vertical</property>
                                     <child>
                                       <placeholder/>
@@ -976,6 +977,7 @@
                                   <object class="GtkBox" id="source_output_box">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
+                                    <property name="valign">start</property>
                                     <property name="orientation">vertical</property>
                                     <child>
                                       <placeholder/>

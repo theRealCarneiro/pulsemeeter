@@ -21,7 +21,7 @@ LOG = logging.getLogger("generic")
 
 class AudioServer(Server):
 
-    def __init__(self, init_server=False):
+    def __init__(self, init_server=True):
 
         # check if pulseaudio is running
         try:
@@ -76,10 +76,12 @@ class AudioServer(Server):
                         ret_message, notify_all = self.handle_command(command)
 
                     case 'audio_server':
-                        ret_message, sender_id, notify_all = command, None, True
+                        ret_message, notify_all = self.handle_pulsectl(command), True
+                        if not ret_message:
+                            continue
 
                     case 'exit':
-                        ret_message, sender_id, notify_all = 'exit', None, True
+                        ret_message, notify_all = 'exit', True
                         self.exit_flag = True
 
                 self.send_message(ret_message, sender_id, notify_all)
@@ -100,6 +102,27 @@ class AudioServer(Server):
             self.save_config(buffer=False)
             if self.config['cleanup']:
                 self.audio_server.cleanup()
+
+    def handle_pulsectl(self, event):
+        command, id, device_type = event.split(' ')
+
+        if device_type in ['sink_input', 'source_output']:
+            device_type = device_type.replace('_', '-') + 's'
+        else:
+            return event
+
+        if (command == 'device-plugged-in'):
+
+            # if list len is 0, it will just skip to return None
+            app_list = pmctl.get_app_list(device_type, id)
+            if len(app_list) == 0: return None
+
+            id, label, icon, volume, device = app_list[0]
+            return f'{command} {device_type} {id} {label} {icon} {volume} {device}'
+
+            return None
+        else:
+            return f'{command} {id} {device_type}'
 
     # handles incoming commands
     def handle_command(self, data):

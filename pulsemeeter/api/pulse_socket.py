@@ -5,6 +5,8 @@ import logging
 import pulsectl
 import pulsectl_asyncio
 
+import pulsemeeter.scripts.pmctl as pmctl
+
 LOG = logging.getLogger("generic")
 
 

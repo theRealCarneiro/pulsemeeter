@@ -64,6 +64,7 @@ class AudioClient(Client):
         '''
         while not self.exit_flag:
             event, sender_id = self.event_queue.get()
+            # LOG.debug(event)
             self.assert_config(event)
             event = event.split(' ')
 

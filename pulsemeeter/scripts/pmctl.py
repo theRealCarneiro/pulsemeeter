@@ -1,8 +1,9 @@
+import subprocess
+import traceback
+import logging
+import json
 import sys
 import os
-import json
-import subprocess
-import logging
 
 LOG = logging.getLogger('generic')
 
@@ -111,18 +112,27 @@ def listobj(device_type, device_name=None):
     return devices
 
 
-def get_app_list(device_type, id=None):
+def get_app_list(device_type, index=None):
+    # print(traceback.print_stack())
+    # print(device_type)
     app_list = listobj(device_type)
     index_key = 'id' if get_pactl_version() < 16 else 'index'
     obj_list = []
     for i in app_list:
 
-        if id is not None:
-            if str(id) != str(i[index_key]):
-                continue
+        if index is not None and str(index) != str(i[index_key]):
+            continue
+        # try:
+            # print(i['properties']['application.name'])
 
-        if id is None:
+        # # TEST
+        # except Exception:
+            # print(i['properties']['application.id'])
+
+        if index is None:
             id = i[index_key]
+        else:
+            id = index
 
         if 'properties' not in i:
             # PACTL < 16 (old)
@@ -136,6 +146,7 @@ def get_app_list(device_type, id=None):
                     (i['properties']['application.name'] == 'Console Meter') or
                     ('application.id' in i['properties']) and
                     (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
+                # print(i['properties']['application.name'])
                 continue
 
             if 'application.icon_name' not in i['properties']:
@@ -148,7 +159,6 @@ def get_app_list(device_type, id=None):
 
         if 'device' not in i:
             d = 'sinks' if device_type == 'sink-inputs' else 'sources'
-            print(f'pmctl get-device-by-id {d} {i["sink"]}')
             device = cmd(f'pmctl get-device-by-id {d} {i["sink"]}')
         else:
             device = i['device']
@@ -195,7 +205,7 @@ def cmd(command):
 
 
 # def main():
-    # print(get_ports('Main', 'output'))
+    # print(get_app_list('sink-inputs'))
     # return 0
 
 
