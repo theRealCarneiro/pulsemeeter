@@ -72,10 +72,10 @@ class Vumeter(Gtk.ProgressBar):
         # if return_code:
             # raise subprocess.CalledProcessError(return_code, command)
 
-    def restart(self):
+    def restart(self, name, device):
         self.close()
         self.reload_device()
-        self.start()
+        self.start(name, device)
 
     def reload_device(self):
         self.name = self.config[self.device_type][self.device_id]['name']
