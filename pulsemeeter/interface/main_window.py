@@ -2,6 +2,7 @@ import os
 # import json
 
 from pulsemeeter.settings import GLADEFILE
+from pulsemeeter.interface.popovers.device_creation import DeviceCreationPopOver
 
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
@@ -13,6 +14,12 @@ class MainWindow():
         self.builder = Gtk.Builder()
         getobj = self.builder.get_object
         self.builder.add_from_file(os.path.join(GLADEFILE, 'main_window.glade'))
+        # self.creation_popover = DeviceCreationPopOver(client)
+        self.menu_popover = getobj('menu_popover')
+        menu_button = getobj('menu_button')
+        self.menu_popover.set_relative_to(menu_button)
+
+        menu_button.connect('pressed', self.menu_popup)
 
         self.device_box_dict = {
             "vi": getobj('virtual_input_box'),
@@ -22,10 +29,24 @@ class MainWindow():
             "sink-inputs": getobj('sink_input_box'),
             "source-outputs": getobj('source_output_box')
         }
+        for device_type in ['hi', 'a', 'vi', 'b']:
+            add = getobj(f'add_{device_type}')
+            # add.connect('pressed', FUNC, device_type, add)
+
+        # for device_type in ['hi', 'a']:
+            # add = getobj(f'add_{device_type}')
+            # add.connect('pressed', self.creation_popover.popup, 'hardware', add)
+
+        # for device_type in ['vi', 'b']:
+            # add = getobj(f'add_{device_type}')
+            # add.connect('pressed', self.creation_popover.popup, 'virtual', add)
 
         self.window = self.builder.get_object('window')
 
-    def create_device(self, device_type, device):
+    def menu_popup(self, widget):
+        self.menu_popover.popup()
+
+    def init_device(self, device_type, device):
         self.device_box_dict[device_type].pack_start(device, True, True, 0)
 
     def remove_device(self, device_type, device):

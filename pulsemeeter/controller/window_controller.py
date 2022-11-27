@@ -12,6 +12,8 @@ from pulsemeeter.interface.devices.hardware_output import HardwareOutput
 from pulsemeeter.interface.devices.virtual_output import VirtualOutput
 from pulsemeeter.interface.devices.app import App
 
+DEVICES = {'vi': VirtualInput, 'hi': HardwareInput, 'a': HardwareOutput, 'b': VirtualOutput}
+
 
 class WindowController():
     """
@@ -33,77 +35,26 @@ class WindowController():
 
     def create_device(self, device_type, device_id):
         """
-        Create a device in the UI
+        Handle device creation popover
+        """
+        pass
+
+    def init_device(self, device_type, device_id):
+        """
+        Init a device in the UI
         """
         device_config = self.config[device_type][device_id]
         name = device_config['name']
-        mute = device_config['mute']
-        volume = device_config['vol']
-        primary, rnnoise, eq = None, None, None
-
         if name == '': return
 
-        if device_type == 'vi':
-            primary = device_config['primary']
-            device = VirtualInput(name, mute, volume, primary)
-            device.primary.connect('button_press_event', self.primary_click,
-                    device_type, device_id)
-            self.create_route_buttons(device, device_type, device_id)
-
-        elif device_type == 'b':
-            eq = device_config['use_eq']
-            primary = device_config['primary']
-            device = VirtualOutput(name, mute, volume, primary, eq)
-            device.primary.connect('button_press_event', self.primary_click,
-                    device_type, device_id)
-            device.eq.connect('button_press_event', self.eq_click,
-                    device_type, device_id)
-
-        elif device_type == 'hi':
-            rnnoise = device_config['use_rnnoise']
-            device = HardwareInput(name, mute, volume, rnnoise)
-            self.create_route_buttons(device, device_type, device_id)
-            device.rnnoise.connect('button_press_event', self.rnnoise_click, device_id)
-
-        elif device_type == 'a':
-            eq = device_config['use_eq']
-            name = device_config['name']
-            nick = device_config['nick']
-            device = HardwareOutput(nick, mute, volume, eq)
-            device.eq.connect('button_press_event', self.eq_click,
-                    device_type, device_id)
-
-        if self.config['enable_vumeters']:
-            device.vumeter.start(name, device_type)
-
-        device.volume.connect('value-changed', self.volume_change,
-                device_type, device_id)
-        device.mute.connect('button_press_event', self.mute_click,
-                device_type, device_id)
+        device = DEVICES[device_type](self.client, device_type, device_id)
 
         self.devices[device_type][device_id] = device
-        self.main_window.create_device(device_type, device)
-
-    def create_route_buttons(self, device, input_type, input_id):
-        """
-        Insert route buttons into an specific input
-        """
-        input_config = self.config[input_type][input_id]
-
-        # iterate all outputs
-        for output_type in ['a', 'b']:
-            for output_id, output_config in self.config[output_type].items():
-                key = 'nick' if output_type == 'a' else 'name'
-                name = output_config[key]
-                active = input_config[f'{output_type}{output_id}']['status']
-                button = device.insert_output(output_type, output_id, name, active)
-
-                button.connect('button_press_event', self.connect_click,
-                        input_type, input_id, output_type, output_id)
+        self.main_window.init_device(device_type, device)
 
     def load_application_list(self, device_type, id=None, app_list=None):
         """
-        Load apps
+        Load apps into app list
         """
         # if app is not None:
             # self.app_list[device_type][id] = app
@@ -116,7 +67,7 @@ class WindowController():
         if len(app_list) == 0: return
 
         for id, label, icon, volume, device in app_list:
-            print(id, label, icon, volume, device)
+            # print(id, label, icon, volume, device)
 
             app = App(id, label, icon, volume, device, ['Main', 'Music', 'Comn'])
             app.adjust.connect('value_changed', self.app_volume_change, device_type, id)
@@ -160,8 +111,7 @@ class WindowController():
         Gets called whenever an app volume slider changes
         """
         val = slider.get_value()
-        print(id, val, device_type)
-        self.client.set_app_volume(id, int(val), device_type)
+        self.client.set_app_volume(id, int(val), device_type[:-1])
 
     def connect_click(self, button, event, input_type, input_id,
             output_type, output_id):
@@ -177,50 +127,6 @@ class WindowController():
         # right click
         elif event.button == 3:
             pass
-
-    def mute_click(self, button, event):
-        """
-        Gets called whenever a mute button is clicked
-        """
-        if not event.button == 1:
-            return
-
-        state = not self.mute.get_active()
-        self.client.mute(self.device_type, self.device_id, state)
-
-    def primary_click(self, button, event, device_type, device_id):
-        """
-        Gets called whenever a primary button is clicked
-        """
-        if not event.button == 1:
-            return
-
-        button.set_sensitive(False)
-        button.set_active(True)
-        self.client.primary(device_type, device_id)
-
-        for curr_id, device in self.devices[device_type].items():
-            primary = device.primary
-            if primary.get_active() and curr_id != device_id:
-                primary.set_active(False)
-                primary.set_state(False)
-                primary.set_sensitive(True)
-
-    def rnnoise_click(self, button, event, input_id):
-        """
-        Gets called whenever a rnnoise button is clicked
-        """
-        if event.button == 1:
-            state = not button.get_active()
-            self.client.rnnoise(input_id, state)
-
-    def eq_click(self, button, event, output_type, output_id):
-        """
-        Gets called whenever an eq button is clicked
-        """
-        if event.button == 1:
-            state = not button.get_active()
-            self.client.eq(output_type, output_id, state)
 
     def update_conect(self, input_type, input_id, output_type,
             output_id, state, latency=None):
@@ -311,7 +217,7 @@ class WindowController():
 
         for device_type in ['vi', 'hi', 'a', 'b']:
             for device_id in self.config[device_type]:
-                self.create_device(device_type, device_id)
+                self.init_device(device_type, device_id)
 
         self.load_application_list('sink-inputs')
         self.load_application_list('source-outputs')

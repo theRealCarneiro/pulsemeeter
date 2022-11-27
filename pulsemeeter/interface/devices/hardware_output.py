@@ -10,8 +10,9 @@ from gi.repository import Gtk
 
 
 class HardwareOutput(MinimalDevice):
-    def __init__(self, name, mute, volume, eq):
+    def __init__(self, client, device_type, device_id):
         builder = Gtk.Builder()
+        name = client.config[device_type][device_id]['name']
 
         try:
             builder.add_objects_from_file(
@@ -22,10 +23,15 @@ class HardwareOutput(MinimalDevice):
             print(f'Error building hardware output {name}!\n{ex}')
             sys.exit(1)
 
-        super(HardwareOutput, self).__init__(builder, name, mute, volume)
+        super(HardwareOutput, self).__init__(builder, client, device_type, device_id,
+                                             nick=True)
+
         self.grid = builder.get_object('hardware_output')
+        self.description = builder.get_object('description')
         self.eq = builder.get_object('eq')
 
-        self.eq.set_active(eq)
+        self.description.set_label(self.device_config['description'])
+        self.eq.set_active(self.device_config['eq'])
+        self.eq.connect('button_press_event', self.eq_click)
 
         self.add(self.grid)
