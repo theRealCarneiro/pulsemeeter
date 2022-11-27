@@ -23,11 +23,6 @@ class MinimalDevice(Gtk.Grid):
         self.config = client.config
         self.device_config = client.config[device_type][device_id]
 
-        popup_type = 'hardware' if device_type in ['hi', 'a'] else 'virtual',
-        # self.creation_popover = DeviceCreationPopOver(client, popup_type,
-                                                      # device_type, device_id,
-                                                      # self.settings, edit=True)
-
         super(MinimalDevice, self).__init__()
 
         self.label = builder.get_object('label')
@@ -49,7 +44,10 @@ class MinimalDevice(Gtk.Grid):
 
         self.volume.connect('value-changed', self.volume_change)
         self.mute.connect('button_press_event', self.mute_click)
-        # self.settings.connect('pressed', self.creation_popover.edit_popup)
+
+        self.creation_popover = DeviceCreationPopOver(client, device_type, device_id,
+                                                      self.settings)
+        self.settings.connect('pressed', self.creation_popover.edit_popup)
 
         if self.config['enable_vumeters']:
             self.vumeter.start(self.device_config['name'], device_type)

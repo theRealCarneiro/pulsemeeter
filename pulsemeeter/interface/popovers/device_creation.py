@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 from pulsemeeter.settings import GLADEFILE
 import pulsemeeter.scripts.pmctl as pmctl
@@ -8,13 +9,20 @@ from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
+LOG = logging.getLogger("generic")
+
 
 class DeviceCreationPopOver:
-    def __init__(self, client, dtype, device_type, device_id=None, edit=False):
+    def __init__(self, client, device_type, device_id=None, edit=False):
         builder = Gtk.Builder()
+        self.config = client.config
+        self.dtype = 'hardware' if device_type in ['hi', 'a'] else 'virtual'
+        self.device_type = device_type
+        self.device_id = device_id
+
         try:
             builder.add_objects_from_file(
-                os.path.join(GLADEFILE, 'device_creation.glade'),
+                os.path.join(GLADEFILE, f'{self.dtype}_settings.glade'),
                 ['device_popover']
             )
         except Exception as ex:
@@ -22,80 +30,117 @@ class DeviceCreationPopOver:
             sys.exit(1)
 
         self.client = client
-        self.components = {
-            'popup': builder.get_object('device_popover'),
-            'trash': builder.get_object('trash'),
-            'button': builder.get_object('button'),
-            'title': builder.get_object('title'),
-        }
 
-        if device_type in ['hi', 'a']:
-            self.components = dict(
-                self.components, **{
-                    'input': builder.get_object('input_hardware'),
-                    'combobox': builder.get_object('device_combobox')
-                }
-            )
-        else:
-            self.components = dict(
-                self.components, **{
-                    'input': builder.get_object('input_virtual'),
-                    'combobox': builder.get_object('channel_map')
-                }
-            )
+        self.popup = builder.get_object('device_popover')
+        self.trash = builder.get_object('trash')
+        self.button = builder.get_object('button')
+        self.title = builder.get_object('title')
+        self.input = builder.get_object('input')
+        self.channel_box = builder.get_object('channel_box')
+        self.device_combobox = builder.get_object('device_combobox')
+        self.channel_map = builder.get_object('channel_map_combobox')
+        self.external = builder.get_object('external')
 
-        self.components['virtual']['button'].connect('pressed', self.button_pressed)
-        self.components['hardware']['button'].connect('pressed', self.button_pressed)
+        self.button.connect('pressed', self.button_pressed)
+        self.button.connect('pressed', self.button_pressed)
 
-    def create_popup(self, widget, device_type, relative):
-        self.combobox['button'].set_label('Create')
-        self.combobox['title'].set_label('Create Device')
-        self.combobox['trash'].set_visible(False)
+    def fill_devices_combobox(self):
+        self.device_combobox.remove_all()
+        if self.device_id is not None:
+            active_name = self.config[self.device_type][self.device_id]['name']
 
-        if device_type in ['hi', 'a']:
+        devt = 'sinks' if self.device_type == 'a' else 'sources'
 
-            # fill combobox
-            devt = 'sinks' if device_type == 'a' else 'sources'
-            self.devices = pmctl.list_devices(devt)[device_type]
-            for i in range(len(self.devices)):
-                desc = self.devices[i]['properties']['device.description']
-                self.components[type]['combobox'].append_text(desc)
+        # get device list
+        self.devices = pmctl.list_devices(devt)[self.device_type]
+        for i in range(len(self.devices)):
+            name = self.devices[i]['name']
+            desc = self.devices[i]['properties']['device.description']
+            self.device_combobox.append_text(desc)
 
-        self.components[type]['popup'].set_relative_to(relative)
-        self.components[type]['popup'].popup()
+            # set active if editing
+            if self.device_id is not None and active_name == name:
+                self.device_combobox.set_active(i)
 
-    # TODO: pactl < 16
-    def edit_popup(self, widget, relative, device_type, device_id):
-
-        self.combobox['button'].set_label('Save')
-        self.combobox['title'].set_label('Edit Device')
-        self.combobox['trash'].set_visible(True)
-
+    def create_port_list(self):
+        device_type = self.device_type
+        device_id = self.device_id
         device_config = self.client.config[device_type][device_id]
-        active_name = device_config['name']
-        active_nick = device_config['nick']
 
-        if device_type in ['hi', 'a']:
-            input_text = active_nick
+        device_ports = device_config['channels']
+        if 'selected_channels' not in device_config:
+            LOG.debug(f'{device_type} {device_id}')
+        selected_ports = device_config['selected_channels']
 
-            # fill combobox
-            devt = 'sinks' if device_type == 'a' else 'sources'
-            self.devices = pmctl.list_devices(devt)[device_type]
-            for i in range(len(self.devices)):
-                name = self.devices[i]['name']
-                desc = self.devices[i]['properties']['device.description']
-                self.components[type]['combobox'].append_text(desc)
-                if active_name == name:
-                    self.components[type]['combobox'].set_active(i)
+        if len(selected_ports) == 0:
+            selected_ports = None
+
+        # clear channel box
+        for i in self.channel_box:
+            self.channel_box.remove(i)
+
+        self.button_list = []
+        hbox = Gtk.HBox(spacing=1)
+
+        # for each port
+        for port in range(device_ports):
+
+            button = Gtk.CheckButton(label=port + 1)
+
+            # set button as active or not
+            if (selected_ports is None or selected_ports[port] is True):
+                button.set_active(True)
+
+            hbox.pack_start(button, True, True, 0)
+            self.button_list.append(button)
+
+        self.channel_box.pack_start(hbox, True, True, 0)
+
+        self.channel_box.show_all()
+
+    def create_popup(self, widget):
+        self.button.set_label('Create')
+        self.title.set_label('Create Device')
+        self.trash.set_visible(False)
+
+        if self.dtype == 'hardware':
+            self.fill_devices_combobox()
+
+        self.popup.set_relative_to(widget)
+        self.popup.popup()
+
+    def edit_popup(self, widget):
+
+        self.button.set_label('Save')
+        self.title.set_label('Edit Device')
+        self.trash.set_visible(True)
+
+        device_config = self.client.config[self.device_type][self.device_id]
+
+        if self.dtype == 'hardware':
+            input_text = device_config['nick']
+            self.fill_devices_combobox()
+            self.create_port_list()
         else:
-            input_text = active_name
+            input_text = device_config['name']
+            channels = device_config['channels']
 
-        self.components[type]['input'].set_text(input_text)
-        self.components[type]['popup'].set_relative_to(relative)
-        self.components[type]['popup'].popup()
+            # index of channel map in combobox
+            tmp = [None, 1, 0, None, 2, 3, None, None, 4]
+            self.channel_map.set_active(tmp[channels])
+            self.external.set_active(device_config['external'])
+
+        self.input.set_text(input_text)
+        self.popup.set_relative_to(widget)
+        self.popup.popup()
 
     # TODO:
     def button_pressed(self, button):
-        nick = self.components[type]['input'].get_text()
-        device = self.devices[self.components[type]['combobox'].get_active()]['name']
-        print(nick, device)
+        if self.dtype == 'hardware':
+            nick = self.input.get_text()
+            device = self.devices[self.device_combobox.get_active()]['name']
+            print(nick, device)
+        else:
+            name = self.input.get_text()
+            channel_map = self.combo
+            print(name, channel_map)
