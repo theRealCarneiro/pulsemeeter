@@ -45,8 +45,7 @@ class MinimalDevice(Gtk.Grid):
         self.volume.connect('value-changed', self.volume_change)
         self.mute.connect('button_press_event', self.mute_click)
 
-        self.creation_popover = DeviceCreationPopOver(client, device_type, device_id,
-                                                      self.settings)
+        self.creation_popover = DeviceCreationPopOver(client, device_type, device_id)
         self.settings.connect('pressed', self.creation_popover.edit_popup)
 
         if self.config['enable_vumeters']:

@@ -14,7 +14,6 @@ class MainWindow():
         self.builder = Gtk.Builder()
         getobj = self.builder.get_object
         self.builder.add_from_file(os.path.join(GLADEFILE, 'main_window.glade'))
-        # self.creation_popover = DeviceCreationPopOver(client)
         self.menu_popover = getobj('menu_popover')
         menu_button = getobj('menu_button')
         self.menu_popover.set_relative_to(menu_button)
@@ -29,17 +28,11 @@ class MainWindow():
             "sink-inputs": getobj('sink_input_box'),
             "source-outputs": getobj('source_output_box')
         }
+        self.creation_popover = {}
         for device_type in ['hi', 'a', 'vi', 'b']:
+            self.creation_popover[device_type] = DeviceCreationPopOver(client, device_type)
             add = getobj(f'add_{device_type}')
-            # add.connect('pressed', FUNC, device_type, add)
-
-        # for device_type in ['hi', 'a']:
-            # add = getobj(f'add_{device_type}')
-            # add.connect('pressed', self.creation_popover.popup, 'hardware', add)
-
-        # for device_type in ['vi', 'b']:
-            # add = getobj(f'add_{device_type}')
-            # add.connect('pressed', self.creation_popover.popup, 'virtual', add)
+            add.connect('pressed', self.creation_popover[device_type].create_popup)
 
         self.window = self.builder.get_object('window')
 

@@ -13,7 +13,7 @@ LOG = logging.getLogger("generic")
 
 
 class DeviceCreationPopOver:
-    def __init__(self, client, device_type, device_id=None, edit=False):
+    def __init__(self, client, device_type, device_id=None):
         builder = Gtk.Builder()
         self.config = client.config
         self.dtype = 'hardware' if device_type in ['hi', 'a'] else 'virtual'
@@ -41,7 +41,8 @@ class DeviceCreationPopOver:
         self.channel_map = builder.get_object('channel_map_combobox')
         self.external = builder.get_object('external')
 
-        self.button.connect('pressed', self.button_pressed)
+        if self.dtype == 'hardware':
+            self.device_combobox.connect('changed', self.device_combo_change)
         self.button.connect('pressed', self.button_pressed)
 
     def fill_devices_combobox(self):
@@ -62,18 +63,25 @@ class DeviceCreationPopOver:
             if self.device_id is not None and active_name == name:
                 self.device_combobox.set_active(i)
 
+        self.active_index = i
+
     def create_port_list(self):
         device_type = self.device_type
         device_id = self.device_id
-        device_config = self.client.config[device_type][device_id]
-
-        device_ports = device_config['channels']
-        if 'selected_channels' not in device_config:
-            LOG.debug(f'{device_type} {device_id}')
-        selected_ports = device_config['selected_channels']
-
-        if len(selected_ports) == 0:
+        if device_id is None:
+            channels = self.devices[self.active_index]['properties']['audio.channels']
             selected_ports = None
+            device_ports = channels
+        else:
+            device_config = self.client.config[device_type][device_id]
+
+            device_ports = device_config['channels']
+            if 'selected_channels' not in device_config:
+                LOG.debug(f'{device_type} {device_id}')
+            selected_ports = device_config['selected_channels']
+
+            if len(selected_ports) == 0:
+                selected_ports = None
 
         # clear channel box
         for i in self.channel_box:
@@ -98,6 +106,9 @@ class DeviceCreationPopOver:
 
         self.channel_box.show_all()
 
+    def device_combo_change(self, widget):
+        self.create_port_list()
+
     def create_popup(self, widget):
         self.button.set_label('Create')
         self.title.set_label('Create Device')
@@ -105,6 +116,7 @@ class DeviceCreationPopOver:
 
         if self.dtype == 'hardware':
             self.fill_devices_combobox()
+            # self.create_port_list()
 
         self.popup.set_relative_to(widget)
         self.popup.popup()
@@ -139,7 +151,8 @@ class DeviceCreationPopOver:
         if self.dtype == 'hardware':
             nick = self.input.get_text()
             device = self.devices[self.device_combobox.get_active()]['name']
-            print(nick, device)
+            ports = [button.get_active() for button in self.button_list]
+            print(nick, device, ports)
         else:
             name = self.input.get_text()
             channel_map = self.combo
