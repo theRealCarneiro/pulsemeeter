@@ -131,6 +131,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="hexpand">True</property>
+                    <property name="active">0</property>
                     <items>
                       <item translatable="yes">Stereo</item>
                       <item translatable="yes">Mono</item>

@@ -146,7 +146,7 @@ class DeviceCreationPopOver:
         self.popup.set_relative_to(widget)
         self.popup.popup()
 
-    # TODO:
+    # TODO: send to client
     def button_pressed(self, button):
         if self.dtype == 'hardware':
             nick = self.input.get_text()
@@ -155,5 +155,9 @@ class DeviceCreationPopOver:
             print(nick, device, ports)
         else:
             name = self.input.get_text()
-            channel_map = self.combo
-            print(name, channel_map)
+            channel_map = self.channel_map.get_active()
+
+            # number of channels per channel map
+            tmp = [2, 1, 4, 5, 8]
+            external = self.external.get_active()
+            print(name, tmp[channel_map], external)
