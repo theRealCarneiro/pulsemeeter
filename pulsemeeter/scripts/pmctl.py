@@ -1,7 +1,8 @@
+import pulsemeeter.scripts.patojson as patojson
 import subprocess
-import traceback
+# import traceback
 import logging
-import json
+# import json
 import sys
 import os
 
@@ -96,11 +97,56 @@ def rnnoise(status, name, sink_name, control,
     return command
 
 
+def list_devices(device_type, hardware=False, virtual=False, all=False):
+    '''
+    returns json of hardware devices.
+    '''
+
+    devl = listobj(device_type)
+
+    # all for for returning the entire json
+    if all: return devl
+
+    devices = {}
+
+    h, v = ('a', 'vi') if device_type == 'sinks' else ('hi', 'b')
+
+    devices[h] = []
+    devices[v] = []
+
+    for i in devl:
+        if get_pactl_version() < 16:
+            # LEGACY
+            if 'properties' not in i or 'alsa.card_name' in i['properties']:
+                devices[h].append(i)
+            else:
+                devices[v].append(i)
+        else:
+            # PROPER CHECK
+            if 'HARDWARE' in i['flags']:
+                devices[h].append(i)
+            else:
+                devices[v].append(i)
+
+    if hardware is True:
+        return devices[h]
+
+    if virtual is True:
+        return devices[v]
+
+    return devices
+
+
 def listobj(device_type, device_name=None):
     command = f'pmctl list {device_type}'
 
     try:
-        devices = json.loads(cmd(command))
+        devices = patojson.get_devices(device_type)
+        # if get_pactl_version() < 16:
+            # devices = patojson.get_devices(device_type)
+        # else:
+            # devices = json.loads(cmd(command))
+
         if device_name is not None:
             for i in devices:
                 if i['name'] == device_name:
