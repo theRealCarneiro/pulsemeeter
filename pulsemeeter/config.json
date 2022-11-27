@@ -1,7 +1,7 @@
 {
 	"a": {
 		"1": {
-			"name": "",
+			"name": "A1",
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -10,7 +10,7 @@
 			"channels": 1
 		},
 		"2": {
-			"name": "",
+			"name": "A2",
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -19,7 +19,7 @@
 			"channels": 1
 		},
 		"3": {
-			"name": "",
+			"name": "A3",
 			"vol": 100,
 			"mute": false,
 			"eq_control": "",
@@ -30,10 +30,12 @@
 	},
 	"b": {
 		"1": {
+			"nick": "B1",
 			"name": "Virtual_Output_B1",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
+			"external": false,
 			"channel_map": "1",
 			"eq_control": "",
 			"eq_name": "",
@@ -41,10 +43,12 @@
 			"channels": 1
 		},
 		"2": {
+			"nick": "B2",
 			"name": "Virtual_Output_B2",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
+			"external": false,
 			"channel_map": "1",
 			"eq_control": "",
 			"eq_name": "",
@@ -52,10 +56,12 @@
 			"channels": 1
 		},
 		"3": {
+			"nick": "B3",
 			"name": "Virtual_Output_B3",
 			"primary": false,
 			"vol": 100,
 			"mute": false,
+			"external": false,
 			"channel_map": "1",
 			"eq_control": "",
 			"eq_name": "",
