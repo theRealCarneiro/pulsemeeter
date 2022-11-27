@@ -75,7 +75,9 @@ class AudioClient(Client):
             command = event[0]
             args = tuple(event[1:])
 
-            if command in self.callback_dict and (sender_id != self.id or event[0] == 'create-device'):
+            if command in self.callback_dict and (
+                    sender_id != self.id or (
+                        event[0] in ['remove-device', 'create-device'])):
                 function = self.callback_dict[command]
                 function(*args)
 
@@ -560,7 +562,13 @@ class AudioClient(Client):
                 if len(args) > 2:
                     control = args[2]
                     self.config['hi'][device_id]['rnnoise_control'] = control
+
             case 'create-device':
                 device_type = args[0]
                 device_id = args[1]
                 self.config[device_type][device_id] = json.loads(args[2])
+
+            case 'remove-device':
+                device_type = args[0]
+                device_id = args[1]
+                del self.config[device_type][device_id]

@@ -55,6 +55,9 @@ class WindowController():
         if j is not None:
             self.main_window.window.show_all()
 
+    def remove_device(self, device_type, device_id):
+        self.main_window.remove_device(device_type, self.devices[device_type][device_id])
+
     def load_application_list(self, device_type, id=None, app_list=None):
         """
         Load apps into app list
@@ -207,6 +210,7 @@ class WindowController():
         cb('rnnoise', self.update_rnnoise)
         cb('eq', self.update_eq)
         cb('create-device', self.init_device)
+        cb('remove-device', self.remove_device)
         # cb('change-hd', self.update_device_name)
         cb('device-plugged-in', self.device_new)
         cb('device-unplugged', self.device_remove)

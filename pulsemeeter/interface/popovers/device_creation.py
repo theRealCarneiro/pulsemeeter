@@ -45,6 +45,7 @@ class DeviceCreationPopOver:
         if self.dtype == 'hardware':
             self.device_combobox.connect('changed', self.device_combo_change)
         self.button.connect('pressed', self.button_pressed)
+        self.trash.connect('pressed', self.remove_device)
 
     def fill_devices_combobox(self):
         self.device_combobox.remove_all()
@@ -171,3 +172,6 @@ class DeviceCreationPopOver:
                 'external': external
             }
         self.client.create_device(self.device_type, device)
+
+    def remove_device(self, button):
+        self.client.remove_device(self.device_type, self.device_id)
