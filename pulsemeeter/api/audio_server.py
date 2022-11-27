@@ -128,6 +128,11 @@ class AudioServer(Server):
     def handle_command(self, data):
         decoded_data = data.decode()
         msg = tuple(decoded_data.split(' '))
+
+        # special case for now, when there's a model ill remove this
+        if msg[0] == 'create-device':
+            msg = decoded_data.split(' ', 2)
+
         str_args = re.sub(r'^.*?\ ', '', decoded_data)
         command = msg[0]
         if len(msg) > 1:
@@ -138,6 +143,7 @@ class AudioServer(Server):
         if command == 'exit':
             return 'exit', True
 
+        print(msg, str_args)
         try:
 
             # check if args are valid
@@ -163,9 +169,9 @@ class AudioServer(Server):
             LOG.error('invalid number of arguments')
             return None
 
-        except KeyError:
-            LOG.error(f"command \'{command}\' not found")
-            return None
+        # except KeyError as ex:
+            # LOG.error(f"command \'{command}\' not found {ex}")
+            # return None
 
     def init_audio(self):
         command = ''
@@ -817,22 +823,28 @@ class AudioServer(Server):
             return command
 
     # create a new device (slot)
-    def create_device(self, device_type):
+    def create_device(self, device_type, j):
 
+        j = json.loads(j)
+        print(j)
         # get current highest device
         highest_number = max(self.config[f"{device_type}"], key=int)
 
         # get the right number for the device
         device_number = int(highest_number) + 1
 
-        self.config[f"{device_type}"][f"{device_number}"] = {}
-        new_device = self.config[f"{device_type}"][f"{device_number}"]
+        self.config[device_type][f"{device_number}"] = {}
+        new_device = self.config[device_type][f"{device_number}"]
 
         # insert standard device config here
         # I let it so long cause it kind of represents the json
         # maybe we could also just create a json for "standard devices" which could get copied
         if device_type == "hi":
-            new_device["name"] = ""
+            new_device["name"] = j['device']
+            new_device["nick"] = j['nick']
+            new_device["description"] = j['description']
+            new_device["channels"] = j['channels']
+            new_device["selected_channels"] = j['selected_channels']
             new_device["vol"] = 100
             new_device["mute"] = False
             new_device["jack"] = False
@@ -841,21 +853,28 @@ class AudioServer(Server):
             new_device["rnnoise_control"] = 95
             new_device["rnnoise_latency"] = 200
             new_device["channels"] = 1
+
         elif device_type == "a":
-            new_device["name"] = ""
+            new_device["name"] = j['device']
+            new_device["description"] = j['description']
+            new_device["nick"] = j['nick']
+            new_device["channels"] = j['channels']
+            new_device["selected_channels"] = j['selected_channels']
             new_device["vol"] = 100
             new_device["mute"] = False
             new_device["eq_control"] = ""
             new_device["eq_name"] = ""
             new_device["eq"] = False
             new_device["channels"] = 2
+
         elif device_type == "vi":
-            new_device["name"] = f"Virtual_Input_{device_number}"
+            new_device["name"] = j['name']
             new_device["primary"] = False
-            new_device["external"] = False
+            new_device["external"] = j['external']
             new_device["mute"] = False
             new_device["vol"] = 100
             new_device["channels"] = 2
+
         elif device_type == "b":
             new_device["name"] = f"Virtual_Output_B{device_number}"
             new_device["primary"] = False
@@ -891,8 +910,6 @@ class AudioServer(Server):
 
             for category in (self.config["vi"], self.config["hi"]):
                 for device in category:
-                    # print(device)
-                    # create device
                     category[device][new_port] = {}
                     # add new values
                     p = category[device][new_port]
@@ -901,7 +918,8 @@ class AudioServer(Server):
                     p["auto_ports"] = True
                     p["port_map"] = []
 
-        return f"create-device {device_type}"
+        device_id = f'{device_number}'
+        return f"create-device {device_type} {device_number} {json.dumps(self.config[device_type][device_id])}"
 
     # remove a device (slot)
     # use -1 as device id to delete the last one
@@ -1323,7 +1341,7 @@ class AudioServer(Server):
                 'function': self.create_device,
                 'notify': True,
                 'save_config': True,
-                'regex': '(hi|vi|a|b)'
+                'regex': ''
             },
             'remove-device': {
                 'function': self.remove_device,

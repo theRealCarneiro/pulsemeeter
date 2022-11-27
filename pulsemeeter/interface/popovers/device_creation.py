@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 
 from pulsemeeter.settings import GLADEFILE
@@ -149,10 +150,14 @@ class DeviceCreationPopOver:
     # TODO: send to client
     def button_pressed(self, button):
         if self.dtype == 'hardware':
-            nick = self.input.get_text()
-            device = self.devices[self.device_combobox.get_active()]['name']
-            ports = [button.get_active() for button in self.button_list]
-            print(nick, device, ports)
+            active_device = self.devices[self.device_combobox.get_active()]
+            device = {
+                'nick': self.input.get_text(),
+                'device': active_device['name'],
+                'description': active_device['properties']['device.description'],
+                'channels': active_device['properties']['audio.channels'],
+                'selected_channels': [button.get_active() for button in self.button_list]
+            }
         else:
             name = self.input.get_text()
             channel_map = self.channel_map.get_active()
@@ -160,4 +165,9 @@ class DeviceCreationPopOver:
             # number of channels per channel map
             tmp = [2, 1, 4, 5, 8]
             external = self.external.get_active()
-            print(name, tmp[channel_map], external)
+            device = {
+                'name': name,
+                'channels': tmp[channel_map],
+                'external': external
+            }
+        self.client.create_device(self.device_type, device)

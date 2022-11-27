@@ -63,15 +63,19 @@ class AudioClient(Client):
         Only for internal use.
         '''
         while not self.exit_flag:
-            event, sender_id = self.event_queue.get()
+            msg, sender_id = self.event_queue.get()
             # LOG.debug(event)
-            self.assert_config(event)
-            event = event.split(' ')
+            self.assert_config(msg)
+            event = msg.split(' ')
+
+            # leave it until model
+            if event[0] == 'create-device':
+                event = msg.split(' ', 3)
 
             command = event[0]
             args = tuple(event[1:])
 
-            if command in self.callback_dict and sender_id != self.id:
+            if command in self.callback_dict and (sender_id != self.id or event[0] == 'create-device'):
                 function = self.callback_dict[command]
                 function(*args)
 
@@ -136,14 +140,14 @@ class AudioClient(Client):
         LOG.debug(command)
         return self.send_command(command)
 
-    def create_device(self, device_type):
+    def create_device(self, device_type, j):
         """
         create a new device (slot)
         """
         if self.verify_device(device_type) is not True:
             return
 
-        command = f"create-device {device_type}"
+        command = f"create-device {device_type} {json.dumps(j)}"
 
         LOG.debug(command)
         return self.send_command(command)
@@ -442,9 +446,12 @@ class AudioClient(Client):
         for stdout_line in iter(self.process.stdout.readline, ""):
             yield stdout_line
 
-    def assert_config(self, event):
+    def assert_config(self, msg):
         '''update the config'''
-        event = event.split(' ')
+        event = msg.split(' ')
+        if event[0] == 'create-device':
+            event = msg.split(' ', 3)
+
         command = event[0]
         args = event[1:]
 
@@ -553,3 +560,7 @@ class AudioClient(Client):
                 if len(args) > 2:
                     control = args[2]
                     self.config['hi'][device_id]['rnnoise_control'] = control
+            case 'create-device':
+                device_type = args[0]
+                device_id = args[1]
+                self.config[device_type][device_id] = json.loads(args[2])

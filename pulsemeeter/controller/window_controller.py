@@ -39,18 +39,21 @@ class WindowController():
         """
         pass
 
-    def init_device(self, device_type, device_id):
+    def init_device(self, device_type, device_id, j=None):
         """
         Init a device in the UI
         """
-        device_config = self.config[device_type][device_id]
-        name = device_config['name']
-        if name == '': return
+        # device_config = self.config[device_type][device_id]
+        # name = device_config['name']
+        # if name == '': return
 
+        print("CRIADO")
         device = DEVICES[device_type](self.client, device_type, device_id)
 
         self.devices[device_type][device_id] = device
         self.main_window.init_device(device_type, device)
+        if j is not None:
+            self.main_window.window.show_all()
 
     def load_application_list(self, device_type, id=None, app_list=None):
         """
@@ -203,6 +206,7 @@ class WindowController():
         cb('volume', self.update_volume)
         cb('rnnoise', self.update_rnnoise)
         cb('eq', self.update_eq)
+        cb('create-device', self.init_device)
         # cb('change-hd', self.update_device_name)
         cb('device-plugged-in', self.device_new)
         cb('device-unplugged', self.device_remove)
