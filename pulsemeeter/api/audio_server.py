@@ -194,7 +194,7 @@ class AudioServer(Server):
         if index[0] == 'hi':
 
             # return ladspa sink with rnnoise plugin
-            if self.config[index[0]][index[1]]['use_rnnoise'] is True:
+            if self.config[index[0]][index[1]]['rnnoise'] is True:
                 name = f'{index[0]}{index[1]}_rnnoise'
 
                 if self.audio_server != 'Pipewire':
@@ -204,14 +204,14 @@ class AudioServer(Server):
         if index[0] == 'a':
 
             # return ladspa sink with eq plugin
-            if self.config[index[0]][index[1]]['use_eq'] is True:
+            if self.config[index[0]][index[1]]['eq'] is True:
                 name = f'{index[0]}{index[1]}_eq'
 
         # virtual outputs need an aux sink to route audio into it
         if index[0] == 'b':
 
             # return ladspa sink with eq plugin
-            if self.config[index[0]][index[1]]['use_eq'] is True:
+            if self.config[index[0]][index[1]]['eq'] is True:
                 name = f'{index[0]}{index[1]}_eq'
                 if conn_type == 'source' and self.audio_server != 'Pipewire':
                     name += '.monitor'
@@ -280,7 +280,7 @@ class AudioServer(Server):
             for output_id in self.config[output_type]:
 
                 # check if device uses an eq
-                if self.config[output_type][output_id]['use_eq'] is True:
+                if self.config[output_type][output_id]['eq'] is True:
 
                     # create eq sink
                     command += self.eq(output_type, output_id, status=True,
@@ -295,7 +295,7 @@ class AudioServer(Server):
         for input_id in self.config[input_type]:
 
             # check if device uses rnnoise
-            if self.config[input_type][input_id]['use_rnnoise'] is True:
+            if self.config[input_type][input_id]['rnnoise'] is True:
 
                 # create rnnoise sink
                 command += self.rnnoise(input_id, status=True,
@@ -347,7 +347,7 @@ class AudioServer(Server):
         # print('removing rnnoise')
         for hi_id in self.config['hi']:
             hi_config = self.config['hi'][hi_id]
-            if hi_config['use_rnnoise']:
+            if hi_config['rnnoise']:
                 command += self.rnnoise(hi_id, status=False,
                         reconnect=False, change_config=False, run_command=False)
 
@@ -356,7 +356,7 @@ class AudioServer(Server):
         for output_type in ['a', 'b']:
             for output_id in self.config[output_type]:
                 output_config = self.config[output_type][output_id]
-                if output_config['use_eq']:
+                if output_config['eq']:
                     command += self.eq(output_type, output_id, status=False,
                             reconnect=False, change_config=False, run_command=False)
 
@@ -397,11 +397,11 @@ class AudioServer(Server):
 
         # status = None -> toggle state
         if status is None:
-            status = not source_config['use_rnnoise']
+            status = not source_config['rnnoise']
 
         # if only changing control
         elif status == 'set':
-            status = source_config['use_rnnoise']
+            status = source_config['rnnoise']
 
         else:
             status = str2bool(status)
@@ -418,7 +418,7 @@ class AudioServer(Server):
             command += self.reconnect('hi', input_id, False, run_command=False)
 
         if change_config:
-            if status != 'set': source_config['use_rnnoise'] = status
+            if status != 'set': source_config['rnnoise'] = status
             source_config['rnnoise_control'] = int(control)
             if self.audio_server != 'Pipewire':
                 source_config['rnnoise_latency'] = chann_lat
@@ -452,17 +452,17 @@ class AudioServer(Server):
 
         # toggle on/off
         if status is None:
-            status = not sink_config['use_eq']
+            status = not sink_config['eq']
             conn_status = status
 
         # if only changing the control
         elif status == 'set':
-            conn_status = sink_config['use_eq']
+            conn_status = sink_config['eq']
 
         else:
             conn_status = str2bool(status)
 
-        if status == sink_config['use_eq'] is False:
+        if status == sink_config['eq'] is False:
             return f'eq {output_type} {output_id} {conn_status} {control}'
 
         # create ladspa sink
@@ -472,7 +472,7 @@ class AudioServer(Server):
             command += self.reconnect(output_type, output_id, False, run_command=False)
 
         if change_config:
-            if status != 'set': sink_config['use_eq'] = conn_status
+            if status != 'set': sink_config['eq'] = conn_status
             sink_config['eq_control'] = control
 
         # recreates all loopbacks from the device
@@ -583,7 +583,7 @@ class AudioServer(Server):
 
             # get selected ports
             if input_type == 'hi' and 'selected_channels' in source_config:
-                if source_config['use_rnnoise']:
+                if source_config['rnnoise']:
                     iselports = [0]
                 iselports = source_config['selected_channels']
                 iselports = [i for i in range(len(iselports)) if iselports[i] is True]
@@ -661,7 +661,6 @@ class AudioServer(Server):
                 else:
                     channels = device['channel_map'].count(',') + 1
 
-                # device_config['channel_map'] = channel_map
                 device_config['channels'] = channels
                 device_config['selected_channels'] = [True for _ in range(channels)]
         device_config['name'] = name
@@ -696,14 +695,14 @@ class AudioServer(Server):
         if device_type == 'a':
             device_list = ['hi', 'vi']
 
-            if status and device_config['use_eq']:
+            if status and device_config['eq']:
                 command += self.eq(device_type, device_id, status=True,
                         reconnect=False, change_config=False, run_command=False)
 
         else:
             device_list = ['a', 'b']
 
-            if status and device_type == 'hi' and device_config['use_rnnoise']:
+            if status and device_type == 'hi' and device_config['rnnoise']:
                 command += self.rnnoise(device_id, status=True,
                         reconnect=False, change_config=False, run_command=False)
 
@@ -730,11 +729,11 @@ class AudioServer(Server):
                             status=status, run_command=False, change_state=False, init=True)
 
         if not status:
-            if device_type == 'a' and device_config['use_eq']:
+            if device_type == 'a' and device_config['eq']:
                 command += self.eq(device_type, device_id, status=False,
                         reconnect=False, change_config=False, run_command=False)
 
-            elif device_type == 'hi' and device_config['use_rnnoise']:
+            elif device_type == 'hi' and device_config['rnnoise']:
                 command += self.rnnoise(device_id, status=False,
                         reconnect=False, change_config=False, run_command=False)
 
@@ -837,7 +836,7 @@ class AudioServer(Server):
             new_device["vol"] = 100
             new_device["mute"] = False
             new_device["jack"] = False
-            new_device["use_rnnoise"] = False
+            new_device["rnnoise"] = False
             new_device["rnnoise_name"] = ""
             new_device["rnnoise_control"] = 95
             new_device["rnnoise_latency"] = 200
@@ -848,7 +847,7 @@ class AudioServer(Server):
             new_device["mute"] = False
             new_device["eq_control"] = ""
             new_device["eq_name"] = ""
-            new_device["use_eq"] = False
+            new_device["eq"] = False
             new_device["channels"] = 2
         elif device_type == "vi":
             new_device["name"] = f"Virtual_Input_{device_number}"
@@ -864,7 +863,7 @@ class AudioServer(Server):
             new_device["mute"] = False
             new_device["eq_control"] = ""
             new_device["eq_name"] = ""
-            new_device["use_eq"] = False
+            new_device["eq"] = False
             new_device["channels"] = 1
             new_device["channel_map"] = "1"
 
@@ -892,7 +891,7 @@ class AudioServer(Server):
 
             for category in (self.config["vi"], self.config["hi"]):
                 for device in category:
-                    print(device)
+                    # print(device)
                     # create device
                     category[device][new_port] = {}
                     # add new values
