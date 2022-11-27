@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkPopover" id="menu_popover">
@@ -151,9 +151,11 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
+                    <property name="halign">end</property>
                     <property name="margin-end">5</property>
                     <property name="margin-top">5</property>
                     <property name="margin-bottom">5</property>
+                    <property name="hexpand">True</property>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>
@@ -287,6 +289,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-end">10</property>
                         <property name="margin-bottom">10</property>
                         <property name="hexpand">True</property>
                         <property name="label" translatable="yes">Hardware Inputs</property>
@@ -298,12 +301,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="add_hi">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
                         <property name="halign">end</property>
-                        <property name="margin-start">10</property>
                         <child>
                           <object class="GtkImage" id="icon">
                             <property name="visible">True</property>
@@ -428,7 +430,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="add_vi">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -620,17 +622,6 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">Virtual Outputs</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkBox" id="virtual_output_box">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -644,6 +635,50 @@
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkButton" id="add_b">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="halign">end</property>
+                                <property name="margin-start">10</property>
+                                <child>
+                                  <object class="GtkImage" id="icon3">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="pixel-size">11</property>
+                                    <property name="icon-name">list-add</property>
+                                    <property name="icon_size">1</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Virtual Outputs</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                       </object>
@@ -726,17 +761,6 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">Hardware Outputs</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkBox" id="hardware_output_box">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
@@ -750,6 +774,50 @@
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Hardware Outputs</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="add_a">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="halign">end</property>
+                                <property name="margin-start">10</property>
+                                <child>
+                                  <object class="GtkImage" id="icon2">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="pixel-size">11</property>
+                                    <property name="icon-name">list-add</property>
+                                    <property name="icon_size">1</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                       </object>

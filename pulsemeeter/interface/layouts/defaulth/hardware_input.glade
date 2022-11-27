@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkAdjustment" id="adjust">
@@ -81,7 +81,7 @@
                 <property name="can-focus">False</property>
                 <property name="vexpand">False</property>
                 <child>
-                  <!-- n-columns=2 n-rows=1 -->
+                  <!-- n-columns=3 n-rows=1 -->
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -90,10 +90,14 @@
                       <object class="GtkLabel" id="label">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="hexpand">True</property>
+                        <property name="halign">start</property>
+                        <property name="margin-start">10</property>
+                        <property name="hexpand">False</property>
                         <property name="ellipsize">end</property>
-                        <property name="width-chars">10</property>
-                        <property name="max-width-chars">10</property>
+                        <property name="width-chars">1</property>
+                        <property name="single-line-mode">True</property>
+                        <property name="max-width-chars">25</property>
+                        <property name="lines">1</property>
                         <attributes>
                           <attribute name="weight" value="ultraheavy"/>
                         </attributes>
@@ -109,6 +113,7 @@
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
                         <property name="halign">end</property>
+                        <property name="hexpand">True</property>
                         <child>
                           <object class="GtkImage">
                             <property name="visible">True</property>
@@ -116,6 +121,23 @@
                             <property name="icon-name">document-properties</property>
                           </object>
                         </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">2</property>
+                        <property name="top-attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="description">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="margin-start">8</property>
+                        <property name="margin-end">10</property>
+                        <property name="label" translatable="yes">Device</property>
+                        <property name="ellipsize">end</property>
+                        <property name="width-chars">1</property>
+                        <property name="max-width-chars">25</property>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -277,6 +299,19 @@
             <property name="left-attach">1</property>
             <property name="top-attach">1</property>
           </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkPopover" id="device_popover">
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkBox" id="device_grid">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <placeholder/>
         </child>
       </object>
     </child>
