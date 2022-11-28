@@ -76,15 +76,15 @@ class Server:
 
                 try:
                     msg_len = conn.recv(4)
-                    if not msg_len: raise
+                    if not msg_len: raise Exception
                     msg_len = int(msg_len.decode())
 
                     data = conn.recv(msg_len)
-                    if not data: raise
+                    if not data: raise Exception
 
                     # print(data, msg_len)
                     LOG.debug('message from client #%d, size %d: %s', id, msg_len, data)
-                    if data == b'quit': raise
+                    if data == b'quit': raise Exception
 
                     self.command_queue.put(('command', id, data))
                 except Exception:

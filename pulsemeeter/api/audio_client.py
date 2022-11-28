@@ -437,7 +437,7 @@ class AudioClient(Client):
 
     def listen_peak(self, device_name, device_type):
         if device_name == '': return
-        dev_type = '0' if device_type == 'vi' or device_type == 'a' else '1'
+        dev_type = '0' if device_type in ('vi', 'a') else '1'
         command = ('pulse-vumeter', self.name, dev_type)
         sys.stdout.flush()
         self.process = subprocess.Popen(command,

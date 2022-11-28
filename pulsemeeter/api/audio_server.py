@@ -41,6 +41,7 @@ class AudioServer(Server):
         # call server __init__
         super().__init__(init_server)
 
+        self.exit_flag = False
         if init_server: self.start_server()
 
     def start_server(self, daemon=False):
@@ -1158,7 +1159,7 @@ class AudioServer(Server):
                 return json.dumps(config, ensure_ascii=False)
 
     def set_tray(self, state):
-        if type(state) == str:
+        if isinstance(state, str):
             state = state.lower() == 'true'
         self.config['tray'] = state
         ret_msg = f'tray {state}'
