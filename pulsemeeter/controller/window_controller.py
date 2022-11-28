@@ -93,15 +93,6 @@ class WindowController():
         if device_type == 'sink-inputs' or device_type == 'source-outputs':
             GLib.idle_add(self.remove_application, device_type, index)
 
-    def volume_change(self, slider, device_type, device_id):
-        """
-        Gets called whenever a volume slider changes
-        """
-        device_config = self.config[device_type][device_id]
-        val = int(slider.get_value())
-        if device_config['vol'] != val:
-            self.client.volume(device_type, device_id, val)
-
     def app_volume_change(self, slider, device_type, id):
         """
         Gets called whenever an app volume slider changes
