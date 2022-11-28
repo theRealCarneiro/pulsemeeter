@@ -937,16 +937,14 @@ class AudioServer(Server):
     # use -1 as device id to delete the last one
     def remove_device(self, device_type, device_id):
 
-        # check if there is at least one device left
-        # if len(self.config[device_type]) <= 1:
-            # LOG.info("Cannot remove device because there has to be at least one device")
-            # return False
-
         # delete the device with the highest num
         if device_id == -1:
             highest_num = max(self.config[device_type], key=int)
             del self.config[device_type][f"{highest_num}"]
             return f"remove-device {device_type} {highest_num}"
+
+        if device_type in ['vi', 'b']:
+            self.toggle_virtual_device(device_type, device_id, status=False)
 
         # delete the specified device
         del self.config[device_type][f"{device_id}"]
