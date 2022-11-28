@@ -1,6 +1,6 @@
 import os
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('pulsemeeter/settings.py') as f:
     for line in f:
@@ -39,14 +39,7 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=[
-        'pulsemeeter',
-        'pulsemeeter.interface',
-        'pulsemeeter.controller',
-        'pulsemeeter.api',
-        'pulsemeeter.ipc',
-        'pulsemeeter.scripts'
-    ],
+    packages=find_packages(),
     install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
     entry_points={
