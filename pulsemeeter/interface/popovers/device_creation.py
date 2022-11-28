@@ -3,7 +3,7 @@ import sys
 import json
 import logging
 
-from pulsemeeter.settings import GLADEFILE
+from pulsemeeter.settings import LAYOUT_DIR
 import pulsemeeter.scripts.pmctl as pmctl
 
 from gi import require_version as gi_require_version
@@ -23,7 +23,7 @@ class DeviceCreationPopOver:
 
         try:
             builder.add_objects_from_file(
-                os.path.join(GLADEFILE, f'{self.dtype}_settings.glade'),
+                os.path.join(LAYOUT_DIR, f'{client.config["layout"]}/{self.dtype}_settings.glade'),
                 ['device_popover']
             )
         except Exception as ex:

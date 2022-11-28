@@ -1,7 +1,7 @@
 import os
 # import json
 
-from pulsemeeter.settings import GLADEFILE
+from pulsemeeter.settings import LAYOUT_DIR
 from pulsemeeter.interface.popovers.device_creation import DeviceCreationPopOver
 
 from gi import require_version as gi_require_version
@@ -10,10 +10,10 @@ from gi.repository import Gtk
 
 
 class MainWindow():
-    def __init__(self, client):
+    def __init__(self, client, layout):
         self.builder = Gtk.Builder()
         getobj = self.builder.get_object
-        self.builder.add_from_file(os.path.join(GLADEFILE, 'main_window.glade'))
+        self.builder.add_from_file(os.path.join(LAYOUT_DIR, f'{layout}/main_window.glade'))
         self.menu_popover = getobj('menu_popover')
         menu_button = getobj('menu_button')
         self.menu_popover.set_relative_to(menu_button)

@@ -241,7 +241,7 @@ class WindowController():
         """
         Create a new instance of the window
         """
-        self.main_window = MainWindow(self.client)
+        self.main_window = MainWindow(self.client, self.config['layout'])
         window = self.main_window.window
         window.connect('delete_event', self.delete_event)
 

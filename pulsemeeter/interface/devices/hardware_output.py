@@ -2,7 +2,7 @@ import os
 import sys
 
 from pulsemeeter.interface.devices.minimal_device import MinimalDevice
-from pulsemeeter.settings import GLADEFILE
+from pulsemeeter.settings import LAYOUT_DIR
 
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
@@ -16,7 +16,7 @@ class HardwareOutput(MinimalDevice):
 
         try:
             builder.add_objects_from_file(
-                os.path.join(GLADEFILE, 'hardware_output.glade'),
+                os.path.join(LAYOUT_DIR, f'{client.config["layout"]}/hardware_output.glade'),
                 ['hardware_output', 'adjust']
             )
         except Exception as ex:
