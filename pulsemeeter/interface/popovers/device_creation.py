@@ -73,7 +73,7 @@ class DeviceCreationPopOver:
         if device_id is None:
             channels = self.devices[self.active_index]['properties']['audio.channels']
             selected_ports = None
-            device_ports = channels
+            device_ports = int(channels)
         else:
             device_config = self.client.config[device_type][device_id]
 
