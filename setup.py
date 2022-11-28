@@ -39,7 +39,14 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=['pulsemeeter', 'pulsemeeter.interface', 'pulsemeeter.socket', 'pulsemeeter.backends'],
+    packages=[
+        'pulsemeeter',
+        'pulsemeeter.interface',
+        'pulsemeeter.controller',
+        'pulsemeeter.api',
+        'pulsemeeter.ipc',
+        'pulsemeeter.scripts'
+    ],
     install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
     entry_points={
