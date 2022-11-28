@@ -132,6 +132,8 @@ class AudioServer(Server):
         # special case for now, when there's a model ill remove this
         if msg[0] == 'create-device':
             msg = decoded_data.split(' ', 2)
+        if msg[0] == 'edit-device':
+            msg = decoded_data.split(' ', 3)
 
         str_args = re.sub(r'^.*?\ ', '', decoded_data)
         command = msg[0]
@@ -143,7 +145,6 @@ class AudioServer(Server):
         if command == 'exit':
             return 'exit', True
 
-        print(msg, str_args)
         try:
 
             # check if args are valid
@@ -165,13 +166,13 @@ class AudioServer(Server):
 
             return (ret_msg, notify)
 
-        except TypeError:
-            LOG.error('invalid number of arguments')
-            return None
-
-        # except KeyError as ex:
-            # LOG.error(f"command \'{command}\' not found {ex}")
+        # except TypeError:
+            # LOG.error('invalid number of arguments')
             # return None
+
+        except KeyError as ex:
+            LOG.error(f"command \'{command}\' not found {ex}")
+            return None
 
     def init_audio(self):
         command = ''
@@ -745,6 +746,7 @@ class AudioServer(Server):
 
         LOG.debug(command)
         if run_command: os.popen(command)
+        return command
 
     def toggle_virtual_device(self, device_type, device_id, status=False, disconnect=True, run_command=True):
         command = ''
@@ -826,7 +828,7 @@ class AudioServer(Server):
     def create_device(self, device_type, j):
 
         j = json.loads(j)
-        print(j)
+        # print(j)
         # get current highest device
         highest_number = max(self.config[f"{device_type}"], key=int)
 
@@ -939,6 +941,35 @@ class AudioServer(Server):
         # delete the specified device
         del self.config[device_type][f"{device_id}"]
         return f"remove-device {device_type} {device_id}"
+
+    def edit_device(self, device_type, device_id, j):
+        device_config = self.config[device_type][device_id]
+
+        j = json.loads(j)
+        if device_type in ['a', 'hi']:
+
+            # disable old device
+            command = self.toggle_hardware_device(device_type, device_id, False,
+                                                  run_command=False)
+            device_config['nick'] = j['nick']
+            device_config['name'] = j['device']
+            device_config['description'] = j['description']
+            device_config['channels'] = j['channels']
+            device_config['selected_channels'] = j['selected_channels']
+            command += self.toggle_hardware_device(device_type, device_id, True,
+                                                  run_command=False)
+        else:
+
+            command = self.toggle_virtual_device(device_type, device_id, status=False,
+                                                 run_command=False)
+            device_config['name'] = j['name']
+            device_config['channels'] = j['channels']
+            device_config['external'] = j['external']
+            command += self.toggle_virtual_device(device_type, device_id, status=True,
+                                                 run_command=False)
+
+        os.popen(command)
+        return f'edit-device {device_type} {device_id} {json.dumps(device_config, ensure_ascii=False)}'
 
     # set a device as primary (only vi and b)
     def set_primary(self, device_type, device_id, run_command=True):
@@ -1348,6 +1379,12 @@ class AudioServer(Server):
                 'notify': True,
                 'save_config': True,
                 'regex': '(hi|vi|a|b) [0-9]+'
+            },
+            'edit-device': {
+                'function': self.edit_device,
+                'notify': True,
+                'save_config': True,
+                'regex': ''
             }
         }
 

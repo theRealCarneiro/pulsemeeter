@@ -171,7 +171,10 @@ class DeviceCreationPopOver:
                 'channels': tmp[channel_map],
                 'external': external
             }
-        self.client.create_device(self.device_type, device)
+        if self.device_id is None:
+            self.client.create_device(self.device_type, device)
+        else:
+            self.client.edit_device(self.device_type, self.device_id, device)
 
     def remove_device(self, button):
         self.client.remove_device(self.device_type, self.device_id)

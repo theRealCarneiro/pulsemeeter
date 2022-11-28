@@ -39,24 +39,15 @@ class WindowController():
         """
         pass
 
-    def init_device(self, device_type, device_id, j=None):
+    def init_device(self, device_type, device_id, init=True):
         """
         Init a device in the UI
         """
-        # device_config = self.config[device_type][device_id]
-        # name = device_config['name']
-        # if name == '': return
 
-        print("CRIADO")
         device = DEVICES[device_type](self.client, device_type, device_id)
 
         self.devices[device_type][device_id] = device
         self.main_window.init_device(device_type, device)
-        if j is not None:
-            self.main_window.window.show_all()
-
-    def remove_device(self, device_type, device_id):
-        self.main_window.remove_device(device_type, self.devices[device_type][device_id])
 
     def load_application_list(self, device_type, id=None, app_list=None):
         """
@@ -73,7 +64,6 @@ class WindowController():
         if len(app_list) == 0: return
 
         for id, label, icon, volume, device in app_list:
-            # print(id, label, icon, volume, device)
 
             app = App(id, label, icon, volume, device, ['Main', 'Music', 'Comn'])
             app.adjust.connect('value_changed', self.app_volume_change, device_type, id)
@@ -196,6 +186,18 @@ class WindowController():
         if state != curr_state:
             GLib.idle_add(button.set_active, state)
 
+    def update_remove_device(self, device_type, device_id):
+        GLib.idle_add(self.main_window.remove_device, device_type,
+                      self.devices[device_type][device_id])
+
+    def update_create_device(self, device_type, device_id, j=None):
+        GLib.idle_add(self.init_device, device_type, device_id)
+
+    def update_edit_device(self, device_type, device_id, j):
+        self.update_remove_device(device_type, device_id)
+        self.update_create_device(device_type, device_id)
+        GLib.idle_add(self.main_window.window.show_all)
+
     def set_client_callbacks(self):
         """
         Set callback for server events
@@ -209,8 +211,9 @@ class WindowController():
         cb('volume', self.update_volume)
         cb('rnnoise', self.update_rnnoise)
         cb('eq', self.update_eq)
-        cb('create-device', self.init_device)
-        cb('remove-device', self.remove_device)
+        cb('create-device', self.update_create_device)
+        cb('remove-device', self.update_remove_device)
+        cb('edit-device', self.update_edit_device)
         # cb('change-hd', self.update_device_name)
         cb('device-plugged-in', self.device_new)
         cb('device-unplugged', self.device_remove)

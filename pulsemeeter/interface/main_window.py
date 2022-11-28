@@ -44,6 +44,7 @@ class MainWindow():
 
     def remove_device(self, device_type, device):
         box = self.device_box_dict[device_type]
+        device.vumeter.close()
         box.remove(device)
 
     def add_app(self, app, device_type):

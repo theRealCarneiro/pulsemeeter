@@ -69,7 +69,7 @@ class AudioClient(Client):
             event = msg.split(' ')
 
             # leave it until model
-            if event[0] == 'create-device':
+            if event[0] in ['create-device', 'edit-device']:
                 event = msg.split(' ', 3)
 
             command = event[0]
@@ -77,7 +77,7 @@ class AudioClient(Client):
 
             if command in self.callback_dict and (
                     sender_id != self.id or (
-                        event[0] in ['remove-device', 'create-device'])):
+                        event[0] in ['remove-device', 'create-device', 'edit-device'])):
                 function = self.callback_dict[command]
                 function(*args)
 
@@ -162,6 +162,18 @@ class AudioClient(Client):
             return
 
         command = f"remove-device {device_type} {device_id}"
+
+        LOG.debug(command)
+        return self.send_command(command)
+
+    def edit_device(self, device_type, device_id, j):
+        """
+        edits a device
+        """
+        if self.verify_device(device_type) is not True:
+            return
+
+        command = f"edit-device {device_type} {device_id} {json.dumps(j)}"
 
         LOG.debug(command)
         return self.send_command(command)
@@ -451,7 +463,7 @@ class AudioClient(Client):
     def assert_config(self, msg):
         '''update the config'''
         event = msg.split(' ')
-        if event[0] == 'create-device':
+        if event[0] in ['create-device', 'edit-device']:
             event = msg.split(' ', 3)
 
         command = event[0]
@@ -572,3 +584,8 @@ class AudioClient(Client):
                 device_type = args[0]
                 device_id = args[1]
                 del self.config[device_type][device_id]
+
+            case 'edit-device':
+                device_type = args[0]
+                device_id = args[1]
+                self.config[device_type][device_id] = json.loads(args[2])
