@@ -327,18 +327,10 @@ class AudioClient(Client):
         devices[v] = []
 
         for i in devl:
-            if pmctl.get_pactl_version() < 16:
-                # LEGACY
-                if 'properties' not in i or 'alsa.card_name' in i['properties']:
-                    devices[h].append(i)
-                else:
-                    devices[v].append(i)
+            if 'HARDWARE' in i['flags']:
+                devices[h].append(i)
             else:
-                # PROPER CHECK
-                if 'HARDWARE' in i['flags']:
-                    devices[h].append(i)
-                else:
-                    devices[v].append(i)
+                devices[v].append(i)
 
         if hardware is True:
             return devices[h]

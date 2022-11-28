@@ -2,7 +2,7 @@ import pulsemeeter.scripts.patojson as patojson
 import subprocess
 # import traceback
 import logging
-# import json
+import json
 import sys
 import os
 
@@ -115,18 +115,10 @@ def list_devices(device_type, hardware=False, virtual=False, all=False):
     devices[v] = []
 
     for i in devl:
-        if get_pactl_version() < 16:
-            # LEGACY
-            if 'properties' not in i or 'alsa.card_name' in i['properties']:
-                devices[h].append(i)
-            else:
-                devices[v].append(i)
+        if 'HARDWARE' in i['flags']:
+            devices[h].append(i)
         else:
-            # PROPER CHECK
-            if 'HARDWARE' in i['flags']:
-                devices[h].append(i)
-            else:
-                devices[v].append(i)
+            devices[v].append(i)
 
     if hardware is True:
         return devices[h]
@@ -141,11 +133,11 @@ def listobj(device_type, device_name=None):
     command = f'pmctl list {device_type}'
 
     try:
-        devices = patojson.get_devices(device_type)
-        # if get_pactl_version() < 16:
-            # devices = patojson.get_devices(device_type)
-        # else:
-            # devices = json.loads(cmd(command))
+        # devices = patojson.get_devices(device_type)
+        if get_pactl_version() < 16:
+            devices = patojson.get_devices(device_type)
+        else:
+            devices = json.loads(cmd(command))
 
         if device_name is not None:
             for i in devices:
@@ -162,7 +154,7 @@ def get_app_list(device_type, index=None):
     # print(traceback.print_stack())
     # print(device_type)
     app_list = listobj(device_type)
-    index_key = 'id' if get_pactl_version() < 16 else 'index'
+    index_key = 'index'
     obj_list = []
     for i in app_list:
 
@@ -180,28 +172,20 @@ def get_app_list(device_type, index=None):
         else:
             id = index
 
-        if 'properties' not in i:
-            # PACTL < 16 (old)
-            icon = 'audio-card' if 'icon' not in i else i['icon']
-            label = i['name']
-            volume = 100
-            # volume = self.client.get_app_volume(id, self.dev_type)
-        else:
-            # PACTL >= 16 (new)
-            if (('application.name' not in i['properties']) or
-                    (i['properties']['application.name'] == 'Console Meter') or
-                    ('application.id' in i['properties']) and
-                    (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
-                # print(i['properties']['application.name'])
-                continue
+        if (('application.name' not in i['properties']) or
+                (i['properties']['application.name'] == 'Console Meter') or
+                ('application.id' in i['properties']) and
+                (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
+            # print(i['properties']['application.name'])
+            continue
 
-            if 'application.icon_name' not in i['properties']:
-                i['properties']['application.icon_name'] = 'audio-card'
+        if 'application.icon_name' not in i['properties']:
+            i['properties']['application.icon_name'] = 'audio-card'
 
-            i['volume'] = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
-            icon = i['properties']['application.icon_name']
-            label = i['properties']['application.name']
-            volume = i['volume']
+        i['volume'] = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
+        icon = i['properties']['application.icon_name']
+        label = i['properties']['application.name']
+        volume = i['volume']
 
         if 'device' not in i:
             d = 'sinks' if device_type == 'sink-inputs' else 'sources'
