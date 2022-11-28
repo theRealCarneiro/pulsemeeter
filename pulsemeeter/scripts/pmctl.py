@@ -189,7 +189,7 @@ def get_app_list(device_type, index=None):
 
         if 'device' not in i:
             d = 'sinks' if device_type == 'sink-inputs' else 'sources'
-            device = cmd(f'pmctl get-device-by-id {d} {i["sink"]}')
+            device = cmd(f'pmctl get-device-by-id {d} {i[d[:-1]]}')
         else:
             device = i['device']
 
