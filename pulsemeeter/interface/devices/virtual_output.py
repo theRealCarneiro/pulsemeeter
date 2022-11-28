@@ -23,7 +23,7 @@ class VirtualOutput(MinimalDevice):
             print(f'Error building virtual output {name}!\n{ex}')
             sys.exit(1)
 
-        super(VirtualOutput, self).__init__(builder, client, device_type, device_id)
+        super().__init__(builder, client, device_type, device_id)
         self.grid = builder.get_object('virtual_output')
         self.primary = builder.get_object('primary')
         self.eq = builder.get_object('eq')

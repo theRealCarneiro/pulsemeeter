@@ -5,7 +5,7 @@ import json
 import sys
 import re
 
-import pulsemeeter.scripts.pmctl as pmctl
+from pulsemeeter.scripts import pmctl
 from pulsemeeter.ipc.client import Client
 
 LOG = logging.getLogger("generic")
@@ -15,12 +15,13 @@ class AudioClient(Client):
 
     def __init__(self, listen=False, noconfig=False):
 
-        super(AudioClient, self).__init__(listen=listen, noconfig=noconfig)
+        super().__init__(listen=listen, noconfig=noconfig)
         self.config = json.loads(self.send_command('get-config', nowait=not listen))
         self.callback_dict = {}
         self.listen_thread = None
         self.exit_flag = False
         self.noconfig = noconfig
+        self.callback_thread = None
 
         if listen:
             self.start_callbacks()
@@ -90,31 +91,31 @@ class AudioClient(Client):
 
         if dev == 'virtual':
             if device_type not in ['vi', 'b']:
-                LOG.error(f'input type {device_type} not found')
+                LOG.error('input type %s not found', device_type)
                 return False
 
         if dev == 'hardware':
             if device_type not in ['a', 'hi']:
-                LOG.error(f'input type {device_type} not found')
+                LOG.error('input type %s not found', device_type)
                 return False
 
         if dev == 'input':
             if device_type not in ['hi', 'vi']:
-                LOG.error(f'input type {device_type} not found')
+                LOG.error('input type %s not found', device_type)
                 return False
 
         if dev == 'output':
             if device_type not in ['a', 'b']:
-                LOG.error(f'output type {device_type} not found')
+                LOG.error('output type %s not found', device_type)
                 return False
 
         if dev == 'any':
             if device_type not in ['hi', 'vi', 'a', 'b']:
-                LOG.error(f'output type {device_type} not found')
+                LOG.error('output type %s not found', device_type)
                 return False
 
         if not device_id.isdigit():
-            LOG.error(f'invalid device index {device_id}')
+            LOG.error('invalid device index %s', device_id)
             return False
 
         return True
@@ -129,14 +130,14 @@ class AudioClient(Client):
         '''
         if (not self.verify_device(input_type, input_id, 'input') or
                 not self.verify_device(output_type, output_id, 'output')):
-            return
+            return False
 
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
         if state is not None: command += f' {state}'
         if latency is not None: command += f' {latency}'
 
         if self.config[input_type][input_id][f'{output_type}{output_id}']['status'] == state:
-            return
+            return False
 
         LOG.debug(command)
         return self.send_command(command)
@@ -265,7 +266,7 @@ class AudioClient(Client):
         '''
         if not self.verify_device(device_type, device_id, 'any'):
             return
-        if type(vol) == str:
+        if isinstance(vol, str):
             if not re.match('[+-]?[0-9]+$', vol):
                 return 'invalid volume'
             if re.match('^[0-9]+$', vol):
@@ -308,7 +309,7 @@ class AudioClient(Client):
             return
         return self.send_command(command)
 
-    def list(self, device_type, hardware=False, virtual=False, all=False):
+    def list(self, device_type, hardware=False, virtual=False, alld=False):
         '''
         returns json of hardware devices.
         '''
@@ -316,7 +317,7 @@ class AudioClient(Client):
         devl = pmctl.listobj(device_type)
 
         # all for for returning the entire json
-        if all: return devl
+        if alld: return devl
 
         devices = {}
 
@@ -339,8 +340,8 @@ class AudioClient(Client):
 
         return devices
 
-    def get_app_list(self, device_type, id=None):
-        return pmctl.get_app_list(device_type, id)
+    def get_app_list(self, device_type, app_id=None):
+        return pmctl.get_app_list(device_type, app_id)
 
     def set_port_map(self, input_type, input_id, output, port_map):
         port_map = json.dumps(port_map).replace(" ", "")
@@ -437,7 +438,7 @@ class AudioClient(Client):
     def listen_peak(self, device_name, device_type):
         if device_name == '': return
         dev_type = '0' if device_type == 'vi' or device_type == 'a' else '1'
-        command = ['pulse-vumeter', self.name, dev_type]
+        command = ('pulse-vumeter', self.name, dev_type)
         sys.stdout.flush()
         self.process = subprocess.Popen(command,
             stdout=subprocess.PIPE,

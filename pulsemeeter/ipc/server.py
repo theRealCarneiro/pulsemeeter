@@ -53,7 +53,7 @@ class Server:
                 try:
                     # Wait for a connection
                     conn, addr = s.accept()
-                    LOG.debug(f'new client {id}')
+                    LOG.debug('new client %d', id)
 
                     # send id to client
                     conn.sendall(str.encode(str(id).rjust(4, '0')))
@@ -83,12 +83,12 @@ class Server:
                     if not data: raise
 
                     # print(data, msg_len)
-                    LOG.debug(f'message from client #{id}, size {msg_len}: {data}')
+                    LOG.debug('message from client #%d, size %d: %s', id, msg_len, data)
                     if data == b'quit': raise
 
                     self.command_queue.put(('command', id, data))
                 except Exception:
-                    LOG.debug(f'client {id} disconnect')
+                    LOG.debug('client %d disconnect', id)
                     conn.shutdown(socket.SHUT_RDWR)
                     del self.client_handler_connections[id]
                     break
@@ -121,7 +121,7 @@ class Server:
                 conn.sendall(msg_len.encode())  # message len
                 conn.sendall(encoded_msg)  # command
             except OSError:
-                LOG.info(f'client {sender_id} already disconnected, message not sent')
+                LOG.info('client %d already disconnected, message not sent', sender_id)
 
     def is_running(self):
         try:

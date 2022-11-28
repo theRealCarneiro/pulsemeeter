@@ -1,4 +1,3 @@
-import pulsemeeter.scripts.pmctl as pmctl
 import subprocess
 import traceback
 import threading
@@ -12,6 +11,7 @@ import re
 import os
 
 from pulsemeeter.settings import CONFIG_DIR, CONFIG_FILE, ORIG_CONFIG_FILE, __version__
+from pulsemeeter.scripts import pmctl
 from pulsemeeter.api.pulse_socket import PulseSocket
 from pulsemeeter.ipc.server import Server
 
@@ -39,7 +39,7 @@ class AudioServer(Server):
         self.create_command_dict()
 
         # call server __init__
-        super(AudioServer, self).__init__(init_server)
+        super().__init__(init_server)
 
         if init_server: self.start_server()
 
@@ -101,7 +101,7 @@ class AudioServer(Server):
             # Call any code to clean up virtual devices or similar
             self.save_config(buffer=False)
             if self.config['cleanup']:
-                self.audio_server.cleanup()
+                self.cleanup()
 
     def handle_pulsectl(self, event):
         evt = event.split(' ')
@@ -800,7 +800,7 @@ class AudioServer(Server):
         if name == '': return
 
         # set device type
-        device = 'sink' if device_type == 'a' or device_type == 'vi' else 'source'
+        device = 'sink' if device_type in ('a', 'vi') else 'source'
 
         # if a state is None, toggle it
         if state is None:
@@ -1395,7 +1395,7 @@ def cmd(command):
         stderr=subprocess.STDOUT)
     stdout, stderr = p.communicate()
     if p.returncode:
-        LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
+        LOG.warning('cmd \'%s\' returned %s', command, p.returncode)
         return
     return stdout.decode()
 

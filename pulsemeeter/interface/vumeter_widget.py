@@ -14,7 +14,7 @@ LOG = logging.getLogger("generic")
 class Vumeter(Gtk.ProgressBar):
 
     def __init__(self, vertical=False):
-        super(Vumeter, self).__init__()
+        super().__init__()
         self.process = None
 
         if vertical:

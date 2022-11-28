@@ -23,7 +23,7 @@ class MinimalDevice(Gtk.Grid):
         self.config = client.config
         self.device_config = client.config[device_type][device_id]
 
-        super(MinimalDevice, self).__init__()
+        super().__init__()
 
         self.label = builder.get_object('label')
         self.mute = builder.get_object('mute')

@@ -10,7 +10,7 @@ LOG = logging.getLogger("generic")
 class App(Gtk.VBox):
 
     def __init__(self, id, label, icon, volume, device, dev_list):
-        super(App, self).__init__(spacing=0)
+        super().__init__(spacing=0)
         icon = Gio.ThemedIcon(name=icon)
         image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
         image.set_margin_left(10)

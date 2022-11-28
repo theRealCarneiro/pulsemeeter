@@ -24,7 +24,7 @@ class VirtualInput(MinimalDevice):
             print(f'Error building virtual input {name}!\n{ex}')
             sys.exit(1)
 
-        super(VirtualInput, self).__init__(builder, client, device_type, device_id)
+        super().__init__(builder, client, device_type, device_id)
         self.grid = builder.get_object('virtual_input')
         self.primary = builder.get_object('primary')
         self.route_box = {"a": getobj('a_box'), "b": getobj('b_box')}

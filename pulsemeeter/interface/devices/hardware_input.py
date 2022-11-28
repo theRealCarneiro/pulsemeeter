@@ -24,7 +24,7 @@ class HardwareInput(MinimalDevice):
             print(f'Error building hardware input {name}!\n{ex}')
             sys.exit(1)
 
-        super(HardwareInput, self).__init__(builder, client, device_type, device_id, nick=True)
+        super().__init__(builder, client, device_type, device_id, nick=True)
         self.grid = builder.get_object('hardware_input')
         self.description = builder.get_object('description')
         self.rnnoise = builder.get_object('rnnoise')

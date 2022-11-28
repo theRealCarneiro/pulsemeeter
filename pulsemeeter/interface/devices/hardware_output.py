@@ -23,7 +23,7 @@ class HardwareOutput(MinimalDevice):
             print(f'Error building hardware output {name}!\n{ex}')
             sys.exit(1)
 
-        super(HardwareOutput, self).__init__(builder, client, device_type, device_id,
+        super().__init__(builder, client, device_type, device_id,
                                              nick=True)
 
         self.grid = builder.get_object('hardware_output')
