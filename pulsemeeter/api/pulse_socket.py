@@ -115,8 +115,8 @@ class PulseSocket():
             'sink',
             'source'
         }
-        for case in case:
-            if argument == case: return case
+        for c in case:
+            if argument == c: return c
 
     # It searches in the facility for the specific device with the index and returns this device.
     # (used for listener)

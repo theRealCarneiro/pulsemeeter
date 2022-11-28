@@ -439,8 +439,7 @@ class AudioServer(Server):
             LOG.debug(command)
             os.popen(command)
             return f'rnnoise {input_id} {status} {control}'
-        else:
-            return command
+        return command
 
     # creates a ladspa sink with eq plugin for a given output
     def eq(self, output_type, output_id, status=None, control=None, ladspa_sink=None,
@@ -491,8 +490,7 @@ class AudioServer(Server):
             LOG.debug(command)
             os.popen(command)
             return f'eq {output_type} {output_id} {status} {control}'
-        else:
-            return command
+        return command
 
     # recreates connections fom a device, does not affect config
     def reconnect(self, device_type, device_id, status=True, run_command=True):
@@ -645,8 +643,7 @@ class AudioServer(Server):
                 LOG.debug(command)
                 os.popen(command)
             return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
-        else:
-            return command
+        return command
 
     def change_hardware_device(self, output_type, output_id, name):
         if name in ['None', None]: name = ''
@@ -821,8 +818,7 @@ class AudioServer(Server):
             LOG.debug(command)
             os.popen(command)
             return f'mute {device_type} {device_id} {state}'
-        else:
-            return command
+        return command
 
     # create a new device (slot)
     def create_device(self, device_type, j):
@@ -893,16 +889,12 @@ class AudioServer(Server):
 
         # generate connections for THIS device
         if device_type in ("vi", "hi"):
-            for port in ("a", "b"):
-                if len(self.config[port]) > 0:
-                    highest_number = max(self.config[port], key=int)
-                else:
-                    highest_number = 0
-                for i in range(1, int(highest_number) + 1):
+            for output_type in ("a", "b"):
+                for output_id in self.config[output_type]:
                     # create device
-                    new_device[f"{port}{i}"] = {}
+                    new_device[f"{output_type}{output_id}"] = {}
                     # add new values
-                    p = new_device[f"{port}{i}"]
+                    p = new_device[f"{output_type}{output_id}"]
                     p["status"] = False
                     p["latency"] = 200
                     p["auto_ports"] = True
