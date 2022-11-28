@@ -64,7 +64,6 @@ class AudioClient(Client):
         '''
         while not self.exit_flag:
             msg, sender_id = self.event_queue.get()
-            # LOG.debug(event)
             self.assert_config(msg)
             event = msg.split(' ')
 
@@ -571,11 +570,24 @@ class AudioClient(Client):
                 device_type = args[0]
                 device_id = args[1]
                 self.config[device_type][device_id] = json.loads(args[2])
+                if device_type in ['a', 'b']:
+                    for i in ['vi', 'hi']:
+                        for key, device in self.config[i].items():
+                            device[f'{device_type}{device_id}'] = {
+                                "status": False,
+                                "latency": 200,
+                                "auto_ports": True,
+                                "port_map": []
+                            }
 
             case 'remove-device':
                 device_type = args[0]
                 device_id = args[1]
                 del self.config[device_type][device_id]
+                if device_type in ['a', 'b']:
+                    for i in ['vi', 'hi']:
+                        for device, key in self.config[i].items():
+                            del device[f'{device_type}{device_id}']
 
             case 'edit-device':
                 device_type = args[0]

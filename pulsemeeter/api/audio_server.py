@@ -104,7 +104,12 @@ class AudioServer(Server):
                 self.audio_server.cleanup()
 
     def handle_pulsectl(self, event):
-        command, id, device_type = event.split(' ')
+        evt = event.split(' ')
+
+        if len(evt) > 3:
+            return event
+
+        command, id, device_type = evt
 
         if device_type in ['sink_input', 'source_output']:
             device_type = device_type.replace('_', '-') + 's'
@@ -347,11 +352,9 @@ class AudioServer(Server):
 
     def cleanup(self):
         # remove connections
-        # print('removing connections')
         command = self.stop_connections(run_command=False)
 
         # remove rnnoise
-        # print('removing rnnoise')
         for hi_id in self.config['hi']:
             hi_config = self.config['hi'][hi_id]
             if hi_config['rnnoise']:
@@ -359,7 +362,6 @@ class AudioServer(Server):
                         reconnect=False, change_config=False, run_command=False)
 
         # remove eqs
-        # print('removing eqs')
         for output_type in ['a', 'b']:
             for output_id in self.config[output_type]:
                 output_config = self.config[output_type][output_id]
@@ -368,7 +370,6 @@ class AudioServer(Server):
                             reconnect=False, change_config=False, run_command=False)
 
         # remove virtual devices
-        # print('removing virtual devices')
         for device_type in ['b', 'vi']:
             for device_id in self.config[device_type]:
                 command += self.toggle_virtual_device(device_type, device_id, status=False, disconnect=False, run_command=False)
@@ -649,7 +650,6 @@ class AudioServer(Server):
 
     def change_hardware_device(self, output_type, output_id, name):
         if name in ['None', None]: name = ''
-        # print(f'{output_type} {output_id} {name}')
         device_config = self.config[output_type][output_id]
         # channel_map = None
         channels = None
@@ -828,7 +828,6 @@ class AudioServer(Server):
     def create_device(self, device_type, j):
 
         j = json.loads(j)
-        # print(j)
         # get current highest device
         if len(self.config[f"{device_type}"]) > 0:
             highest_number = max(self.config[f"{device_type}"], key=int)
@@ -928,7 +927,11 @@ class AudioServer(Server):
                     p["port_map"] = []
 
         device_id = f'{device_number}'
-        return f"create-device {device_type} {device_number} {json.dumps(self.config[device_type][device_id])}"
+        if device_type in ['vi', 'b']:
+            self.toggle_virtual_device(device_type, device_id, status=True)
+
+        j = json.dumps(self.config[device_type][device_id])
+        return f"create-device {device_type} {device_number} {j}"
 
     # remove a device (slot)
     # use -1 as device id to delete the last one
@@ -1155,7 +1158,6 @@ class AudioServer(Server):
             return json.dumps(self.config, ensure_ascii=False)
         else:
             args = args.split(':')
-            # print(args)
             config = self.config
             for arg in args:
                 config = config[arg]

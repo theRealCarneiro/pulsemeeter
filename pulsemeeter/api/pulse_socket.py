@@ -5,7 +5,7 @@ import logging
 import pulsectl
 import pulsectl_asyncio
 
-import pulsemeeter.scripts.pmctl as pmctl
+# import pulsemeeter.scripts.pmctl as pmctl
 
 LOG = logging.getLogger("generic")
 
@@ -47,16 +47,18 @@ class PulseSocket():
         if event.t == 'change':
             device = await self.device_from_event(event)
             if device is not None:
-                pulsem_device = self.config_device_from_name(device.name)
-                if pulsem_device is not None:
-                    device_config = self.config[pulsem_device["device_type"]][pulsem_device["device_id"]]
+
+                device_type, device_id = self.config_device_from_name(device.name)
+                if device_type is not None:
+                    device_config = self.config[device_type][device_id]
+
                     # read the volume data from config and from pulseaudio
                     config_volume = device_config["vol"]
                     device_volume = int(round(device.volume.value_flat * 100))
 
                     # compare config value with pulseaudio value
                     if config_volume != device_volume:
-                        command = f'volume {pulsem_device["device_type"]} {pulsem_device["device_id"]} {device_volume}'
+                        command = f'volume {device_type} {device_id} {device_volume}'
                         self.command_queue.put(('audio_server', None, command))
                         device_config["vol"] = device_volume
                         return
@@ -65,7 +67,7 @@ class PulseSocket():
                     device_mute = bool(device.mute)
 
                     if config_mute != device_mute:
-                        command = f'mute {pulsem_device["device_type"]} {pulsem_device["device_id"]} {device_mute}'
+                        command = f'mute {device_type} {device_id} {device_mute}'
                         self.command_queue.put(('audio_server', None, command))
                         device_config["mute"] = device_mute
                         return
@@ -90,22 +92,17 @@ class PulseSocket():
     def volume_info(self, val, chann):
         return pulsectl.PulseVolumeInfo(val, chann)
 
-        # searches for device with name(pulseaudio device) and returns tuple:
+    # searches for device with name(pulseaudio device) and returns tuple:
     # - device_type
     # - device_id
     def config_device_from_name(self, name):
         for device_type in ['a', 'b', 'hi', 'vi']:
             # iterate through all devices (can scale with device count)
-            device_id_range = range(1, len(self.config[device_type]) + 1)
-            for device_id in device_id_range:
-                device_id = str(device_id)
+            for device_id in self.config[device_type]:
                 device_config = self.config[device_type][device_id]
                 if device_config["name"] == name:
-                    return {
-                        "device_type": device_type,
-                        "device_id": device_id
-                    }
-        return
+                    return (device_type, device_id)
+        return None, None
 
     # thanks EnumValue
     # facility EnumValue to native string
