@@ -44,15 +44,15 @@ class Server:
     # handles connection requests
     def query_clients(self):
         # loop to get new connections
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-            s.settimeout(LISTENER_TIMEOUT)
-            s.bind(SOCK_FILE)
-            s.listen()
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.settimeout(LISTENER_TIMEOUT)
+            sock.bind(SOCK_FILE)
+            sock.listen()
             id = 0
             while not self.exit_flag:
                 try:
                     # Wait for a connection
-                    conn, addr = s.accept()
+                    conn, addr = sock.accept()
                     LOG.debug('new client %d', id)
 
                     # send id to client
@@ -151,9 +151,10 @@ class Server:
 
 
 def to_bytes(s):
-    if type(s) is bytes:
+    if isinstance(s, bytes):
         return s
-    elif type(s) is str:
+
+    if isinstance(s, str):
         return codecs.encode(s, 'utf-8')
-    else:
-        raise TypeError(f"[ERROR] [function: to_bytes()@{__name__}] Expected bytes or string, but got {type(s)}.")
+
+    raise TypeError(f"[ERROR] [function: to_bytes()@{__name__}] Expected bytes or string, but got {type(s)}.")

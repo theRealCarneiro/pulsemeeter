@@ -2,7 +2,7 @@ import threading
 import traceback
 import logging
 import socket
-import json
+# import json
 
 from queue import SimpleQueue
 
@@ -37,14 +37,14 @@ class Client:
             self.start_listen()
 
     # start listen thread
-    def start_listen(self, print_event=False):
+    def start_listen(self):
         '''
         starts the listening thread.
         (starts if listen=True in Client class)
         '''
         if self.listen_thread is not None:
             self.stop_listen()
-        self.listen_thread = threading.Thread(target=self.listen, args=(print_event,))
+        self.listen_thread = threading.Thread(target=self.listen)
         self.listen_thread.start()
 
     # stop listen thread
@@ -56,7 +56,7 @@ class Client:
         # if self.listen_thread is not None:
             # self.listen_thread.join()
 
-    def disconnect(self, quit=False):
+    def disconnect(self):
         self.send_command('quit')
         self.stop_listen()
         self.sock.close()
@@ -72,7 +72,7 @@ class Client:
             # encode message ang get it's length
             message = command.encode()
             msg_len = len(message)
-            if msg_len == 0: raise
+            if msg_len == 0: raise Exception
 
             # send message length
             msg_len = str(msg_len).rjust(4, '0')
@@ -98,7 +98,7 @@ class Client:
             self.sock.close()
             raise
 
-    def listen(self, print_event=True):
+    def listen(self):
         '''
         Starts to listen to server events. (gets called by start_listen)
         '''
@@ -143,7 +143,7 @@ class Client:
             try:
                 # get the id of the client that sent the message
                 sender_id = self.sock.recv(4)
-                if not sender_id: raise
+                if not sender_id: raise Exception
                 try:
                     sender_id = int(sender_id)
                 except ValueError:
@@ -151,12 +151,12 @@ class Client:
 
                 # length of the message
                 msg_len = self.sock.recv(4)
-                if not msg_len: raise
+                if not msg_len: raise Exception
                 msg_len = int(msg_len.decode())
 
                 # get event
                 event = self.sock.recv(msg_len)
-                if not event: raise
+                if not event: raise Exception
                 event = event.decode()
 
                 if self.id == sender_id:
