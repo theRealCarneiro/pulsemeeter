@@ -2,6 +2,7 @@ import os
 import pathlib
 from setuptools import setup, find_packages
 
+
 with open('pulsemeeter/settings.py') as f:
     for line in f:
         if line.startswith('__version__'):
@@ -40,6 +41,7 @@ setup(
     ],
     url='https://github.com/theRealCarneiro/pulsemeeter',
     packages=find_packages(),
+    package_data={"": ["*.glade"]},
     install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
     entry_points={
