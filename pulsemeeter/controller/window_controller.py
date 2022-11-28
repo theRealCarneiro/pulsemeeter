@@ -192,11 +192,11 @@ class WindowController():
 
     def update_create_device(self, device_type, device_id, j=None):
         GLib.idle_add(self.init_device, device_type, device_id)
+        GLib.idle_add(self.main_window.window.show_all)
 
     def update_edit_device(self, device_type, device_id, j):
         self.update_remove_device(device_type, device_id)
         self.update_create_device(device_type, device_id)
-        GLib.idle_add(self.main_window.window.show_all)
 
     def set_client_callbacks(self):
         """
