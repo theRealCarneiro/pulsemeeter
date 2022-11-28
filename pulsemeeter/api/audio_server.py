@@ -830,7 +830,10 @@ class AudioServer(Server):
         j = json.loads(j)
         # print(j)
         # get current highest device
-        highest_number = max(self.config[f"{device_type}"], key=int)
+        if len(self.config[f"{device_type}"]) > 0:
+            highest_number = max(self.config[f"{device_type}"], key=int)
+        else:
+            highest_number = 0
 
         # get the right number for the device
         device_number = int(highest_number) + 1
@@ -891,7 +894,10 @@ class AudioServer(Server):
         # generate connections for THIS device
         if device_type in ("vi", "hi"):
             for port in ("a", "b"):
-                highest_number = max(self.config[port], key=int)
+                if len(self.config[port]) > 0:
+                    highest_number = max(self.config[port], key=int)
+                else:
+                    highest_number = 0
                 for i in range(1, int(highest_number) + 1):
                     # create device
                     new_device[f"{port}{i}"] = {}
