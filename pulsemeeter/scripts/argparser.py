@@ -1,3 +1,5 @@
+# pylint: disable-all
+
 import subprocess
 import platform
 import argparse
@@ -24,13 +26,13 @@ def pprint_bool_options(style='simple'):
     # pretty print boolean values
     if style == 'pretty':
         return ' | '.join(map(str, true_values)) + '\n' + ' | '.join(map(str, false_values))
-    elif style == 'simple':
+    if style == 'simple':
         return f'[{"|".join(map(str, true_values))}] | [{"|".join(map(str, false_values))}]'
 
 
 def pprint_device_options(allowed_devices=all_devices, no_numbers=False):
     # pretty print devices
-    if type(allowed_devices) == str:
+    if isinstance(allowed_devices, str):
         if no_numbers is False:
             return f'{allowed_devices}[number]'
         else:
@@ -94,38 +96,53 @@ class format:
         self.no_color = no_color
 
     def bold(self, text):
-        if self.no_color: return text
-        else: return self.BOLD + text + self.END
+        if self.no_color:
+            return text
+
+        return self.BOLD + text + self.END
 
     def red_bold(self, text):
-        if self.no_color: return text
-        else: return self.BOLD_RED + text + self.END
+        if self.no_color:
+            return text
+
+        return self.BOLD_RED + text + self.END
 
     def grey(self, text):
-        if self.no_color: return text
-        else: return self.GREY + text + self.END
+        if self.no_color:
+            return text
+        return self.GREY + text + self.END
 
     def green(self, text):
-        if self.no_color: return text
-        else: return self.GREEN + text + self.END
+        if self.no_color:
+            return text
+
+        return self.GREEN + text + self.END
 
     def yellow(self, text):
-        if self.no_color: return text
-        else: return self.YELLOW + text + self.END
+        if self.no_color:
+            return text
+
+        return self.YELLOW + text + self.END
 
     def red(self, text):
-        if self.no_color: return text
-        else: return self.RED + text + self.END
+        if self.no_color:
+            return text
+
+        return self.RED + text + self.END
 
     # clear terminal
     def clear(self, text):
-        if self.no_color: return text
-        else: return self.CLEAR + self.END
+        if self.no_color:
+            return text
+
+        return self.CLEAR + self.END
 
     # print a color end
     def end(self, text):
-        if self.no_color: return text
-        else: return self.END
+        if self.no_color:
+            return text
+
+        return self.END
 
 
 # DEBUG HELPERS
@@ -168,14 +185,13 @@ def server_listen_mode(client):
 
 # CONVERTERS
 def str_to_bool(string, parser):
-    if type(string) == bool:
+    if isinstance(string, bool):
         return string
-    elif string.lower() in true_values:
+    if string.lower() in true_values:
         return True
-    elif string.lower() in false_values:
+    if string.lower() in false_values:
         return False
-    else:
-        parser.error(f'value has to be one of these options: {pprint_bool_options()}')
+    parser.error(f'value has to be one of these options: {pprint_bool_options()}')
 
 
 # check if values are valid and check devices for different type
@@ -198,12 +214,12 @@ def convert_eq_rnnoise(args, parser, type):
     else:
         if type == 'rnnoise':
             if args.state is None:
-                return (device_args[1])
+                return device_args[1]
             else:
                 return (*device_args[1], str_to_bool(args.state, parser))
         else:
             if args.state is None:
-                return (device_args)
+                return device_args
             else:
                 return (*device_args, str_to_bool(args.state, parser))
 
@@ -215,13 +231,13 @@ def convert_device(args, parser, device_type='general',
         # convert all devices
         try:
             # return device + value
-            if type(allowed_devices) == str:
+            if isinstance(allowed_devices, str):
                 device = re.match(f'^({allowed_devices})', args.device).group()
             else:
                 device = re.match(f'^({"|".join(allowed_devices)})', args.device).group()
             num = re.search(r'\d+$', args.device).group()
         except Exception:
-            if type(allowed_devices) == str:
+            if isinstance(allowed_devices, str):
                 parser.error(f'device has to be assigned like this: [{allowed_devices}][number].')
             else:
                 parser.error(f'device has to be assigned like this: [{"|".join(allowed_devices)}][number].')
