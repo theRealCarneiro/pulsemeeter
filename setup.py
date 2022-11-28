@@ -3,7 +3,7 @@ import pathlib
 from setuptools import setup, find_packages
 
 
-with open('pulsemeeter/settings.py') as f:
+with open('pulsemeeter/settings.py', 'r', encoding='utf-8') as f:
     for line in f:
         if line.startswith('__version__'):
             __version__ = line.replace("'", '').split()[2]
@@ -15,11 +15,11 @@ README = (pathlib.Path(__file__).parent / "README.md").read_text()
 DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']), ]
 REQUIREMENTS = []
 
-with open('requirements.txt') as file:
+with open('requirements.txt', 'r', encoding='utf-8') as file:
     for line in file:
         REQUIREMENTS.append(line.rstrip())
 
-for directory, _, filenames in os.walk(u'share'):
+for directory, _, filenames in os.walk('share'):
     dest = directory[6:]
     if filenames:
         files = [os.path.join(directory, filename) for filename in filenames]
