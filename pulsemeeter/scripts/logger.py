@@ -1,8 +1,8 @@
 import logging
 import sys
 import threading
-import traceback
 from pulsemeeter.settings import LOGGING_FORMAT, LOGGING_FORMAT_DEBUG, DEBUG
+
 
 def init_log(name):
     """
@@ -20,8 +20,9 @@ def init_log(name):
     console.setLevel(logging.DEBUG)
     console.setFormatter(FormatLog())
     log.addHandler(console)
-    log.debug(f'started logger instance {log} at thread {threading.get_native_id()}')
+    log.debug('started logger instance %s at thread %s', log, threading.get_native_id())
     return log
+
 
 class FormatLog(logging.Formatter):
     """used to color format the logs"""
@@ -31,16 +32,16 @@ class FormatLog(logging.Formatter):
     red = "\x1b[31;21m"
     reset = "\x1b[0m"
     if DEBUG is True:
-        format = LOGGING_FORMAT_DEBUG
+        format_txt = LOGGING_FORMAT_DEBUG
     else:
-        format = LOGGING_FORMAT
+        format_txt = LOGGING_FORMAT
 
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
-        logging.INFO: grey + format + reset,
-        logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: red + format + reset
+        logging.DEBUG: grey + format_txt + reset,
+        logging.INFO: grey + format_txt + reset,
+        logging.WARNING: yellow + format_txt + reset,
+        logging.ERROR: red + format_txt + reset,
+        logging.CRITICAL: red + format_txt + reset
     }
 
     def format(self, record):
