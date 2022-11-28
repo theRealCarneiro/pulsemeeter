@@ -71,7 +71,7 @@ class MinimalDevice(Gtk.Grid):
 
     def remove_output(self, output_type, output_id):
         button = self.route_dict[output_type][output_id]
-        self.route_box[output_type].remove(button, True, True, 0)
+        self.route_box[output_type].remove(button)
         del self.route_dict[output_type][output_id]
 
     def volume_change(self, slider):

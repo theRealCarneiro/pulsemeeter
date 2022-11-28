@@ -190,13 +190,32 @@ class WindowController():
         GLib.idle_add(self.main_window.remove_device, device_type,
                       self.devices[device_type][device_id])
 
+        if device_type in ['a', 'b']:
+            GLib.idle_add(self.update_loopback_buttons, device_type, device_id, False)
+
     def update_create_device(self, device_type, device_id, j=None):
         GLib.idle_add(self.init_device, device_type, device_id)
+        if device_type in ['a', 'b']:
+            GLib.idle_add(self.update_loopback_buttons, device_type, device_id, True)
         GLib.idle_add(self.main_window.window.show_all)
 
     def update_edit_device(self, device_type, device_id, j):
         self.update_remove_device(device_type, device_id)
         self.update_create_device(device_type, device_id)
+
+    def update_loopback_buttons(self, output_type, output_id, status):
+        for input_type in ['hi', 'vi']:
+            for input_id, device in self.devices[input_type].items():
+
+                # add
+                if status:
+                    name_type = 'nick' if output_type == 'a' else 'name'
+                    nick = self.config[output_type][output_id][name_type]
+                    device.insert_output(output_type, output_id, nick, False)
+
+                # remove
+                else:
+                    device.remove_output(output_type, output_id)
 
     def set_client_callbacks(self):
         """

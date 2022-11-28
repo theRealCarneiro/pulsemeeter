@@ -881,7 +881,8 @@ class AudioServer(Server):
             new_device["channels"] = 2
 
         elif device_type == "b":
-            new_device["name"] = f"Virtual_Output_B{device_number}"
+            new_device["name"] = j['name']
+            new_device["external"] = j['external']
             new_device["primary"] = False
             new_device["vol"] = 100
             new_device["mute"] = False
@@ -934,9 +935,9 @@ class AudioServer(Server):
     def remove_device(self, device_type, device_id):
 
         # check if there is at least one device left
-        if len(self.config[device_type]) <= 1:
-            LOG.info("Cannot remove device because there has to be at least one device")
-            return False
+        # if len(self.config[device_type]) <= 1:
+            # LOG.info("Cannot remove device because there has to be at least one device")
+            # return False
 
         # delete the device with the highest num
         if device_id == -1:
