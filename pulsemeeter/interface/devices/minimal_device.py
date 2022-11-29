@@ -42,7 +42,7 @@ class MinimalDevice(Gtk.Grid):
         self.set_vexpand(True)
         self.set_hexpand(True)
 
-        self.volume.connect('value-changed', self.volume_change)
+        self.adjust.connect('value-changed', self.volume_change)
         self.mute.connect('button_press_event', self.mute_click)
 
         self.creation_popover = DeviceCreationPopOver(client, device_type, device_id)
