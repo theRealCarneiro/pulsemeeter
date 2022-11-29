@@ -587,7 +587,7 @@ class AudioClient(Client):
                 del self.config[device_type][device_id]
                 if device_type in ['a', 'b']:
                     for i in ['vi', 'hi']:
-                        for device, key in self.config[i].items():
+                        for key, device in self.config[i].items():
                             del device[f'{device_type}{device_id}']
 
             case 'edit-device':
