@@ -1,8 +1,9 @@
 import os
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
-with open('pulsemeeter/settings.py') as f:
+
+with open('pulsemeeter/settings.py', 'r', encoding='utf-8') as f:
     for line in f:
         if line.startswith('__version__'):
             __version__ = line.replace("'", '').split()[2]
@@ -14,11 +15,11 @@ README = (pathlib.Path(__file__).parent / "README.md").read_text()
 DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']), ]
 REQUIREMENTS = []
 
-with open('requirements.txt') as file:
+with open('requirements.txt', 'r', encoding='utf-8') as file:
     for line in file:
         REQUIREMENTS.append(line.rstrip())
 
-for directory, _, filenames in os.walk(u'share'):
+for directory, _, filenames in os.walk('share'):
     dest = directory[6:]
     if filenames:
         files = [os.path.join(directory, filename) for filename in filenames]
@@ -39,16 +40,17 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=['pulsemeeter', 'pulsemeeter.interface', 'pulsemeeter.socket', 'pulsemeeter.backends'],
+    packages=find_packages(),
+    package_data={"": ["*.glade"]},
     install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
     entry_points={
         "console_scripts": [
-            "pulsemeeter = pulsemeeter.__main__:main",
+            "pulsemeeter = pulsemeeter.main:main",
         ],
     },
 
-    python_requires=">=3.5",
+    python_requires=">=3.10",
     scripts=[
         'scripts/pmctl',
     ],
