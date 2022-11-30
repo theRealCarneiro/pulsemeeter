@@ -225,7 +225,7 @@ class AudioClient(Client):
         if state is not None: command += f' {state}'
         if control and latency: command += f' {control} {latency}'
 
-        if (self.config['hi'][input_id]['use_rnnoise'] == state or
+        if (self.config['hi'][input_id]['rnnoise'] == state or
                 self.config['hi'][input_id]['rnnoise_control'] == control):
             return
         return self.send_command(command)
@@ -254,7 +254,7 @@ class AudioClient(Client):
         elif control is not None and state != 'set':
             return
 
-        if (self.config[output_type][output_id]['use_eq'] == state or
+        if (self.config[output_type][output_id]['eq'] == state or
                 self.config[output_type][output_id]['eq_control'] == control):
             return
         return self.send_command(command)
@@ -536,7 +536,7 @@ class AudioClient(Client):
                 device_type = args[0]
                 device_id = args[1]
                 state = args[2].lower() == 'true'
-                self.config[device_type][device_id]['use_eq'] = state
+                self.config[device_type][device_id]['eq'] = state
 
                 if len(args) > 3:
                     control = args[3]
@@ -561,7 +561,7 @@ class AudioClient(Client):
             case 'rnnoise':
                 device_id = args[0]
                 state = args[1].lower() == 'true'
-                self.config['hi'][device_id]['use_rnnoise'] = state
+                self.config['hi'][device_id]['rnnoise'] = state
 
                 if len(args) > 2:
                     control = args[2]
