@@ -106,7 +106,9 @@ def get_devices(device_type):
     sink_blocks = cmd(f'pactl list {device_type}').split('\n\n')
     sink_arr = []
     for i in sink_blocks:
-        sink_arr.append(tokenize(i))
+        token = tokenize(i)
+        if len(token) > 0:
+            sink_arr.append(token)
     return sink_arr
 
 
@@ -122,3 +124,6 @@ def cmd(command):
     # if p.returncode:
         # LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
     return stdout.decode()
+
+
+print(json.dumps(get_devices('source-outputs')))

@@ -151,24 +151,15 @@ def listobj(device_type, device_name=None):
 
 
 def get_app_list(device_type, index=None):
-    # print(traceback.print_stack())
-    # print(device_type)
     app_list = listobj(device_type)
-    index_key = 'index'
     obj_list = []
     for i in app_list:
 
-        if index is not None and str(index) != str(i[index_key]):
+        if index is not None and str(index) != str(i['index']):
             continue
-        # try:
-            # print(i['properties']['application.name'])
-
-        # # TEST
-        # except Exception:
-            # print(i['properties']['application.id'])
 
         if index is None:
-            id = i[index_key]
+            id = i['index']
         else:
             id = index
 
