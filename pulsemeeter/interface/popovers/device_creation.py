@@ -71,7 +71,13 @@ class DeviceCreationPopOver:
         device_type = self.device_type
         device_id = self.device_id
         if device_id is None:
-            channels = self.devices[self.active_index]['properties']['audio.channels']
+
+            device = self.devices[self.active_index]
+            if 'audio.channels' in device['properties']:
+                channels = int(device['properties']['audio.channels'])
+            else:
+                channels = device['channel_map'].count(',') + 1
+
             selected_ports = None
             device_ports = int(channels)
         else:
