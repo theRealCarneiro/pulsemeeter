@@ -57,6 +57,19 @@ class PulseSocket():
                     device_volume = int(round(device.volume.value_flat * 100))
 
                     # compare config value with pulseaudio value
+                    # selected channels
+                    if 'selected_channels' in device_config:
+                        device_volume = config_volume
+                        dv = device.volume.values
+                        for i in range(device_config['selected_channels']):
+                            if device_config['selected_channels'] is True:
+                                if config_volume != dv[i]:
+                                    device_volume = dv[i]
+                                    break
+                                else:
+                                    return
+
+                    # all channels
                     if config_volume != device_volume:
                         command = f'volume {device_type} {device_id} {device_volume}'
                         self.command_queue.put(('audio_server', None, command))
@@ -91,10 +104,12 @@ class PulseSocket():
 
     def volume_info(self, val, chann):
         return pulsectl.PulseVolumeInfo(val, chann)
+    """
+    searches for device with name(pulseaudio device) and returns tuple:
+    - device_type
+    - device_id
+    """
 
-    # searches for device with name(pulseaudio device) and returns tuple:
-    # - device_type
-    # - device_id
     def config_device_from_name(self, name):
         for device_type in ['a', 'b', 'hi', 'vi']:
             # iterate through all devices (can scale with device count)

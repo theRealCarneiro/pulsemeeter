@@ -1018,18 +1018,18 @@ class AudioServer(Server):
         volume = device.volume
 
         # set by channel
-        # nchan = len(device.volume.values)
-        # vollist = device.volume.values
-        # v = []
-        # if device_type in ['a', 'hi']:
-            # selected_channels = device_config['selected_channels']
-            # for c in range(nchan):
-                # v.append(val / 100 if selected_channels[c] is True else vollist[c])
-            # volume = pulsectl.PulseVolumeInfo(v)
-        # else:
-            # volume.value_flat = val / 100
+        nchan = len(device.volume.values)
+        vollist = device.volume.values
+        v = []
+        if device_type in ['a', 'hi']:
+            selected_channels = device_config['selected_channels']
+            for c in range(nchan):
+                v.append(val / 100 if selected_channels[c] is True else vollist[c])
+            volume = pulsectl.PulseVolumeInfo(v)
+        else:
+            volume.value_flat = val / 100
 
-        volume.value_flat = val / 100
+        # volume.value_flat = val / 100
         self.pulse_socket.pulsectl.volume_set(device, volume)
         return f'volume {device_type} {device_id} {val}'
 
