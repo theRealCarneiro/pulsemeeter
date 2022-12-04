@@ -65,9 +65,7 @@ class WindowController():
 
         for id, label, icon, volume, device in app_list:
 
-            app = App(id, label, icon, volume, device, ['Main', 'Music', 'Comn'])
-            app.adjust.connect('value_changed', self.app_volume_change, device_type, id)
-            # app.combobox.connect()
+            app = App(self.client, id, label, icon, volume, device, device_type)
             app.show_all()
             self.app_list[device_type][id] = app
             self.main_window.add_app(app, device_type)
@@ -92,13 +90,6 @@ class WindowController():
     def device_remove(self, index, device_type):
         if device_type == 'sink-inputs' or device_type == 'source-outputs':
             GLib.idle_add(self.remove_application, device_type, index)
-
-    def app_volume_change(self, slider, device_type, id):
-        """
-        Gets called whenever an app volume slider changes
-        """
-        val = slider.get_value()
-        self.client.set_app_volume(id, int(val), device_type[:-1])
 
     def connect_click(self, button, event, input_type, input_id,
             output_type, output_id):
