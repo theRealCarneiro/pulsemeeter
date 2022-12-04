@@ -43,7 +43,6 @@ class App(Gtk.VBox):
         combobox.set_active(index)
         self.combobox = combobox
 
-        print(volume)
         value = int(volume)
         adjust = Gtk.Adjustment(lower=0, upper=153, step_increment=1, page_increment=10)
         adjust.set_value(value)

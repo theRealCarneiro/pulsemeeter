@@ -67,6 +67,7 @@ class AudioClient(Client):
             msg, sender_id = self.event_queue.get()
             self.assert_config(msg)
             event = msg.split(' ')
+            LOG.debug('message from client #%s: %s', sender_id, msg)
 
             # leave it until model
             if event[0] in ['create-device', 'edit-device']:

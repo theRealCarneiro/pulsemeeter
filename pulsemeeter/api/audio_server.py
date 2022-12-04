@@ -112,10 +112,10 @@ class AudioServer(Server):
 
         command, id, device_type = evt
 
-        if device_type in ['sink_input', 'source_output']:
-            device_type = device_type.replace('_', '-') + 's'
-        else:
-            return event
+        if device_type not in ['sink_input', 'source_output']:
+            return None
+
+        device_type = device_type.replace('_', '-') + 's'
 
         if (command == 'device-plugged-in'):
 
@@ -126,9 +126,7 @@ class AudioServer(Server):
             id, label, icon, volume, device = app_list[0]
             return f'{command} {device_type} {id} {label} {icon} {volume} {device}'
 
-            return None
-        else:
-            return f'{command} {id} {device_type}'
+        return f'{command} {id} {device_type}'
 
     # handles incoming commands
     def handle_command(self, data):
