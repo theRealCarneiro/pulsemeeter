@@ -86,16 +86,20 @@ class PulseSocket():
         elif event.t in ['new', 'remove']:
             index = event.index
             facility = self._fa_enum_to_string(event.facility)
-            if event.t == 'new':
-                command = f'device-plugged-in {index} {facility}'
-            elif event.t == 'remove':
-                command = f'device-unplugged {index} {facility}'
-            self.command_queue.put(('audio_server', None, command))
+            if facility in ['sink_input', 'source_output']:
+                if event.t == 'new':
+                    command = f'device-plugged-in {index} {facility}'
+                elif event.t == 'remove':
+                    command = f'device-unplugged {index} {facility}'
+
+                print(command)
+                self.command_queue.put(('audio_server', None, command))
 
     # listener for pulseaudio events
     async def _pulse_listener(self):
         async with self.pulsectl_asyncio as pulse:
             async for event in pulse.subscribe_events('all'):
+                print(event)
                 await self._pulse_listener_handler(event)
 
     def config_device_from_name(self, name):
