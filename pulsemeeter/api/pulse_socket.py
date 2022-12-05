@@ -92,14 +92,12 @@ class PulseSocket():
                 elif event.t == 'remove':
                     command = f'device-unplugged {index} {facility}'
 
-                print(command)
                 self.command_queue.put(('audio_server', None, command))
 
     # listener for pulseaudio events
     async def _pulse_listener(self):
         async with self.pulsectl_asyncio as pulse:
             async for event in pulse.subscribe_events('all'):
-                print(event)
                 await self._pulse_listener_handler(event)
 
     def config_device_from_name(self, name):
