@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import logging
 
 from pulsemeeter.settings import LAYOUT_DIR
@@ -53,14 +52,16 @@ class DeviceCreationPopOver:
         if self.device_id is not None:
             active_name = self.config[self.device_type][self.device_id]['name']
 
-        devt = 'sinks' if self.device_type == 'a' else 'sources'
+        if self.device_type == 'a':
+            devices = pmctl.list_sinks(hardware=True)
+        else:
+            devices = pmctl.list_sources(hardware=True)
 
-        # get device list
-        self.devices = pmctl.list_devices(devt)[self.device_type]
+        self.devices = devices
         i = None
         for i in range(len(self.devices)):
-            name = self.devices[i]['name']
-            desc = self.devices[i]['properties']['device.description']
+            name = self.devices[i].name
+            desc = self.devices[i].proplist['device.description']
             self.device_combobox.append_text(desc)
 
             # set active if editing
@@ -76,10 +77,7 @@ class DeviceCreationPopOver:
         if device_id is None:
 
             device = self.devices[self.active_index]
-            if 'audio.channels' in device['properties']:
-                channels = int(device['properties']['audio.channels'])
-            else:
-                channels = device['channel_map'].count(',') + 1
+            channels = len(device.channel_list)
 
             selected_ports = None
             device_ports = int(channels)
@@ -163,9 +161,9 @@ class DeviceCreationPopOver:
             active_device = self.devices[self.device_combobox.get_active()]
             device = {
                 'nick': self.input.get_text(),
-                'device': active_device['name'],
-                'description': active_device['properties']['device.description'],
-                'channels': active_device['properties']['audio.channels'],
+                'device': active_device.name,
+                'description': active_device.description,
+                'channels': len(active_device.channel_list),
                 'selected_channels': [button.get_active() for button in self.button_list]
             }
         else:
