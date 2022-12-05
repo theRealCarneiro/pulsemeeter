@@ -164,10 +164,9 @@ def get_app_list(device_type, index=None):
             id = index
 
         if (('application.name' not in i['properties']) or
-                (i['properties']['application.name'] == 'Console Meter') or
-                ('application.id' in i['properties']) and
+            ('_peak' in i['properties']['application.name']) or
+            ('application.id' in i['properties']) and
                 (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
-            # print(i['properties']['application.name'])
             continue
 
         if 'application.icon_name' not in i['properties']:

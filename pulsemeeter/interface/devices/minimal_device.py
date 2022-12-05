@@ -6,7 +6,7 @@ from pulsemeeter.interface.popovers.device_creation import DeviceCreationPopOver
 
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 
 class MinimalDevice(Gtk.Grid):
@@ -25,15 +25,18 @@ class MinimalDevice(Gtk.Grid):
 
         super().__init__()
 
+        name = self.device_config['nick'] if nick else self.device_config['name']
         self.label = builder.get_object('label')
         self.mute = builder.get_object('mute')
         self.adjust = builder.get_object('adjust')
         self.volume = builder.get_object('volume')
         self.settings = builder.get_object('settings')
         self.vumeter_grid = builder.get_object('vumeter_grid')
-        self.vumeter = Vumeter()
+        vumeter_input = self.device_config['name']
+        if device_type not in ['hi', 'b']:
+            vumeter_input += '.monitor'
+        self.vumeter = Vumeter(vumeter_input)
 
-        name = self.device_config['nick'] if nick else self.device_config['name']
         self.label.set_text(name)
         self.mute.set_active(self.device_config['mute'])
         self.adjust.set_value(self.device_config['vol'])
@@ -49,7 +52,8 @@ class MinimalDevice(Gtk.Grid):
         self.settings.connect('pressed', self.creation_popover.edit_popup)
 
         if self.config['enable_vumeters']:
-            self.vumeter.start(self.device_config['name'], device_type)
+            self.vumeter.start()
+            # GLib.idle_add(self.vumeter.start)
 
     def create_route_buttons(self):
         """

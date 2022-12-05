@@ -29,7 +29,7 @@ class AudioClient(Client):
     def start_callbacks(self):
         # self.stop_listen()
         # self.exit_flag = False
-        self.callback_thread = threading.Thread(target=self.handle_callback, args=())
+        self.callback_thread = threading.Thread(target=self.handle_callback, args=(), daemon=True)
         self.callback_thread.start()
 
     def stop_callbacks(self):
@@ -67,7 +67,7 @@ class AudioClient(Client):
             msg, sender_id = self.event_queue.get()
             self.assert_config(msg)
             event = msg.split(' ')
-            LOG.debug('message from server: %s', msg)
+            # LOG.debug('message from server: %s', msg)
 
             # leave it until model
             if event[0] in ['create-device', 'edit-device']:

@@ -47,9 +47,9 @@ class PulseSocket():
         if event.t == 'change':
             device = await self.device_from_event(event)
             if device is not None:
+                pmdevs = self.config_device_from_name(device.name)
 
-                device_type, device_id = self.config_device_from_name(device.name)
-                if device_type is not None:
+                for device_type, device_id in pmdevs:
                     device_config = self.config[device_type][device_id]
 
                     # read the volume data from config and from pulseaudio
@@ -62,14 +62,12 @@ class PulseSocket():
                         device_volume = config_volume
                         dv = device.volume.values
                         for i in range(device_config['selected_channels']):
+
+                            # check if selected port has updated it's volume
                             if device_config['selected_channels'] is True:
                                 if config_volume != dv[i]:
                                     device_volume = dv[i]
-                                    break
-                                else:
-                                    return
 
-                    # all channels
                     if config_volume != device_volume:
                         command = f'volume {device_type} {device_id} {device_volume}'
                         self.command_queue.put(('audio_server', None, command))
@@ -85,8 +83,6 @@ class PulseSocket():
                         device_config["mute"] = device_mute
                         return
 
-                    # TODO: Maybe add detection for connection changes
-
         elif event.t in ['new', 'remove']:
             index = event.index
             facility = self._fa_enum_to_string(event.facility)
@@ -96,28 +92,24 @@ class PulseSocket():
                 command = f'device-unplugged {index} {facility}'
             self.command_queue.put(('audio_server', None, command))
 
-        # listener for pulseaudio events
+    # listener for pulseaudio events
     async def _pulse_listener(self):
         async with self.pulsectl_asyncio as pulse:
             async for event in pulse.subscribe_events('all'):
                 await self._pulse_listener_handler(event)
 
-    def volume_info(self, val, chann):
-        return pulsectl.PulseVolumeInfo(val, chann)
-    """
-    searches for device with name(pulseaudio device) and returns tuple:
-    - device_type
-    - device_id
-    """
-
     def config_device_from_name(self, name):
+        """
+        searches for device with name(pulseaudio device) and returns tuple:
+        - device_type
+        - device_id
+        """
         for device_type in ['a', 'b', 'hi', 'vi']:
-            # iterate through all devices (can scale with device count)
-            for device_id in self.config[device_type]:
-                device_config = self.config[device_type][device_id]
+            devices = []
+            for device_id, device_config in self.config[device_type].items:
                 if device_config["name"] == name:
-                    return (device_type, device_id)
-        return None, None
+                    devices.append((device_type, device_id))
+        return devices
 
     # thanks EnumValue
     # facility EnumValue to native string

@@ -231,8 +231,8 @@ class WindowController():
             for device_id in self.config[device_type]:
                 self.init_device(device_type, device_id)
 
-        self.load_application_list('sink-inputs')
-        self.load_application_list('source-outputs')
+        GLib.idle_add(self.load_application_list, 'sink-inputs')
+        GLib.idle_add(self.load_application_list, 'source-outputs')
 
         builder = self.main_window.builder
         builder.connect_signals(window)
@@ -323,8 +323,5 @@ class WindowController():
         else:
             self.client.stop_callbacks()
             self.client.stop_listen()
-        for device_type in self.devices:
-            for device_id, device in self.devices[device_type].items():
-                device.vumeter.close()
 
         Gtk.main_quit()
