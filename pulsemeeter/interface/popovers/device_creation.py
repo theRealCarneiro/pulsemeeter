@@ -15,6 +15,7 @@ LOG = logging.getLogger("generic")
 
 class DeviceCreationPopOver:
     def __init__(self, client, device_type, device_id=None):
+        self.active_index = 0
         builder = Gtk.Builder()
         self.config = client.config
         self.dtype = 'hardware' if device_type in ['hi', 'a'] else 'virtual'
