@@ -1066,16 +1066,21 @@ class AudioServer(Server):
             val = 153
         # get channel number
         # chann = int(cmd(f'pmctl get-{stream_type}-chann {id}'))
-        chann = 2
 
         # set volume object
-        volume = self.pulse_socket.volume_info(val / 100, chann)
-        id = int(id)
 
         if stream_type == 'sink-input':
-            self.pulse_socket.pulsectl.sink_input_volume_set(id, volume)
+            index = int(id)
+            device = self.pulsectl.sink_input_info(index)
+            chann = len(device.volume.values)
+            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+            self.pulsectl.sink_input_volume_set(index, volume)
         else:
-            self.pulse_socket.pulsectl.source_output_volume_set(id, volume)
+            index = int(id)
+            device = self.pulsectl.source_output_info(index)
+            chann = len(device.volume.values)
+            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+            self.pulsectl.source_output_volume_set(index, volume)
 
         return f'app-volume {id} {val} {stream_type}'
 

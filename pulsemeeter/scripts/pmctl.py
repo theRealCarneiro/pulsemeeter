@@ -1,5 +1,6 @@
 import pulsemeeter.scripts.patojson as patojson
 import subprocess
+import pulsectl
 # import traceback
 import logging
 import json
@@ -7,6 +8,7 @@ import sys
 import os
 
 LOG = logging.getLogger('generic')
+PULSE = pulsectl.Pulse('pmctl')
 
 
 # todo: channel mapping
@@ -97,6 +99,36 @@ def rnnoise(status, name, sink_name, control,
     return command
 
 
+def list_sinks(hardware=False, virtual=False, all=False):
+    device_list = []
+    if hardware is True:
+        for device in PULSE.sink_list():
+
+            # 0x0004 is PA_SINK_HARDWARE
+            if device.flags & 0x0004:
+                device_list.append(device)
+
+    return device_list
+
+
+def list_sources(hardware=False, virtual=False):
+    pulse_devices = PULSE.source_list()
+    device_list = []
+    if hardware is True or virtual is True:
+        for device in pulse_devices:
+
+            # 0x0004 is PA_SINK_HARDWARE
+            if device.flags & 0x0004:
+                if hardware and device.proplist['device.class'] != 'monitor':
+                    device_list.append(device)
+            elif virtual:
+                device_list.append(device)
+    else:
+        device_list = pulse_devices
+
+    return device_list
+
+
 def list_devices(device_type, hardware=False, virtual=False, all=False):
     '''
     returns json of hardware devices.
@@ -148,6 +180,62 @@ def listobj(device_type, device_name=None):
         devices = []
 
     return devices
+
+
+def list_sink_inputs(index=None):
+    si_list = PULSE.sink_input_list()
+    if index is not None:
+        si_list = [PULSE.sink_input_info(index)]
+
+    app_list = []
+    for app in si_list:
+
+        # filter pavu and pm peak sinks
+        if ('application.name' not in app.proplist or
+            '_peak' in app.proplist['application.name'] or
+            'application.id' in app.proplist and
+                app.proplist['application.id'] == 'org.PulseAudio.pavucontrol'):
+            continue
+
+        # some apps don't have icons
+        if 'application.icon_name' not in app.proplist:
+            app.proplist['application.icon_name'] = 'audio-card'
+
+        index = app.index
+        icon = app.proplist['application.icon_name']
+        label = app.proplist['application.name']
+        volume = int(app.volume.values[0] * 100)
+        device = PULSE.sink_info(app.sink)
+        app_list.append((index, label, icon, volume, device))
+    return app_list
+
+
+def list_source_outputs(index=None):
+    si_list = PULSE.source_output_list()
+    if index is not None:
+        si_list = [PULSE.source_output_info(index)]
+
+    app_list = []
+    for app in si_list:
+
+        # filter pavu and pm peak sinks
+        if ('application.name' not in app.proplist or
+            '_peak' in app.proplist['application.name'] or
+            'application.id' in app.proplist and
+                app.proplist['application.id'] == 'org.PulseAudio.pavucontrol'):
+            continue
+
+        # some apps don't have icons
+        if 'application.icon_name' not in app.proplist:
+            app.proplist['application.icon_name'] = 'audio-card'
+
+        index = app.index
+        icon = app.proplist['application.icon_name']
+        label = app.proplist['application.name']
+        volume = int(app.volume.values[0] * 100)
+        device = PULSE.source_info(app.source)
+        app_list.append((index, label, icon, volume, device))
+    return app_list
 
 
 def get_app_list(device_type, index=None):

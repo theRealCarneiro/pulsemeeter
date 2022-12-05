@@ -341,8 +341,14 @@ class AudioClient(Client):
 
         return devices
 
+    def list_sink_inputs(index=None):
+        return pmctl.list_sink_inputs(index=None)
+
     def get_app_list(self, device_type, app_id=None):
-        return pmctl.get_app_list(device_type, app_id)
+        if device_type == 'sink-inputs':
+            return pmctl.list_sink_inputs(app_id)
+
+        return pmctl.list_source_outputs(app_id)
 
     def set_port_map(self, input_type, input_id, output, port_map):
         port_map = json.dumps(port_map).replace(" ", "")
