@@ -1069,18 +1069,24 @@ class AudioServer(Server):
 
         # set volume object
 
-        if stream_type == 'sink-input':
-            index = int(id)
-            device = self.pulsectl.sink_input_info(index)
-            chann = len(device.volume.values)
-            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
-            self.pulsectl.sink_input_volume_set(index, volume)
-        else:
-            index = int(id)
-            device = self.pulsectl.source_output_info(index)
-            chann = len(device.volume.values)
-            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
-            self.pulsectl.source_output_volume_set(index, volume)
+        try:
+            if stream_type == 'sink-input':
+                index = int(id)
+                device = self.pulsectl.sink_input_info(index)
+                chann = len(device.volume.values)
+                volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+                self.pulsectl.sink_input_volume_set(index, volume)
+            else:
+                index = int(id)
+                device = self.pulsectl.source_output_info(index)
+                chann = len(device.volume.values)
+                volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+                self.pulsectl.source_output_volume_set(index, volume)
+
+        # trying to change volume of a device that just desapears
+        # better to just ignore it, nothing bad comes from doing so
+        except pulsectl.PulseIndexError:
+            LOG.debug(f'Device #{id} already removed')
 
         return f'app-volume {id} {val} {stream_type}'
 
