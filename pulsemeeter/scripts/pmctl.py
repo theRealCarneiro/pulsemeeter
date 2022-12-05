@@ -206,7 +206,7 @@ def list_sink_inputs(index=None):
         label = app.proplist['application.name']
         volume = int(app.volume.values[0] * 100)
         device = PULSE.sink_info(app.sink)
-        app_list.append((index, label, icon, volume, device))
+        app_list.append((index, label, icon, volume, device.name))
     return app_list
 
 
@@ -234,7 +234,7 @@ def list_source_outputs(index=None):
         label = app.proplist['application.name']
         volume = int(app.volume.values[0] * 100)
         device = PULSE.source_info(app.source)
-        app_list.append((index, label, icon, volume, device))
+        app_list.append((index, label, icon, volume, device.name))
     return app_list
 
 

@@ -33,6 +33,9 @@ class App(Gtk.VBox):
 
         devices_config = client.config['vi' if device_type == 'sink-inputs' else 'b']
         dev_list = [item['name'] for key, item in devices_config.items()]
+        if device_type == 'source-outputs':
+            for key, item in client.config['vi'].items():
+                dev_list.append(item['name'] + '.monitor')
 
         for dev in dev_list:
             combobox.append_text(dev)

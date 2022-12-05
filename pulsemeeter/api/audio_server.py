@@ -1091,8 +1091,13 @@ class AudioServer(Server):
         return f'app-volume {id} {val} {stream_type}'
 
     def move_app_device(self, app, name, stream_type):
-        command = f'pmctl move-{stream_type} {app} {name}'
-        os.popen(command)
+        if stream_type == 'sink-input':
+            sink = self.pulsectl.get_sink_by_name(name)
+            self.pulsectl.sink_input_move(int(app), sink.index)
+        else:
+            source = self.pulsectl.get_source_by_name(name)
+            self.pulsectl.source_output_move(int(app), source.index)
+
         return f'app {app} {name} {stream_type}'
 
     def read_config(self):
