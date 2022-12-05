@@ -56,6 +56,7 @@ class DeviceCreationPopOver:
 
         # get device list
         self.devices = pmctl.list_devices(devt)[self.device_type]
+        i = None
         for i in range(len(self.devices)):
             name = self.devices[i]['name']
             desc = self.devices[i]['properties']['device.description']
@@ -65,7 +66,8 @@ class DeviceCreationPopOver:
             if self.device_id is not None and active_name == name:
                 self.device_combobox.set_active(i)
 
-        self.active_index = i
+        if i:
+            self.active_index = i
 
     def create_port_list(self):
         device_type = self.device_type
