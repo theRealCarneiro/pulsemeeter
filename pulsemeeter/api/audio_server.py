@@ -1091,12 +1091,17 @@ class AudioServer(Server):
         return f'app-volume {id} {val} {stream_type}'
 
     def move_app_device(self, app, name, stream_type):
-        if stream_type == 'sink-input':
-            sink = self.pulsectl.get_sink_by_name(name)
-            self.pulsectl.sink_input_move(int(app), sink.index)
-        else:
-            source = self.pulsectl.get_source_by_name(name)
-            self.pulsectl.source_output_move(int(app), source.index)
+        try:
+            if stream_type == 'sink-input':
+                sink = self.pulsectl.get_sink_by_name(name)
+                self.pulsectl.sink_input_move(int(app), sink.index)
+            else:
+                source = self.pulsectl.get_source_by_name(name)
+                self.pulsectl.source_output_move(int(app), source.index)
+
+        # some apps have DONT MOVE flag, the app will crash
+        except pulsectl.PulseOperationFailed:
+            LOG.debug(f'Device #{app} cant be moved')
 
         return f'app {app} {name} {stream_type}'
 
