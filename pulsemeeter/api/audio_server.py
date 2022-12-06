@@ -78,7 +78,6 @@ class AudioServer(Server):
 
                     case 'audio_server':
                         ret_message, notify_all = self.handle_pulsectl(command), True
-                        print(ret_message)
                         if not ret_message:
                             continue
 
@@ -855,7 +854,6 @@ class AudioServer(Server):
             new_device["rnnoise_name"] = ""
             new_device["rnnoise_control"] = 95
             new_device["rnnoise_latency"] = 200
-            new_device["channels"] = 1
 
         elif device_type == "a":
             new_device["name"] = j['device']
@@ -868,27 +866,25 @@ class AudioServer(Server):
             new_device["eq_control"] = ""
             new_device["eq_name"] = ""
             new_device["eq"] = False
-            new_device["channels"] = 2
 
         elif device_type == "vi":
             new_device["name"] = j['name']
             new_device["primary"] = False
             new_device["external"] = j['external']
+            new_device["channels"] = j['channels']
             new_device["mute"] = False
             new_device["vol"] = 100
-            new_device["channels"] = 2
 
         elif device_type == "b":
             new_device["name"] = j['name']
             new_device["external"] = j['external']
             new_device["primary"] = False
+            new_device["channels"] = j['channels']
             new_device["vol"] = 100
             new_device["mute"] = False
             new_device["eq_control"] = ""
             new_device["eq_name"] = ""
             new_device["eq"] = False
-            new_device["channels"] = 1
-            new_device["channel_map"] = "1"
 
         # generate connections for THIS device
         if device_type in ("vi", "hi"):
