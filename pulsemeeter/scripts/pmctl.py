@@ -187,7 +187,11 @@ def list_sink_inputs(index=None):
     PULSE = pulsectl.Pulse()
     si_list = PULSE.sink_input_list()
     if index is not None:
-        si_list = [PULSE.sink_input_info(index)]
+        try:
+            device = PULSE.sink_input_info(index)
+        except pulsectl.PulseIndexError:
+            return []
+        si_list = [device]
 
     app_list = []
     for app in si_list:
@@ -216,7 +220,11 @@ def list_source_outputs(index=None):
     PULSE = pulsectl.Pulse()
     si_list = PULSE.source_output_list()
     if index is not None:
-        si_list = [PULSE.source_output_info(index)]
+        try:
+            device = PULSE.source_output_info(index)
+        except pulsectl.PulseIndexError:
+            return []
+        si_list = [device]
 
     app_list = []
     for app in si_list:
