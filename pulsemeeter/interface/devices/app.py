@@ -9,9 +9,9 @@ LOG = logging.getLogger("generic")
 
 class App(Gtk.VBox):
 
-    def __init__(self, client, aid, label, icon, volume, device, device_type):
+    def __init__(self, client, index, label, icon, volume, device, device_type):
         self.client = client
-        self.id = aid
+        self.id = index
         self.label = label
         self.icon = icon
         self.volume = volume
@@ -40,10 +40,10 @@ class App(Gtk.VBox):
         for dev in dev_list:
             combobox.append_text(dev)
         try:
-            index = dev_list.index(device)
+            i = dev_list.index(device)
         except Exception:
-            index = 0
-        combobox.set_active(index)
+            i = 0
+        combobox.set_active(i)
         self.combobox = combobox
 
         value = int(volume)
@@ -88,11 +88,11 @@ class App(Gtk.VBox):
         Gets called whenever a new device gets selected in the combobox
         """
         name = combobox.get_active_text()
-        self.client.move_app_device(self.id, name, self.device_type[:-1])
+        self.client.move_app_device(self.id, name, self.device_type)
 
     def volume_change(self, slider):
         """
         Gets called whenever an app volume slider changes
         """
         val = slider.get_value()
-        self.client.set_app_volume(self.id, int(val), self.device_type[:-1])
+        self.client.set_app_volume(self.id, int(val), self.device_type)

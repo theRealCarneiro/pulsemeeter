@@ -64,9 +64,9 @@ class WindowController():
 
         for index, label, icon, volume, device in app_list:
 
-            app = App(self.client, int(index), label, icon, volume, device, device_type)
+            app = App(self.client, index, label, icon, volume, device, device_type)
             app.show_all()
-            self.app_list[device_type][int(index)] = app
+            self.app_list[device_type][index] = app
             self.main_window.add_app(app, device_type)
 
     def remove_application(self, device_type, index=None):

@@ -171,9 +171,9 @@ class AudioServer(Server):
 
             return (ret_msg, notify)
 
-        # except TypeError:
-            # LOG.error('invalid number of arguments')
-            # return None
+        except TypeError:
+            LOG.error('invalid number of arguments')
+            return None
 
         except KeyError as ex:
             LOG.error(f"command \'{command}\' not found {ex}")
@@ -1068,7 +1068,7 @@ class AudioServer(Server):
         # set volume object
 
         try:
-            if stream_type == 'sink-input':
+            if stream_type == 'sink_input':
                 index = int(id)
                 device = self.pulsectl.sink_input_info(index)
                 chann = len(device.volume.values)
@@ -1090,7 +1090,7 @@ class AudioServer(Server):
 
     def move_app_device(self, app, name, stream_type):
         try:
-            if stream_type == 'sink-input':
+            if stream_type == 'sink_input':
                 sink = self.pulsectl.get_sink_by_name(name)
                 self.pulsectl.sink_input_move(int(app), sink.index)
             else:
@@ -1312,21 +1312,21 @@ class AudioServer(Server):
                 'regex': '(a|b|hi|vi) [0-9]+ [+-]?[0-9]+$'
             },
 
-            # ARGS: id vol [sink-input|source-output]
+            # ARGS: id vol [sink_input|source_output]
             # vol can ONLY be an absolute number from 0 to 153
             'app-volume': {
                 'function': self.app_volume,
                 'notify': True,
                 'save_config': False,
-                'regex': '[0-9]+ [0-9]+ (sink-input|source-output)$'
+                'regex': '[0-9]+ [0-9]+ (sink_input|source_output)$'
             },
 
-            # ARGS: id device [sink-input|source-output]
+            # ARGS: id device [sink_input|source_output]
             'move-app-device': {
                 'function': self.move_app_device,
                 'notify': True,
                 'save_config': False,
-                'regex': r'[0-9]+ \w([\w\.-]+)? (sink-input|source-output)$'
+                'regex': r'[0-9]+ \w([\w\.-]+)? (sink_input|source_output)$'
             },
 
             'port-map': {
