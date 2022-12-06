@@ -52,8 +52,8 @@ class MinimalDevice(Gtk.Grid):
         self.settings.connect('pressed', self.creation_popover.edit_popup)
 
         if self.config['enable_vumeters']:
-            self.vumeter.start()
-            # GLib.idle_add(self.vumeter.start)
+            # self.vumeter.start()
+            GLib.idle_add(self.vumeter.start)
 
     def create_route_buttons(self):
         """

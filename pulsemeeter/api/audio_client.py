@@ -190,7 +190,6 @@ class AudioClient(Client):
         command = f'mute {device_type} {device_id}'
         if state is not None: command += f' {state}'
 
-        # print('config: ', self.config[device_type][device_id]['mute'], 'new: ', state)
         if self.config[device_type][device_id]['mute'] == state:
             return
         return self.send_command(command)
@@ -275,7 +274,6 @@ class AudioClient(Client):
                     return
 
         command = f'volume {device_type} {device_id} {vol}'
-        # print(command)
 
         return self.send_command(command)
 
@@ -345,7 +343,7 @@ class AudioClient(Client):
         return pmctl.list_sink_inputs(index=None)
 
     def get_app_list(self, device_type, app_id=None):
-        if device_type == 'sink-inputs':
+        if device_type == 'sink_input':
             return pmctl.list_sink_inputs(app_id)
 
         return pmctl.list_source_outputs(app_id)

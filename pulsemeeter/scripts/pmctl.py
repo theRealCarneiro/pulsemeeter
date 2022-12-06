@@ -184,14 +184,16 @@ def listobj(device_type, device_name=None):
 
 
 def list_sink_inputs(index=None):
+    si_list = None
     PULSE = pulsectl.Pulse()
-    si_list = PULSE.sink_input_list()
     if index is not None:
         try:
             device = PULSE.sink_input_info(index)
         except pulsectl.PulseIndexError:
             return []
         si_list = [device]
+    else:
+        si_list = PULSE.sink_input_list()
 
     app_list = []
     for app in si_list:
@@ -218,13 +220,14 @@ def list_sink_inputs(index=None):
 
 def list_source_outputs(index=None):
     PULSE = pulsectl.Pulse()
-    si_list = PULSE.source_output_list()
     if index is not None:
         try:
             device = PULSE.source_output_info(index)
         except pulsectl.PulseIndexError:
             return []
         si_list = [device]
+    else:
+        si_list = PULSE.source_output_list()
 
     app_list = []
     for app in si_list:

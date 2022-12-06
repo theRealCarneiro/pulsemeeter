@@ -25,8 +25,8 @@ class MainWindow():
             "hi": getobj('hardware_input_box'),
             "a": getobj('hardware_output_box'),
             "b": getobj('virtual_output_box'),
-            "sink-inputs": getobj('sink_input_box'),
-            "source-outputs": getobj('source_output_box')
+            "sink_input": getobj('sink_input_box'),
+            "source_output": getobj('source_output_box')
         }
         self.creation_popover = {}
         for device_type in ['hi', 'a', 'vi', 'b']:

@@ -31,9 +31,9 @@ class App(Gtk.VBox):
         combobox.set_hexpand(True)
         combobox.set_margin_right(10)
 
-        devices_config = client.config['vi' if device_type == 'sink-inputs' else 'b']
+        devices_config = client.config['vi' if device_type == 'sink_input' else 'b']
         dev_list = [item['name'] for key, item in devices_config.items()]
-        if device_type == 'source-outputs':
+        if device_type == 'source_output':
             for key, item in client.config['vi'].items():
                 dev_list.append(item['name'] + '.monitor')
 

@@ -25,7 +25,7 @@ class WindowController():
         self.trayonly = trayonly
         self.isserver = isserver
         self.devices = {"vi": {}, "hi": {}, "a": {}, "b": {}}
-        self.app_list = {"sink-inputs": {}, "source-outputs": {}}
+        self.app_list = {"sink_input": {}, "source_output": {}}
         self.client = AudioClient(listen=True)
         self.config = self.client.config
         self.set_client_callbacks()
@@ -63,11 +63,11 @@ class WindowController():
 
         if len(app_list) == 0: return
 
-        for id, label, icon, volume, device in app_list:
+        for index, label, icon, volume, device in app_list:
 
-            app = App(self.client, id, label, icon, volume, device, device_type)
+            app = App(self.client, int(index), label, icon, volume, device, device_type)
             app.show_all()
-            self.app_list[device_type][id] = app
+            self.app_list[device_type][int(index)] = app
             self.main_window.add_app(app, device_type)
 
     def remove_application(self, device_type, index=None):
@@ -84,12 +84,12 @@ class WindowController():
 
     def device_new(self, device_type, id,
             label=None, icon=None, volume=None, device=None):
-        if device_type == 'sink-inputs' or device_type == 'source-outputs':
+        if device_type == 'sink_input' or device_type == 'source_output':
             app_list = None if label is None else [(id, label, icon, volume, device)]
             GLib.idle_add(self.load_application_list, device_type, id, app_list)
 
     def device_remove(self, index, device_type):
-        if device_type == 'sink-inputs' or device_type == 'source-outputs':
+        if device_type == 'sink_input' or device_type == 'source_output':
             GLib.idle_add(self.remove_application, device_type, index)
 
     def connect_click(self, button, event, input_type, input_id,
@@ -232,8 +232,8 @@ class WindowController():
             for device_id in self.config[device_type]:
                 self.init_device(device_type, device_id)
 
-        GLib.idle_add(self.load_application_list, 'sink-inputs')
-        GLib.idle_add(self.load_application_list, 'source-outputs')
+        GLib.idle_add(self.load_application_list, 'sink_input')
+        GLib.idle_add(self.load_application_list, 'source_output')
 
         builder = self.main_window.builder
         builder.connect_signals(window)

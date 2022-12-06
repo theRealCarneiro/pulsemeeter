@@ -17,7 +17,7 @@ class PulseSocket():
 
     def __init__(self, command_queue, config):
         self.pulsectl_asyncio = pulsectl_asyncio.PulseAsync('pulsemeeter-listener')
-        self.pulsectl = pulsectl.Pulse('pulsemeeter')
+        self.pulsectl = pulsectl.Pulse('pulse-socket')
 
         self.command_queue = command_queue
         self.config = config
@@ -61,12 +61,13 @@ class PulseSocket():
                     if 'selected_channels' in device_config:
                         device_volume = config_volume
                         dv = device.volume.values
-                        for i in range(device_config['selected_channels']):
+                        for i in range(len(device_config['selected_channels'])):
 
                             # check if selected port has updated it's volume
-                            if device_config['selected_channels'] is True:
-                                if config_volume != dv[i]:
-                                    device_volume = dv[i]
+                            if device_config['selected_channels'][i] is True:
+                                channel_vol = int(dv[i] * 100)
+                                if config_volume != channel_vol:
+                                    device_volume = channel_vol
 
                     if config_volume != device_volume:
                         command = f'volume {device_type} {device_id} {device_volume}'
@@ -87,6 +88,7 @@ class PulseSocket():
             index = event.index
             facility = self._fa_enum_to_string(event.facility)
             if facility in ['sink_input', 'source_output']:
+                # print(event)
                 if event.t == 'new':
                     command = f'device-plugged-in {index} {facility}'
                 elif event.t == 'remove':
@@ -106,9 +108,9 @@ class PulseSocket():
         - device_type
         - device_id
         """
+        devices = []
         for device_type in ['a', 'b', 'hi', 'vi']:
-            devices = []
-            for device_id, device_config in self.config[device_type].items:
+            for device_id, device_config in self.config[device_type].items():
                 if device_config["name"] == name:
                     devices.append((device_type, device_id))
         return devices
@@ -135,7 +137,7 @@ class PulseSocket():
         elif event.facility == 'source':
             dev_list = await self.pulsectl_asyncio.source_list()
         else:
-            return
+            return None
 
         for device in dev_list:
             if device.index == event.index:
