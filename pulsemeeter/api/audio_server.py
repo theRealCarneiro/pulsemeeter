@@ -78,6 +78,7 @@ class AudioServer(Server):
 
                     case 'audio_server':
                         ret_message, notify_all = self.handle_pulsectl(command), True
+                        print(ret_message)
                         if not ret_message:
                             continue
 
@@ -120,7 +121,10 @@ class AudioServer(Server):
         if (command == 'device-plugged-in'):
 
             # if list len is 0, it will just skip to return None
-            app_list = pmctl.get_app_list(device_type, id)
+            if device_type == 'sink_input':
+                app_list = pmctl.list_sink_inputs(int(id))
+            else:
+                app_list = pmctl.list_source_outputs(int(id))
             if len(app_list) == 0: return None
 
             id, label, icon, volume, device = app_list[0]

@@ -70,15 +70,16 @@ class WindowController():
             self.app_list[device_type][id] = app
             self.main_window.add_app(app, device_type)
 
-    def remove_application(self, device_type, id=None):
+    def remove_application(self, device_type, index=None):
         # remove all apps (probably never gonna use it, but still)
-        if id is None:
+        if index is None:
             for id, app in self.app_list[device_type].items():
                 self.main_window.remove_app(app, device_type)
 
+        index = int(index)
         # remove a single app
-        if id in self.app_list[device_type]:
-            app = self.app_list[device_type][id]
+        if index in self.app_list[device_type]:
+            app = self.app_list[device_type][index]
             self.main_window.remove_app(app, device_type)
 
     def device_new(self, device_type, id,
