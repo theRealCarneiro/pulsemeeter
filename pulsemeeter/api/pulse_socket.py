@@ -88,7 +88,6 @@ class PulseSocket():
             index = event.index
             facility = self._fa_enum_to_string(event.facility)
             if facility in ['sink_input', 'source_output']:
-                # print(event)
                 if event.t == 'new':
                     command = f'device-plugged-in {index} {facility}'
                 elif event.t == 'remove':

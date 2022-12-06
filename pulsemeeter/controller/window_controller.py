@@ -49,7 +49,7 @@ class WindowController():
         self.devices[device_type][device_id] = device
         self.main_window.init_device(device_type, device)
 
-    def load_application_list(self, device_type, id=None, app_list=None):
+    def load_application_list(self, device_type, id=None):
         """
         Load apps into app list
         """
@@ -58,8 +58,7 @@ class WindowController():
             # self.main_window.add_app(app, device_type)
             # return
 
-        if app_list is None:
-            app_list = self.client.get_app_list(device_type, id)
+        app_list = self.client.get_app_list(device_type, id)
 
         if len(app_list) == 0: return
 
@@ -82,11 +81,9 @@ class WindowController():
             app = self.app_list[device_type][index]
             self.main_window.remove_app(app, device_type)
 
-    def device_new(self, device_type, id,
-            label=None, icon=None, volume=None, device=None):
-        if device_type == 'sink_input' or device_type == 'source_output':
-            app_list = None if label is None else [(id, label, icon, volume, device)]
-            GLib.idle_add(self.load_application_list, device_type, id, app_list)
+    def device_new(self, index, device_type):
+        if device_type in ['sink_input', 'source_output']:
+            GLib.idle_add(self.load_application_list, device_type, int(index))
 
     def device_remove(self, index, device_type):
         if device_type == 'sink_input' or device_type == 'source_output':

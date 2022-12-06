@@ -188,7 +188,7 @@ def list_sink_inputs(index=None):
     PULSE = pulsectl.Pulse()
     if index is not None:
         try:
-            device = PULSE.sink_input_info(index)
+            device = PULSE.sink_input_info(int(index))
         except pulsectl.PulseIndexError:
             return []
         si_list = [device]
@@ -222,7 +222,7 @@ def list_source_outputs(index=None):
     PULSE = pulsectl.Pulse()
     if index is not None:
         try:
-            device = PULSE.source_output_info(index)
+            device = PULSE.source_output_info(int(index))
         except pulsectl.PulseIndexError:
             return []
         si_list = [device]
@@ -250,44 +250,6 @@ def list_source_outputs(index=None):
         device = PULSE.source_info(app.source)
         app_list.append((index, label, icon, volume, device.name))
     return app_list
-
-
-def get_app_list(device_type, index=None):
-    app_list = listobj(device_type)
-    obj_list = []
-    for i in app_list:
-
-        if index is not None and str(index) != str(i['index']):
-            continue
-
-        if index is None:
-            id = i['index']
-        else:
-            id = index
-
-        if (('application.name' not in i['properties']) or
-            ('_peak' in i['properties']['application.name']) or
-            ('application.id' in i['properties']) and
-                (i['properties']['application.id'] == 'org.PulseAudio.pavucontrol')):
-            continue
-
-        if 'application.icon_name' not in i['properties']:
-            i['properties']['application.icon_name'] = 'audio-card'
-
-        i['volume'] = int(i['volume'][next(iter(i['volume']))]['value_percent'].strip('%'))
-        icon = i['properties']['application.icon_name']
-        label = i['properties']['application.name']
-        volume = i['volume']
-
-        if 'device' not in i:
-            d = 'sinks' if device_type == 'sink-inputs' else 'sources'
-            device = cmd(f'pmctl get-device-by-id {d} {i[d[:-1]]}')
-        else:
-            device = i['device']
-
-        obj_list.append((id, label, icon, volume, device))
-
-    return obj_list
 
 
 def get_ports(device, device_type):

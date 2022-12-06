@@ -77,10 +77,11 @@ class AudioServer(Server):
                         ret_message, notify_all = self.handle_command(command)
 
                     case 'audio_server':
-                        ret_message, notify_all = self.handle_pulsectl(command), True
-                        print(ret_message)
-                        if not ret_message:
-                            continue
+                        # ret_message, notify_all = self.handle_pulsectl(command), True
+                        ret_message, notify_all = command, True
+                        # print(ret_message)
+                        # if not ret_message:
+                            # continue
 
                     case 'exit':
                         ret_message, notify_all = 'exit', True
@@ -124,7 +125,7 @@ class AudioServer(Server):
             if len(app_list) == 0: return None
 
             index, label, icon, volume, device = app_list[0]
-            return f'{command} {device_type} {index} {label} {icon} {volume} {device}'
+            return f'{command} {device_type}~{index}~{label}~{icon}~{volume}~{device}'
 
         return f'{command} {index} {device_type}'
 
