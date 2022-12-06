@@ -8,7 +8,6 @@ import sys
 import os
 
 LOG = logging.getLogger('generic')
-PULSE = pulsectl.Pulse('pmctl')
 
 
 # todo: channel mapping
@@ -100,6 +99,7 @@ def rnnoise(status, name, sink_name, control,
 
 
 def list_sinks(hardware=False, virtual=False, all=False):
+    PULSE = pulsectl.Pulse()
     device_list = []
     if hardware is True:
         for device in PULSE.sink_list():
@@ -112,6 +112,7 @@ def list_sinks(hardware=False, virtual=False, all=False):
 
 
 def list_sources(hardware=False, virtual=False):
+    PULSE = pulsectl.Pulse()
     pulse_devices = PULSE.source_list()
     device_list = []
     if hardware is True or virtual is True:
@@ -183,6 +184,7 @@ def listobj(device_type, device_name=None):
 
 
 def list_sink_inputs(index=None):
+    PULSE = pulsectl.Pulse()
     si_list = PULSE.sink_input_list()
     if index is not None:
         si_list = [PULSE.sink_input_info(index)]
@@ -211,6 +213,7 @@ def list_sink_inputs(index=None):
 
 
 def list_source_outputs(index=None):
+    PULSE = pulsectl.Pulse()
     si_list = PULSE.source_output_list()
     if index is not None:
         si_list = [PULSE.source_output_info(index)]
