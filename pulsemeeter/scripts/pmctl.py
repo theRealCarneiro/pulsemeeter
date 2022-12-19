@@ -3,7 +3,6 @@ import subprocess
 import pulsectl
 # import traceback
 import logging
-import json
 import sys
 import os
 
@@ -60,20 +59,22 @@ def disconnect(input, output, run_command=False):
     return command
 
 
-def mute(device_type, device, state, run_command=False):
+def mute(device_type, name, state, pulse=None):
 
-    command = f'pmctl mute {device_type} {device} {state}\n'
+    info = pulse.get_sink_by_name if device_type == 'sink' else pulse.source_by_name
+    device = info(name)
+    pulse.mute(device, state)
 
-    if run_command is True: os.popen(command)
-    return command
+    return 0
 
 
-def set_primary(device_type, device_name, run_command=False):
+def set_primary(device_type, name, pulse=None):
 
-    command = f'pmctl set-primary {device_type} {device_name}\n'
+    info = pulse.get_sink_by_name if device_type == 'sink' else pulse.source_by_name
+    device = info(name)
+    pulse.default_set(device)
 
-    if run_command: os.popen(command)
-    return command
+    return 0
 
 
 def ladspa(status, device_type, name, sink_name, label, plugin, control,
@@ -128,59 +129,6 @@ def list_sources(hardware=False, virtual=False):
         device_list = pulse_devices
 
     return device_list
-
-
-def list_devices(device_type, hardware=False, virtual=False, all=False):
-    '''
-    returns json of hardware devices.
-    '''
-
-    devl = listobj(device_type)
-
-    # all for for returning the entire json
-    if all: return devl
-
-    devices = {}
-
-    h, v = ('a', 'vi') if device_type == 'sinks' else ('hi', 'b')
-
-    devices[h] = []
-    devices[v] = []
-
-    for i in devl:
-        if 'HARDWARE' in i['flags']:
-            devices[h].append(i)
-        else:
-            devices[v].append(i)
-
-    if hardware is True:
-        return devices[h]
-
-    if virtual is True:
-        return devices[v]
-
-    return devices
-
-
-def listobj(device_type, device_name=None):
-    command = f'pmctl list {device_type}'
-
-    try:
-        # devices = patojson.get_devices(device_type)
-        if get_pactl_version() < 16:
-            devices = patojson.get_devices(device_type)
-        else:
-            devices = json.loads(cmd(command))
-
-        if device_name is not None:
-            for i in devices:
-                if i['name'] == device_name:
-                    devices = i
-                    break
-    except Exception:
-        devices = []
-
-    return devices
 
 
 def list_sink_inputs(index=None):
@@ -252,29 +200,8 @@ def list_source_outputs(index=None):
     return app_list
 
 
-def get_ports(device, device_type):
-    return cmd(f'pmctl get-ports {device_type} {device}').split('\n')
-
-
 def get_pactl_version():
     return int(cmd('pmctl get-pactl-version'))
-
-
-def get_stream_volume(stream_type, app_id):
-    return int(cmd(f'pmctl get-{stream_type}-volume {app_id}'))
-
-
-def subscribe():
-    command = ['pactl', 'subscribe']
-    sys.stdout.flush()
-    env = os.environ
-    env['LC_ALL'] = 'C'
-    sub_proc = subprocess.Popen(command, env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True)
-
-    return sub_proc
 
 
 def cmd(command):

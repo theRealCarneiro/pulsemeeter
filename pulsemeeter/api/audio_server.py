@@ -799,26 +799,15 @@ class AudioServer(Server):
         name = device_config['name']
         if name == '': return
 
-        # set device type
-        device = 'sink' if device_type in ('a', 'vi') else 'source'
-
         # if a state is None, toggle it
-        if state is None:
-            state = not device_config['mute']
-        else:
-            state = str2bool(state)
-
-        # save setting
+        state = not device_config['mute'] if state is None else str2bool(state)
         device_config['mute'] = state
 
-        conn_status = 1 if state else 0
-        command = pmctl.mute(device, name, conn_status)
+        device = 'sink' if device_type in ('a', 'vi') else 'source'
+        msg = pmctl.mute(device, name, state, self.pulsectl)
 
-        if run_command:
-            LOG.debug(command)
-            os.popen(command)
-            return f'mute {device_type} {device_id} {state}'
-        return command
+        LOG.debug(msg)
+        return msg
 
     # create a new device (slot)
     def create_device(self, device_type, j):
@@ -975,11 +964,8 @@ class AudioServer(Server):
             self.config[device_type][i]['primary'] = False if i != device_id else True
 
         device = 'sink' if device_type == 'vi' else 'source'
-        command = pmctl.set_primary(device, name)
-        if run_command:
-            os.popen(command)
-            return f'primary {device_type} {device_id}'
-        return command
+        pmctl.set_primary(device, name)
+        return f'primary {device_type} {device_id}'
 
     def volume(self, device_type, device_id, val):
         device_config = self.config[device_type][device_id]
