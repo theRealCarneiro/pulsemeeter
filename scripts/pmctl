@@ -6,7 +6,7 @@ init (){
 	local channels="$3"
 
 	# pulse
-	if [ $is_pulse = true ]; then
+	if [ $ISPULSE = true ]; then
 		case $device_type in
 			"sink")
 				pactl list sinks short >/dev/null 2>&1 | grep $device && exit
@@ -18,10 +18,12 @@ init (){
 
 			"source")
 				pactl list sources short >/dev/null 2>&1 | grep $device && exit
-				pactl load-module module-null-sink sink_name=$device"device" >/dev/null 2>&1 ||
+				pactl load-module module-null-sink sink_name=$device"_sink" >/dev/null 2>&1 ||
 					printf "Error creating virtual output sink $device\n" >&2
 
-				pactl load-module module-remap-source source_name=$device master=$device"_sink.monitor" source_properties=device.description=$device 2>/dev/null || 
+				pactl load-module module-remap-source source_name=$device \
+					master=$device"_sink.monitor" \
+					source_properties=device.description=$device 2>/dev/null || 
 				printf "Error creating virtual output $device\n" >&2
 			;;
 		esac
@@ -57,7 +59,7 @@ remove (){
 	local device=$1
 
 	# pulse
-	if [ $is_pulse = true ]; then
+	if [ $ISPULSE = true ]; then
 		index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index 
 		
@@ -78,7 +80,7 @@ connect (){
 	[ -z "$input" -o -z "$output" ] && exit
 
 	# pulse
-	if [ $is_pulse = true ]; then
+	if [ $ISPULSE = true ]; then
 		index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
 			printf "Error disconnecting $input $2 to System:$3\n" >&2
@@ -116,7 +118,7 @@ disconnect (){
 	[ -z "$input" -o -z "$output" ] && exit
 
 	# pulse
-	if [ $is_pulse = true ]; then
+	if [ $ISPULSE = true ]; then
 		index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" | grep Module | sed 's/.*#//g')"
 		[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
 			printf "Error disconnecting $input $2 to System:$3\n" >&2
@@ -156,38 +158,6 @@ mute (){
 	local status=$3
 
 	pactl set-$device_type-mute $device $status
-}
-
-rename () {
-	pacmd update-sink-proplist $1 device.description=$2
-}
-
-
-get_source_by_id() {
-	id=$1
-	LC_ALL=C pactl list sources | grep "Source #$id$" -A 3 | grep 'Name: ' | sed 's/.*: //g'
-}
-
-move_sink_input_master (){
-	local sink_name=$1
-	local master=$2
-	index=$(LC_ALL=C pactl list modules | grep -B 2 "$sink_name m" | grep Module | sed 's/.*#//g')
-	[ -z "$index" ] && exit
-	id=$(LC_ALL=C pactl list sink-inputs | grep -B 2 $index | grep '#' | sed 's/.*#//g')
-	[ -z "$id" ] && exit
-	pactl move-sink-input $id $master
-}
-
-move_sink_input (){
-	app=$1
-	master=$2
-	pactl move-sink-input $app $master
-}
-
-move_source_output () {
-	app=$1
-	master=$2
-	pactl move-source-output $app $master
 }
 
 get_pactl_version () {
@@ -265,7 +235,7 @@ rnnoise() {
 	done
 	
 	[ -z "$found" ] && exit 1
-	if [ $is_pulse = false ]; then
+	if [ $ISPULSE = false ]; then
 		lat_or_map=1
 	fi
 
@@ -318,7 +288,7 @@ ladspa() {
 			sink_name+='_in'
 			channels="channels=$map"
 
-		elif [ $is_pulse = false ]; then
+		elif [ $ISPULSE = false ]; then
 
 			# pipewire wont allow ladspa sinks to connect directly to virtual sources, 
 			# so we need to add a middleground sink
@@ -342,36 +312,10 @@ ladspa() {
 				echo "Error loading $label ladspa sink $sink_name for $master"
 
 
-		[ $is_pulse = false ] && latency=''
+		[ $ISPULSE = false ] && latency=''
 		# we need to connect our source to the filter
-		#[ "$device_type" = "source" ] && connect $input $sink_name '$latency'
+		[ "$device_type" = "source" ] && connect $input $sink_name $latency
 	fi
-}
-
-get_device_by_id (){
-	dev_type=$1
-	id=$2
-	printf "%s" "$(pactl list $dev_type short | grep $id | awk '{print $2}')" 2>/dev/null
-}
-
-get_sink_input_chann_num (){
-	output=$(LC_ALL=C pactl list sink-inputs | grep -e 'Sink Input #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume)
-	printf "%s" "${output//[^%]}" | wc -m
-}
-
-get_source_output_chann_num (){
-	output=$(LC_ALL=C pactl list source-outputs | grep -e 'Source Output #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume)
-	printf "%s" "${output//[^%]}" | wc -m
-}
-
-get_sink_input_volume(){
-	output=$(LC_ALL=C pactl list sink-inputs | grep -e 'Sink Input #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
-	printf "%d" $output 
-}
-
-get_source_output_volume(){
-	output=$(LC_ALL=C pactl list source-outputs | grep -e 'Source Output #' -e 'Volume' | sed 's/.*#//g' | grep $1$ -A 1 | grep Volume | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
-	printf "%d" $output 
 }
 
 if ! pactl info >/dev/null 2>&1; then
@@ -379,109 +323,6 @@ if ! pactl info >/dev/null 2>&1; then
 	exit 1
 fi
 
+which pulseaudio 2>/dev/null 1>&2 && ISPULSE=true || ISPULSE=false
 
-which pulseaudio 2>/dev/null 1>&2 && is_pulse=true || is_pulse=false
-
-case $1 in
-	"init")
-		init $2 $3 "$4"
-	;;
-
-	"set-primary")
-		set_primary $2 $3
-	;;
-
-	"connect") 
-		connect $2 $3 "$4"
-	;;
-
-	"disconnect")
-		disconnect $2 $3 "$4"
-	;;
-
-	"remove")
-		remove $2 $3
-	;;
-
-	"volume")
-		volume $2 $3 $4
-	;;
-
-	"list")
-		list $2
-	;;
-
-	"rename")
-		rename $2 $3
-	;;
-
-	"mute")
-		mute $2 $3 $4
-	;;
-
-	"move_sink_input_master")
-		move_sink_input_master $2 $3
-	;;
-
-	"get-source-by-id")
-		get_source_by_id $2
-	;;
-
-	"eq")
-		eq $2 $3 $4 $5 $6
-	;;
-
-	"compressor")
-		compressor $2 $3 $4
-	;;
-
-	"rnnoise")
-		rnnoise $2 $3 $4 $5 "$6"
-	;;
-
-	"ladspa")
-		ladspa $2 $3 $4 $5 $6 $7 $8 $9
-	;;
-
-	"move-sink-input")
-		move_sink_input $2 $3
-	;;
-
-	"move-source-output")
-		move_source_output $2 $3
-	;;
-
-	"get-sink-input-chann")
-		get_sink_input_chann_num $2
-	;;
-
-	"get-source-output-chann")
-		get_source_output_chann_num $2
-	;;
-
-	"get-sink-input-volume")
-		get_sink_input_volume $2
-	;;
-
-	"get-source-output-volume")
-		get_source_output_volume $2
-	;;
-	"get-port-name")
-		get_port_name $2 $3
-	;;
-
-	"get-ports")
-		get_ports $2 $3
-	;;
-
-	"get-pactl-version")
-		get_pactl_version
-	;;
-
-	"get-device-by-id")
-		get_device_by_id $2 $3
-	;;
-
-	"*") echo "command not found";;
-esac
-
+$@
