@@ -1,62 +1,48 @@
-import pulsemeeter.scripts.patojson as patojson
 import subprocess
 import pulsectl
-# import traceback
 import logging
 import sys
-import os
 
 LOG = logging.getLogger('generic')
 
 
 # todo: channel mapping
-def init(device_type, device, channel_map=None, run_command=False):
-    command = f'pmctl init {device_type} {device} "{channel_map}"\n'
+def init(device_type, device, channel_map=None):
+    command = f'pmctl init {device_type} {device} {channel_map}'
 
-    if run_command is True: os.popen(command)
-    return command
+    ret = runcmd(command)
 
+    if ret == 126:
+        LOG.error('Could not create %s %s', device_type, device)
 
-def remove(device, run_command=False):
-    command = f'pmctl remove {device}\n'
-
-    if run_command is True: os.popen(command)
-    return command
+    return ret
 
 
-def connect(input, output, status=True, latency=200, port_map=None,
-            input_ports=None, output_ports=None, run_command=False):
+def remove(device):
+    command = f'pmctl remove {device}'
+
+    ret = runcmd(command)
+
+    if ret:
+        LOG.error('Could not remove %s', device)
+
+
+def connect(input, output, status=True, latency=200, port_map=None):
 
     command = ''
     conn_status = 'connect' if status else 'disconnect'
 
     # auto port mapping
     if port_map is None:
-        command = f'pmctl {conn_status} {input} {output} {latency}\n'
+        command = f'pmctl {conn_status} {input} {output} {latency}'
 
     # manual port mapping
     else:
-        command = f'pmctl {conn_status} {input} {output} "{port_map}"\n'
+        command = f'pmctl {conn_status} {input} {output} {port_map}'
 
-    if run_command is True: os.popen(command)
-    return command
+    ret = runcmd(command, 4)
 
-
-def disconnect(input, output, run_command=False):
-
-    if type(input) == str:
-        input = [input]
-
-    if type(output) == str:
-        output = [output]
-
-    command = ''
-    for i in input:
-        for o in output:
-            command += f'pmctl disconnect {i} {o}\n'
-
-    if run_command is True: os.popen(command)
-    return command
+    return ret
 
 
 def mute(device_type, name, state, pulse=None):
@@ -78,25 +64,23 @@ def set_primary(device_type, name, pulse=None):
 
 
 def ladspa(status, device_type, name, sink_name, label, plugin, control,
-        chann_or_lat, channel_map=None, run_command=False):
+        chann_or_lat, channel_map=None):
 
     status = 'connect' if status else 'disconnect'
 
-    command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}\n'
+    command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}'
 
-    if run_command: os.popen(command)
-    return command
+    runcmd(command)
 
 
 def rnnoise(status, name, sink_name, control,
-        chann_or_lat, run_command=False):
+        chann_or_lat):
 
     status = 'connect' if status else 'disconnect'
 
-    command = f'pmctl rnnoise {sink_name} {name} {control} {status} "{chann_or_lat}"\n'
+    command = f'pmctl rnnoise {sink_name} {name} {control} {status} "{chann_or_lat}"'
 
-    if run_command: os.popen(command)
-    return command
+    runcmd(command)
 
 
 def list_sinks(hardware=False, virtual=False, all=False):
@@ -213,6 +197,14 @@ def cmd(command):
     if p.returncode:
         LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
     return stdout.decode()
+
+
+def runcmd(command: str, split_size: int = -1):
+    LOG.debug(command)
+    command = command.split(' ', split_size)
+    process = subprocess.Popen(command)
+    process.wait()
+    return process.returncode
 
 
 # def main():

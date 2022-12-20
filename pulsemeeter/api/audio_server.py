@@ -44,6 +44,14 @@ class AudioServer(Server):
         self.exit_flag = False
         if init_server: self.start_server()
 
+    def init_audio(self):
+        self.start_sinks()
+        self.start_sources()
+        self.start_eqs()
+        self.start_rnnoise()
+        self.start_connections()
+        self.start_primarys()
+
     def start_server(self, daemon=False):
 
         # start audio devices and connections
@@ -179,17 +187,6 @@ class AudioServer(Server):
             LOG.error(f"command \'{command}\' not found {ex}")
             return None
 
-    def init_audio(self):
-        command = ''
-        command += self.start_sinks()
-        command += self.start_sources()
-        command += self.start_eqs()
-        command += self.start_rnnoise()
-        command += self.start_connections()
-        command += self.start_primarys()
-
-        os.popen(command)
-
     # get the correct device to connect to, e.g. include .monitor in a
     # virtual sink name, or use a ladspa sink for a hardware source
     def get_correct_device(self, index, conn_type):
@@ -239,8 +236,6 @@ class AudioServer(Server):
 
     # init virtual inputs
     def start_sinks(self):
-        command = ''
-        sink_list = cmd("pactl list sinks short")
 
         # itarate between all devices
         for device_id in self.config['vi']:
@@ -252,21 +247,13 @@ class AudioServer(Server):
                 # external key means that the user is responsible for managing that sink
                 if device_config['external'] is False:
 
-                    # if device is available on pulse
-                    if not re.search(device_config['name'], sink_list):
-
-                        # set sink properties
-                        sink = device_config['name']
-                        channels = device_config['channels']
-                        command += pmctl.init('sink', sink, channels)
-
-        LOG.debug(command)
-        return command
+                    # set sink properties
+                    sink = device_config['name']
+                    channels = device_config['channels']
+                    pmctl.init('sink', sink, channels)
 
     # init virtual outputs
     def start_sources(self):
-        command = ''
-        source_list = cmd("pactl list sources short")
         # itarate between all devices
         for device_id in self.config['b']:
             device_config = self.config['b'][device_id]
@@ -274,20 +261,13 @@ class AudioServer(Server):
             # if device does not have a name
             if device_config['name'] != '':
 
-                # if device is available on pulse
-                if not re.search(device_config['name'], source_list):
-
-                    # set source properties
-                    source = device_config['name']
-                    channels = device_config['channels']
-                    command += pmctl.init('source', source, channels)
-
-        LOG.debug(command)
-        return command
+                # set source properties
+                source = device_config['name']
+                channels = device_config['channels']
+                pmctl.init('source', source, channels)
 
     # creates all ladspa sinks for eq plugin
     def start_eqs(self):
-        command = ''
         for output_type in ['a', 'b']:
             for output_id in self.config[output_type]:
 
@@ -295,14 +275,11 @@ class AudioServer(Server):
                 if self.config[output_type][output_id]['eq'] is True:
 
                     # create eq sink
-                    command += self.eq(output_type, output_id, status=True,
-                            reconnect=False, change_config=False, run_command=False)
-
-        return command
+                    self.eq(output_type, output_id, status=True,
+                            reconnect=False, change_config=False)
 
     # creates all ladspa sinks for rnnoise plugin
     def start_rnnoise(self):
-        command = ''
         input_type = 'hi'
         for input_id in self.config[input_type]:
 
@@ -310,29 +287,21 @@ class AudioServer(Server):
             if self.config[input_type][input_id]['rnnoise'] is True:
 
                 # create rnnoise sink
-                command += self.rnnoise(input_id, status=True,
-                        reconnect=False, change_config=False, run_command=False)
-        return command
+                self.rnnoise(input_id, status=True,
+                        reconnect=False, change_config=False)
 
     # create connections
     def start_connections(self):
-        command = ''
         for input_type in ['vi', 'hi']:
             for input_id in self.config[input_type]:
-                command += self.reconnect(input_type, input_id, run_command=False)
-
-        return command
+                self.reconnect(input_type, input_id)
 
     # set all primary devices
     def start_primarys(self):
-        command = ''
         for device_type in ['vi', 'b']:
             for device_id in self.config[device_type]:
                 if self.config[device_type][device_id]['primary'] is True:
-                    command += self.set_primary(device_type, device_id, run_command=False)
-
-        LOG.debug(command)
-        return command
+                    self.set_primary(device_type, device_id)
 
     # def start_hardware_devices(self):
         # inputs = pmctl.list('sources')
@@ -342,43 +311,38 @@ class AudioServer(Server):
             # for device_id in self.config[device_type]:
                 # names.append()
 
-    def stop_connections(self, run_command=True):
-        command = ''
+    def stop_connections(self):
         for input_type in ['vi', 'hi']:
             for input_id in self.config[input_type]:
-                command += self.reconnect(input_type, input_id, status=False, run_command=False)
-        if run_command: os.popen(command)
-        return command
+                self.reconnect(input_type, input_id, status=False)
 
     def cleanup(self):
         # remove connections
-        command = self.stop_connections(run_command=False)
+        self.stop_connections()
 
         # remove rnnoise
         for hi_id in self.config['hi']:
             hi_config = self.config['hi'][hi_id]
             if hi_config['rnnoise']:
-                command += self.rnnoise(hi_id, status=False,
-                        reconnect=False, change_config=False, run_command=False)
+                self.rnnoise(hi_id, status=False,
+                        reconnect=False, change_config=False)
 
         # remove eqs
         for output_type in ['a', 'b']:
             for output_id in self.config[output_type]:
                 output_config = self.config[output_type][output_id]
                 if output_config['eq']:
-                    command += self.eq(output_type, output_id, status=False,
-                            reconnect=False, change_config=False, run_command=False)
+                    self.eq(output_type, output_id, status=False,
+                            reconnect=False, change_config=False)
 
         # remove virtual devices
         for device_type in ['b', 'vi']:
             for device_id in self.config[device_type]:
-                command += self.toggle_virtual_device(device_type, device_id, status=False, disconnect=False, run_command=False)
-
-        os.popen(command)
+                self.toggle_virtual_device(device_type, device_id, status=False, disconnect=False)
 
     # creates a ladspa sink with rnnoise for a given hardware input
     def rnnoise(self, input_id, status=None, control=None, latency=None, reconnect=True,
-            change_config=True, run_command=True, ladspa_sink=None):
+            change_config=True, ladspa_sink=None):
 
         # get control values
         input_type = 'hi'
@@ -419,11 +383,11 @@ class AudioServer(Server):
 
         # create ladspa sink
         # command = pmctl.ladspa(status, 'source', source, ladspa_sink, label, plugin, control, chann_lat)
-        command = pmctl.rnnoise(status, source, ladspa_sink, control, chann_lat)
+        pmctl.rnnoise(status, source, ladspa_sink, control, chann_lat)
 
         # recreates all loopbacks from the device
         if reconnect:
-            command += self.reconnect('hi', input_id, False, run_command=False)
+            self.reconnect('hi', input_id, False)
 
         if change_config:
             if status != 'set': source_config['rnnoise'] = status
@@ -432,18 +396,13 @@ class AudioServer(Server):
                 source_config['rnnoise_latency'] = chann_lat
 
         if reconnect:
-            command += self.reconnect('hi', input_id, True, run_command=False)
+            self.reconnect('hi', input_id, True)
 
-        LOG.debug(command)
-        if run_command is True:
-            LOG.debug(command)
-            os.popen(command)
-            return f'rnnoise {input_id} {status} {control}'
-        return command
+        return f'rnnoise {input_id} {status} {control}'
 
     # creates a ladspa sink with eq plugin for a given output
     def eq(self, output_type, output_id, status=None, control=None, ladspa_sink=None,
-            reconnect=True, change_config=True, run_command=True):
+            reconnect=True, change_config=True):
 
         # get information about the device
         sink_config = self.config[output_type][output_id]
@@ -473,10 +432,10 @@ class AudioServer(Server):
             return f'eq {output_type} {output_id} {conn_status} {control}'
 
         # create ladspa sink
-        command = pmctl.ladspa(status, 'sink', master, ladspa_sink, 'mbeq', 'mbeq_1197', control, '')
+        pmctl.ladspa(status, 'sink', master, ladspa_sink, 'mbeq', 'mbeq_1197', control, '')
 
         if reconnect:
-            command += self.reconnect(output_type, output_id, False, run_command=False)
+            self.reconnect(output_type, output_id, False)
 
         if change_config:
             if status != 'set': sink_config['eq'] = conn_status
@@ -484,17 +443,12 @@ class AudioServer(Server):
 
         # recreates all loopbacks from the device
         if reconnect:
-            command += self.reconnect(output_type, output_id, True, run_command=False)
+            self.reconnect(output_type, output_id, True)
 
-        if run_command:
-            LOG.debug(command)
-            os.popen(command)
-            return f'eq {output_type} {output_id} {status} {control}'
-        return command
+        return f'eq {output_type} {output_id} {status} {control}'
 
-    # recreates connections fom a device, does not affect config
-    def reconnect(self, device_type, device_id, status=True, run_command=True):
-        command = ''
+    # recreates connections from a device, does not affect config
+    def reconnect(self, device_type, device_id, status=True):
         sinks = ['a', 'b']
         sources = ['hi', 'vi']
 
@@ -538,17 +492,12 @@ class AudioServer(Server):
                 sink = output_type + output_id
                 # connection status check
                 if self.config[input_type][input_id][sink]['status'] is True:
-                    command += self.connect(input_type, input_id, output_type, output_id,
-                            status=status, change_state=False, run_command=False, init=True)
-
-        if run_command:
-            LOG.debug(command)
-            os.popen(command)
-        return command
+                    self.connect(input_type, input_id, output_type, output_id,
+                            status=status, change_state=False, init=True)
 
     # connects an input to an output
     def connect(self, input_type, input_id, output_type, output_id,
-            status=None, latency=None, run_command=True, change_state=True, init=False):
+            status=None, latency=None, change_state=True, init=False):
 
         source_config = self.config[input_type][input_id]
         sink_config = self.config[output_type][output_id]
@@ -632,18 +581,10 @@ class AudioServer(Server):
                     ports += f'{iselports[i]}:{oselports[i]} '
 
         if device_exists:
-            command = pmctl.connect(source, sink, status,
-                                    latency=latency if self.audio_server != 'Pipewire' else None,
-                                    port_map=ports, run_command=False)
-        else:
-            command = ''
-
-        if run_command is True:
-            if device_exists:
-                LOG.debug(command)
-                os.popen(command)
-            return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
-        return command
+            pmctl.connect(source, sink, status,
+                          latency=latency if self.audio_server != 'Pipewire' else None,
+                          port_map=ports)
+        return f'connect {input_type} {input_id} {output_type} {output_id} {status} {latency}'
 
     def change_hardware_device(self, output_type, output_id, name):
         if name in ['None', None]: name = ''
@@ -690,9 +631,8 @@ class AudioServer(Server):
 
     # this will cleanup a hardware device and will not affect the config
     # useful when e.g. changing the device used in a hardware input/output strip
-    def toggle_hardware_device(self, device_type, device_id, status, run_command=True):
+    def toggle_hardware_device(self, device_type, device_id, status):
         device_config = self.config[device_type][device_id]
-        command = ''
         status = str2bool(status)
 
         # check what type of device, then disable plugins
@@ -700,15 +640,15 @@ class AudioServer(Server):
             device_list = ['hi', 'vi']
 
             if status and device_config['eq']:
-                command += self.eq(device_type, device_id, status=True,
-                        reconnect=False, change_config=False, run_command=False)
+                self.eq(device_type, device_id, status=True,
+                        reconnect=False, change_config=False)
 
         else:
             device_list = ['a', 'b']
 
             if status and device_type == 'hi' and device_config['rnnoise']:
-                command += self.rnnoise(device_id, status=True,
-                        reconnect=False, change_config=False, run_command=False)
+                self.rnnoise(device_id, status=True,
+                        reconnect=False, change_config=False)
 
         # set connections
         for target_type in device_list:
@@ -729,24 +669,19 @@ class AudioServer(Server):
                     sink = f'{output_type}{output_id}'
 
                 if self.config[input_type][input_id][sink]['status'] is True:
-                    command += self.connect(input_type, input_id, output_type, output_id,
-                            status=status, run_command=False, change_state=False, init=True)
+                    self.connect(input_type, input_id, output_type, output_id,
+                            status=status, change_state=False, init=True)
 
         if not status:
             if device_type == 'a' and device_config['eq']:
-                command += self.eq(device_type, device_id, status=False,
-                        reconnect=False, change_config=False, run_command=False)
+                self.eq(device_type, device_id, status=False,
+                        reconnect=False, change_config=False)
 
             elif device_type == 'hi' and device_config['rnnoise']:
-                command += self.rnnoise(device_id, status=False,
-                        reconnect=False, change_config=False, run_command=False)
+                self.rnnoise(device_id, status=False,
+                        reconnect=False, change_config=False)
 
-        LOG.debug(command)
-        if run_command: os.popen(command)
-        return command
-
-    def toggle_virtual_device(self, device_type, device_id, status=False, disconnect=True, run_command=True):
-        command = ''
+    def toggle_virtual_device(self, device_type, device_id, status=False, disconnect=True):
         device_config = self.config[device_type][device_id]
 
         if device_config.get('external') is True:
@@ -758,43 +693,34 @@ class AudioServer(Server):
         conn_type = 'sink' if device_type == 'vi' else 'source'
 
         if status:
-            command += pmctl.init(conn_type, name)
+            pmctl.init(conn_type, name)
             if device_config['primary']:
-                command += self.set_primary(device_type, device_id, run_command=False)
+                self.set_primary(device_type, device_id)
 
         if disconnect:
-            command += self.reconnect(device_type, device_id, status=status, run_command=False)
+            self.reconnect(device_type, device_id, status=status)
 
         if not status:
-            command += pmctl.remove(name)
-
-        LOG.debug(command)
-        if run_command: os.popen(command)
-        return command
+            pmctl.remove(name)
 
     # removes a device, then creates another one with the new name
     def rename(self, device_type, device_id, new_name):
         device_config = self.config[device_type][device_id]
-        command = ''
         old_name = device_config['name']
 
         # if new_name == old_name:
             # return False
 
         if old_name != '':
-            command += self.toggle_virtual_device(device_type, device_id, status=False,
-                    run_command=False)
+            self.toggle_virtual_device(device_type, device_id, status=False)
 
         if new_name != '':
             device_config['name'] = new_name
-            command += self.toggle_virtual_device(device_type, device_id, status=True,
-                    run_command=False)
-
-            os.popen(command)
+            self.toggle_virtual_device(device_type, device_id, status=True)
 
         return f'rename {device_type} {device_id} {new_name}'
 
-    def mute(self, device_type, device_id, state=None, run_command=True):
+    def mute(self, device_type, device_id, state=None):
         device_config = self.config[device_type][device_id]
         name = device_config['name']
         if name == '': return
@@ -806,7 +732,6 @@ class AudioServer(Server):
         device = 'sink' if device_type in ('a', 'vi') else 'source'
         msg = pmctl.mute(device, name, state, self.pulsectl)
 
-        LOG.debug(msg)
         return msg
 
     # create a new device (slot)
@@ -935,30 +860,25 @@ class AudioServer(Server):
         if device_type in ['a', 'hi']:
 
             # disable old device
-            command = self.toggle_hardware_device(device_type, device_id, False,
-                                                  run_command=False)
+            self.toggle_hardware_device(device_type, device_id, False)
             device_config['nick'] = j['nick']
             device_config['name'] = j['device']
             device_config['description'] = j['description']
             device_config['channels'] = j['channels']
             device_config['selected_channels'] = j['selected_channels']
-            command += self.toggle_hardware_device(device_type, device_id, True,
-                                                  run_command=False)
+            self.toggle_hardware_device(device_type, device_id, True)
         else:
 
-            command = self.toggle_virtual_device(device_type, device_id, status=False,
-                                                 run_command=False)
+            self.toggle_virtual_device(device_type, device_id, status=False)
             device_config['name'] = j['name']
             device_config['channels'] = j['channels']
             device_config['external'] = j['external']
-            command += self.toggle_virtual_device(device_type, device_id, status=True,
-                                                 run_command=False)
+            self.toggle_virtual_device(device_type, device_id, status=True)
 
-        os.popen(command)
         return f'edit-device {device_type} {device_id} {json.dumps(device_config, ensure_ascii=False)}'
 
     # set a device as primary (only vi and b)
-    def set_primary(self, device_type, device_id, run_command=True):
+    def set_primary(self, device_type, device_id):
         name = self.config[device_type][device_id]['name']
         for i in self.config[device_type]:
             self.config[device_type][i]['primary'] = False if i != device_id else True
@@ -1040,18 +960,9 @@ class AudioServer(Server):
             else:
                 return False
 
-            # if not an absolute number, add it to current volume
-            # else:
-                # cur_vol = cmd('pmctl get-{stream_type}-volume {id}')
-                # val = device_config['vol'] + int(val)
-
         # limit volume at 153
         if val > 153:
             val = 153
-        # get channel number
-        # chann = int(cmd(f'pmctl get-{stream_type}-chann {id}'))
-
-        # set volume object
 
         try:
             if stream_type == 'sink_input':
@@ -1403,18 +1314,6 @@ class AudioServer(Server):
                 'regex': ''
             }
         }
-
-
-def cmd(command):
-    sys.stdout.flush()
-    p = subprocess.Popen(command.split(' '),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    stdout, stderr = p.communicate()
-    if p.returncode:
-        LOG.warning('cmd \'%s\' returned %s', command, p.returncode)
-        return
-    return stdout.decode()
 
 
 def str2bool(v):

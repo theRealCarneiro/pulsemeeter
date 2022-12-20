@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+CREATE_ERROR=1
+DEVICE_EXISTS=2
+
 init (){
 	local device_type=$1
 	local device=$2
@@ -7,30 +10,37 @@ init (){
 
 	# pulse
 	if [ $ISPULSE = true ]; then
-		case $device_type in
-			"sink")
-				pactl list sinks short >/dev/null 2>&1 | grep $device && exit
-				pactl load-module module-null-sink \
-					sink_name=$device \
-					sink_properties="device.description="$device"" >/dev/null 2>&1 || 
-						printf "Error creating virtual input $device\n" >&2
-			;;
 
-			"source")
-				pactl list sources short >/dev/null 2>&1 | grep $device && exit
-				pactl load-module module-null-sink sink_name=$device"_sink" >/dev/null 2>&1 ||
-					printf "Error creating virtual output sink $device\n" >&2
+		# check if device exists
+		pactl list "$device_type"s short >/dev/null 2>&1 | grep $device && exit 1
 
-				pactl load-module module-remap-source source_name=$device \
-					master=$device"_sink.monitor" \
-					source_properties=device.description=$device 2>/dev/null || 
-				printf "Error creating virtual output $device\n" >&2
-			;;
-		esac
+		# sink
+		if [ "$device_type" = "sink" ]; then
+
+			# load null sink
+			pactl load-module module-null-sink \
+				sink_name=$device \
+				sink_properties="device.description="$device"" >/dev/null 2>&1 || 
+					exit 126
+		# source
+		else
+
+			# pulseaudio does not allow routing audio into sources, so we need an aux sink
+			pactl load-module module-null-sink sink_name=$device"_sink" >/dev/null 2>&1 ||
+				exit 126
+
+			# load remap source that will remap the sink audio into itself
+			pactl load-module module-remap-source source_name=$device \
+				master=$device"_sink.monitor" \
+				source_properties=device.description=$device 2>/dev/null || 
+					exit 126
+
+		fi
 
 	# pipewire
 	else
 
+		# set media.class
 		case "$device_type" in
 			"sink") class="Sink" ;;
 			"source") class="Source/Virtual" ;;
@@ -38,7 +48,7 @@ init (){
 		esac
 
 		# check if device exists
-		pw-cli info $device 2>&1 | grep Error >/dev/null || exit
+		pw-cli info $device 2>&1 | grep -q Error || exit 1
 
 		# create device
 		pw-cli create-node adapter "{
@@ -49,7 +59,7 @@ init (){
 			audio.channels=$channels
 			monitor.channel-volumes = true
 			object.linger=true
-		}" >/dev/null || printf "Error creating $device_type $device\n" >&2
+		}" >/dev/null || exit 126
 
 		#audio.position=[ $channel_map ]
 	fi
@@ -61,14 +71,14 @@ remove (){
 	# pulse
 	if [ $ISPULSE = true ]; then
 		index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
-		[ -z "$index" ] || pactl unload-module $index 
+		[ -z "$index" ] && exit 1 || pactl unload-module $index 
 		
 		aux_index="$(LC_ALL=C pactl list modules | grep -B 2 $device'_sink' | grep Module | sed 's/.*#//g')"
-		[ -z "$aux_index" ] || pactl unload-module $aux_index
+		[ -z "$aux_index" ] && exit 1 || pactl unload-module $aux_index
 
 	# pipewire
 	else
-		pw-cli destroy $device 2>/dev/null 1>&2
+		pw-cli destroy $device 2>&1 | grep -q Error && exit 1
 	fi
 }
 
@@ -91,11 +101,11 @@ connect (){
 
 	# pipewire
 	else
-		local port_map="$3"
+		local port_map="${@:3}"
 		local input_ports=$(get_ports output $input)
 		local output_ports=$(get_ports input $output)
 
-		if [ -z "$port_map" -o "$3" = 'None' ]; then
+		if [ -z "$port_map" -o "$port_map" = 'None' ]; then
 			pw-link $input $output 2> /dev/null
 		else
 			for i in $(echo "$port_map"); do
@@ -125,11 +135,11 @@ disconnect (){
 	
 	# pipewire
 	else
-		local port_map="$3"
+		local port_map="${@:3}"
 		local input_ports=$(get_ports output $input)
 		local output_ports=$(get_ports input $output)
 
-		if [ -z "$port_map" -o "$3" = 'None' ]; then
+		if [ -z "$port_map" -o "$port_map" = 'None' ]; then
 			pw-link -d $input $output 2> /dev/null
 		else
 			for i in $(echo "$port_map"); do
