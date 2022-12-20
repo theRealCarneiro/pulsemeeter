@@ -1,8 +1,2 @@
-from .interface import MainWindow
-from .backends import *
-from .socket import *
-from .settings import __version__
-
-__all__ = [
-    '__version__',
-]
+from pulsemeeter.scripts.logger import init_log
+init_log("generic")
