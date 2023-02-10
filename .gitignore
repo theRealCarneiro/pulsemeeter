@@ -259,3 +259,4 @@ cython_debug/
 
 # Glade temporary files
 *.glade~
+*.glade\#

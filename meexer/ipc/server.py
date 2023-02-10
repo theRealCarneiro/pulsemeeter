@@ -1,0 +1,313 @@
+import threading
+import traceback
+import logging
+import socket
+import json
+import os
+
+from queue import SimpleQueue
+
+from meexer import settings
+# from meexer.settings import SOCK_FILE, PIDFILE
+from meexer.schemas import ipc_schema as schemas
+
+LISTENER_TIMEOUT = 2
+CLIENT_ID_LEN = 5
+REQUEST_SIZE_LEN = 5
+
+LOG = logging.getLogger("generic")
+
+
+class Server:
+
+    __routes = {}
+
+    def __init__(self, instance_name: str = None):
+        '''
+        '''
+
+        if instance_name is not None:
+            settings.SOCK_FILE = f'/tmp/pulsemeeter.{instance_name}.sock'
+            settings.PIDFILE = f'/tmp/pulsemeeter.{instance_name}.pid'
+
+        if self.is_running():
+            # LOG.error('Another instance is already running')
+            raise ConnectionAbortedError('Another instance is already running')
+
+        # delete socket file if exists
+        self.unlink_socket()
+
+        self.exit_flag = False
+        self.command_queue = SimpleQueue()
+        self.query_thread = None
+        self.main_loop_thread = None
+        self.clients = {}
+
+    @classmethod
+    def command(cls, command_str, flags=0, notify=True, save_config=True):
+        '''
+        Decorator for creating routes
+        '''
+        def decorator(f):
+            r = {
+                'command': f,
+                # make sure to include ALL flag
+                'flags': flags | 1 if flags != 0 else 0,
+                'notify': notify,
+                'save_config': save_config
+            }
+            route = schemas.Route(**r)
+            cls.__routes[command_str] = route
+            return f
+
+        return decorator
+
+    @classmethod
+    def get_route(cls, command):
+        return cls.__routes.get(command)
+
+    def start_queries(self, daemon=False):
+        '''
+        Start query and server threads
+            "daemon" is a bool, if True the server will exit when the main thread exists
+                else it will remain running
+        '''
+        self.stop_queries()
+        self.stop_main_loop()
+
+        # self.ready = False
+        self.query_thread = threading.Thread(target=self.query_clients, daemon=daemon)
+        self.query_thread.start()
+
+        self.main_loop_thread = threading.Thread(target=self.main_loop)
+        self.main_loop_thread.start()
+
+        # while not self.ready:
+            # pass
+
+    def stop_main_loop(self):
+        if self.main_loop_thread is not None and self.main_loop_thread.is_alive():
+            self.exit_flag = True
+            self.main_loop_thread.join()
+
+    def stop_queries(self):
+        if self.query_thread is not None and self.query_thread.is_alive():
+            self.exit_flag = True
+            self.query_thread.join()
+
+    def unlink_socket(self):
+        '''
+        Deletes socket file
+        '''
+        try:
+            os.unlink(settings.SOCK_FILE)
+        except OSError:
+            if os.path.exists(settings.SOCK_FILE):
+                raise
+
+    def unlink_pid_file(self):
+        '''
+        Deletes pid file
+        '''
+        try:
+            os.unlink(settings.PIDFILE)
+        except OSError:
+            if os.path.exists(settings.PIDFILE):
+                raise
+
+    def main_loop(self):
+        '''
+        Will run the commands requested by the clients
+        '''
+
+        # Make sure that even in the event of an error, cleanup still happens
+        try:
+
+            while not self.exit_flag:
+                req = self.command_queue.get()
+
+
+            # Listen for commands
+            while not self.exit_flag:
+                req = self.command_queue.get()
+                route = Server.get_route(req.command)
+                ret_message = route['command'](req)
+                notify_all = route['notify']
+
+                if req.command == 'audio_server':
+                    notify_all = True
+                    pass
+                elif req.command == 'exit':
+                    ret_message, notify_all = 'exit', True
+                    self.exit_flag = True
+                else:
+                    route = Server.get_route(req.command)
+                    ret_message = route['command'](req.data)
+                    notify_all = route['notify']
+
+                res = schemas.Response(
+                    status=0,
+                    sender_id=req.sender_id,
+                    data=ret_message
+                )
+                self.send_message(res)
+
+        finally:
+
+            # Set the exit flag and wait for the listener thread to timeout
+            LOG.info('closing listener threads, they should exit within a few seconds...')
+            self.exit_flag = True
+
+            try:
+                self.pulse_socket.stop_listener()
+            except Exception:
+                LOG.error('Could not close pulse listener')
+                LOG.error(traceback.format_exc())
+
+            # Call any code to clean up virtual devices or similar
+            self.save_config(buffer=False)
+            if self.config['cleanup']:
+                self.cleanup()
+
+    def query_clients(self) -> None:
+        '''
+        Loops for new connections
+        '''
+
+        # loop to get new connections
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.settimeout(LISTENER_TIMEOUT)
+            sock.bind(settings.SOCK_FILE)
+            sock.listen()
+            client_id = 0
+            self.ready = True
+            while not self.exit_flag:
+                try:
+                    # Wait for a connection
+                    conn, addr = sock.accept()
+                    LOG.debug('new client %d', client_id)
+
+                    # send id to client
+                    conn.sendall(str.encode(str(client_id).rjust(CLIENT_ID_LEN, '0')))
+                    flags = int(conn.recv(CLIENT_ID_LEN))
+
+                    # Create a thread for the client
+                    thread = threading.Thread(target=self.listen_client,
+                            args=(client_id,), daemon=True)
+                    c = {'conn': conn, 'id': client_id, 'thread': thread, 'flags': flags}
+                    client = schemas.Client(**c)
+                    self.clients[client_id] = client
+                    client.thread.start()
+                    client_id += 1
+                except socket.timeout:
+                    if self.exit_flag:
+                        break
+
+    def listen_client(self, client_id) -> None:
+        '''
+        Listens to client and queue their requests
+        '''
+        client = self.clients[client_id]
+        with client.conn:
+            while not self.exit_flag:
+
+                try:
+                    req = self.recive_message(client)
+                    LOG.debug(req)
+                    self.command_queue.append(req)
+                    # route = Server.get_route.get(req.command)
+                    # ret_msg = route.command(req.data)
+
+                    # res = req
+                    # res.data = ret_msg
+                    # res.flags = route.flags
+                    # self.send_message(client, res)
+
+                    # if route.notify:
+                        # self.notify(res, client.id)
+
+                    # # TODO: save config
+                    # if route.save_config:
+                        # pass
+                except (ConnectionResetError, ValueError):
+                    LOG.debug('client #%d closed the connection', client_id)
+                    self.clients.pop(client_id, None)
+                    break
+
+    def send_message(self, client: schemas.Client, res: schemas.Request) -> None:
+        '''
+        Send a message to a specific client
+        '''
+        msg = res.json().encode('utf-8')
+        msg_len = str(len(msg)).rjust(REQUEST_SIZE_LEN, '0').encode('utf-8')
+        client.conn.sendall(msg_len)
+        client.conn.sendall(msg)
+
+    def notify(self, res: schemas.Request, sender_id: int) -> None:
+        '''
+        Send events to subscribed clients
+        '''
+        for client_id, client in self.clients.items():
+            if client_id != sender_id:
+
+                # check if client wants notification
+                if client.flags & res.flags:
+                    self.send_message(client, res)
+
+    def get_message(self, conn) -> str:
+        '''
+        Recives a connection, and returns a single massage
+        '''
+        msg_len = conn.recv(REQUEST_SIZE_LEN)
+        if not msg_len: raise ValueError('Invalid message length')
+        msg_len = int(msg_len.decode())
+
+        msg = conn.recv(msg_len)
+        if not msg: raise ValueError('Invalid message data')
+
+        return msg
+
+    def recive_message(self, client: schemas.Client) -> schemas.Request:
+        '''
+        Recives a client, returns a request
+        '''
+        msg = self.get_message(client.conn)
+        req = json.loads(msg.decode())
+        LOG.debug(req)
+        return schemas.Request(**req)
+
+    def exit_signal(self):
+        '''
+        Inserts an exit command on the command queue for a clean exit
+        '''
+        req = schemas.Request(
+            command='exit',
+            sender_id=None,
+            data=None,
+            flags=0
+        )
+
+        self.command_queue.put(req)
+
+    def is_running(self):
+
+        try:
+            with open(settings.PIDFILE) as f:
+                pid = int(next(f))
+
+            # if pid is of running instance
+            if os.kill(pid, 0) is not False:
+                return True
+
+            # if pid is of a closed instance
+            else:
+                # write pid to file
+                with open(settings.PIDFILE, 'w') as f:
+                    f.write(f'{os.getpid()}\n')
+                return False
+
+        # PIDFILE does not exist
+        except Exception:
+            with open(settings.PIDFILE, 'w') as f:
+                f.write(f'{os.getpid()}\n')
+            return False
