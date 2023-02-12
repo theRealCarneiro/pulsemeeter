@@ -33,6 +33,7 @@ class Client:
             self.conn.connect(settings.SOCK_FILE)
             self.id = int(self.conn.recv(CLIENT_ID_LEN))
             self.conn.sendall(str(listen_flags).rjust(CLIENT_ID_LEN, '0').encode())
+            LOG.debug('connected to server, id %d', self.id)
         except socket.error:
             LOG.error(traceback.format_exc())
             LOG.error("Could not connect to server")

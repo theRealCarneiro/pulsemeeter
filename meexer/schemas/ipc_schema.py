@@ -43,10 +43,18 @@ class Client(BaseModel):
 
 
 class Request(BaseModel):
+    '''
+    Schema for requests
+        "command" is the name of the command/route
+        "sender_id" is the id of the client who sent the msg
+        "data" is a dict containing the actual request
+        "run" is a bool, True means run the request,
+            False means don't run it
+    '''
     command: str
     sender_id: str
     data: dict
-    flags: int = 0
+    run: bool = True
 
 
 class Response(BaseModel):

@@ -123,34 +123,45 @@ class Server:
         # Make sure that even in the event of an error, cleanup still happens
         try:
 
-            while not self.exit_flag:
-                req = self.command_queue.get()
-
-
             # Listen for commands
             while not self.exit_flag:
                 req = self.command_queue.get()
                 route = Server.get_route(req.command)
-                ret_message = route['command'](req)
-                notify_all = route['notify']
 
-                if req.command == 'audio_server':
-                    notify_all = True
-                    pass
-                elif req.command == 'exit':
-                    ret_message, notify_all = 'exit', True
+                # close server without warning
+                if req.command == 'kill':
+                    break
+
+                if route is None:
+                    continue
+
+                command_notify = route['notify']
+                command_flags = route['flags']
+                command_function = route['command']
+
+                if req.command == 'exit':
                     self.exit_flag = True
-                else:
-                    route = Server.get_route(req.command)
-                    ret_message = route['command'](req.data)
-                    notify_all = route['notify']
 
-                res = schemas.Response(
-                    status=0,
-                    sender_id=req.sender_id,
-                    data=ret_message
-                )
-                self.send_message(res)
+                # run function if command not from server
+                if req.run is True:
+
+                    # run command
+                    status_code, ret_message = command_function(req.data)
+
+                    res = schemas.Response(
+                        status=status_code,
+                        sender_id=req.sender_id,
+                        data=ret_message
+                    )
+
+                    self.send_message(req.sender_id, res)
+
+                    # skip notify when command fail
+                    if status_code != schemas.StatusCode.OK:
+                        continue
+
+                if command_notify:
+                    self.notify(req, command_flags)
 
         finally:
 
@@ -158,16 +169,16 @@ class Server:
             LOG.info('closing listener threads, they should exit within a few seconds...')
             self.exit_flag = True
 
-            try:
-                self.pulse_socket.stop_listener()
-            except Exception:
-                LOG.error('Could not close pulse listener')
-                LOG.error(traceback.format_exc())
+            # try:
+                # self.pulse_socket.stop_listener()
+            # except Exception:
+                # LOG.error('Could not close pulse listener')
+                # LOG.error(traceback.format_exc())
 
             # Call any code to clean up virtual devices or similar
-            self.save_config(buffer=False)
-            if self.config['cleanup']:
-                self.cleanup()
+            # self.save_config(buffer=False)
+            # if self.config['cleanup']:
+                # self.cleanup()
 
     def query_clients(self) -> None:
         '''
@@ -179,7 +190,8 @@ class Server:
             sock.settimeout(LISTENER_TIMEOUT)
             sock.bind(settings.SOCK_FILE)
             sock.listen()
-            client_id = 0
+            # server is id 0
+            client_id = 1
             self.ready = True
             while not self.exit_flag:
                 try:
@@ -188,14 +200,20 @@ class Server:
                     LOG.debug('new client %d', client_id)
 
                     # send id to client
-                    conn.sendall(str.encode(str(client_id).rjust(CLIENT_ID_LEN, '0')))
+                    conn.sendall()
                     flags = int(conn.recv(CLIENT_ID_LEN))
 
                     # Create a thread for the client
                     thread = threading.Thread(target=self.listen_client,
                             args=(client_id,), daemon=True)
-                    c = {'conn': conn, 'id': client_id, 'thread': thread, 'flags': flags}
-                    client = schemas.Client(**c)
+
+                    client = schemas.Client(
+                        conn=conn,
+                        id=client_id,
+                        thread=thread,
+                        flags=flags
+                    )
+
                     self.clients[client_id] = client
                     client.thread.start()
                     client_id += 1
@@ -234,25 +252,32 @@ class Server:
                     self.clients.pop(client_id, None)
                     break
 
-    def send_message(self, client: schemas.Client, res: schemas.Request) -> None:
+    def send_message(self, client_id: schemas.Client, res: schemas.Request) -> None:
         '''
         Send a message to a specific client
         '''
+
+        # don't send message to id 0 since it's the server
+        if int(client_id) == 0:
+            return
+
+        client = self.clients[client_id]
         msg = res.json().encode('utf-8')
         msg_len = str(len(msg)).rjust(REQUEST_SIZE_LEN, '0').encode('utf-8')
         client.conn.sendall(msg_len)
         client.conn.sendall(msg)
 
-    def notify(self, res: schemas.Request, sender_id: int) -> None:
+    def notify(self, req: schemas.Request, command_flags: int) -> None:
         '''
         Send events to subscribed clients
         '''
+        sender_id = req.sender_id
         for client_id, client in self.clients.items():
             if client_id != sender_id:
 
                 # check if client wants notification
-                if client.flags & res.flags:
-                    self.send_message(client, res)
+                if client.flags & command_flags:
+                    self.send_message(client, req)
 
     def get_message(self, conn) -> str:
         '''
@@ -282,8 +307,8 @@ class Server:
         '''
         req = schemas.Request(
             command='exit',
-            sender_id=None,
-            data=None,
+            sender_id='00000',
+            data={},
             flags=0
         )
 
@@ -311,3 +336,7 @@ class Server:
             with open(settings.PIDFILE, 'w') as f:
                 f.write(f'{os.getpid()}\n')
             return False
+
+
+def id_to_str(client_id: int) -> str:
+    return str.encode(str(client_id).rjust(CLIENT_ID_LEN, '0'))
