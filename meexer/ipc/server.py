@@ -1,5 +1,5 @@
 import threading
-import traceback
+# import traceback
 import logging
 import socket
 import json
@@ -8,12 +8,12 @@ import os
 from queue import SimpleQueue
 
 from meexer import settings
+from meexer.ipc import utils
 # from meexer.settings import SOCK_FILE, PIDFILE
 from meexer.schemas import ipc_schema as schemas
+from meexer.settings import CLIENT_ID_LEN, REQUEST_SIZE_LEN
 
 LISTENER_TIMEOUT = 2
-CLIENT_ID_LEN = 5
-REQUEST_SIZE_LEN = 5
 
 LOG = logging.getLogger("generic")
 
@@ -135,9 +135,9 @@ class Server:
                 if route is None:
                     continue
 
-                command_notify = route['notify']
-                command_flags = route['flags']
-                command_function = route['command']
+                command_notify = route.notify
+                command_flags = route.flags
+                command_function = route.command
 
                 if req.command == 'exit':
                     self.exit_flag = True
@@ -150,11 +150,11 @@ class Server:
 
                     res = schemas.Response(
                         status=status_code,
-                        sender_id=req.sender_id,
-                        data=ret_message
+                        data=ret_message,
+                        id=req.id
                     )
 
-                    self.send_message(req.sender_id, res)
+                    self.send_message(self.clients[int(req.sender_id)], res)
 
                     # skip notify when command fail
                     if status_code != schemas.StatusCode.OK:
@@ -200,7 +200,7 @@ class Server:
                     LOG.debug('new client %d', client_id)
 
                     # send id to client
-                    conn.sendall()
+                    conn.sendall(utils.id_to_str(client_id))
                     flags = int(conn.recv(CLIENT_ID_LEN))
 
                     # Create a thread for the client
@@ -232,7 +232,7 @@ class Server:
                 try:
                     req = self.recive_message(client)
                     LOG.debug(req)
-                    self.command_queue.append(req)
+                    self.command_queue.put(req)
                     # route = Server.get_route.get(req.command)
                     # ret_msg = route.command(req.data)
 
@@ -252,18 +252,17 @@ class Server:
                     self.clients.pop(client_id, None)
                     break
 
-    def send_message(self, client_id: schemas.Client, res: schemas.Request) -> None:
+    def send_message(self, client: schemas.Client, res: schemas.Request) -> None:
         '''
         Send a message to a specific client
         '''
 
         # don't send message to id 0 since it's the server
-        if int(client_id) == 0:
+        if int(client.id) == 0:
             return
 
-        client = self.clients[client_id]
         msg = res.json().encode('utf-8')
-        msg_len = str(len(msg)).rjust(REQUEST_SIZE_LEN, '0').encode('utf-8')
+        msg_len = utils.msg_len_to_str(len(msg))
         client.conn.sendall(msg_len)
         client.conn.sendall(msg)
 
@@ -307,8 +306,23 @@ class Server:
         '''
         req = schemas.Request(
             command='exit',
-            sender_id='00000',
+            sender_id=utils.id_to_str(0),
             data={},
+            id=0,
+            flags=0
+        )
+
+        self.command_queue.put(req)
+
+    def kill_signal(self):
+        '''
+        Inserts a kill command on the command queue for an imediate exit
+        '''
+        req = schemas.Request(
+            command='kill',
+            sender_id=utils.id_to_str(0),
+            data={},
+            id=0,
             flags=0
         )
 
@@ -336,7 +350,3 @@ class Server:
             with open(settings.PIDFILE, 'w') as f:
                 f.write(f'{os.getpid()}\n')
             return False
-
-
-def id_to_str(client_id: int) -> str:
-    return str.encode(str(client_id).rjust(CLIENT_ID_LEN, '0'))
