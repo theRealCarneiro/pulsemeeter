@@ -351,7 +351,7 @@ list_sink_inputs (){
 	# turn sink number into name
 	sinks=$(echo "$apps" | grep Sink:)
 	for sink in $sinks; do
-		name=$(LC_ALL=C pactl list sinks | grep -A 2 "\#$(echo $sink | sed "s/Sink://g")$" | awk '/Name/ {print $2}')
+		name=$(LC_ALL=C pactl list sinks | grep -A 2 "#$(echo $sink | sed "s/Sink://g")$" | awk '/Name/ {print $2}')
 		apps=$(echo "$apps" | sed "s/$sink$/\"device\":\"$name\"/")
 	done
 
