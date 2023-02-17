@@ -4,7 +4,7 @@ import os
 __version__ = '1.2.16'
 
 # show/hide debug messages
-DEBUG = False
+DEBUG = True
 
 HOME = os.getenv('HOME', os.getenv('USERPROFILE'))
 
@@ -19,6 +19,11 @@ GLADEFILE = os.path.join(LAYOUT_DIR, 'defaulth')
 SOCK_FILE = f'/tmp/pulsemeeter.{USER}.sock'
 PIDFILE = f'/tmp/pulsemeeter.{USER}.pid'
 LISTENER_TIMEOUT = 2
+
+# IPC SETTINGS
+CLIENT_ID_LEN = 5
+REQUEST_SIZE_LEN = 5
+
 
 # logging formats
 # for vars look at: https://docs.python.org/3/library/logging.html#logrecord-attributes

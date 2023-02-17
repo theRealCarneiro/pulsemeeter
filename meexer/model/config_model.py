@@ -2,7 +2,7 @@ import os
 import json
 from meexer.schemas.config_schema import ConfigSchema
 from meexer.model.device_model import DeviceModel
-from meexer.schemas.device_schema import DeviceSchema
+# from meexer.schemas.device_schema import DeviceSchema
 from meexer.settings import CONFIG_DIR, CONFIG_FILE
 CONFIG_FILE += '.test.json'
 
@@ -57,7 +57,7 @@ class ConfigModel(ConfigSchema):
         return self.__dict__[dtype][did]
 
     def get_max_id(self, device_type: str):
-
+        pass
 
     def create_device(self, device: DeviceModel):
         '''

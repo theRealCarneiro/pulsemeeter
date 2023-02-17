@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
+from typing import Literal
 
-from meexer.schemas import device_schema
+from meexer.schemas import device_schema, app_schema
 
 
 class DeviceIndex(BaseModel):
@@ -53,14 +54,15 @@ class Eq(BaseModel):
     state: bool | None = Field(...)
 
 
+class AppList(BaseModel):
+    app_type: Literal['sink_input', 'source_output']
+
+
 class AppVolume(BaseModel):
-    index: int
-    device_index: int
-    type: str
+    app: app_schema.AppSchema
     volume: int = Field(..., ge=0, le=154)
 
 
-class AppDevice(BaseModel):
-    index: int
+class AppMove(BaseModel):
+    app: app_schema.AppSchema
     device: str
-    type: str

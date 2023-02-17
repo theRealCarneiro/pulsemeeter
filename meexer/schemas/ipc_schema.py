@@ -48,16 +48,25 @@ class Request(BaseModel):
         "command" is the name of the command/route
         "sender_id" is the id of the client who sent the msg
         "data" is a dict containing the actual request
+        "id" is a integer used by the client to know if it's own request when answerd
         "run" is a bool, True means run the request,
             False means don't run it
     '''
     command: str
     sender_id: str
     data: dict
+    id: int
     run: bool = True
 
 
 class Response(BaseModel):
+    '''
+    Schema for requests
+        "status" is the Enum StatusCode
+        "sender_id" is the id of the client who sent the msg
+        "data" is a dict containing the actual request
+        "id" is a integer used by the client to know if it's own request when answerd
+    '''
     status: StatusCode
-    sender_id: str
     data: dict | None = Field(...)
+    id: int

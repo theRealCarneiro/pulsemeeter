@@ -88,7 +88,7 @@ def rnnoise(status, name, sink_name, control,
     runcmd(command)
 
 
-def mute(device_type: DeviceType, device_name: str, state: bool, pulse=None):
+def mute(device_type: str, device_name: str, state: bool, pulse=None):
     '''
     Change mute state of a device
         "device_type" is the enum DeviceType
@@ -106,7 +106,7 @@ def mute(device_type: DeviceType, device_name: str, state: bool, pulse=None):
     return 0
 
 
-def set_primary(device_type: DeviceType, device_name: str, pulse=None):
+def set_primary(device_type: str, device_name: str, pulse=None):
     '''
     Change mute state of a device
         "device_type" is the enum DeviceType
@@ -164,6 +164,51 @@ def volume(device_type: str, device_name: str, val: int, selected_channels: list
     return 0
 
 
+def app_volume(app_type: str, index: int, val: int):
+
+    # limit volume at 153
+    if val > 153:
+        val = 153
+    elif val < 0:
+        val = 0
+
+    # set volume object
+    try:
+        if app_type == 'sink_input':
+            device = PULSE.sink_input_info(index)
+            chann = len(device.volume.values)
+            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+            PULSE.sink_input_volume_set(index, volume)
+        else:
+            device = PULSE.source_output_info(index)
+            chann = len(device.volume.values)
+            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
+            PULSE.source_output_volume_set(index, volume)
+
+    # trying to change volume of a device that just desapears
+    # better to just ignore it, nothing bad comes from doing so
+    except pulsectl.PulseIndexError:
+        LOG.debug(f'App #{id} already removed')
+
+    return 0
+
+
+def move_app_device(app_type: str, index: int, device_name: str):
+    try:
+        if app_type == 'sink_input':
+            sink = PULSE.get_sink_by_name(device_name)
+            PULSE.sink_input_move(index, sink.index)
+        else:
+            source = PULSE.get_source_by_name(device_name)
+            PULSE.source_output_move(index, source.index)
+
+    # some apps have DONT MOVE flag, the app will crash
+    except pulsectl.PulseOperationFailed:
+        LOG.debug(f'App #{index} device cant be moved')
+
+    return 0
+
+
 def list_sinks(hardware=False, virtual=False, all=False):
     PULSE = pulsectl.Pulse()
     device_list = []
@@ -196,71 +241,55 @@ def list_sources(hardware=False, virtual=False):
     return device_list
 
 
-def list_sink_inputs(index=None):
-    si_list = None
-    PULSE = pulsectl.Pulse()
+def filter_results(app):
+    # filter pavu and pm peak sinks
+    assert (
+        'application.name' in app.proplist and
+        '_peak' not in app.proplist['application.name'] and
+        app.proplist.get('application.id') != 'org.PulseAudio.pavucontrol'
+    )
+
+
+def list_apps(app_type: str, index: int = None):
+    app_list = []
+
+    if app_type == 'sink_input':
+        app_info = PULSE.sink_input_info
+        list_type_app = PULSE.sink_input_list
+        device_info = PULSE.sink_info
+
+    elif app_type == 'source_output':
+        app_info = PULSE.source_output_info
+        list_type_app = PULSE.source_output_list
+        device_info = PULSE.source_info
+
+    # get device list or single device
     if index is not None:
         try:
-            device = PULSE.sink_input_info(int(index))
+            device = app_info(int(index))
         except pulsectl.PulseIndexError:
             return []
-        si_list = [device]
+        full_app_list = [device]
     else:
-        si_list = PULSE.sink_input_list()
+        full_app_list = list_type_app()
 
-    app_list = []
-    for app in si_list:
+    for app in full_app_list:
 
         # filter pavu and pm peak sinks
-        if ('application.name' not in app.proplist or
-            '_peak' in app.proplist['application.name'] or
-            'application.id' in app.proplist and
-                app.proplist['application.id'] == 'org.PulseAudio.pavucontrol'):
+        try:
+            filter_results(app)
+        except AssertionError:
             continue
 
         # some apps don't have icons
-        if 'application.icon_name' not in app.proplist:
-            app.proplist['application.icon_name'] = 'audio-card'
+        icon = app.proplist.get('application.icon_name')
+        if icon is None:
+            icon = 'audio-card'
 
         index = app.index
-        icon = app.proplist['application.icon_name']
         label = app.proplist['application.name']
         volume = int(app.volume.values[0] * 100)
-        device = PULSE.sink_info(app.sink)
-        app_list.append((index, label, icon, volume, device.name))
-    return app_list
-
-
-def list_source_outputs(index=None):
-    PULSE = pulsectl.Pulse()
-    if index is not None:
-        try:
-            device = PULSE.source_output_info(int(index))
-        except pulsectl.PulseIndexError:
-            return []
-        si_list = [device]
-    else:
-        si_list = PULSE.source_output_list()
-
-    app_list = []
-    for app in si_list:
-
-        # filter pavu and pm peak sinks
-        if ('application.name' not in app.proplist or
-            '_peak' in app.proplist['application.name'] or
-            'application.id' in app.proplist and
-                app.proplist['application.id'] == 'org.PulseAudio.pavucontrol'):
-            continue
-
-        # some apps don't have icons
-        if 'application.icon_name' not in app.proplist:
-            app.proplist['application.icon_name'] = 'audio-card'
-
-        index = app.index
-        icon = app.proplist['application.icon_name']
-        label = app.proplist['application.name']
-        volume = int(app.volume.values[0] * 100)
-        device = PULSE.source_info(app.source)
+        device = device_info(app.sink)
         app_list.append((index, label, icon, volume, device.name))
     return app_list
 

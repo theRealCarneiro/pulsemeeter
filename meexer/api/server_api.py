@@ -1,3 +1,4 @@
+from meexer.schemas.ipc_schema import StatusCode
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
 from meexer.ipc.server import Server as ipc
 from meexer.model.config_model import ConfigModel
@@ -5,12 +6,14 @@ from meexer.model.config_model import ConfigModel
 CONFIG = ConfigModel()
 
 
-@ipc.command('exit', sflags.MUTE | sflags.APP, True, True)
+@ipc.command('exit', sflags.APP, True, True)
 def close_server(self):
     '''
     Closes server, saves the config file, and can save
     '''
-    CONFIG.write()
+    print('exit')
+    return StatusCode.OK, None
+    # CONFIG.write()
     # cleanup
 
 

@@ -31,8 +31,8 @@ class DeviceModel(DeviceSchema):
         '''
         if self.device_class == 'virtual' and not self.flags & DeviceFlags.EXTERNAL:
             ret = pmctl.init(self.device_type, self.name)
-            if ret == 126:
-                raise 
+            # if ret == 126:
+                # raise 
 
     def reconnect(self, state: bool):
         '''
