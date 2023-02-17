@@ -33,6 +33,6 @@ def app_list(req: requests.AppList):
     '''
 
     app_list_req = requests.AppList(**req)
-    AppModel.list_apps(app_list_req.app_type)
+    app_list = AppModel.list_apps(app_list_req.app_type)
 
     return ipc_schema.StatusCode.OK, app_list
