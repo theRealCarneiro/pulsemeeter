@@ -79,5 +79,4 @@ class ConfigModel(ConfigSchema):
         '''
         Remove a device from config
         '''
-        self.__dict__[device_type][device_index].destroy()
-        del self.__dict__[device_type][device_index]
+        return self.__dict__[device_type].pop(device_index)

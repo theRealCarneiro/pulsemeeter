@@ -55,10 +55,14 @@ def remove_device(req: requests.RemoveDevice):
     try:
         remove_device_req = requests.RemoveDevice(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID
+        return ipc_schema.StatusCode.INVALID, None
 
+    device_type = remove_device_req.index.device_index.device_type
+    device_id = remove_device_req.index.device_index.device_id
+    device = config.remove_device(device_type, device_id)
+    device.destroy()
 
-    CONFIG.remove_device(req.index.device_index, req.index.device_index)
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('connect', sflags.CONNECTION | sflags.DEVICE)
