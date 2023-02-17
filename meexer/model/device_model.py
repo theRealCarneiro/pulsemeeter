@@ -31,8 +31,8 @@ class DeviceModel(DeviceSchema):
         '''
         if self.device_class == 'virtual' and not self.flags & DeviceFlags.EXTERNAL:
             ret = pmctl.init(self.device_type, self.name)
-            # if ret == 126:
-                # raise 
+            if ret == 126:
+                raise
 
     def reconnect(self, state: bool):
         '''
@@ -119,3 +119,23 @@ class DeviceModel(DeviceSchema):
             "val" is the new volume level
         '''
         pmctl.volume(self.device_type, self.name, val)
+
+    @staticmethod()
+    def list_devices(device_type: str):
+        pa_device_list = pmctl.list_devices(device_type)
+        device_list = []
+
+        for device in pa_device_list:
+            device_model = DeviceModel(
+                name=device.name,
+                description=device.description,
+                channels=device.channels,
+                channel_list=device.channels_list,
+                device_type=device_type,
+                device_class='hardware',
+                mute=bool(device.mute),
+                volume=device.volume  # TODO: fix volume in model
+            )
+            device_list.append(device_model)
+
+        return device_list

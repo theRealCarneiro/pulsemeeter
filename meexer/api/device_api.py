@@ -76,6 +76,7 @@ def connect(connection: requests.Connect) -> int:
     source = CONFIG.get_device(source_index.device_type, source_index.device_id)
     output = CONFIG.get_device(output_index.device_type, output_index.device_id)
     source.connect(output_index.output_type, output_index.output_id, output.name, state)
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('mute', sflags.DEVICE, save_config=False)
@@ -86,6 +87,7 @@ def mute(mute: requests.Mute):
     mute = requests.Mute(**mute)
     device = CONFIG.get_device(mute.index.device_type, mute.index.device_id)
     device.set_mute(mute.state)
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('default', sflags.DEVICE, save_config=False)
@@ -96,6 +98,7 @@ def default(default: requests.Default):
     default = requests.Default(**default)
     device = CONFIG.get_device(default.index.device_type, default.index.device_id)
     device.set_default()
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('volume', sflags.VOLUME | sflags.DEVICE, save_config=False)
@@ -106,3 +109,12 @@ def volume(volume: requests.Volume):
     volume = requests.volume(**volume)
     device = CONFIG.get_device(volume.index.device_type, volume.index.device_type)
     device.set_volume(volume.volume)
+    return ipc_schema.StatusCode.OK, None
+
+
+@ipc.command('list_devices', sflags.VOLUME | sflags.DEVICE, save_config=False)
+def list_devices(req: requests.DeviceList):
+    device_list_req = requests.DeviceList(**req)
+    device_list = DeviceModel.list_devices(device_list_req.device_type)
+
+    return ipc_schema.StatusCode.OK, device_list

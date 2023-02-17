@@ -209,6 +209,19 @@ def move_app_device(app_type: str, index: int, device_name: str):
     return 0
 
 
+def list_devices(device_type):
+    PULSE = pulsectl.Pulse()
+    list_pa_devices = PULSE.sink_list if device_type == 'sink' else PULSE.source_list
+    device_list = []
+    for device in list_pa_devices():
+
+        pa_sink_hardware = 0x0004
+        if device.flags & pa_sink_hardware:
+            device_list.append(device)
+
+    return device_list
+
+
 def list_sinks(hardware=False, virtual=False, all=False):
     PULSE = pulsectl.Pulse()
     device_list = []
