@@ -68,5 +68,5 @@ class Response(BaseModel):
         "id" is a integer used by the client to know if it's own request when answerd
     '''
     status: StatusCode
-    data: dict | None = Field(...)
+    data: any
     id: int

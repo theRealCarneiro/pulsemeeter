@@ -54,6 +54,10 @@ class Eq(BaseModel):
     state: bool | None = Field(...)
 
 
+class DeviceList(BaseModel):
+    device_type: Literal['sink', 'source']
+
+
 class AppList(BaseModel):
     app_type: Literal['sink_input', 'source_output']
 
