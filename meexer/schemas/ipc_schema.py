@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Callable
+from typing import Callable, Any
 from enum import Enum
 import threading
 import socket
@@ -68,5 +68,5 @@ class Response(BaseModel):
         "id" is a integer used by the client to know if it's own request when answerd
     '''
     status: StatusCode
-    data: any
+    data: Any
     id: int

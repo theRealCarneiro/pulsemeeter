@@ -121,7 +121,7 @@ class DeviceModel(DeviceSchema):
         '''
         pmctl.volume(self.device_type, self.name, val)
 
-    @staticmethod()
+    @staticmethod
     def list_devices(device_type: str):
         pa_device_list = pmctl.list_devices(device_type)
         device_list = []
@@ -130,12 +130,12 @@ class DeviceModel(DeviceSchema):
             device_model = DeviceModel(
                 name=device.name,
                 description=device.description,
-                channels=device.channels,
-                channel_list=device.channels_list,
+                channels=len(device.volume.values),
+                channel_list=device.channel_list,
                 device_type=device_type,
                 device_class='hardware',
                 mute=bool(device.mute),
-                volume=device.volume  # TODO: fix volume in model
+                volume=[i * 100 for i in device.volume.values]  # TODO: fix volume in model
             )
             device_list.append(device_model)
 

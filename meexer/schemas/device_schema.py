@@ -23,8 +23,8 @@ class PluginSchema(BaseModel):
     control: list[float]
 
 
-class VolumeSchema(BaseModel):
-    value: int = Field(100, ge=0, le=153, description='volume must be ge 0 le 153')
+# class VolumeSchema(BaseModel):
+    # value: int = Field(100, ge=0, le=153, description='volume must be ge 0 le 153')
 
 
 class DeviceSchema(BaseModel):
@@ -33,7 +33,7 @@ class DeviceSchema(BaseModel):
     description: str
     device_type: Literal['sink', 'source']
     device_class: Literal['virtual', 'hardware']
-    volume: list[VolumeSchema] = None
+    volume: list[int] = None
     mute: bool = False
     flags: int = 0
     primary: bool = False

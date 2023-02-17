@@ -112,7 +112,7 @@ def volume(volume: requests.Volume):
     return ipc_schema.StatusCode.OK, None
 
 
-@ipc.command('list_devices', sflags.VOLUME | sflags.DEVICE, save_config=False)
+@ipc.command('list_devices', flags=0, notify=False, save_config=False)
 def list_devices(req: requests.DeviceList):
     device_list_req = requests.DeviceList(**req)
     device_list = DeviceModel.list_devices(device_list_req.device_type)
