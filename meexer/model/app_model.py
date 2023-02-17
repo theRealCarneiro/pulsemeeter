@@ -16,3 +16,19 @@ class AppModel(AppSchema):
     def change_device(self, device_name: str):
         print(self)
         pmctl.move_app_device(self.app_type, self.index, device_name)
+
+    @classmethod
+    def list_apps(app_type):
+        app_list_full = pmctl.list_apps(app_type)
+        app_list = []
+        for index, label, icon, volume, device in app_list_full:
+            app = AppModel(
+                app_type=app_type,
+                index=index,
+                label=label,
+                icon=icon,
+                volume=volume,
+                device=device
+            )
+            app_list.append(app)
+        return app_list

@@ -34,17 +34,6 @@ def app_list(req: requests.AppList):
     '''
 
     app_list_req = requests.AppList(**req)
-    app_list_full = pmctl.list_apps(app_list_req.app_type)
-    app_list = []
-    for index, label, icon, volume, device in app_list_full:
-        app = AppModel(
-            app_type=app_list_req.app_type,
-            index=index,
-            label=label,
-            icon=icon,
-            volume=volume,
-            device=device
-        )
-        app_list.append(app)
+    AppModel.list_apps(app_list_req.app_type)
 
     return ipc_schema.StatusCode.OK, app_list
