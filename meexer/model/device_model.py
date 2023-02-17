@@ -2,6 +2,7 @@ from meexer.scripts import pmctl
 from meexer.schemas.device_schema import DeviceSchema, DeviceFlags, ConnectionSchema
 
 
+# TODO: Plugins, Reconnect, Update Device, Update Connection, Change Device
 class DeviceModel(DeviceSchema):
     '''
     Child class of DeviceSchema, implements pmctl calls to PA and PW
