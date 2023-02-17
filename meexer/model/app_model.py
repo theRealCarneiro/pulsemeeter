@@ -17,7 +17,7 @@ class AppModel(AppSchema):
         print(self)
         pmctl.move_app_device(self.app_type, self.index, device_name)
 
-    @classmethod
+    @staticmethod
     def list_apps(app_type):
         app_list_full = pmctl.list_apps(app_type)
         app_list = []
