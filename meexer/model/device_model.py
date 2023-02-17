@@ -2,7 +2,7 @@ from meexer.scripts import pmctl
 from meexer.schemas.device_schema import DeviceSchema, DeviceFlags, ConnectionSchema
 
 
-# TODO: Plugins, Reconnect, Update Device, Update Connection, Change Device
+# TODO: Plugins, Change Device
 class DeviceModel(DeviceSchema):
     '''
     Child class of DeviceSchema, implements pmctl calls to PA and PW
@@ -41,51 +41,76 @@ class DeviceModel(DeviceSchema):
             "state" represents what state should the connections be changed into,
                 True will recreate active connections, False will destroy them
         '''
-        pass
 
-    def update_connection(self, connection):
+        for device_type, connections in self.connections.keys():
+            for device_id, conn in connections.keys():
+                if conn.state is True:
+                    self.connect(device_type, device_id, conn.target, state,
+                                 change_config=False)
+
+        return 0
+
+    def update_connection(self, output_type: str, output_id: str,
+                          connection: ConnectionSchema):
         '''
         Changes the settings of connection, e.g. latency and portmap
         '''
         # TODO: disconnect old connection
         # TODO: change settings
         # TODO: recreate connection
-        pass
+        target = connection.target
+        state = connection.state
+        self.connect(output_type, output_id, target, False, change_config=False)
+        self.connections[output_type][output_id].__dict__.update(connection)
+        self.connect(output_type, output_id, target, state, change_config=False)
 
-    def update_device(self, device: DeviceSchema):
+    def update_device_settings(self, device: DeviceSchema):
         '''
-        Edit device settings
+        Update device settings
         '''
-        pass
+        self.destroy()
+        device.connections = self.connections
+        self.__dict__.update(device)
+        self.create()
+        self.reconnect(True)
+        return 0
 
     def change_device(self):
         '''
-        Changes the hardware device being used
+        Changes the hardware device being used (perhaps not needed bc update_device_settings)
         '''
         # TODO: disconnect old device
         # TODO: change name/description to new device
         # TODO: recreate connections
         pass
 
-    def connect(self, output_type: str, output_id: str, target: str, state: bool = None):
+    def connect(self, output_type: str, output_id: str, target: str,
+                state: bool = None, change_config: bool = False):
         '''
-        Changes the state of a connection
+        Changes the state of a connection, or create it if it does not exist
             "output_type" is either 'vi', 'hi', 'a' or 'b'
             "output_id" is the id of the output device
             "target" is the name of the output device
             "state" is a bool that represents the state of the connection
                 True mean connect, False means disconnect
+            "change_config" means save the state change of the connection,
+                useful for e.g. removing connections on cleanup
         '''
+
+        # toggle the state of the connection
         if state is None:
             state = not self.connections[output_type][output_id].state
 
+        # check if output_type key is in the connections dict
         if output_type not in self.connections:
             self.connections[output_type] = {}
 
+        # create connection if it doesn't exist
         if output_id not in self.connections[output_type]:
             self.connections[output_type][output_id] = ConnectionSchema()
 
-        self.connections[output_type][output_id].state = state
+        if change_config is True:
+            self.connections[output_type][output_id].state = state
 
         portmap = self.connections[output_type][output_id].port_map
 
@@ -95,6 +120,8 @@ class DeviceModel(DeviceSchema):
         '''
         Destroy device if virtual, if hardware destroy connections
         '''
+        # TODO: remove plugins
+        self.reconnect(False)
         if self.device_class == 'virtual' and not self.flags & DeviceFlags.EXTERNAL:
             pmctl.remove(self.name)
 
