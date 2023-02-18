@@ -14,32 +14,37 @@ def create_device(req: requests.CreateDevice) -> DeviceModel:
     Recives a devices index and a device
     '''
 
-    config = CONFIG.__dict__
-
-    # request validation
+    # validate request
     try:
         create_device_req = requests.CreateDevice(**req)
     except ValidationError:
         return ipc_schema.StatusCode.INVALID
 
-    # create device model without running validation, since it
-    # was already validated by the CreateDevice schema
     device = DeviceModel.construct(create_device_req.device)
+    CONFIG.insert_device(device)
 
-    # get device new index and store device in config
-    device_type = device.get_type()
-    device_id = max(config[device_type], key=int, default='0')
-    config[device_type][device_id] = device
-
-    return ipc_schema.StatusCode.OK
+    return ipc_schema.StatusCode.OK, None
 
 
-# @ipc.command('edit_device', sflags.DEVICE_CHANGED | sflags.DEVICE)
-# def edit_device(device: requests.RemoveEdit):
-    # '''
-    # Recives a device index
-    # '''
-    # pass
+@ipc.command('update_device', sflags.DEVICE_CHANGED | sflags.DEVICE)
+def update_device(req: requests.UpdateDevice):
+    '''
+    Recives a device index and a device
+    '''
+
+    try:
+        update_device_req = requests.UpdateDevice(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID
+
+    device_type = update_device_req.index.device_type
+    device_id = update_device_req.index.device_id
+    new_device = update_device_req.device
+
+    device = CONFIG.get_device(device_type, device_id)
+    device.update_device_settings(new_device)
+
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('remove_device', sflags.DEVICE_REMOVE | sflags.DEVICE)
@@ -64,56 +69,88 @@ def remove_device(req: requests.RemoveDevice):
     return ipc_schema.StatusCode.OK, None
 
 
+@ipc.command('reconnect', sflags.CONNECTION | sflags.DEVICE, False, False)
+def reconnect() -> int:
+    pass
+
+
 @ipc.command('connect', sflags.CONNECTION | sflags.DEVICE)
-def connect(connection: requests.Connect) -> int:
+def connect(req: requests.Connect) -> int:
     '''
     Recives a connection, and connects devices
     '''
-    state = connection.state
-    source_index = connection.source
-    output_index = connection.output
+
+    try:
+        connection_req = requests.Connect(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID, None
+
+    state = connection_req.state
+    source_index = connection_req.source
+    output_index = connection_req.output
+
     source = CONFIG.get_device(source_index.device_type, source_index.device_id)
     output = CONFIG.get_device(output_index.device_type, output_index.device_id)
-    source.connect(output_index.output_type, output_index.output_id, output.name, state)
+
+    source.connect(output_index.output_type, output_index.output_id,
+                   output.get_correct_name(), state)
+
     return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('mute', sflags.DEVICE, save_config=False)
-def mute(mute: requests.Mute):
+def mute(req: requests.Mute):
     '''
     Recives a connection, and connects devices
     '''
-    mute = requests.Mute(**mute)
-    device = CONFIG.get_device(mute.index.device_type, mute.index.device_id)
-    device.set_mute(mute.state)
+    try:
+        mute_req = requests.Mute(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID, None
+
+    device = CONFIG.get_device(mute_req.index.device_type, mute_req.index.device_id)
+    device.set_mute(mute_req.state)
     return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('default', sflags.DEVICE, save_config=False)
-def default(default: requests.Default):
+def default(req: requests.Default):
     '''
     Recives an index, sets device as default, only works for virtual devices
     '''
-    default = requests.Default(**default)
-    device = CONFIG.get_device(default.index.device_type, default.index.device_id)
+    try:
+        default_req = requests.Default(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID, None
+
+    device = CONFIG.get_device(default_req.index.device_type, default_req.index.device_id)
     device.set_default()
     return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('volume', sflags.VOLUME | sflags.DEVICE, save_config=False)
-def volume(volume: requests.Volume):
+def volume(req: requests.Volume):
     '''
     Recives a volume request
     '''
-    volume = requests.volume(**volume)
-    device = CONFIG.get_device(volume.index.device_type, volume.index.device_type)
-    device.set_volume(volume.volume)
+    try:
+        volume_req = requests.volume(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID, None
+
+    device = CONFIG.get_device(volume_req.index.device_type, volume_req.index.device_type)
+    device.set_volume(volume_req.volume)
     return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('list_devices', flags=0, notify=False, save_config=False)
 def list_devices(req: requests.DeviceList):
-    device_list_req = requests.DeviceList(**req)
+
+    try:
+        device_list_req = requests.DeviceList(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID, None
+
     device_list = DeviceModel.list_devices(device_list_req.device_type)
 
     return ipc_schema.StatusCode.OK, device_list

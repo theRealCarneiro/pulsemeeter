@@ -14,6 +14,12 @@ class DeviceModel(DeviceSchema):
         self.create()
         self.reconnect(True)
 
+    def get_correct_name(self):
+        '''
+        Get the device name that will be used
+        '''
+        pass
+
     def get_type(self):
         if self.device_type == 'sink':
             if self.device_class == 'virtual':
@@ -114,7 +120,7 @@ class DeviceModel(DeviceSchema):
 
         portmap = self.connections[output_type][output_id].port_map
 
-        pmctl.connect(self.name, target, state, port_map=portmap)
+        pmctl.connect(self.get_correct_name(), target, state, port_map=portmap)
 
     def destroy(self):
         '''

@@ -17,6 +17,11 @@ class RemoveDevice(BaseModel):
     index: DeviceIndex
 
 
+class UpdateDevice(BaseModel):
+    index: DeviceIndex
+    device: device_schema.DeviceSchema
+
+
 class UpdateConnection(BaseModel):
     index: DeviceIndex
     connection: device_schema.ConnectionSchema
