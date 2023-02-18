@@ -59,7 +59,7 @@ class ConfigModel(ConfigSchema):
     def get_max_id(self, device_type: str):
         pass
 
-    def create_device(self, device: DeviceModel):
+    def insert_device(self, device: DeviceModel):
         '''
         Insert a device into config
         '''
