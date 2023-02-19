@@ -263,28 +263,26 @@ def filter_results(app):
     )
 
 
-def list_apps(app_type: str, index: int = None):
+def app_by_id(index: int, app_type: str):
+    app_info = PULSE.sink_input_info if app_type == 'sink_input' else PULSE.source_output_info
+    app = app_info(index)
+
+    if app_type == 'sink_input':
+        app.device_name = PULSE.sink_info(app.sink).name
+    else:
+        app.device_name = PULSE.source_info(app.sink).name
+
+    return app
+
+
+def list_apps(app_type: str):
     app_list = []
 
     if app_type == 'sink_input':
-        app_info = PULSE.sink_input_info
-        list_type_app = PULSE.sink_input_list
-        device_info = PULSE.sink_info
+        full_app_list = PULSE.sink_input_list()
 
     elif app_type == 'source_output':
-        app_info = PULSE.source_output_info
-        list_type_app = PULSE.source_output_list
-        device_info = PULSE.source_info
-
-    # get device list or single device
-    if index is not None:
-        try:
-            device = app_info(int(index))
-        except pulsectl.PulseIndexError:
-            return []
-        full_app_list = [device]
-    else:
-        full_app_list = list_type_app()
+        full_app_list = PULSE.source_output_list()
 
     for app in full_app_list:
 
@@ -294,17 +292,57 @@ def list_apps(app_type: str, index: int = None):
         except AssertionError:
             continue
 
-        # some apps don't have icons
-        icon = app.proplist.get('application.icon_name')
-        if icon is None:
-            icon = 'audio-card'
+        if app_type == 'sink_input':
+            app.device_name = PULSE.sink_info(app.sink).name
+        else:
+            app.device_name = PULSE.source_info(app.sink).name
 
-        index = app.index
-        label = app.proplist['application.name']
-        volume = int(app.volume.values[0] * 100)
-        device = device_info(app.sink)
-        app_list.append((index, label, icon, volume, device.name))
+        app_list.append(app)
     return app_list
+
+
+# def list_apps(app_type: str, index: int = None):
+    # app_list = []
+
+    # if app_type == 'sink_input':
+        # app_info = PULSE.sink_input_info
+        # list_type_app = PULSE.sink_input_list
+        # device_info = PULSE.sink_info
+
+    # elif app_type == 'source_output':
+        # app_info = PULSE.source_output_info
+        # list_type_app = PULSE.source_output_list
+        # device_info = PULSE.source_info
+
+    # # get device list or single device
+    # if index is not None:
+        # try:
+            # device = app_info(int(index))
+        # except pulsectl.PulseIndexError:
+            # return []
+        # full_app_list = [device]
+    # else:
+        # full_app_list = list_type_app()
+
+    # for app in full_app_list:
+
+        # # filter pavu and pm peak sinks
+        # try:
+            # filter_results(app)
+        # except AssertionError:
+            # continue
+
+        # # some apps don't have icons
+        # icon = app.proplist.get('application.icon_name')
+        # if icon is None:
+            # icon = 'audio-card'
+
+        # index = app.index
+        # label = app.proplist['application.name']
+        # volume = int(app.volume.values[0] * 100)
+        # device = device_info(app.sink)
+        # app_list.append((index, label, icon, volume, device.name))
+    # return app_list
 
 
 def get_pactl_version():

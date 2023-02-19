@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Literal
 
 
@@ -14,6 +14,10 @@ class AppSchema(BaseModel):
     app_type: Literal['sink_input', 'source_output']
     index: int
     label: str
-    icon: str
+    icon: str | None
     volume: int
     device: str
+
+    @validator('icon')
+    def set_icon(cls, icon):
+        return icon or 'audio-card'
