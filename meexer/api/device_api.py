@@ -18,7 +18,7 @@ def create_device(req: requests.CreateDevice) -> DeviceModel:
     try:
         create_device_req = requests.CreateDevice(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID
+        return ipc_schema.StatusCode.INVALID, None
 
     device = DeviceModel.construct(create_device_req.device)
     CONFIG.insert_device(device)
@@ -35,7 +35,7 @@ def update_device(req: requests.UpdateDevice):
     try:
         update_device_req = requests.UpdateDevice(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID
+        return ipc_schema.StatusCode.INVALID, None
 
     device_type = update_device_req.index.device_type
     device_id = update_device_req.index.device_id
@@ -59,7 +59,7 @@ def remove_device(req: requests.RemoveDevice):
     try:
         remove_device_req = requests.RemoveDevice(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+        return ipc_schema.StatusCode.INVALID, None, None
 
     device_type = remove_device_req.index.device_index.device_type
     device_id = remove_device_req.index.device_index.device_id
@@ -83,7 +83,7 @@ def connect(req: requests.Connect) -> int:
     try:
         connection_req = requests.Connect(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+        return ipc_schema.StatusCode.INVALID, None, None
 
     state = connection_req.state
     source_index = connection_req.source
@@ -106,7 +106,7 @@ def mute(req: requests.Mute):
     try:
         mute_req = requests.Mute(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+        return ipc_schema.StatusCode.INVALID, None, None
 
     device = CONFIG.get_device(mute_req.index.device_type, mute_req.index.device_id)
     device.set_mute(mute_req.state)
@@ -121,7 +121,7 @@ def default(req: requests.Default):
     try:
         default_req = requests.Default(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+        return ipc_schema.StatusCode.INVALID, None, None
 
     device = CONFIG.get_device(default_req.index.device_type, default_req.index.device_id)
     device.set_default()
@@ -136,7 +136,7 @@ def volume(req: requests.Volume):
     try:
         volume_req = requests.volume(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+        return ipc_schema.StatusCode.INVALID, None, None
 
     device = CONFIG.get_device(volume_req.index.device_type, volume_req.index.device_type)
     device.set_volume(volume_req.volume)
@@ -149,7 +149,7 @@ def list_devices(req: requests.DeviceList):
     try:
         device_list_req = requests.DeviceList(**req)
     except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+        return ipc_schema.StatusCode.INVALID, None, None
 
     device_list = DeviceModel.list_devices(device_list_req.device_type)
 
