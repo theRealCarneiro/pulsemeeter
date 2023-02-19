@@ -16,9 +16,11 @@ class DeviceModel(DeviceSchema):
 
     def get_correct_name(self):
         '''
-        Get the device name that will be used
+        Get the device name that will be used, e.g. when using plugins you need
+        the name of the effect sink
         '''
-        pass
+        # TODO: actually implement this
+        return self.name
 
     def get_type(self):
         if self.device_type == 'sink':
@@ -40,6 +42,59 @@ class DeviceModel(DeviceSchema):
             ret = pmctl.init(self.device_type, self.name)
             if ret == 126:
                 raise
+
+    def update_device_settings(self, device: DeviceSchema):
+        '''
+        Update device settings
+        '''
+        self.destroy()
+        device.connections = self.connections
+        self.__dict__.update(device)
+        self.create()
+        self.reconnect(True)
+        return 0
+
+    def change_device(self):
+        '''
+        Changes the hardware device being used (perhaps not needed bc update_device_settings)
+        '''
+        # TODO: disconnect old device
+        # TODO: change name/description to new device
+        # TODO: recreate connections
+        pass
+
+    def connect(self, output_type: str, output_id: str, output: DeviceSchema,
+                state: bool = None, change_config: bool = False):
+        '''
+        Changes the state of a connection, or create it if it does not exist
+            "output_type" is either 'vi', 'hi', 'a' or 'b'
+            "output_id" is the id of the output device
+            "target" is the name of the output device
+            "state" is a bool that represents the state of the connection
+                True mean connect, False means disconnect
+            "change_config" means save the state change of the connection,
+                useful for e.g. removing connections on cleanup
+        '''
+
+        # toggle the state of the connection
+        if state is None:
+            state = not self.connections[output_type][output_id].state
+
+        # check if output_type key is in the connections dict
+        if output_type not in self.connections:
+            self.connections[output_type] = {}
+
+        # create connection if it doesn't exist
+        if output_id not in self.connections[output_type]:
+            self.connections[output_type][output_id] = ConnectionSchema()
+
+        if change_config is True:
+            self.connections[output_type][output_id].state = state
+
+        str_port_map = self.str_port_map(output_type, output_id, output)
+
+        pmctl.connect(self.get_correct_name(), output.get_correct_name(),
+                      state, port_map=str_port_map)
 
     def reconnect(self, state: bool):
         '''
@@ -70,61 +125,9 @@ class DeviceModel(DeviceSchema):
         self.connections[output_type][output_id].__dict__.update(connection)
         self.connect(output_type, output_id, target, state, change_config=False)
 
-    def update_device_settings(self, device: DeviceSchema):
-        '''
-        Update device settings
-        '''
-        self.destroy()
-        device.connections = self.connections
-        self.__dict__.update(device)
-        self.create()
-        self.reconnect(True)
-        return 0
-
-    def change_device(self):
-        '''
-        Changes the hardware device being used (perhaps not needed bc update_device_settings)
-        '''
-        # TODO: disconnect old device
-        # TODO: change name/description to new device
-        # TODO: recreate connections
-        pass
-
-    def connect(self, output_type: str, output_id: str, target: str,
-                state: bool = None, change_config: bool = False):
-        '''
-        Changes the state of a connection, or create it if it does not exist
-            "output_type" is either 'vi', 'hi', 'a' or 'b'
-            "output_id" is the id of the output device
-            "target" is the name of the output device
-            "state" is a bool that represents the state of the connection
-                True mean connect, False means disconnect
-            "change_config" means save the state change of the connection,
-                useful for e.g. removing connections on cleanup
-        '''
-
-        # toggle the state of the connection
-        if state is None:
-            state = not self.connections[output_type][output_id].state
-
-        # check if output_type key is in the connections dict
-        if output_type not in self.connections:
-            self.connections[output_type] = {}
-
-        # create connection if it doesn't exist
-        if output_id not in self.connections[output_type]:
-            self.connections[output_type][output_id] = ConnectionSchema()
-
-        if change_config is True:
-            self.connections[output_type][output_id].state = state
-
-        portmap = self.connections[output_type][output_id].port_map
-
-        pmctl.connect(self.get_correct_name(), target, state, port_map=portmap)
-
     def destroy(self):
         '''
-        Destroy device if virtual, if hardware destroy connections
+        Destroy connections, estroy device if virtual
         '''
         # TODO: remove plugins
         self.reconnect(False)
@@ -137,7 +140,7 @@ class DeviceModel(DeviceSchema):
             "state": bool, True mean mute, False means unmute
         '''
         self.mute = state
-        pmctl.mute('sink', self.name, state)
+        pmctl.mute(self.device_type, self.name, state)
 
     def set_default(self):
         '''
@@ -145,7 +148,7 @@ class DeviceModel(DeviceSchema):
         '''
         self.primary = True
         if self.device_class == 'virtual':
-            pmctl.set_primary('sink', self.name)
+            pmctl.set_primary(self.device_type, self.name)
 
     def set_volume(self, val: int):
         '''
@@ -154,22 +157,82 @@ class DeviceModel(DeviceSchema):
         '''
         pmctl.volume(self.device_type, self.name, val)
 
-    @staticmethod
-    def list_devices(device_type: str):
+    # TODO: maybe use that instead of List[bool] for selected_channels ?
+    def get_selected_channel_list(self) -> list[int]:
+        '''
+        Returns a list with the index of the selected channels
+        '''
+
+        sel_channels = self.selected_channels
+
+        if sel_channels is None:
+            return list(range(self.channels))
+        else:
+            return [i for i in range(len(sel_channels)) if sel_channels[i] is True]
+
+    def str_port_map(self, output_type: str, output_id: str, output: DeviceSchema):
+        '''
+        Returns a string formated portmap for pmctl
+        '''
+        output_ports = output.get_selected_channel_list()
+        input_ports: list = self.get_selected_channel_list()
+        ports: str = ''
+
+        # auto port mapping
+        if self.connections[output_type][output_id].auto_ports is True:
+
+            # get the number of channels of the device with less channels
+            num_connection_channel = min(len(input_ports), len(output_ports))
+
+            for port in range(num_connection_channel):
+                ports += f'{input_ports[port]}:{output_ports[port]} '
+
+        # manual port mapping
+        else:
+            port_map = self.connections[output_type][output_id].port_map
+            for input_port in range(len(port_map)):
+                for output_port in port_map[input_port]:
+                    ports += f'{input_ports[input_port]}:{output_port} '
+
+        ports = ports[:-1]
+
+        return ports
+
+    @classmethod
+    def pa_to_device_model(cls, device, device_type: str):
+        '''
+        Convert a pulsectl device into an Device Model
+            "device" is either a PulseSinkInfo or a PulseSourceInfo
+            "device_type" is either 'sink' or 'source'
+        '''
+
+        device_model = cls(
+            name=device.name,
+            description=device.description,
+            channels=len(device.volume.values),
+            channel_list=device.channel_list,
+            selected_channels=[True for _ in len(device.volume.values)],
+            device_type=device_type,
+            device_class='hardware',
+            mute=bool(device.mute),
+
+            # TODO: fix volume in model
+            volume=[i * 100 for i in device.volume.values]
+        )
+
+        return device_model
+
+    @classmethod
+    def list_devices(cls, device_type: str):
+        '''
+        Convert a list of pulsectl devices into a list of Device Models
+            "device_type" is either 'sink' or 'source'
+        '''
         pa_device_list = pmctl.list_devices(device_type)
         device_list = []
 
         for device in pa_device_list:
-            device_model = DeviceModel(
-                name=device.name,
-                description=device.description,
-                channels=len(device.volume.values),
-                channel_list=device.channel_list,
-                device_type=device_type,
-                device_class='hardware',
-                mute=bool(device.mute),
-                volume=[i * 100 for i in device.volume.values]  # TODO: fix volume in model
-            )
+            device_model = cls.pa_to_device_model(device, device_type)
             device_list.append(device_model)
 
         return device_list
