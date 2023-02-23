@@ -10,6 +10,7 @@ class DeviceFlags:
 
 class ConnectionSchema(BaseModel):
     target: str
+    nick: str
     state: bool = False
     latency: int | None
     auto_ports: bool = False
@@ -39,7 +40,7 @@ class DeviceSchema(BaseModel):
     primary: bool = False
     channels: int
     channel_list: list[str]
-    connections: dict[str, dict[str, ConnectionSchema]] | None
+    connections: dict[str, dict[str, ConnectionSchema]] = {}
     selected_channels: list[bool] | None
     plugins: list[PluginSchema] = []
 
@@ -58,6 +59,19 @@ class DeviceSchema(BaseModel):
 
         return values
 
+    @root_validator(pre=True)
+    def check_volume(cls, values):
+        '''
+        Set volume list if None are set
+        '''
+        if 'volume' not in values:
+            values['volume'] = [100 for _ in range(values['channels'])]
+
+        if isinstance(values['volume'], int):
+            values['volume'] = [values['volume'] for _ in range(len(values['channels']))]
+
+        return values
+
     @validator('name', always=True)
     def check_name(cls, name):
         '''
@@ -65,5 +79,3 @@ class DeviceSchema(BaseModel):
         '''
         if re.match('^[a-zA-Z-_.]+ ?([a-zA-z+-_.]+)?$', name):
             return name
-
-        raise ValueError('Invalid device name')
