@@ -39,3 +39,12 @@ class TestDeviceModel(unittest.TestCase):
         a = DeviceModel(**self.device)
         a.set_volume(15)
         a.destroy()
+
+
+class TestClassMethods(unittest.TestCase):
+    def test_list_devices(self):
+        device_list = DeviceModel.list_devices('sink')
+        assert isinstance(device_list, list)
+        if len(device_list) > 0:
+            device = device_list[0]
+            assert isinstance(device, DeviceModel)
