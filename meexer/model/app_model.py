@@ -28,6 +28,7 @@ class AppModel(AppSchema):
             label=app.proplist['application.name'],
             icon=app.proplist.get('application.icon_name'),
             volume=int(app.volume.values[0] * 100),
+            mute=bool(app.mute),
             device=app.device_name
         )
 
