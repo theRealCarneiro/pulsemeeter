@@ -16,6 +16,7 @@ class AppSchema(BaseModel):
     label: str
     icon: str | None
     volume: int
+    mute: bool
     device: str
 
     @validator('icon')
