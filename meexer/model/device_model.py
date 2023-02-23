@@ -5,7 +5,7 @@ from meexer.schemas.device_schema import DeviceSchema, DeviceFlags, ConnectionSc
 # TODO: Plugins, Change Device
 class DeviceModel(DeviceSchema):
     '''
-    Child class of DeviceSchema, implements pmctl calls to PA and PW
+    Child class of DeviceSchema, implements pmctl calls
     '''
 
     def __init__(self, **kwargs):
@@ -19,7 +19,7 @@ class DeviceModel(DeviceSchema):
         Get the device name that will be used, e.g. when using plugins you need
         the name of the effect sink
         '''
-        # TODO: actually implement this
+        # TODO: actually implement this, but not really necessary until plugins
         return self.name
 
     def get_type(self):
@@ -61,7 +61,7 @@ class DeviceModel(DeviceSchema):
         # TODO: disconnect old device
         # TODO: change name/description to new device
         # TODO: recreate connections
-        pass
+        raise NotImplementedError
 
     def connect(self, output_type: str, output_id: str, output: DeviceSchema,
                 state: bool = None, change_config: bool = False):
@@ -86,7 +86,8 @@ class DeviceModel(DeviceSchema):
 
         # create connection if it doesn't exist
         if output_id not in self.connections[output_type]:
-            self.connections[output_type][output_id] = ConnectionSchema()
+            conn_schema = ConnectionSchema(target=output.name, nick=output.nick)
+            self.connections[output_type][output_id] = conn_schema
 
         if change_config is True:
             self.connections[output_type][output_id].state = state
@@ -119,10 +120,17 @@ class DeviceModel(DeviceSchema):
         # TODO: disconnect old connection
         # TODO: change settings
         # TODO: recreate connection
+
         target = connection.target
         state = connection.state
+
+        # disconnect
         self.connect(output_type, output_id, target, False, change_config=False)
+
+        # update connection
         self.connections[output_type][output_id].__dict__.update(connection)
+
+        # connect
         self.connect(output_type, output_id, target, state, change_config=False)
 
     def destroy(self):
@@ -173,6 +181,9 @@ class DeviceModel(DeviceSchema):
     def str_port_map(self, output_type: str, output_id: str, output: DeviceSchema):
         '''
         Returns a string formated portmap for pmctl
+            "output_type" is either 'a' or 'b'
+            "output_id" is an int > 0
+            "output" is the DeviceSchema of the output device
         '''
         output_ports = output.get_selected_channel_list()
         input_ports: list = self.get_selected_channel_list()
@@ -211,7 +222,7 @@ class DeviceModel(DeviceSchema):
             description=device.description,
             channels=len(device.volume.values),
             channel_list=device.channel_list,
-            selected_channels=[True for _ in len(device.volume.values)],
+            selected_channels=[True for _ in range(len(device.volume.values))],
             device_type=device_type,
             device_class='hardware',
             mute=bool(device.mute),
