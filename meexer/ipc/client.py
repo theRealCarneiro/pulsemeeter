@@ -17,17 +17,21 @@ LOG = logging.getLogger("generic")
 
 class Client:
 
-    def __init__(self, listen_flags: int = 0, instance_name: str = None):
+    _clients = {}
+
+    def __init__(self, listen_flags: int = 0, instance_name: str = 'default',
+                 sock_name: str = None):
         '''
         '''
 
-        if instance_name is not None:
-            settings.SOCK_FILE = f'/tmp/pulsemeeter.{instance_name}.sock'
+        if sock_name is not None:
+            settings.SOCK_FILE = f'/tmp/pulsemeeter.{sock_name}.sock'
 
         self.conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.id = None
         self.listen_flags = listen_flags
         self.request_id = 0
+        self.instance_name = instance_name
         self.exit_flag = False
 
         # connect to server
@@ -40,6 +44,8 @@ class Client:
             LOG.error(traceback.format_exc())
             LOG.error("Could not connect to server")
             raise
+
+        Client.new_client(self, instance_name)
 
         if listen_flags:
             self.start_listen()
@@ -125,3 +131,11 @@ class Client:
 
         self.request_id += 1
         return res
+
+    @classmethod
+    def new_client(cls, client, client_name: str = 'default'):
+        cls._clients[client_name] = client
+
+    @classmethod
+    def get_client(cls, client_name: str = 'default'):
+        return cls._clients[client_name]

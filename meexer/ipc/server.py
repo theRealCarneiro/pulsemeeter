@@ -22,13 +22,14 @@ class Server:
 
     __routes = {}
 
-    def __init__(self, instance_name: str = None):
+    def __init__(self, sock_name: str = None):
         '''
+            "sock_name" is the name of the socket file, should only be used for testing
         '''
 
-        if instance_name is not None:
-            settings.SOCK_FILE = f'/tmp/pulsemeeter.{instance_name}.sock'
-            settings.PIDFILE = f'/tmp/pulsemeeter.{instance_name}.pid'
+        if sock_name is not None:
+            settings.SOCK_FILE = f'/tmp/pulsemeeter.{sock_name}.sock'
+            settings.PIDFILE = f'/tmp/pulsemeeter.{sock_name}.pid'
 
         if self.is_running():
             # LOG.error('Another instance is already running')
