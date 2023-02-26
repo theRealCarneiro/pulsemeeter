@@ -37,7 +37,7 @@ class DeviceSchema(BaseModel):
     volume: list[int] = None
     mute: bool = False
     flags: int = 0
-    primary: bool = False
+    primary: bool | None
     channels: int
     channel_list: list[str]
     connections: dict[str, dict[str, ConnectionSchema]] = {}
@@ -69,6 +69,19 @@ class DeviceSchema(BaseModel):
 
         if isinstance(values['volume'], int):
             values['volume'] = [values['volume'] for _ in range(len(values['channels']))]
+
+        return values
+
+    @root_validator(pre=True)
+    def no_hardware_primary(cls, values):
+        '''
+        Sets hardware devices primary as None
+        '''
+        if values['device_class'] == 'hardware':
+            values['primary'] = None
+
+        elif 'primary' not in values:
+            values['primary'] = False
 
         return values
 
