@@ -36,24 +36,31 @@ class MainWindow(Gtk.Window):
     def insert_device(self, device_type: str, device: DeviceWidget):
         '''
         Insert a device widget and add it to a device box
+            "device_type" is [vi, hi, a, b]
+            "device" is the device widget to insert in the box
         '''
         self.device_box[device_type].pack_start(device, False, False, 0)
 
     def destroy_device(self, device_type: str, device: DeviceWidget):
         '''
         Destroy a device widget and remove it from a device box
+            "device_type" is [vi, hi, a, b]
+            "device" is the device widget to remove from the box
         '''
         self.device_box[device_type].remove(device)
 
     def insert_app(self, app_widget: AppWidget):
         '''
-        Create a device widget and add it to a device box
+        Insert an app widget to a device box
+            "app_widget" is the app widget to remove from the box
         '''
         self.app_box[app_widget.app_type].pack_start(app_widget, False, False, 0)
 
     def _framed(self, widget, label):
         '''
         Returns a framed widget with the requested label
+            "widget" is the widget that is going to be framed
+            "label" is the label of the frame
         '''
         frame = Gtk.Frame(margin=5)
         frame.set_label_widget(Gtk.Label(label=label, margin=10))
