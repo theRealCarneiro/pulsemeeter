@@ -53,7 +53,7 @@ class Request(BaseModel):
             False means don't run it
     '''
     command: str
-    sender_id: str
+    sender_id: int
     data: dict
     id: int
     run: bool = True

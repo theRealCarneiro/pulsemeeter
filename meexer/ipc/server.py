@@ -114,7 +114,8 @@ class Server:
                         id=req.id
                     )
 
-                    self.send_message(self.clients[int(req.sender_id)], res)
+                    if req.sender_id != 0:
+                        self.send_message(self.clients[int(req.sender_id)], res)
 
                     # skip notify when command fail
                     if status_code != schemas.StatusCode.OK:
@@ -275,7 +276,7 @@ class Server:
         '''
         req = schemas.Request(
             command='exit',
-            sender_id=utils.id_to_str(0),
+            sender_id=0,
             data={},
             id=0,
             flags=0
@@ -289,7 +290,7 @@ class Server:
         '''
         req = schemas.Request(
             command='kill',
-            sender_id=utils.id_to_str(0),
+            sender_id=0,
             data={},
             id=0,
             flags=0
