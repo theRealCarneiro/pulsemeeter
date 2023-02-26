@@ -31,7 +31,6 @@ class Server:
             settings.PIDFILE = f'/tmp/pulsemeeter.{sock_name}.pid'
 
         if self.is_running():
-            # LOG.error('Another instance is already running')
             raise ConnectionAbortedError('Another instance is already running')
 
         # delete socket file if exists

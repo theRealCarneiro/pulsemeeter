@@ -11,11 +11,9 @@ def init_log(name):
     """
     log = logging.getLogger(name)
     log.propagate = 0
+
     # change depending on debug level
-    if DEBUG is True:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+    log.setLevel(logging.DEBUG if DEBUG is True else logging.INFO)
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(logging.DEBUG)
     console.setFormatter(FormatLog())

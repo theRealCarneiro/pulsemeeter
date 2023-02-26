@@ -10,9 +10,33 @@ class AppModel(AppSchema):
     def set_volume(self, val: int):
         pmctl.app_volume(self.app_type, self.index, val)
 
+    def set_mute(self, state: bool):
+        pmctl.app_mute(self.app_type, self.index, state)
+
     def change_device(self, device_name: str):
         print(self)
         pmctl.move_app_device(self.app_type, self.index, device_name)
+
+    @staticmethod
+    def set_volume_by_index(index: int, app_type: str, volume: int):
+        '''
+        Set an app volume by the app's index
+        '''
+        pmctl.app_volume(app_type, index, volume)
+
+    @staticmethod
+    def set_mute_by_index(index: int, app_type: str, state: bool):
+        '''
+        Set an app mute state by the app's index
+        '''
+        pmctl.app_mute(app_type, index, state)
+
+    @staticmethod
+    def change_device_by_index(app_index: int, app_type: str, device: str):
+        '''
+        Change an app output by the app's index
+        '''
+        pmctl.move_app_device(app_type, app_index, device)
 
     @classmethod
     def pa_to_app_model(cls, app, app_type: str):
