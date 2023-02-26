@@ -59,6 +59,8 @@ class GtkClient(Gtk.Application):
 
         device = DeviceWidget(device_schema)
 
+        # TODO: connect vumeters
+
         # connect mute signal
         device.mute.connect('toggled', device_service.mute, device_type, device_id)
 
@@ -90,9 +92,11 @@ class GtkClient(Gtk.Application):
         '''
         app = AppWidget(app_schema)
 
-        # TODO: signals
+        # TODO: volume signal
+        # TODO: mute signal
+        # TODO: device change signal
+        # TODO: vumeter signal
 
-        print(app_schema)
         self.apps[app.app_type][app.index] = app
 
         return app
