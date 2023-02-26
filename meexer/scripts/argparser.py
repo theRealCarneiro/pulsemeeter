@@ -7,8 +7,8 @@ import sys
 import re
 import os
 
-from pulsemeeter.settings import CONFIG_FILE, __version__
-from pulsemeeter.api.audio_client import AudioClient
+from meexer.settings import CONFIG_FILE, __version__
+# from meexer.api.audio_client import AudioClient
 
 
 # change these to change all occurences of these values (also for checking)
