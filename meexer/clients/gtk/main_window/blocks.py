@@ -45,13 +45,11 @@ class MainWindow(Gtk.Window):
         '''
         self.device_box[device_type].remove(device)
 
-    def insert_app(self, app_schema: AppWidget):
+    def insert_app(self, app_widget: AppWidget):
         '''
         Create a device widget and add it to a device box
         '''
-        app = AppWidget(app_schema)
-        self.app_box[app_schema.app_type].pack_start(app, False, False, 0)
-        return app
+        self.app_box[app_widget.app_type].pack_start(app_widget, False, False, 0)
 
     def _framed(self, widget, label):
         '''

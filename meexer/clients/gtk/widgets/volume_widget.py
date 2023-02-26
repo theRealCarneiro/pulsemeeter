@@ -7,6 +7,7 @@ class VolumeWidget(Gtk.Scale):
 
     def __init__(self, value: int = 100):
 
+        print(value)
         self.adjustment = Gtk.Adjustment(
             value=value,
             lower=0,

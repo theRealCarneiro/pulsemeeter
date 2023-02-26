@@ -1,13 +1,13 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk
 
 from meexer.schemas.device_schema import DeviceSchema, ConnectionSchema
 
-from meexer.interface.widgets.volume_widget import VolumeWidget
-from meexer.interface.widgets.mute_widget import MuteWidget
-from meexer.interface.widgets.default_widget import DefaultWidget
-from meexer.interface.widgets.vumeter_widget import VumeterWidget
+from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
+from meexer.clients.gtk.widgets.mute_widget import MuteWidget
+from meexer.clients.gtk.widgets.default_widget import DefaultWidget
+from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
 
 
 class DeviceWidget(Gtk.Frame):

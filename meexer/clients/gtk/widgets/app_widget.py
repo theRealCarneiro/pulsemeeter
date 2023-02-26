@@ -5,9 +5,9 @@ import logging
 
 from meexer.schemas.app_schema import AppSchema
 
-from meexer.interface.widgets.volume_widget import VolumeWidget
-from meexer.interface.widgets.vumeter_widget import VumeterWidget
-from meexer.interface.widgets.mute_widget import MuteWidget
+from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
+from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
+from meexer.clients.gtk.widgets.mute_widget import MuteWidget
 
 
 LOG = logging.getLogger("generic")

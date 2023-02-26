@@ -24,7 +24,7 @@ class GtkClient(Gtk.Application):
         res = self.client.send_request('get_config', {})
         self.config = ConfigSchema(**res.data)
         self.devices = dict(a={}, b={}, vi={}, hi={})
-        self.apps = dict(sink_inputs={}, source_outputs={})
+        self.apps = dict(sink_input={}, source_output={})
 
     def create_window(self):
         window = blocks.MainWindow(application=self)
@@ -92,6 +92,7 @@ class GtkClient(Gtk.Application):
 
         # TODO: signals
 
+        print(app_schema)
         self.apps[app.app_type][app.index] = app
 
         return app
@@ -108,5 +109,5 @@ class GtkClient(Gtk.Application):
         self.quit()
 
 
-app = GtkClient()
-app.run()
+# app = GtkClient()
+# app.run()
