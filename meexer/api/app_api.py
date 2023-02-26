@@ -1,7 +1,7 @@
 from meexer.schemas import requests_schema as requests
 from meexer.schemas import ipc_schema
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
-from meexer.ipc.server import Server as ipc
+from meexer.ipc.router import Router as ipc
 from meexer.model.app_model import AppModel
 from pydantic.error_wrappers import ValidationError
 
