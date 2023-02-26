@@ -13,7 +13,7 @@ from meexer.interface.widgets.vumeter_widget import VumeterWidget
 class DeviceWidget(Gtk.Frame):
 
     def __init__(self, device_schema: DeviceSchema):
-        super().__init__()
+        super().__init__(margin=10)
 
         label = device_schema.nick
         if device_schema.nick != device_schema.description:
@@ -24,6 +24,7 @@ class DeviceWidget(Gtk.Frame):
         self.label = Gtk.Label(label=label)
         self.volume = VolumeWidget(device_schema.volume[0])
         self.mute = MuteWidget(state=device_schema.mute)
+        # if device_schema.primary is not None:
         self.default = DefaultWidget(state=device_schema.primary)
         self.vumeter = VumeterWidget()
         # TODO: plugins
@@ -55,7 +56,9 @@ class DeviceWidget(Gtk.Frame):
         control_grid.attach(self.volume, 0, 0, 1, 1)
         control_grid.attach(self.vumeter, 0, 1, 1, 1)
         control_grid.attach(self.mute, 1, 0, 1, 1)
-        control_grid.attach(self.default, 2, 0, 1, 1)
+
+        if device_schema.primary is not None:
+            control_grid.attach(self.default, 2, 0, 1, 1)
 
     def create_output_button(self, output_type, output_id, nick):
         button = Gtk.ToggleButton(label=nick)
@@ -86,8 +89,8 @@ d = DeviceSchema(
     connections={'a': {'1': ConnectionSchema(target='test', nick='test')}}
 )
 
-window = Gtk.Window()
-window.add(DeviceWidget(d))
-window.show_all()
-window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-Gtk.main()
+# window = Gtk.Window()
+# window.add(DeviceWidget(d))
+# window.show_all()
+# window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+# Gtk.main()

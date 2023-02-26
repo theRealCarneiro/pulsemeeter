@@ -26,3 +26,6 @@ class MuteWidget(Gtk.ToggleButton):
         self.handler_block_by_func(self.on_toggled)
         self.set_active(state)
         self.handler_unblock_by_func(self.on_toggled)
+
+    def to_schema(self) -> bool:
+        return self.get_active()

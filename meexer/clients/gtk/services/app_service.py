@@ -1,9 +1,9 @@
 from meexer.ipc.client import Client
 from meexer.schemas import requests_schema
 from meexer.schemas.app_schema import AppSchema
-import Gtk
+from gi.repository import Gtk
 
-CLIENT = Client.get_client('default')
+CLIENT = Client.get_client('gtk')
 
 '''
 This module is for implementing the gtk signal callback for apps and making the requests
@@ -21,7 +21,7 @@ def volume(scale: Gtk.Scale, app: AppSchema, volume: int):
     CLIENT.send_request('app_volume', data)
 
 
-def move(combobox: Gtk.Combobox, app: AppSchema):
+def move(combobox: Gtk.ComboBox, app: AppSchema):
     data = {
         'app': app.__dict__,
         'device': combobox.get_active_text()

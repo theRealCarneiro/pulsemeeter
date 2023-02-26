@@ -3,7 +3,8 @@ from meexer.ipc.client import Client
 
 from meexer.schemas import requests_schema
 
-CLIENT = Client.get_client('default')
+CLIENT_NAME = 'gtk'
+
 
 '''
 This module is for implementing the gtk signal callback for devices and making the requests
@@ -28,7 +29,7 @@ def connect(button, input_type, input_id, output_type, output_id):
     }
 
     requests_schema.Connect(**data)
-    CLIENT.send_request('connect', data)
+    Client.get_client(CLIENT_NAME).send_request('connect', data)
 
 
 def mute(button, device_type, device_id):
@@ -39,13 +40,13 @@ def mute(button, device_type, device_id):
     data = {
         'index': {
             'device_type': device_type,
-            'device_id': device_type
+            'device_id': device_id
         },
         'state': button.get_active()
     }
 
     requests_schema.Mute(**data)
-    CLIENT.send_request('mute', data)
+    Client.get_client(CLIENT_NAME).send_request('mute', data)
 
 
 def default(button, device_type, device_id):
@@ -56,12 +57,12 @@ def default(button, device_type, device_id):
     data = {
         'index': {
             'device_type': device_type,
-            'device_id': device_type
+            'device_id': device_id
         }
     }
 
     requests_schema.Default(**data)
-    CLIENT.send_request('default', data)
+    Client.get_client(CLIENT_NAME).send_request('default', data)
 
 
 def volume(scale, device_type, device_id):
@@ -72,10 +73,10 @@ def volume(scale, device_type, device_id):
     data = {
         'index': {
             'device_type': device_type,
-            'device_id': device_type
+            'device_id': device_id
         },
         'volume': scale.get_value()
     }
 
     requests_schema.Volume(**data)
-    CLIENT.send_request('volume', data)
+    Client.get_client(CLIENT_NAME).send_request('volume', data)

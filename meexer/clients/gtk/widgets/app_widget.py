@@ -1,6 +1,6 @@
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio, Gdk
+from gi.repository import Gtk, Gio
 import logging
 
 from meexer.schemas.app_schema import AppSchema
@@ -13,11 +13,11 @@ from meexer.interface.widgets.mute_widget import MuteWidget
 LOG = logging.getLogger("generic")
 
 
-class App(Gtk.Frame):
+class AppWidget(Gtk.Frame):
 
     def __init__(self, app_schema: AppSchema):
         self.app_schema = app_schema
-        super().__init__()
+        super().__init__(margin=10)
         main_grid = Gtk.Grid(margin=5, hexpand=True)
         info_grid = Gtk.Grid(margin_start=8, hexpand=True)
         control_grid = Gtk.Grid(hexpand=True)
@@ -95,11 +95,11 @@ class AppCombobox(Gtk.ComboBox):
         return cls.device_list
 
 
-window = Gtk.Window()
-frame = Gtk.Frame(margin=5)
-frame.add(App())
-window.add(frame)
-window.show_all()
-window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-AppCombobox.set_device_list(['Main', 'Music', 'Comn'])
-Gtk.main()
+# window = Gtk.Window()
+# frame = Gtk.Frame(margin=5)
+# frame.add(App())
+# window.add(frame)
+# window.show_all()
+# window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+# AppCombobox.set_device_list(['Main', 'Music', 'Comn'])
+# Gtk.main()
