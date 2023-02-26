@@ -9,9 +9,10 @@ from queue import SimpleQueue
 
 from meexer import settings
 from meexer.ipc import utils
-# from meexer.settings import SOCK_FILE, PIDFILE
 from meexer.schemas import ipc_schema as schemas
 from meexer.settings import CLIENT_ID_LEN, REQUEST_SIZE_LEN
+
+from meexer.ipc.router import Router
 
 LISTENER_TIMEOUT = 2
 
@@ -19,8 +20,6 @@ LOG = logging.getLogger("generic")
 
 
 class Server:
-
-    __routes = {}
 
     def __init__(self, sock_name: str = None):
         '''
@@ -43,29 +42,6 @@ class Server:
         self.query_thread = None
         self.main_loop_thread = None
         self.clients = {}
-
-    @classmethod
-    def command(cls, command_str, flags=0, notify=True, save_config=True):
-        '''
-        Decorator for creating routes
-        '''
-        def decorator(f):
-            r = {
-                'command': f,
-                # make sure to include ALL flag
-                'flags': flags | 1 if flags != 0 else 0,
-                'notify': notify,
-                'save_config': save_config
-            }
-            route = schemas.Route(**r)
-            cls.__routes[command_str] = route
-            return f
-
-        return decorator
-
-    @classmethod
-    def get_route(cls, command):
-        return cls.__routes.get(command)
 
     def start_queries(self, daemon=False):
         '''
@@ -96,26 +72,6 @@ class Server:
             self.exit_flag = True
             self.query_thread.join()
 
-    def unlink_socket(self):
-        '''
-        Deletes socket file
-        '''
-        try:
-            os.unlink(settings.SOCK_FILE)
-        except OSError:
-            if os.path.exists(settings.SOCK_FILE):
-                raise
-
-    def unlink_pid_file(self):
-        '''
-        Deletes pid file
-        '''
-        try:
-            os.unlink(settings.PIDFILE)
-        except OSError:
-            if os.path.exists(settings.PIDFILE):
-                raise
-
     def main_loop(self):
         '''
         Will run the commands requested by the clients
@@ -127,7 +83,10 @@ class Server:
             # Listen for commands
             while not self.exit_flag:
                 req = self.command_queue.get()
-                route = Server.get_route(req.command)
+                route = Router.get_route(req.command)
+
+                if route is None:
+                    LOG.error('No routes for command "`%s"', req.command)
 
                 # close server without warning
                 if req.command == 'kill':
@@ -234,17 +193,6 @@ class Server:
                     req = self.recive_message(client)
                     LOG.debug(req)
                     self.command_queue.put(req)
-                    # route = Server.get_route.get(req.command)
-                    # ret_msg = route.command(req.data)
-
-                    # res = req
-                    # res.data = ret_msg
-                    # res.flags = route.flags
-                    # self.send_message(client, res)
-
-                    # if route.notify:
-                        # self.notify(res, client.id)
-
                     # # TODO: save config
                     # if route.save_config:
                         # pass
@@ -300,6 +248,26 @@ class Server:
         req = json.loads(msg.decode())
         LOG.debug(req)
         return schemas.Request(**req)
+
+    def unlink_socket(self):
+        '''
+        Deletes socket file
+        '''
+        try:
+            os.unlink(settings.SOCK_FILE)
+        except OSError:
+            if os.path.exists(settings.SOCK_FILE):
+                raise
+
+    def unlink_pid_file(self):
+        '''
+        Deletes pid file
+        '''
+        try:
+            os.unlink(settings.PIDFILE)
+        except OSError:
+            if os.path.exists(settings.PIDFILE):
+                raise
 
     def exit_signal(self):
         '''
