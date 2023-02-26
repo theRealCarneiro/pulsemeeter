@@ -164,6 +164,18 @@ def volume(device_type: str, device_name: str, val: int, selected_channels: list
     return 0
 
 
+def app_mute(app_type: str, index: int, state: bool):
+
+    if app_type == 'sink_input':
+        app = PULSE.sink_input_info(index)
+    else:
+        app = PULSE.source_output_info(index)
+
+    PULSE.mute(app, state)
+
+    return 0
+
+
 def app_volume(app_type: str, index: int, val: int):
 
     # limit volume at 153

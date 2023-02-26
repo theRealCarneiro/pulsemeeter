@@ -17,8 +17,14 @@ def app_move(req: requests.AppMove):
     except ValidationError:
         return ipc_schema.StatusCode.INVALID, None
 
-    app_model = AppModel.construct(app_move_req.app)
-    app_model.change_device(app_move_req.device)
+    # app_model = AppModel.construct(app_move_req.app)
+    app_index = app_move_req.app_index
+    app_type = app_move_req.app_type
+    device = app_move_req.device
+
+    AppModel.change_device_by_index(app_index, app_type, device)
+
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('app_volume', sflags.APP, save_config=False)
@@ -32,8 +38,33 @@ def app_volume(req: requests.AppVolume):
     except ValidationError:
         return ipc_schema.StatusCode.INVALID, None
 
-    app_model = AppModel.construct(app_volume_req.app)
-    app_model.set_volume(app_volume_req.volume)
+    app_index = app_volume_req.app_index
+    app_type = app_volume_req.app_type
+    volume = app_volume_req.volume
+
+    AppModel.set_volume_by_index(app_index, app_type, volume)
+
+    return ipc_schema.StatusCode.OK, None
+
+
+@ipc.command('app_mute', sflags.APP, save_config=False)
+def app_mute(req: requests.AppMute):
+    '''
+    Recives a volume reques
+    '''
+
+    try:
+        app_mute_req = requests.AppMute(**req)
+    except ValidationError:
+        return ipc_schema.StatusCode.INVALID, None
+
+    app_index = app_mute_req.app_index
+    app_type = app_mute_req.app_type
+    state = app_mute_req.state
+
+    AppModel.set_mute_by_index(app_index, app_type, state)
+
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('app_list', sflags.APP, notify=False, save_config=False)

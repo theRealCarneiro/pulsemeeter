@@ -75,21 +75,3 @@ class DeviceWidget(Gtk.Frame):
         # for device_type, buttons in self.connection_buttons.items():
             # for device_id, button in buttons:
                 # self.device_schema.connections[device_type][device_id]
-
-
-d = DeviceSchema(
-    name='test',
-    description='testing',
-    channels=2,
-    channel_list=[],
-    device_type='sink',
-    device_class='virtual',
-    volume=[70, 70],
-    connections={'a': {'1': ConnectionSchema(target='test', nick='test')}}
-)
-
-# window = Gtk.Window()
-# window.add(DeviceWidget(d))
-# window.show_all()
-# window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-# Gtk.main()

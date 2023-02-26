@@ -11,7 +11,7 @@ from meexer.schemas.app_schema import AppSchema
 from meexer.model.app_model import AppModel
 
 from meexer.clients.gtk.widgets.device_widget import DeviceWidget
-from meexer.clients.gtk.widgets.app_widget import AppWidget
+from meexer.clients.gtk.widgets.app_widget import AppWidget, AppCombobox
 from meexer.clients.gtk.services import app_service, device_service
 
 
@@ -24,7 +24,9 @@ class GtkClient(Gtk.Application):
         res = self.client.send_request('get_config', {})
         self.config = ConfigSchema(**res.data)
         self.devices = dict(a={}, b={}, vi={}, hi={})
+        self.device_handlers = dict(a={}, b={}, vi={}, hi={})
         self.apps = dict(sink_input={}, source_output={})
+        self.app_handlers = dict(sink_input={}, source_output={})
 
     def create_window(self):
         window = blocks.MainWindow(application=self)
@@ -34,6 +36,19 @@ class GtkClient(Gtk.Application):
             for device_id, device_schema in self.config.__dict__[device_type].items():
                 device = self.create_device(device_type, device_id, device_schema)
                 window.insert_device(device_type, device)
+
+        sink_input_device_list = [
+            device.name for device_id, device in self.config.__dict__['vi'].items()
+        ]
+
+        source_output_device_list = [
+            device.name for device_id, device in self.config.__dict__['b'].items()
+        ]
+
+        source_output_device_list += sink_input_device_list
+
+        AppCombobox.set_device_list('sink_input', sink_input_device_list)
+        AppCombobox.set_device_list('source_output', source_output_device_list)
 
         # load apps
         for app_type in ('sink_input', 'source_output'):
@@ -58,24 +73,41 @@ class GtkClient(Gtk.Application):
         '''
 
         device = DeviceWidget(device_schema)
+        self.device_handlers[device_type][device_id] = {}
+        device_handle = self.device_handlers[device_type][device_id]
 
         # TODO: connect vumeters
 
         # connect mute signal
-        device.mute.connect('toggled', device_service.mute, device_type, device_id)
+        device_handle['mute'] = device.mute.connect(
+            'toggled', device_service.mute, device_type, device_id
+        )
 
         # connect volume change signal
-        device.volume.connect('value-changed', device_service.volume, device_type, device_id)
+        device_handle['volume'] = device.volume.connect(
+            'value-changed', device_service.volume, device_type, device_id
+        )
 
-        # connect default signals
-        if device.default is not None:
-            device.default.connect('toggled', device_service.default, device_type, device_id)
+        # connect default signal
+        device_handle['default'] = device.default.connect(
+            'toggled', device_service.default, device_type, device_id
+        )
 
-        # connect connection signals
+        # connect change last default device state
+        device_handle['default_after'] = device.default.connect_after(
+            'toggled', self.change_default_state, device_type, device_id
+        )
+
+        # interate connection buttons
         for output_type, buttons in device.connection_buttons.items():
+            device_handle[output_type] = {}
             for output_id, button in buttons:
-                button.connect('toggled', device_service.connect, device_type, device_id,
-                               output_type, output_id)
+
+                # connect connection signals
+                device_handle[output_type][output_id] = button.connect(
+                    'toggled', device_service.connect, device_type, device_id,
+                    output_type, output_id
+                )
 
         self.devices[device_type][device_id] = device
 
@@ -83,6 +115,7 @@ class GtkClient(Gtk.Application):
 
     def remove_device(self, device_type: str, device_id: str):
         device = self.devices[device_type].pop(device_id)
+        self.device_handlers[device_type].pop(device_id)
         self.window.remove_device(device_type, device)
         device.destroy()
 
@@ -91,10 +124,18 @@ class GtkClient(Gtk.Application):
         Create an app widget and add it to an app box
         '''
         app = AppWidget(app_schema)
+        self.app_handlers[app_schema.app_type][app_schema.index] = {}
+        app_handler = self.app_handlers[app_schema.app_type][app_schema.index]
 
-        # TODO: volume signal
-        # TODO: mute signal
-        # TODO: device change signal
+        app_handler['volume'] = app.volume.connect(
+            'value-changed', app_service.volume, app_schema.app_type, app_schema.index
+        )
+        app_handler['mute'] = app.mute.connect(
+            'toggled', app_service.mute, app_schema.app_type, app_schema.index
+        )
+        app_handler['combobox'] = app.combobox.connect(
+            'changed', app_service.move, app_schema.app_type, app_schema.index
+        )
         # TODO: vumeter signal
 
         self.apps[app.app_type][app.index] = app
@@ -106,12 +147,41 @@ class GtkClient(Gtk.Application):
         Delete an app widget
         '''
         app = self.apps[app_schema.app_type].pop(app_schema.index)
+        self.app_handlers[app_schema.app_type].pop(app_schema.index)
         self.window.remove_app(app)
         app.destroy()
 
+    def change_default_state(self, widget, device_type: str, device_id: str):
+        '''
+        Called after a default request has been sent, removes the previous default
+        device as default
+        '''
+
+        # disable widget
+        widget.set_sensitive(False)
+
+        # search device handler
+        for target_id, device in self.devices[device_type].items():
+            if device_id != target_id and device.default.get_active():
+
+                # get handlers
+                device_handlers = self.device_handlers[device_type][target_id]
+                handler = device_handlers['default']
+                handler_after = device_handlers['default_after']
+
+                # block signal handler
+                device.default.handler_block(handler)
+                device.default.handler_block(handler_after)
+
+                # reset state and sensitivity
+                device.default.set_active(False)
+                device.default.set_sensitive(True)
+
+                # unblock signal handler
+                device.default.handler_unblock(handler)
+                device.default.handler_unblock(handler_after)
+
+                break
+
     def on_quit(self):
         self.quit()
-
-
-# app = GtkClient()
-# app.run()

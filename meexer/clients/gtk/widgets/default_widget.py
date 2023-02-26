@@ -23,11 +23,3 @@ class DefaultWidget(Gtk.ToggleButton):
         self.set_active(state)
         if state is True:
             self.set_sensitive(False)
-
-    def set_state(self, state: bool):
-        '''
-        Manually change the state of the button
-        '''
-        self.handler_block_by_func(self.on_toggled)
-        self.set_active(state)
-        self.handler_unblock_by_func(self.on_toggled)

@@ -68,14 +68,23 @@ class AppList(BaseModel):
 
 
 class AppVolume(BaseModel):
-    app: app_schema.AppSchema
+    app_type: Literal['sink_input', 'source_output']
+    app_index: int
     volume: int = Field(..., ge=0, le=154)
 
 
+class AppMute(BaseModel):
+    app_type: Literal['sink_input', 'source_output']
+    app_index: int
+    state: bool
+
+
 class AppMove(BaseModel):
-    app: app_schema.AppSchema
+    app_type: Literal['sink_input', 'source_output']
+    app_index: int
     device: str
 
 
 class AppRemove(BaseModel):
-    app: app_schema.AppSchema
+    app_type: Literal['sink_input', 'source_output']
+    app_index: int

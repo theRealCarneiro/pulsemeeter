@@ -1,36 +1,44 @@
 from meexer.ipc.client import Client
 from meexer.schemas import requests_schema
-from meexer.schemas.app_schema import AppSchema
+# from meexer.schemas.app_schema import AppSchema
 from gi.repository import Gtk
 
-CLIENT = Client.get_client('gtk')
+CLIENT_NAME = 'gtk'
 
 '''
-This module is for implementing the gtk signal callback for apps and making the requests
-to the server
+This module is for implementing the gtk signal callback for apps and making the
+requests to the server
 '''
 
 
-def volume(scale: Gtk.Scale, app: AppSchema, volume: int):
+def volume(scale: Gtk.Scale, app_type: str, app_index: int):
     data = {
-        'app': app.__dict__,
-        'volume': volume
+        'app_type': app_type,
+        'app_index': app_index,
+        'volume': scale.get_value()
     }
 
     requests_schema.AppVolume(**data)
-    CLIENT.send_request('app_volume', data)
+    Client.get_client(CLIENT_NAME).send_request('app_volume', data)
 
 
-def move(combobox: Gtk.ComboBox, app: AppSchema):
+def mute(button: Gtk.ToggleButton, app_type: str, app_index: int):
     data = {
-        'app': app.__dict__,
-        'device': combobox.get_active_text()
+        'app_type': app_type,
+        'app_index': app_index,
+        'state': button.get_active()
     }
 
-    requests_schema.AppVolume(**data)
-    CLIENT.send_request('app_volume', data)
+    requests_schema.AppMute(**data)
+    Client.get_client(CLIENT_NAME).send_request('app_mute', data)
 
 
-# TODO
-def mute():
-    pass
+def move(combobox: Gtk.ComboBox, app_type: str, app_index: int):
+    data = {
+        'app_type': app_type,
+        'app_index': app_index,
+        'device': combobox.get_active_text(app_type)
+    }
+
+    requests_schema.AppMove(**data)
+    Client.get_client(CLIENT_NAME).send_request('app_move', data)

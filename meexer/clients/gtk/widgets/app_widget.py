@@ -28,7 +28,7 @@ class AppWidget(Gtk.Frame):
         self.label = Gtk.Label(label=app_schema.label, margin_left=10, halign=Gtk.Align.START)
         self.icon = AppIcon(app_schema.icon)
         self.volume = VolumeWidget(app_schema.volume)
-        self.combobox = AppCombobox(app_schema.device)
+        self.combobox = AppCombobox(app_schema.device, app_schema.app_type)
         self.mute = MuteWidget(app_schema.mute)
         self.vumeter = VumeterWidget()
 
@@ -54,10 +54,11 @@ class AppIcon(Gtk.Image):
 
 class AppCombobox(Gtk.ComboBox):
 
-    device_list: Gtk.ListStore = Gtk.ListStore(str)
+    _device_list = dict(sink_input=Gtk.ListStore(str), source_output=Gtk.ListStore(str))
 
-    def __init__(self, device: str):
-        device_list = self.device_list
+    def __init__(self, device: str, app_type: str):
+        print(device)
+        device_list = self._device_list[app_type]
         super().__init__(
             model=device_list,
             hexpand=True,
@@ -74,32 +75,32 @@ class AppCombobox(Gtk.ComboBox):
 
         count: int = 0
         for device_name in device_list:
-            if device_name == device[0]:
+            if device_name[0] == device:
                 self.set_active(count)
                 break
             count += 1
 
-    def get_active_text(self):
+    def get_active_text(self, app_type):
         active_iter = self.get_active_iter()
         if active_iter is not None:
-            return self.device_list.get_value(active_iter, 0)
+            return self._device_list[app_type].get_value(active_iter, 0)
 
     @classmethod
-    def set_device_list(cls, device_list):
-        cls.device_list.clear()
+    def set_device_list(cls, app_type, device_list):
+        cls._device_list[app_type].clear()
         for device in device_list:
-            cls.device_list.append([device])
+            cls._device_list[app_type].append([device])
 
     @classmethod
-    def get_device_list(cls):
-        return cls.device_list
+    def append_device_list(cls, app_type, device):
+        cls._device_list[app_type].append([device])
 
+    @classmethod
+    def remove_device_list(cls, app_type, device):
+        for row in cls._device_list[app_type]:
+            if device == row[0]:
+                cls._device_list[app_type].remove(row.iter)
 
-# window = Gtk.Window()
-# frame = Gtk.Frame(margin=5)
-# frame.add(App())
-# window.add(frame)
-# window.show_all()
-# window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-# AppCombobox.set_device_list(['Main', 'Music', 'Comn'])
-# Gtk.main()
+    @classmethod
+    def get_device_list(cls, app_type):
+        return cls.device_list[app_type]
