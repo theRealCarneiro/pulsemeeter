@@ -138,4 +138,4 @@ class Client:
 
     @classmethod
     def get_client(cls, client_name: str = 'default'):
-        return cls._clients[client_name]
+        return cls._clients.get(client_name)
