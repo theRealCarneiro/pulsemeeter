@@ -1,4 +1,4 @@
-from meexer.ipc.server import Server as ipc
+from meexer.ipc.router import Router as ipc
 from meexer.schemas import ipc_schema, requests_schema as requests
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
 from meexer.model.device_model import DeviceModel
@@ -134,11 +134,11 @@ def volume(req: requests.Volume):
     Recives a volume request
     '''
     try:
-        volume_req = requests.volume(**req)
+        volume_req = requests.Volume(**req)
     except ValidationError:
         return ipc_schema.StatusCode.INVALID, None, None
 
-    device = CONFIG.get_device(volume_req.index.device_type, volume_req.index.device_type)
+    device = CONFIG.get_device(volume_req.index.device_type, volume_req.index.device_id)
     device.set_volume(volume_req.volume)
     return ipc_schema.StatusCode.OK, None
 
