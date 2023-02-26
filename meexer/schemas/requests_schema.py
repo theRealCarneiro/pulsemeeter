@@ -75,3 +75,7 @@ class AppVolume(BaseModel):
 class AppMove(BaseModel):
     app: app_schema.AppSchema
     device: str
+
+
+class AppRemove(BaseModel):
+    app: app_schema.AppSchema
