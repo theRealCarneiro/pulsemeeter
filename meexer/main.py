@@ -4,7 +4,8 @@ import logging
 import time
 import sys
 
-from pulsemeeter.controller.window_controller import WindowController
+from meexer.api import app_api, device_api, server_api
+from meexer.clients.gtk.gtk_client import GtkClient
 from meexer.ipc.server import Server
 from meexer.ipc.client import Client
 
@@ -13,7 +14,7 @@ LOG = logging.getLogger("generic")
 
 def start_server(server):
     try:
-        server.start_server(daemon=True)
+        server.start_queries(daemon=True)
         time.sleep(0.1)
     except Exception:
         print('Could not start server because of:\n')
@@ -35,7 +36,8 @@ def main():
 
         # no args: open window
         case []:
-            trayonly = False
+            pass
+            # trayonly = False
 
         # daemon: start only the server
         case ['daemon']:
@@ -43,7 +45,7 @@ def main():
                 LOG.error('There\'s another server instance running')
                 return 1
 
-            trayonly = True
+            # trayonly = True
 
         # init: Just start devices and connections
         case ['init']:
@@ -70,9 +72,10 @@ def main():
 
     # start server if there's no server running
     if isserver: start_server(server)
-    WindowController(isserver, trayonly)
+    app = GtkClient()
+    app.run()
 
     # close server if there was a server started
-    if isserver: server.stop_server()
+    if isserver: server.exit_signal()
 
     return 0
