@@ -19,7 +19,6 @@ class DeviceWidget(Gtk.Frame):
         if device_schema.nick != device_schema.description:
             label += f': {device_schema.description}'
 
-        # print(device_schema)
         # create widgets
         self.label = Gtk.Label(label=label)
         self.volume = VolumeWidget(device_schema.volume[0])
