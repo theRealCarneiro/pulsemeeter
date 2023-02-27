@@ -29,7 +29,7 @@ class ConfigModel(ConfigSchema):
     hi: dict[str, DeviceModel] = {}
     a: dict[str, DeviceModel] = {}
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         config = self.load_config()
         super().__init__(**config)
 
@@ -48,7 +48,9 @@ class ConfigModel(ConfigSchema):
         Load config from file
         '''
         with open(CONFIG_FILE, 'r') as outfile:
-            return json.load(outfile)
+            config = json.load(outfile)
+
+        return config
 
     def get_device(self, dtype: str, did: str):
         '''
