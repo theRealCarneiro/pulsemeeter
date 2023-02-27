@@ -4,7 +4,6 @@ from gi.repository import Gtk
 
 from meexer.ipc.client import Client
 from meexer.clients.gtk.main_window import blocks
-# from meexer.schemas.device_schema import DeviceSchema
 from meexer.schemas.config_schema import ConfigSchema
 from meexer.schemas.device_schema import DeviceSchema
 from meexer.schemas.app_schema import AppSchema
@@ -101,7 +100,7 @@ class GtkClient(Gtk.Application):
         # interate connection buttons
         for output_type, buttons in device.connection_buttons.items():
             device_handle[output_type] = {}
-            for output_id, button in buttons:
+            for output_id, button in buttons.items():
 
                 # connect connection signals
                 device_handle[output_type][output_id] = button.connect(
@@ -136,7 +135,7 @@ class GtkClient(Gtk.Application):
         app_handler['combobox'] = app.combobox.connect(
             'changed', app_service.move, app_schema.app_type, app_schema.index
         )
-        # TODO: vumeter signal
+        # TODO: connect vumeter
 
         self.apps[app.app_type][app.index] = app
 
