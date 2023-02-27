@@ -1,9 +1,10 @@
+from pydantic.error_wrappers import ValidationError
+
 from meexer.schemas import requests_schema as requests
 from meexer.schemas import ipc_schema
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
 from meexer.ipc.router import Router as ipc
 from meexer.model.app_model import AppModel
-from pydantic.error_wrappers import ValidationError
 
 
 @ipc.command('app_move', sflags.APP, save_config=False)
@@ -78,6 +79,6 @@ def app_list(req: requests.AppList):
     except ValidationError:
         return ipc_schema.StatusCode.INVALID, None
 
-    app_list = AppModel.list_apps(app_list_req.app_type)
+    apps = AppModel.list_apps(app_list_req.app_type)
 
-    return ipc_schema.StatusCode.OK, app_list
+    return ipc_schema.StatusCode.OK, apps
