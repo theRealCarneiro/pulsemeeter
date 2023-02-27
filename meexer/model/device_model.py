@@ -8,11 +8,11 @@ class DeviceModel(DeviceSchema):
     Child class of DeviceSchema, implements pmctl calls
     '''
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self.create()
-        self.reconnect(True)
+        # self.create()
+        # self.reconnect(True)
 
     def get_correct_name(self):
         '''
@@ -104,8 +104,8 @@ class DeviceModel(DeviceSchema):
                 True will recreate active connections, False will destroy them
         '''
 
-        for device_type, connections in self.connections.keys():
-            for device_id, conn in connections.keys():
+        for device_type, connections in self.connections.items():
+            for device_id, conn in connections.items():
                 if conn.state is True:
                     self.connect(device_type, device_id, conn.target, state,
                                  change_config=False)
