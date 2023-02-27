@@ -8,8 +8,8 @@ class DeviceModel(DeviceSchema):
     Child class of DeviceSchema, implements pmctl calls
     '''
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+        # super().__init__(*args, **kwargs)
 
         # self.create()
         # self.reconnect(True)
@@ -26,22 +26,20 @@ class DeviceModel(DeviceSchema):
         if self.device_type == 'sink':
             if self.device_class == 'virtual':
                 return 'vi'
-            else:
-                return 'a'
-        else:
-            if self.device_class == 'virtual':
-                return 'b'
-            else:
-                return 'hi'
+            return 'a'
+
+        if self.device_class == 'virtual':
+            return 'b'
+        return 'hi'
 
     def create(self):
         '''
         Create device if virtual
         '''
         if self.device_class == 'virtual' and not self.flags & DeviceFlags.EXTERNAL:
-            ret = pmctl.init(self.device_type, self.name)
-            if ret == 126:
-                raise
+            pmctl.init(self.device_type, self.name)
+            # if ret == 126:
+                # raise
 
     def update_device_settings(self, device: DeviceSchema):
         '''
@@ -175,8 +173,8 @@ class DeviceModel(DeviceSchema):
 
         if sel_channels is None:
             return list(range(self.channels))
-        else:
-            return [i for i in range(len(sel_channels)) if sel_channels[i] is True]
+
+        return [i for i in range(len(sel_channels)) if sel_channels[i] is True]
 
     def str_port_map(self, output_type: str, output_id: str, output: DeviceSchema):
         '''

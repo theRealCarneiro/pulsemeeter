@@ -51,15 +51,11 @@ class Server:
         self.stop_queries()
         self.stop_main_loop()
 
-        # self.ready = False
         self.query_thread = threading.Thread(target=self.query_clients, daemon=daemon)
         self.query_thread.start()
 
         self.main_loop_thread = threading.Thread(target=self.main_loop)
         self.main_loop_thread.start()
-
-        # while not self.ready:
-            # pass
 
     def stop_main_loop(self):
         if self.main_loop_thread is not None and self.main_loop_thread.is_alive():
@@ -152,7 +148,6 @@ class Server:
             sock.listen()
             # server is id 0
             client_id = 1
-            self.ready = True
             while not self.exit_flag:
                 try:
                     # Wait for a connection
@@ -315,7 +310,7 @@ class Server:
                 return False
 
         # PIDFILE does not exist
-        except Exception:
+        except FileNotFoundError:
             with open(settings.PIDFILE, 'w') as f:
                 f.write(f'{os.getpid()}\n')
             return False
