@@ -13,7 +13,7 @@ class ConnectionSchema(BaseModel):
     nick: str
     state: bool = False
     latency: int | None
-    auto_ports: bool = False
+    auto_ports: bool = True
     port_map: list[list[int]] = []
 
 
