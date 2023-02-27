@@ -92,8 +92,8 @@ def connect(req: requests.Connect) -> int:
     source = CONFIG.get_device(source_index.device_type, source_index.device_id)
     output = CONFIG.get_device(output_index.device_type, output_index.device_id)
 
-    source.connect(output_index.output_type, output_index.output_id,
-                   output.get_correct_name(), state)
+    source.connect(output_index.device_type, output_index.device_id,
+                   output, state)
 
     return ipc_schema.StatusCode.OK, None
 
