@@ -2,3 +2,4 @@ setuptools
 pulsectl
 pulsectl_asyncio
 pygobject
+pydantic

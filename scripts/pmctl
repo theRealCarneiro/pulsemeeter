@@ -78,7 +78,7 @@ remove (){
 
 	# pipewire
 	else
-		pw-cli destroy $device 2>&1 | grep -q Error && exit 1
+		pw-cli destroy $device 2>&1 | grep -q Error && exit 1 || exit 0
 	fi
 }
 
