@@ -22,10 +22,10 @@ class GtkClient(Gtk.Application):
         self.client = Client(listen_flags=0, instance_name='gtk')
         res = self.client.send_request('get_config', {})
         self.config = ConfigSchema(**res.data)
-        self.devices = dict(a={}, b={}, vi={}, hi={})
-        self.device_handlers = dict(a={}, b={}, vi={}, hi={})
-        self.apps = dict(sink_input={}, source_output={})
-        self.app_handlers = dict(sink_input={}, source_output={})
+        self.devices = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
+        self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
+        self.apps = {'sink_input': {}, 'source_output': {}}
+        self.app_handlers = {'sink_input': {}, 'source_output': {}}
 
     def create_window(self):
         window = blocks.MainWindow(application=self)

@@ -1,9 +1,9 @@
+from pydantic.error_wrappers import ValidationError
 from meexer.ipc.router import Router as ipc
 from meexer.schemas import ipc_schema, requests_schema as requests
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
 from meexer.model.device_model import DeviceModel
 from meexer.model.config_model import ConfigModel
-from pydantic.error_wrappers import ValidationError
 
 CONFIG = ConfigModel()
 
@@ -53,8 +53,6 @@ def remove_device(req: requests.RemoveDevice):
     Recives a device index
     '''
 
-    config = CONFIG.__dict__
-
     # request validation
     try:
         remove_device_req = requests.RemoveDevice(**req)
@@ -63,7 +61,7 @@ def remove_device(req: requests.RemoveDevice):
 
     device_type = remove_device_req.index.device_index.device_type
     device_id = remove_device_req.index.device_index.device_id
-    device = config.remove_device(device_type, device_id)
+    device = CONFIG.remove_device(device_type, device_id)
     device.destroy()
 
     return ipc_schema.StatusCode.OK, None

@@ -1,7 +1,7 @@
+from gi.repository import Gtk
 from meexer.ipc.client import Client
 from meexer.schemas import requests_schema
 # from meexer.schemas.app_schema import AppSchema
-from gi.repository import Gtk
 
 CLIENT_NAME = 'gtk'
 

@@ -1,10 +1,9 @@
-import meexer.scripts.argparser as argparser
-import traceback
 import logging
 import time
 import sys
 
 from meexer.api import app_api, device_api, server_api
+from meexer.scripts import argparser
 from meexer.clients.gtk.gtk_client import GtkClient
 from meexer.ipc.server import Server
 from meexer.ipc.client import Client
@@ -13,13 +12,8 @@ LOG = logging.getLogger("generic")
 
 
 def start_server(server):
-    try:
-        server.start_queries(daemon=True)
-        time.sleep(0.1)
-    except Exception:
-        print('Could not start server because of:\n')
-        traceback.print_exc()
-        sys.exit(1)
+    server.start_queries(daemon=True)
+    time.sleep(0.1)
 
 
 def main():
@@ -49,19 +43,19 @@ def main():
 
         # init: Just start devices and connections
         case ['init']:
-            server.init_audio()
+            # server.init_audio()
             return 0
 
         # exit: close server, all clients should close after they recive an exit signal
         case ['exit']:
-            if not isserver:
-                LOG.info('Closing server, it may take a few seconds...')
-                client = Client()
-                client.close_server()
-                return 0
-            else:
+            if server:
                 LOG.error('No instance is running')
                 return 1
+
+            LOG.info('Closing server, it may take a few seconds...')
+            client = Client()
+            client.close_server()
+            return 0
 
         # default: call cli interface
         case _:

@@ -2,8 +2,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from meexer.schemas.device_schema import DeviceSchema, ConnectionSchema
-
+from meexer.schemas.device_schema import DeviceSchema
 from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
 from meexer.clients.gtk.widgets.mute_widget import MuteWidget
 from meexer.clients.gtk.widgets.default_widget import DefaultWidget

@@ -25,12 +25,3 @@ class VolumeWidget(Gtk.Scale):
 
         self.add_mark(100, Gtk.PositionType.TOP, '')
         self.signal_handler = {}
-
-    def set_state(self, value: int):
-        '''
-        Changes the state of a connection without calling the signal
-        '''
-        self.value = value
-        self.handler_block_by_func(self.value_change)
-        self.set_value(value)
-        self.handler_unblock_by_func(self.value_change)

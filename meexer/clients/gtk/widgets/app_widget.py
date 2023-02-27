@@ -1,10 +1,10 @@
+import logging
+
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio
-import logging
 
 from meexer.schemas.app_schema import AppSchema
-
 from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
 from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
 from meexer.clients.gtk.widgets.mute_widget import MuteWidget
@@ -54,7 +54,10 @@ class AppIcon(Gtk.Image):
 
 class AppCombobox(Gtk.ComboBox):
 
-    _device_list = dict(sink_input=Gtk.ListStore(str), source_output=Gtk.ListStore(str))
+    _device_list = {
+        'sink_input': Gtk.ListStore(str),
+        'source_output': Gtk.ListStore(str)
+    }
 
     def __init__(self, device: str, app_type: str):
         print(device)
@@ -84,6 +87,8 @@ class AppCombobox(Gtk.ComboBox):
         active_iter = self.get_active_iter()
         if active_iter is not None:
             return self._device_list[app_type].get_value(active_iter, 0)
+
+        return None
 
     @classmethod
     def set_device_list(cls, app_type, device_list):
