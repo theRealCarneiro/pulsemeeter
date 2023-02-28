@@ -20,6 +20,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pylint
+        pip install pygobject
         pip install pylint-pydantic
         pip install perflint
         
@@ -83,22 +84,7 @@ jobs:
               echo "-------[ $file ]-------"
               echo
           
-              pylint \
-              --load-plugins perflint,pylint_pydantic \
-              --extension-pkg-whitelist='pydantic' \
-              --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321,C0413 \
-              --output-format colorized \
-              --max-module-lines 2000 \
-              --notes TODO \
-              --init-import n \
-              --max-args 8 \
-              --max-locals 15 \
-              --max-returns 10 \
-              --max-statements 50 \
-              --max-parents 8 \
-              --max-attributes 10 \
-              --fail-under 8 \
-              $file
+              pylint $file
             fi
           done
           
