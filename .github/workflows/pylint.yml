@@ -20,10 +20,8 @@ jobs:
       run: |
         sudo apt install libgirepository1.0-dev python3-gi gobject-introspection gir1.2-gtk-3.0
         python -m pip install --upgrade pip
-        pip install pylint
-        pip install pygobject
-        pip install pylint_pydantic
-        pip install perflint
+        pip install -r requirements.txt
+        pip install pylint pylint_pydantic perflint
         
       # if is pr get the sha of the pr
     - name: get pull-request files
