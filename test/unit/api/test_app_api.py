@@ -1,6 +1,6 @@
 import unittest
 from meexer.api import app_api
-from meexer.schemas import requests_schema
+# from meexer.schemas import requests_schema
 
 
 class TestAppList(unittest.TestCase):
@@ -12,4 +12,4 @@ class TestAppList(unittest.TestCase):
         status, data = app_api.app_list({'app_type': 'sink_input'})
 
     def test_app_move(self):
-        app_api.app_move({'app': {'app_type': 'sink_input', 'index': 723, 'label': 'Brave', 'icon': 'brave-browser', 'volume': 100, 'device': 'Main'}, 'device': 'Main'})
+        app_api.app_move({'app_type': 'sink_input', 'app_index': 10, 'device': 'Main'})
