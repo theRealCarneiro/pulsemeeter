@@ -29,10 +29,12 @@ class Client:
 
         self.conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.id = None
+        self.listen_id = None
         self.listen_flags = listen_flags
         self.request_id = 0
         self.instance_name = instance_name
         self.exit_flag = False
+        self.callbacks = {}
 
         # connect to server
         try:
@@ -50,15 +52,15 @@ class Client:
         if listen_flags:
             self.start_listen()
 
-    def callback(self, command_str, flags=0, notify=False, save_config=False):
+    def callback(self, command_str):
         '''
         Decorator for creating callbacks
         '''
-        def decorator(f):
+        def decorator(function):
             if command_str not in self.callbacks:
                 self.callbacks[command_str] = []
-            self.routes[command_str].append(f)
-            return f
+            self.callbacks[command_str].append(function)
+            return function
 
         return decorator
 
