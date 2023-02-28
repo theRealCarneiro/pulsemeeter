@@ -1,14 +1,13 @@
-import subprocess
-import pulsectl
 import logging
 import sys
+import subprocess
+import pulsectl
 
 LOG = logging.getLogger('generic')
-
 PULSE = pulsectl.Pulse('pmctl')
 
 
-# todo: channel mapping
+# TODO: channel mapping
 def init(device_type: str, device_name: str, channel_num: int = 2):
     '''
     Create a device in pulse
@@ -35,16 +34,13 @@ def remove(device_name: str):
 
     ret = runcmd(command)
 
-    # if ret:
-        # LOG.error('Could not remove %s', device_name)
-
     return ret
 
 
-def connect(input: str, output: str, status: bool, latency: bool = 200, port_map=None):
+def connect(input_name: str, output: str, status: bool, latency: bool = 200, port_map=None):
     '''
     Connect two devices (pulse or pipewire)
-        "input" is the name of the input device
+        "input_name" is the name of the input_name device
         "output" is the name of the output device
         "status" is a bool, True means connect, False means disconnect
         "latency" is the latency of the connection (pulseaudio only)
@@ -57,11 +53,11 @@ def connect(input: str, output: str, status: bool, latency: bool = 200, port_map
 
     # auto port mapping
     if port_map is None:
-        command = f'pmctl {conn_status} {input} {output} {latency}'
+        command = f'pmctl {conn_status} {input_name} {output} {latency}'
 
     # manual port mapping
     else:
-        command = f'pmctl {conn_status} {input} {output} {port_map}'
+        command = f'pmctl {conn_status} {input_name} {output} {port_map}'
 
     ret = runcmd(command, 4)
 
@@ -69,7 +65,7 @@ def connect(input: str, output: str, status: bool, latency: bool = 200, port_map
 
 
 def ladspa(status, device_type, name, sink_name, label, plugin, control,
-        chann_or_lat, channel_map=None):
+        chann_or_lat):
 
     status = 'connect' if status else 'disconnect'
 
@@ -123,7 +119,7 @@ def set_primary(device_type: str, device_name: str, pulse=None):
     return 0
 
 
-def volume(device_type: str, device_name: str, val: int, selected_channels: list = None):
+def set_volume(device_type: str, device_name: str, val: int, selected_channels: list = None):
     '''
     Change device volume
         "device_type" either sink or source
@@ -147,24 +143,41 @@ def volume(device_type: str, device_name: str, val: int, selected_channels: list
         device = PULSE.get_source_by_name(device_name)
 
     # set the volume
-    volume = device.volume
+    volume_value = device.volume
 
     # set by channel
-    nchan = len(device.volume.values)
-    vollist = device.volume.values
-    v = []
-    if selected_channels is not None:
-        for c in range(nchan):
-            v.append(val / 100 if selected_channels[c] is True else vollist[c])
-        volume = pulsectl.PulseVolumeInfo(v)
-    else:
-        volume.value_flat = val / 100
+    channels = len(device.volume.values)
+    volume_list = []
 
-    PULSE.volume_set(device, volume)
+    # change specific channels
+    if selected_channels is not None:
+        for channel in range(channels):
+
+            # change volume for selected channel
+            if selected_channels[channel] is True:
+                volume_list.append(val / 100)
+
+            # channels that are not selected don't have their volume changed
+            else:
+                volume_list.append(device.volume.values[channel])
+
+        volume_value = pulsectl.PulseVolumeInfo(volume_list)
+
+    # all channels
+    else:
+        volume_value.value_flat = val / 100
+
+    PULSE.volume_set(device, volume_value)
     return 0
 
 
 def app_mute(app_type: str, index: int, state: bool):
+    '''
+    Mute an app by their type and index
+        "app_type" is either sink_input or source_output
+        "index" is the index of the app in pulse
+        "state" True is mute and False is unmute
+    '''
 
     if app_type == 'sink_input':
         app = PULSE.sink_input_info(index)
@@ -200,7 +213,7 @@ def app_volume(app_type: str, index: int, val: int):
     # trying to change volume of a device that just desapears
     # better to just ignore it, nothing bad comes from doing so
     except pulsectl.PulseIndexError:
-        LOG.debug(f'App #{id} already removed')
+        LOG.debug('App #%d already removed', index)
 
     return 0
 
@@ -216,14 +229,14 @@ def move_app_device(app_type: str, index: int, device_name: str):
 
     # some apps have DONT MOVE flag, the app will crash
     except pulsectl.PulseOperationFailed:
-        LOG.debug(f'App #{index} device cant be moved')
+        LOG.debug('App #%d device cant be moved', index)
 
     return 0
 
 
 def list_devices(device_type):
-    PULSE = pulsectl.Pulse()
-    list_pa_devices = PULSE.sink_list if device_type == 'sink' else PULSE.source_list
+    pulse = pulsectl.Pulse()
+    list_pa_devices = pulse.sink_list if device_type == 'sink' else pulse.source_list
     device_list = []
     for device in list_pa_devices():
 
@@ -234,11 +247,11 @@ def list_devices(device_type):
     return device_list
 
 
-def list_sinks(hardware=False, virtual=False, all=False):
-    PULSE = pulsectl.Pulse()
+def list_sinks(hardware=False):
+    pulse = pulsectl.Pulse()
     device_list = []
     if hardware is True:
-        for device in PULSE.sink_list():
+        for device in pulse.sink_list():
 
             pa_sink_hardware = 0x0004
             if device.flags & pa_sink_hardware:
@@ -248,8 +261,8 @@ def list_sinks(hardware=False, virtual=False, all=False):
 
 
 def list_sources(hardware=False, virtual=False):
-    PULSE = pulsectl.Pulse()
-    pulse_devices = PULSE.source_list()
+    pulse = pulsectl.Pulse()
+    pulse_devices = pulse.source_list()
     device_list = []
     if hardware is True or virtual is True:
         for device in pulse_devices:
@@ -267,15 +280,20 @@ def list_sources(hardware=False, virtual=False):
 
 
 def filter_results(app):
-    # filter pavu and pm peak sinks
-    assert (
-        'application.name' in app.proplist and
-        '_peak' not in app.proplist['application.name'] and
-        app.proplist.get('application.id') != 'org.PulseAudio.pavucontrol'
-    )
+    '''
+    Filter pavu and pm peak sinks
+    '''
+    assert 'application.name' in app.proplist
+    assert '_peak' not in app.proplist['application.name']
+    assert app.proplist.get('application.id') != 'org.PulseAudio.pavucontrol'
 
 
 def app_by_id(index: int, app_type: str):
+    '''
+    Return a specific app
+        "index" is the index of the desidered app
+        "app_type" is sink_input or source_output
+    '''
     app_info = PULSE.sink_input_info if app_type == 'sink_input' else PULSE.source_output_info
     app = app_info(index)
 
@@ -313,77 +331,24 @@ def list_apps(app_type: str):
     return app_list
 
 
-# def list_apps(app_type: str, index: int = None):
-    # app_list = []
-
-    # if app_type == 'sink_input':
-        # app_info = PULSE.sink_input_info
-        # list_type_app = PULSE.sink_input_list
-        # device_info = PULSE.sink_info
-
-    # elif app_type == 'source_output':
-        # app_info = PULSE.source_output_info
-        # list_type_app = PULSE.source_output_list
-        # device_info = PULSE.source_info
-
-    # # get device list or single device
-    # if index is not None:
-        # try:
-            # device = app_info(int(index))
-        # except pulsectl.PulseIndexError:
-            # return []
-        # full_app_list = [device]
-    # else:
-        # full_app_list = list_type_app()
-
-    # for app in full_app_list:
-
-        # # filter pavu and pm peak sinks
-        # try:
-            # filter_results(app)
-        # except AssertionError:
-            # continue
-
-        # # some apps don't have icons
-        # icon = app.proplist.get('application.icon_name')
-        # if icon is None:
-            # icon = 'audio-card'
-
-        # index = app.index
-        # label = app.proplist['application.name']
-        # volume = int(app.volume.values[0] * 100)
-        # device = device_info(app.sink)
-        # app_list.append((index, label, icon, volume, device.name))
-    # return app_list
-
-
 def get_pactl_version():
     return int(cmd('pmctl get-pactl-version'))
 
 
 def cmd(command):
     sys.stdout.flush()
-    p = subprocess.Popen(command.split(' '),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    stdout, stderr = p.communicate()
-    if p.returncode:
-        LOG.warning(f'cmd \'{command}\' returned {p.returncode}')
+    with subprocess.Popen(command.split(' '), stdout=subprocess.PIPE) as proc:
+        stdout, stderr = proc.communicate()
+        if proc.returncode:
+            LOG.warning('%s \ncmd "%s" returned %d', stderr, command, proc.returncode)
     return stdout.decode()
 
 
 def runcmd(command: str, split_size: int = -1):
     LOG.debug(command)
     command = command.split(' ', split_size)
-    process = subprocess.Popen(command)
-    process.wait()
-    return process.returncode
+    with subprocess.Popen(command) as process:
+        process.wait()
+        return_code = process.returncode
 
-
-# def main():
-    # print(get_app_list('sink-inputs'))
-    # return 0
-
-
-# if __name__ == '__main__':
-    # sys.exit(main())
+    return return_code

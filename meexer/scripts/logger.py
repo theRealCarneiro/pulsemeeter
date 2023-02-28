@@ -5,10 +5,10 @@ from meexer.settings import LOGGING_FORMAT, LOGGING_FORMAT_DEBUG, DEBUG
 
 
 def init_log(name):
-    """
-    init custom logger
-    can be used if there should be multiple loggers in one file with different properties
-    """
+    '''
+    init custom logger, can be used if there should be multiple loggers in one file
+    with different properties
+    '''
     log = logging.getLogger(name)
     log.propagate = 0
 
@@ -23,7 +23,9 @@ def init_log(name):
 
 
 class FormatLog(logging.Formatter):
-    """used to color format the logs"""
+    '''
+    used to color format the logs
+    '''
 
     grey = "\x1b[38;21m"
     yellow = "\x1b[33;21m"

@@ -8,11 +8,9 @@ class DeviceModel(DeviceSchema):
     Child class of DeviceSchema, implements pmctl calls
     '''
 
-    # def __init__(self, *args, **kwargs):
-        # super().__init__(*args, **kwargs)
-
-        # self.create()
-        # self.reconnect(True)
+    # def __init__(self):
+    # self.create()
+    # self.reconnect(True)
 
     def get_correct_name(self):
         '''
@@ -38,8 +36,6 @@ class DeviceModel(DeviceSchema):
         '''
         if self.device_class == 'virtual' and not self.flags & DeviceFlags.EXTERNAL:
             pmctl.init(self.device_type, self.name)
-            # if ret == 126:
-                # raise
 
     def update_device_settings(self, device: DeviceSchema):
         '''
@@ -161,7 +157,7 @@ class DeviceModel(DeviceSchema):
         Change device volume
             "val" is the new volume level
         '''
-        pmctl.volume(self.device_type, self.name, val)
+        pmctl.set_volume(self.device_type, self.name, val)
 
     # TODO: maybe use that instead of List[bool] for selected_channels ?
     def get_selected_channel_list(self) -> list[int]:
@@ -190,18 +186,16 @@ class DeviceModel(DeviceSchema):
         # auto port mapping
         if self.connections[output_type][output_id].auto_ports is True:
 
-            # get the number of channels of the device with less channels
-            num_connection_channel = min(len(input_ports), len(output_ports))
-
-            for port in range(num_connection_channel):
-                ports += f'{input_ports[port]}:{output_ports[port]} '
+            # iterate until when the shorter ends
+            for input_port, output_port in zip(input_ports, output_ports):
+                ports += f'{input_port}:{output_port} '
 
         # manual port mapping
         else:
             port_map = self.connections[output_type][output_id].port_map
-            for input_port in range(len(port_map)):
-                for output_port in port_map[input_port]:
-                    ports += f'{input_ports[input_port]}:{output_port} '
+            for input_port, target_ports in enumerate(port_map):
+                for target_port in target_ports:
+                    ports += f'{input_ports[input_port]}:{target_port} '
 
         ports = ports[:-1]
 

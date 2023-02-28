@@ -41,7 +41,7 @@ def update_device(req: requests.UpdateDevice):
     device_id = update_device_req.index.device_id
     new_device = update_device_req.device
 
-    device = CONFIG.get_device(device_type, device_id)
+    device: DeviceModel = CONFIG.get_device(device_type, device_id)
     device.update_device_settings(new_device)
 
     return ipc_schema.StatusCode.OK, None
@@ -61,15 +61,15 @@ def remove_device(req: requests.RemoveDevice):
 
     device_type = remove_device_req.index.device_index.device_type
     device_id = remove_device_req.index.device_index.device_id
-    device = CONFIG.remove_device(device_type, device_id)
+    device: DeviceModel = CONFIG.remove_device(device_type, device_id)
     device.destroy()
 
     return ipc_schema.StatusCode.OK, None
 
 
-@ipc.command('reconnect', sflags.CONNECTION | sflags.DEVICE, False, False)
-def reconnect() -> int:
-    pass
+# @ipc.command('reconnect', sflags.CONNECTION | sflags.DEVICE, False, False)
+# def reconnect() -> int:
+    # pass
 
 
 @ipc.command('connect', sflags.CONNECTION | sflags.DEVICE)
@@ -143,6 +143,9 @@ def volume(req: requests.Volume):
 
 @ipc.command('list_devices', flags=0, notify=False, save_config=False)
 def list_devices(req: requests.DeviceList):
+    '''
+    Returns a list of device schemas
+    '''
 
     try:
         device_list_req = requests.DeviceList(**req)

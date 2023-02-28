@@ -7,7 +7,7 @@ CONFIG = ConfigModel()
 
 
 @ipc.command('exit', sflags.APP, True, True)
-def close_server(req):
+def close_server(_):
     '''
     Closes server, saves the config file, and can save
     '''
@@ -18,17 +18,16 @@ def close_server(req):
 
 
 @ipc.command('save', 0, False, save_config=True)
-def save_config():
+def save_config(_):
     '''
     Saves the current configuration to file by signaling the
     server that we want to save, and avoid having to call the
     actual saving function
     '''
-    pass
 
 
 @ipc.command('get_config', 0, False, save_config=False)
-def get_config(req: dict):
+def get_config(_):
     '''
     Returns the config
     '''

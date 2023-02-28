@@ -54,6 +54,9 @@ def default(button, device_type, device_id):
     Called when the default button is toggled
     '''
 
+    if button.get_active() is False:
+        return
+
     data = {
         'index': {
             'device_type': device_type,

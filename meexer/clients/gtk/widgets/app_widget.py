@@ -1,13 +1,15 @@
 import logging
+import gi
 
 from meexer.schemas.app_schema import AppSchema
 from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
 from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
 from meexer.clients.gtk.widgets.mute_widget import MuteWidget
 
-from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
+gi.require_version('Gtk', '3.0')
+# pylint: disable=wrong-import-order,wrong-import-position
 from gi.repository import Gtk, Gio  # noqa: E402
+# pylint: enable=wrong-import-order,wrong-import-position
 
 
 LOG = logging.getLogger("generic")
@@ -108,4 +110,4 @@ class AppCombobox(Gtk.ComboBox):
 
     @classmethod
     def get_device_list(cls, app_type):
-        return cls.device_list[app_type]
+        return cls._device_list[app_type]

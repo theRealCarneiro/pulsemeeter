@@ -21,6 +21,7 @@ def singleton(class_):
 @singleton
 class ConfigModel(ConfigSchema):
     '''
+    Model for the config file, has functions to load and write the file
     '''
 
     # ensure that we use DeviceModel instead of DeviceSchema so that pmctl works
@@ -29,7 +30,7 @@ class ConfigModel(ConfigSchema):
     hi: dict[str, DeviceModel] = {}
     a: dict[str, DeviceModel] = {}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         config = self.load_config()
         super().__init__(**config)
 
@@ -40,14 +41,14 @@ class ConfigModel(ConfigSchema):
         if not os.path.isdir(CONFIG_DIR):
             os.mkdir(CONFIG_DIR)
         # LOG.debug("writing config")
-        with open(CONFIG_FILE, 'w') as outfile:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as outfile:
             json.dump(self.dict(), outfile, indent='\t', separators=(',', ': '))
 
     def load_config(self):
         '''
         Load config from file
         '''
-        with open(CONFIG_FILE, 'r') as outfile:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as outfile:
             config = json.load(outfile)
 
         return config

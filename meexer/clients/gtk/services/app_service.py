@@ -1,14 +1,13 @@
+'''
+This module is for implementing the gtk signal callback for apps and making the
+requests to the server
+'''
 from gi.repository import Gtk
 from meexer.ipc.client import Client
 from meexer.schemas import requests_schema
 # from meexer.schemas.app_schema import AppSchema
 
 CLIENT_NAME = 'gtk'
-
-'''
-This module is for implementing the gtk signal callback for apps and making the
-requests to the server
-'''
 
 
 def volume(scale: Gtk.Scale, app_type: str, app_index: int):

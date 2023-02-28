@@ -21,4 +21,7 @@ class AppSchema(BaseModel):
 
     @validator('icon')
     def set_icon(cls, icon):
+        '''
+        Some applications don't have an icon name in pulse so we set a default one
+        '''
         return icon or 'audio-card'
