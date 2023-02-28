@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Callable, Any
-from enum import Enum
 import threading
 import socket
+from enum import Enum
+from typing import Callable, Any
+from pydantic import BaseModel, Field
 
 
 class SubscriptionFlags:

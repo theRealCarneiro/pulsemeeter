@@ -1,6 +1,6 @@
 import re
 from typing import Literal
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, root_validator, validator
 
 
 class DeviceFlags:
@@ -90,5 +90,7 @@ class DeviceSchema(BaseModel):
         '''
         A validator that checks if the name is valid
         '''
-        if re.match('^[a-zA-Z-_.]+ ?([a-zA-z+-_.]+)?$', name):
-            return name
+        if not re.match('^[a-zA-Z-_.]+ ?([a-zA-z+-_.]+)?$', name):
+            raise ValueError('Invalid name')
+
+        return name

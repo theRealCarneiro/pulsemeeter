@@ -108,7 +108,8 @@ class Client:
         json_string = req.json()
         msg = json_string.encode('utf-8')
         msg_len = len(msg)
-        if msg_len == 0: raise ValueError('Empty message not allowed')
+        if msg_len == 0:
+            raise ValueError('Empty message not allowed')
         self.conn.sendall(utils.msg_len_to_str(msg_len))
         self.conn.sendall(msg)
 

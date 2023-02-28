@@ -9,17 +9,16 @@ class Router:
         '''
         Decorator for creating routes
         '''
-        def decorator(f):
-            r = {
-                'command': f,
+        def decorator(function):
+            route = Route(
+                command=function,
                 # make sure to include ALL flag
-                'flags': flags | 1 if flags != 0 else 0,
-                'notify': notify,
-                'save_config': save_config
-            }
-            route = Route(**r)
+                flags=flags | 1 if flags != 0 else 0,
+                notify=notify,
+                save_config=save_config
+            )
             cls.__routes[command_str] = route
-            return f
+            return function
 
         return decorator
 

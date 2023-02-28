@@ -125,16 +125,7 @@ class Server:
             LOG.info('closing listener threads, they should exit within a few seconds...')
             self.exit_flag = True
 
-            # try:
-                # self.pulse_socket.stop_listener()
-            # except Exception:
-                # LOG.error('Could not close pulse listener')
-                # LOG.error(traceback.format_exc())
-
-            # Call any code to clean up virtual devices or similar
-            # self.save_config(buffer=False)
-            # if self.config['cleanup']:
-                # self.cleanup()
+            # TODO: cleanup ?
 
     def query_clients(self) -> None:
         '''
@@ -160,7 +151,7 @@ class Server:
 
                     # Create a thread for the client
                     thread = threading.Thread(target=self.listen_client,
-                            args=(client_id,), daemon=True)
+                                              args=(client_id,), daemon=True)
 
                     client = schemas.Client(
                         conn=conn,
@@ -189,8 +180,6 @@ class Server:
                     LOG.debug(req)
                     self.command_queue.put(req)
                     # # TODO: save config
-                    # if route.save_config:
-                        # pass
                 except (ConnectionResetError, ValueError):
                     LOG.debug('client #%d closed the connection', client_id)
                     self.clients.pop(client_id, None)
@@ -227,11 +216,13 @@ class Server:
         Recives a connection, and returns a single massage
         '''
         msg_len = conn.recv(REQUEST_SIZE_LEN)
-        if not msg_len: raise ValueError('Invalid message length')
+        if not msg_len:
+            raise ValueError('Invalid message length')
         msg_len = int(msg_len.decode())
 
         msg = conn.recv(msg_len)
-        if not msg: raise ValueError('Invalid message data')
+        if not msg:
+            raise ValueError('Invalid message data')
 
         return msg
 
@@ -294,23 +285,21 @@ class Server:
 
     def is_running(self):
 
-        try:
-            with open(settings.PIDFILE) as f:
-                pid = int(next(f))
+        def write_pid_file():
+            with open(settings.PIDFILE, 'w', encoding='utf-8') as file:
+                file.write(f'{os.getpid()}\n')
 
-            # if pid is of running instance
+        try:
+            with open(settings.PIDFILE, encoding='utf-8') as file:
+                pid = int(next(file))
+
+            # check if pid is of running instance
             if os.kill(pid, 0) is not False:
                 return True
 
-            # if pid is of a closed instance
-            else:
-                # write pid to file
-                with open(settings.PIDFILE, 'w') as f:
-                    f.write(f'{os.getpid()}\n')
-                return False
-
         # PIDFILE does not exist
         except FileNotFoundError:
-            with open(settings.PIDFILE, 'w') as f:
-                f.write(f'{os.getpid()}\n')
-            return False
+            pass
+
+        write_pid_file()
+        return False

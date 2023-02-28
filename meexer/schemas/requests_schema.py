@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Field
 from typing import Literal
+from pydantic import BaseModel, Field
 
-from meexer.schemas import device_schema, app_schema
+from meexer.schemas import device_schema
 
 
 class DeviceIndex(BaseModel):

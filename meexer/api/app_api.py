@@ -1,5 +1,4 @@
 from pydantic.error_wrappers import ValidationError
-
 from meexer.schemas import requests_schema as requests
 from meexer.schemas import ipc_schema
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags

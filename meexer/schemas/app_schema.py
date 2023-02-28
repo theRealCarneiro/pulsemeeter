@@ -1,5 +1,5 @@
-from pydantic import BaseModel, validator
 from typing import Literal
+from pydantic import BaseModel, validator
 
 
 class AppSchema(BaseModel):
