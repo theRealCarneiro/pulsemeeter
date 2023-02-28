@@ -1,13 +1,13 @@
 import logging
 
-from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio
-
 from meexer.schemas.app_schema import AppSchema
 from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
 from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
 from meexer.clients.gtk.widgets.mute_widget import MuteWidget
+
+from gi import require_version as gi_require_version
+gi_require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gio  # noqa: E402
 
 
 LOG = logging.getLogger("generic")

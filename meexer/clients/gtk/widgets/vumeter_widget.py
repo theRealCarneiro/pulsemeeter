@@ -2,7 +2,7 @@ import logging
 
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib  # noqa: E402
 
 LOG = logging.getLogger("generic")
 

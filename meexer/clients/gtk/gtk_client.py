@@ -1,7 +1,3 @@
-from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk
-
 from meexer.ipc.client import Client
 from meexer.clients.gtk.main_window import blocks
 from meexer.schemas.config_schema import ConfigSchema
@@ -12,6 +8,10 @@ from meexer.model.app_model import AppModel
 from meexer.clients.gtk.widgets.device_widget import DeviceWidget
 from meexer.clients.gtk.widgets.app_widget import AppWidget, AppCombobox
 from meexer.clients.gtk.services import app_service, device_service
+
+from gi import require_version as gi_require_version
+gi_require_version('Gtk', '3.0')
+from gi.repository import Gtk  # noqa: E402
 
 
 class GtkClient(Gtk.Application):
