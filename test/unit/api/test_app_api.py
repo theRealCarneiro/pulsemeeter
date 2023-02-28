@@ -9,7 +9,7 @@ class TestAppList(unittest.TestCase):
     '''
 
     def test_app_list(self):
-        status, data = app_api.app_list({'app_type': 'sink_input'})
+        app_api.app_list({'app_type': 'sink_input'})
 
     def test_app_move(self):
         app_api.app_move({'app_type': 'sink_input', 'app_index': 10, 'device': 'Main'})
