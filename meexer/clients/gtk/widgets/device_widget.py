@@ -4,9 +4,11 @@ from meexer.clients.gtk.widgets.mute_widget import MuteWidget
 from meexer.clients.gtk.widgets.default_widget import DefaultWidget
 from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
 
+# pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk  # noqa: E402
+# pylint: enable=wrong-import-order,wrong-import-position
 
 
 class DeviceWidget(Gtk.Frame):

@@ -1,6 +1,8 @@
+# pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio  # noqa: E402
+# pylint: enable=wrong-import-order,wrong-import-position
 
 
 class MuteWidget(Gtk.ToggleButton):
@@ -18,14 +20,6 @@ class MuteWidget(Gtk.ToggleButton):
         )
 
         self.signal_handler = {}
-
-    def set_state(self, state: bool, function_to_block):
-        '''
-        Manually change the state of the button
-        '''
-        self.handler_block_by_func(self.on_toggled)
-        self.set_active(state)
-        self.handler_unblock_by_func(self.on_toggled)
 
     def to_schema(self) -> bool:
         return self.get_active()

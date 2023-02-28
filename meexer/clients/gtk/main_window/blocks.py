@@ -1,9 +1,11 @@
 from meexer.clients.gtk.widgets.device_widget import DeviceWidget
 from meexer.clients.gtk.widgets.app_widget import AppWidget
 
+# pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk  # noqa: E402
+# pylint: enable=wrong-import-order,wrong-import-position
 
 
 class MainWindow(Gtk.Window):

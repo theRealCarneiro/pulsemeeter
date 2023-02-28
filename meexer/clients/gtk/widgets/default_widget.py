@@ -1,6 +1,8 @@
+# pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio  # noqa: E402
+# pylint: enable=wrong-import-order,wrong-import-position
 
 
 class DefaultWidget(Gtk.ToggleButton):

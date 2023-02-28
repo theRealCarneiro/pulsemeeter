@@ -1,8 +1,10 @@
 import logging
 
+# pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib  # noqa: E402
+# pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
 

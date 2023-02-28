@@ -1,13 +1,13 @@
 import logging
-import gi
 
 from meexer.schemas.app_schema import AppSchema
 from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
 from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
 from meexer.clients.gtk.widgets.mute_widget import MuteWidget
 
-gi.require_version('Gtk', '3.0')
 # pylint: disable=wrong-import-order,wrong-import-position
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 

@@ -9,6 +9,7 @@ from meexer.clients.gtk.widgets.device_widget import DeviceWidget
 from meexer.clients.gtk.widgets.app_widget import AppWidget, AppCombobox
 from meexer.clients.gtk.services import app_service, device_service
 
+# pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk  # noqa: E402
