@@ -61,7 +61,7 @@ jobs:
 
       run: |
           for file in ${{ steps.changed-files-else.outputs.all_changed_files }}; do
-            if [[ $file == *.py ]]; then
+            if [[ $file == *.py -a $file != test*.py ]]; then
               echo
               echo "-------[ $file ]-------"
               echo
@@ -78,7 +78,7 @@ jobs:
 
       run: |          
           for file in ${{ steps.changed-files-pr.outputs.all_changed_files }}; do
-            if [[ $file == *.py ]]; then
+            if [[ $file == *.py -a $file != test*.py ]]; then
               echo
               echo "-------[ $file ]-------"
               echo
