@@ -37,21 +37,6 @@ jobs:
       id: changed-files-else
       uses: tj-actions/changed-files@v24
       
-      # W8201 = loop-invariant-statement
-      # W8205 = dotted-import-in-loop
-      # W0212 = Accessing protected attribute of client class
-      # W0613 = Unused argument
-      # R0903 = Too few public methods
-      # C0301 = Line too long
-      # C0103 = Invalid name
-      # R0914 = Too many local variables
-      # F0401 = Unable to import module
-      # W0402 = Uses of a deprecated module
-      # W0614 = Unused import from wildcard
-      # C0111 = Missing docstring
-      # C0321 multiple statements on one line
-      # C0413 = Used when code and imports are mixed (need to disable due to gtk)
-      
       # ----
       # COMMIT OR OTHER PUSH
       # ----
@@ -86,5 +71,3 @@ jobs:
               pylint $file
             fi
           done
-          
-        
