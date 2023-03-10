@@ -4,10 +4,7 @@ Settings for the runtime of pulsemeeter
 import os
 
 
-__version__ = '1.2.16'
-
-# show/hide debug messages
-DEBUG = True
+VERSION = '1.2.16'
 
 # config settings
 USER = os.getenv('USER')
@@ -25,8 +22,7 @@ SOCK_FILE = os.path.join(XDG_RUNTIME_DIR, f'pulsemeeter.{USER}.sock')
 PIDFILE = os.path.join(XDG_RUNTIME_DIR, f'pulsemeeter.{USER}.pid')
 
 
-# logging formats
-# for vars look at:
-# https://docs.python.org/3/library/logging.html#logrecord-attributes
+# logging
+DEBUG = True
 LOGGING_FORMAT = "[%(levelname)s] in [%(module)s]: %(message)s"
 LOGGING_FORMAT_DEBUG = "[%(levelname)s] in [%(module)s@%(funcName)s]: %(message)s"
