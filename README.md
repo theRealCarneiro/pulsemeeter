@@ -9,7 +9,7 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 [![Donate](https://img.shields.io/badge/donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
 [![Donate](https://img.shields.io/badge/donate-Patreon-yellow.svg)](https://www.patreon.com/theRealCarneiro)
 
-### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\]
+### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/How-to-use)\]
 
 ![](https://i.imgur.com/L4KZEqV.png)
 (This screenshot was taken while using ant dracula gtk theme, it will use your theme)
