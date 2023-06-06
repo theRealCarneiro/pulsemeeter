@@ -19,10 +19,14 @@ from ..socket import Client
 from gi import require_version as gi_require_version
 
 # from pulsectl import Pulse
-gi_require_version('Gtk', '3.0')
-gi_require_version('AppIndicator3', '0.1')
-from gi.repository import Gtk, GLib, AppIndicator3
-
+try:
+    gi_require_version('Gtk', '3.0')
+    gi_require_version('AppIndicator3', '0.1')
+    from gi.repository import Gtk, GLib, AppIndicator3
+except ValueError:
+    gi_require_version('AyatanaAppIndicator3', '0.1')
+    from gi.repository import Gtk, GLib
+    from gi.repository import AyatanaAppIndicator3 as AppIndicator3
 
 class MainWindow(Gtk.Window):
 
