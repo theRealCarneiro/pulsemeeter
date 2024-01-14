@@ -99,21 +99,7 @@ export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ## Start devices on startup
-
-### Starting devices only
-If you only want to restore all connections and devices but not start the entire application, you can run:
-```sh 
-pulsemeeter init
-```
-
-### Start pulsemeeter as a daemon
-You can run pulsemeeter as a daemon, might be useful if you want the app the start in the tray on startup 
-```sh 
-pulsemeeter daemon
-```
-
-## Extensions
-[@Fl1tzi](https://github.com/Fl1tzi) Elgato Streamdeck intergration [pulsemeeter-streamdeck](https://github.com/Fl1tzi/pulsemeeter-streamdeck)
+All connections and devices will be restored with the command `pulsemeeter init`
 
 ## Discord Server
 If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)

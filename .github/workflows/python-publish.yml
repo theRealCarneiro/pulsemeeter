@@ -6,12 +6,11 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish on Pypi
+name: Upload Python Package
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
   deploy:

@@ -8,7 +8,6 @@ import os
 import re
 from queue import SimpleQueue
 
-
 class Client:
 
     def __init__(self, listen=False, noconfig=False):
@@ -43,7 +42,7 @@ class Client:
 
     # stop listen thread
     def stop_listen(self):
-        if self.listen_thread is not None:
+        if self.listen_thread != None: 
             self.exit_flag = True
             self.listen_thread.join()
 
@@ -65,33 +64,32 @@ class Client:
             # wait for answer
             ret_msg = ''
             if nowait or not self.can_listen:
-                ret_msg = self.get_message()
-            else:
+                ret_msg = self.get_message() 
+            else: 
                 ret_msg = self.return_queue.get()
 
             return ret_msg
 
-        except Exception:
+                
+        except:
             print('closing socket')
             self.sock.close()
             raise
 
+
     def listen(self, print_event=True):
         while True:
             try:
-                if self.exit_flag is True: break
+                if self.exit_flag == True: break
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise ConnectionError
-                try:
-                    sender_id = int(sender_id)
-                except ValueError:
-                    sender_id = None
+                sender_id = int(sender_id)
 
                 # length of the message
                 msg_len = self.sock.recv(4)
                 if not msg_len: raise ConnectionError
                 msg_len = int(msg_len.decode())
-
+                
                 # get event
                 event = self.sock.recv(msg_len)
                 if not event: raise ConnectionError
@@ -116,32 +114,33 @@ class Client:
                 # print('closing socket')
                 # raise
 
+
+
     def get_message(self):
         while True:
             try:
                 # get the id of the client that sent the message
                 sender_id = self.sock.recv(4)
                 if not sender_id: raise
-                try:
-                    sender_id = int(sender_id)
-                except ValueError:
-                    sender_id = None
+                sender_id = int(sender_id)
 
                 # length of the message
                 msg_len = self.sock.recv(4)
                 if not msg_len: raise
                 msg_len = int(msg_len.decode())
-
+                
                 # get event
                 event = self.sock.recv(msg_len)
                 if not event: raise
                 event = event.decode()
 
+
                 if self.id == sender_id:
                     return event
 
-            except Exception:
+            except:
                 raise
+
 
     # set a callback function to a command
     def set_callback_function(self, command, function):
@@ -151,7 +150,7 @@ class Client:
         command = event.split(' ')
         if command[0] not in self.callback_dict:
             return
-
+        
         function = self.callback_dict[command[0]]
         args = tuple(command[1:])
         function(*args)
@@ -192,7 +191,7 @@ class Client:
             device_id = args[1]
             vol = int(args[2])
             self.config[device_type][device_id]['vol'] = vol
-
+        
         elif command == 'rename' or command == 'change-hd':
             device_type = args[0]
             device_id = args[1]
@@ -232,6 +231,7 @@ class Client:
                 control = args[2]
                 self.config['hi'][device_id]['rnnoise_control'] = control
 
+
     def verify_device(self, device_type, device_id, dev):
 
         if dev == 'virtual':
@@ -267,19 +267,19 @@ class Client:
 
     def connect(self, input_type, input_id, output_type, output_id, state=None, latency=None):
 
-        if (not self.verify_device(input_type, input_id, 'input') or
-                not self.verify_device(output_type, output_id, 'output')):
+        if (not self.verify_device(input_type, input_id, 'input') 
+                or not self.verify_device(output_type, output_id, 'output')):
             return
-
+           
         command = f'connect {input_type} {input_id} {output_type} {output_id}'
-        if state is not None: command += f' {state}'
-        if latency is not None: command += f' {latency}'
-
+        if state != None: command += f' {state}'
+        if latency != None: command += f' {latency}'
+        
         if self.config[input_type][input_id][f'{output_type}{output_id}'] == state:
             return
 
-        print(command)
         return self.send_command(command)
+
 
     def mute(self, device_type, device_id, state=None):
 
@@ -287,12 +287,13 @@ class Client:
             return
 
         command = f'mute {device_type} {device_id}'
-        if state is not None: command += f' {state}'
+        if state != None: command += f' {state}'
 
         # print('config: ', self.config[device_type][device_id]['mute'], 'new: ', state)
         if self.config[device_type][device_id]['mute'] == state:
             return
         return self.send_command(command)
+
 
     def primary(self, device_type, device_id):
 
@@ -301,9 +302,10 @@ class Client:
 
         command = f'primary {device_type} {device_id}'
 
-        if self.config[device_type][device_id]['primary'] is True:
+        if self.config[device_type][device_id]['primary'] == True:
             return
         return self.send_command(command)
+
 
     def rnnoise(self, input_id, state=None, control=None, latency=None):
 
@@ -311,13 +313,14 @@ class Client:
             return 'invalid device index'
 
         command = f'rnnoise {input_id}'
-        if state is not None: command += f' {state}'
+        if state != None: command += f' {state}'
         if control and latency: command += f' {control} {latency}'
 
-        if (self.config['hi'][input_id]['use_rnnoise'] == state or
-                self.config['hi'][input_id]['rnnoise_control'] == control):
+        if (self.config['hi'][input_id]['use_rnnoise'] == state
+                or self.config['hi'][input_id]['rnnoise_control'] == control):
             return
         return self.send_command(command)
+
 
     def eq(self, output_type, output_id, state=None, control=None):
 
@@ -326,35 +329,36 @@ class Client:
 
         command = f'eq {output_type} {output_id}'
 
-        if control is not None and state == 'set':
+        if control != None and state == 'set':
             command += f' set {control}'
 
-        elif control is None and state is not None:
+        elif control == None and state != None:
             command += f' {state}'
 
-        elif control is not None and state != 'set':
+        elif control != None and state != 'set':
             return
 
-        if (self.config[output_type][output_id]['use_eq'] == state or
-                self.config[output_type][output_id]['eq_control'] == control):
+        if (self.config[output_type][output_id]['use_eq'] == state
+                or self.config[output_type][output_id]['eq_control'] == control):
             return
         return self.send_command(command)
+
 
     def volume(self, device_type, device_id, vol):
 
         if not self.verify_device(device_type, device_id, 'any'):
             return
         if type(vol) == str:
-            if not re.match('[+-]?[1-9]+$', vol):
+            if not re.match('[+-]?\d+$', vol):
                 return 'invalid volume'
-            if re.match('^[1-9]+$', vol):
+            if re.match('^\d+$', vol):
                 if self.config[device_type][device_id]['vol'] == int(vol):
                     return
 
         command = f'volume {device_type} {device_id} {vol}'
-        # print(command)
 
         return self.send_command(command)
+
 
     def rename(self, device_type, device_id, name):
 
@@ -365,6 +369,7 @@ class Client:
         if self.config[device_type][device_id]['name'] == name:
             return
         return self.send_command(command)
+
 
     def change_hardware_device(self, device_type, device_id, device):
 
@@ -382,26 +387,28 @@ class Client:
             return
         return self.send_command(command)
 
+
     def list_hardware_devices(self, device_type):
         if device_type not in ['sinks', 'sources']:
             return
 
         return json.loads(self.send_command(f'get-hd {device_type}'))
 
+
     def list_virtual_devices(self, device_type):
         if device_type not in ['sinks', 'sources']:
             return
 
-        ret = self.send_command(f'get-vd {device_type}')
+        ret =self.send_command(f'get-vd {device_type}') 
         return json.loads(ret)
 
     # get sink-input and source-output list
     def list_apps(self, device_type):
         command = f'get-app-list {device_type}'
         try:
-            ret_message = self.send_command(command)
-            return json.loads(ret_message)
-        except Exception:
+            ret_message = json.loads(self.send_command(command))
+            return ret_message
+        except:
             print('invalid json from server')
             return False
             raise
@@ -452,24 +459,25 @@ class Client:
     def close_server(self):
         self.send_command('exit')
 
+
     def subscribe(self):
         command = ['pactl', 'subscribe']
         sys.stdout.flush()
         env = os.environ
         env['LC_ALL'] = 'C'
-        self.sub_proc = subprocess.Popen(command, env=env,
-            stdout=subprocess.PIPE,
+        self.sub_proc = subprocess.Popen(command, env=env, 
+            stdout=subprocess.PIPE, 
             stderr=subprocess.STDOUT,
             universal_newlines=True)
 
         for stdout_line in iter(self.sub_proc.stdout.readline, ""):
-            yield stdout_line
-
+            yield stdout_line 
+            
         self.sub_proc.stdout.close()
         return_code = self.sub_proc.wait()
         if return_code:
             raise subprocess.CalledProcessError(return_code, command)
 
     def end_subscribe(self):
-        if self.sub_proc is not None:
+        if self.sub_proc != None:
             self.sub_proc.terminate()
