@@ -35,11 +35,20 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 ## Dependencies
 Visit the [dependencies](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation#installing-dependencies) section in the wiki to get in depth information on how to install these for your specific system.
+
  - pip
  - libappindicator3
  - gobject-introspection-1.0
  - libpulse
 
+For Ubuntu/Debian:
+`sudo apt-get update && sudo apt-get install python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev`
+
+For Fedora:
+`sudo dnf install python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel`
+
+For Arch Linux:
+`sudo pacman -S python-pip libappindicator-gtk3 gobject-introspection libpulse`
 
 ### Python Dependencies
 Pip will automaticly install these dependencies
