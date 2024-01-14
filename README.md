@@ -76,11 +76,11 @@ These dependencies are optional and will enable new features in the application
 ### Single user
 When installing for a single user (without sudo) you need to add ~/.local/bin to your path, [this section](#add-local-bin-to-path) will show you how to do it
 ```sh
-pip install pulsemeeter
+pip3 install pulsemeeter
 ```
 ### For all users
 ```sh
-sudo pip install pulsemeeter
+sudo pip3 install pulsemeeter
 ```
 
 ## Arch (AUR)
@@ -93,20 +93,28 @@ When installing for a single user (without sudo) you need to add ~/.local/bin to
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-pip install .
+pip3 install .
 ```
 
 ### For all users
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-sudo pip install .
+sudo pip3 install .
+```
+
+### For Dev
+```sh
+git clone https://github.com/theRealCarneiro/pulsemeeter.git
+cd pulsemeeter
+sudo pip3 install -e .
 ```
 
 ### Uninstall
 
 ```sh
-sudo pip uninstall pulsemeeter
+pip3 uninstall pulsemeeter
+sudo pip3 uninstall pulsemeeter
 ```
 
 ### Add local bin to PATH
