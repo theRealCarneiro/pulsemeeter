@@ -107,7 +107,7 @@ sudo pip3 install .
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-sudo pip3 install -e .
+pip3 install -e .
 ```
 
 ### Uninstall
@@ -134,6 +134,9 @@ kill [pulsemeeter pid]
 pulseaudio -k
 pulseaudio --start
 ```
+
+Settings Not Saving?
+Ensure pulsemeeter is closed, navigate to `~/.config/pulsemeeter`, and delete the config.json
 
 ## Start devices on startup
 All connections and devices will be restored with the command `pulsemeeter init`
