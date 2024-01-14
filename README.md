@@ -43,14 +43,20 @@ Visit the [dependencies](https://github.com/theRealCarneiro/pulsemeeter/wiki/Ins
 
 For Ubuntu/Debian:
 
-```sh sudo apt-get update && sudo apt-get install python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev```
+```sh 
+sudo apt-get update && sudo apt-get install python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev
+```
 
 For Fedora:
 
-```sh sudo dnf install python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel```
+```sh 
+sudo dnf install python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel
+```
 
 For Arch Linux:
-```sh sudo pacman -S python-pip libappindicator-gtk3 gobject-introspection libpulse```
+```sh 
+sudo pacman -S python-pip libappindicator-gtk3 gobject-introspection libpulse
+```
 
 ### Python Dependencies
 Pip will automaticly install these dependencies
