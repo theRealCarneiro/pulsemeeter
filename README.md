@@ -128,10 +128,12 @@ export PATH="$HOME/.local/bin:$PATH"
 When starting pulsemeeter and the error "virual_input_b3" could not be started. To solve the issue, kill all pulsemeeter instances, and kill all pulseaudio instances and restart them up. The command should look similar to:
 
 ENSURE PULSEMEETER IS CLOSED, THE ERROR WILL POP UP IF IT IS NOT CLOSED.
-`ps aux | grep pulsemeeter`
-`kill [pulsemeeter pid]`
-`pulseaudio -k`
-`pulseaudio --start`
+```sh
+ps aux | grep pulsemeeter
+kill [pulsemeeter pid]
+pulseaudio -k
+pulseaudio --start
+```
 
 ## Start devices on startup
 All connections and devices will be restored with the command `pulsemeeter init`
