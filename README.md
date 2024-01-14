@@ -41,13 +41,13 @@ Visit the [dependencies](https://github.com/theRealCarneiro/pulsemeeter/wiki/Ins
  - gobject-introspection-1.0
  - libpulse
 
-### For Ubuntu/Debian:
+For Ubuntu/Debian:
 `sudo apt-get update && sudo apt-get install python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev`
 
-### For Fedora:
+For Fedora:
 `sudo dnf install python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel`
 
-### For Arch Linux:
+For Arch Linux:
 `sudo pacman -S python-pip libappindicator-gtk3 gobject-introspection libpulse`
 
 ### Python Dependencies
@@ -55,12 +55,13 @@ Pip will automaticly install these dependencies
  - [pygobject](https://pypi.org/project/PyGObject)
  - [pulsectl](https://pypi.org/project/pulsectl)
  - [setuptools](https://pypi.org/project/setuptools/)
- 
- ### Optional Dependencies
- These dependencies are optional and will enable new features in the application
- - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) for noise reduction
- - [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
- - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
+
+
+### Optional Dependencies
+These dependencies are optional and will enable new features in the application
+- [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) for noise reduction
+- [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
+- [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
 ## Any distro
 
@@ -106,6 +107,15 @@ When installing for a single user, you to need to have $HOME/.local/bin in your 
 ```sh
 export PATH="$HOME/.local/bin:$PATH"
 ```
+
+## Common Errors
+When starting pulsemeeter and the error "virual_input_b3" could not be started. To solve the issue, kill all pulsemeeter instances, and kill all pulseaudio instances and restart them up. The command should look similar to:
+
+ENSURE PULSEMEETER IS CLOSED, THE ERROR WILL POP UP IF IT IS NOT CLOSED.
+`ps aux | grep pulsemeeter`
+`kill [pulsemeeter pid]`
+`pulseaudio -k`
+`pulseaudio --start`
 
 ## Start devices on startup
 All connections and devices will be restored with the command `pulsemeeter init`
