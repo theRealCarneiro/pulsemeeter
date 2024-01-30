@@ -48,7 +48,7 @@ Required Dependencies:
 - libdbusmenu-gtk4
 - libdbusmenu-glib-dev
 
-Installation Commands:
+# Installation Commands:
 
 ### For Ubuntu/Debian:
 ```sh
