@@ -49,15 +49,16 @@ Required Dependencies:
 - libdbusmenu-glib-dev
 
 Installation Commands:
-For Ubuntu/Debian:
+
+### For Ubuntu/Debian:
 ```sh
 sudo apt-get update && sudo apt-get install python3 python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev appindicator gir1.2-appindicator3 libappindicator3-tools libdbusmenu-gtk3-dev libdbusmenu-gtk4 libdbusmenu-glib-dev
 ```
-For Fedora:
+### For Fedora:
 ```sh
 sudo dnf install python3 python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel libappindicator-tools libdbusmenu-gtk3-devel libdbusmenu-gtk4-devel libdbusmenu-glib-devel
 ```
-For Arch Linux:
+### For Arch Linux:
 
 ```sh 
 sudo pacman -S python3 python-pip libappindicator-gtk3 gobject-introspection libpulse libappindicator-tools libdbusmenu-gtk3 libdbusmenu-gtk4 libdbusmenu-glib
