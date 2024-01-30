@@ -38,15 +38,15 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 Before you start using PulseMeeter, make sure you have the following dependencies installed on your system. Visit the dependencies section in the wiki for in-depth information tailored to your specific system.
 Required Dependencies:
 
-    - pip
-    - python3
-    - libappindicator3
-    - gobject-introspection-1.0
-    - libpulse
-    - libappindicator3-tools
-    - libdbusmenu-gtk3-dev
-    - libdbusmenu-gtk4
-    - libdbusmenu-glib-dev
+- pip
+- python3
+- libappindicator3
+- gobject-introspection-1.0
+- libpulse
+- libappindicator3-tools
+- libdbusmenu-gtk3-dev
+- libdbusmenu-gtk4
+- libdbusmenu-glib-dev
 
 Installation Commands:
 For Ubuntu/Debian:
