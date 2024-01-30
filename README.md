@@ -136,10 +136,8 @@ When starting pulsemeeter and the error "virual_input_b3" could not be started. 
 
 ENSURE PULSEMEETER IS CLOSED, THE ERROR WILL POP UP IF IT IS NOT CLOSED.
 ```sh
-ps aux | grep pulsemeeter
-kill [pulsemeeter pid]
-pulseaudio -k
-pulseaudio --start
+pkill pulsemeeter && rm -rf ~/.config/pulsemeeter/ && pulseaudio -k && pulseaudio --start
+&& pkill pulsemeeter && pulseaudio -k && pulseaudio --start
 ```
 
 Settings Not Saving?
