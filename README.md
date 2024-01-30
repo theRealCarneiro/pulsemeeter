@@ -33,30 +33,36 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 # Installation
 
-## Dependencies
-Visit the [dependencies](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation#installing-dependencies) section in the wiki to get in depth information on how to install these for your specific system.
+## Installation Dependencies
 
- - pip
- - libappindicator3
- - gobject-introspection-1.0
- - libpulse
+Before you start using PulseMeeter, make sure you have the following dependencies installed on your system. Visit the dependencies section in the wiki for in-depth information tailored to your specific system.
+Required Dependencies:
 
+    - pip
+    - python3
+    - libappindicator3
+    - gobject-introspection-1.0
+    - libpulse
+    - libappindicator3-tools
+    - libdbusmenu-gtk3-dev
+    - libdbusmenu-gtk4
+    - libdbusmenu-glib-dev
+
+Installation Commands:
 For Ubuntu/Debian:
-
-```sh 
-sudo apt-get update && sudo apt-get install python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev
+```sh
+sudo apt-get update && sudo apt-get install python3 python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev appindicator gir1.2-appindicator3 libappindicator3-tools libdbusmenu-gtk3-dev libdbusmenu-gtk4 libdbusmenu-glib-dev
 ```
-
 For Fedora:
-
-```sh 
-sudo dnf install python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel
+```sh
+sudo dnf install python3 python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel libappindicator-tools libdbusmenu-gtk3-devel libdbusmenu-gtk4-devel libdbusmenu-glib-devel
 ```
-
 For Arch Linux:
+
 ```sh 
-sudo pacman -S python-pip libappindicator-gtk3 gobject-introspection libpulse
+sudo pacman -S python3 python-pip libappindicator-gtk3 gobject-introspection libpulse libappindicator-tools libdbusmenu-gtk3 libdbusmenu-gtk4 libdbusmenu-glib
 ```
+
 
 ### Python Dependencies
 Pip will automaticly install these dependencies
