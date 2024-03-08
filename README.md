@@ -33,12 +33,36 @@ A frontend to ease the use of pulseaudio's routing capabilities, mimicking voice
 
 # Installation
 
-## Dependencies
-Visit the [dependencies](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation#installing-dependencies) section in the wiki to get in depth information on how to install these for your specific system.
- - pip
- - libappindicator3
- - gobject-introspection-1.0
- - libpulse
+## Installation Dependencies
+
+Before you start using PulseMeeter, make sure you have the following dependencies installed on your system. Visit the dependencies section in the wiki for in-depth information tailored to your specific system.
+Required Dependencies:
+
+- pip
+- python3
+- libappindicator3
+- gobject-introspection-1.0
+- libpulse
+- libappindicator3-tools
+- libdbusmenu-gtk3-dev
+- libdbusmenu-gtk4
+- libdbusmenu-glib-dev
+
+# Installation Commands:
+
+### For Ubuntu/Debian:
+```sh
+sudo apt-get update && sudo apt-get install python3 python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev appindicator gir1.2-appindicator3 libappindicator3-tools libdbusmenu-gtk3-dev libdbusmenu-gtk4 libdbusmenu-glib-dev
+```
+### For Fedora:
+```sh
+sudo dnf install python3 python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel libappindicator-tools libdbusmenu-gtk3-devel libdbusmenu-gtk4-devel libdbusmenu-glib-devel
+```
+### For Arch Linux:
+
+```sh 
+sudo pacman -S python3 python-pip libappindicator-gtk3 gobject-introspection libpulse libappindicator-tools libdbusmenu-gtk3 libdbusmenu-gtk4 libdbusmenu-glib
+```
 
 
 ### Python Dependencies
@@ -46,23 +70,24 @@ Pip will automaticly install these dependencies
  - [pygobject](https://pypi.org/project/PyGObject)
  - [pulsectl](https://pypi.org/project/pulsectl)
  - [setuptools](https://pypi.org/project/setuptools/)
- 
- ### Optional Dependencies
- These dependencies are optional and will enable new features in the application
- - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) for noise reduction
- - [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
- - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
+
+
+### Optional Dependencies
+These dependencies are optional and will enable new features in the application
+- [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) for noise reduction
+- [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
+- [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
 ## Any distro
 
 ### Single user
 When installing for a single user (without sudo) you need to add ~/.local/bin to your path, [this section](#add-local-bin-to-path) will show you how to do it
 ```sh
-pip install pulsemeeter
+pip3 install pulsemeeter
 ```
 ### For all users
 ```sh
-sudo pip install pulsemeeter
+sudo pip3 install pulsemeeter
 ```
 
 ## Arch (AUR)
@@ -75,20 +100,28 @@ When installing for a single user (without sudo) you need to add ~/.local/bin to
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-pip install .
+pip3 install .
 ```
 
 ### For all users
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
-sudo pip install .
+sudo pip3 install .
+```
+
+### For Dev
+```sh
+git clone https://github.com/theRealCarneiro/pulsemeeter.git
+cd pulsemeeter
+pip3 install -e .
 ```
 
 ### Uninstall
 
 ```sh
-sudo pip uninstall pulsemeeter
+pip3 uninstall pulsemeeter
+sudo pip3 uninstall pulsemeeter
 ```
 
 ### Add local bin to PATH
@@ -98,22 +131,20 @@ When installing for a single user, you to need to have $HOME/.local/bin in your 
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+## Common Errors
+When starting pulsemeeter and the error "virual_input_b3" could not be started. To solve the issue, kill all pulsemeeter instances, and kill all pulseaudio instances and restart them up. The command should look similar to:
+
+ENSURE PULSEMEETER IS CLOSED, THE ERROR WILL POP UP IF IT IS NOT CLOSED.
+```sh
+pkill pulsemeeter && rm -rf ~/.config/pulsemeeter/ && pulseaudio -k && pulseaudio --start
+&& pkill pulsemeeter && pulseaudio -k && pulseaudio --start
+```
+
+Settings Not Saving?
+Ensure pulsemeeter is closed, navigate to `~/.config/pulsemeeter`, and delete the config.json
+
 ## Start devices on startup
-
-### Starting devices only
-If you only want to restore all connections and devices but not start the entire application, you can run:
-```sh 
-pulsemeeter init
-```
-
-### Start pulsemeeter as a daemon
-You can run pulsemeeter as a daemon, might be useful if you want the app the start in the tray on startup 
-```sh 
-pulsemeeter daemon
-```
-
-## Extensions
-[@Fl1tzi](https://github.com/Fl1tzi) Elgato Streamdeck intergration [pulsemeeter-streamdeck](https://github.com/Fl1tzi/pulsemeeter-streamdeck)
+All connections and devices will be restored with the command `pulsemeeter init`
 
 ## Discord Server
 If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)

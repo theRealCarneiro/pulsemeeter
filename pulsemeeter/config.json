@@ -64,7 +64,6 @@
 		"1": {
 			"name": "Virtual_Input_1",
 			"primary": false,
-			"external": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -79,7 +78,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -92,7 +90,6 @@
 		"2": {
 			"name": "Virtual_Input_2",
 			"primary": false,
-			"external": false,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -107,7 +104,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -120,7 +116,6 @@
 		"3": {
 			"name": "Virtual_Input_3",
 			"primary": false,
-			"external": true,
 			"a1": false,
 			"a2": false,
 			"a3": false,
@@ -135,7 +130,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -163,7 +157,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -189,7 +182,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -215,7 +207,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -228,11 +219,10 @@
 	},
 	"jack": {
 		"enable": false,
-		"output_groups": {
-		}
+		"output_groups": {}
 	},
 	"enable_vumeters": true,
 	"cleanup": false,
 	"tray": true,
-	"layout":"default"
+	"layout": "default"
 }

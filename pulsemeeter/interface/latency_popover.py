@@ -4,8 +4,7 @@ from ..settings import LAYOUT_DIR
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 
-from gi.repository import Gtk
-
+from gi.repository import Gtk,Gdk
 
 class LatencyPopover():
     def __init__(self, button, sock, input_index, output_index):
@@ -43,9 +42,10 @@ class LatencyPopover():
         self.apply_latency_button = self.builder.get_object('apply_latency_button')
         self.apply_latency_button.connect('pressed', self.apply_latency, input_type, input_id, output_type, output_id)
 
+
         self.latency_popover.popup()
 
     def apply_latency(self, widget, input_type, input_id, output_type, output_id):
-        # sink = output_type + output_id
+        sink = output_type + output_id
         latency = int(self.latency_adjust.get_value())
         self.sock.connect(input_type, input_id, output_type, output_id, True, latency)
