@@ -78,7 +78,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -105,7 +104,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -132,7 +130,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -160,7 +157,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -186,7 +182,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -212,7 +207,6 @@
 			"b3_latency": 200,
 			"mute": false,
 			"vol": 100,
-			"mute": false,
 			"eq_control": "",
 			"eq_name": "",
 			"use_eq": false,
@@ -225,11 +219,10 @@
 	},
 	"jack": {
 		"enable": false,
-		"output_groups": {
-		}
+		"output_groups": {}
 	},
 	"enable_vumeters": true,
 	"cleanup": false,
 	"tray": true,
-	"layout":"default"
+	"layout": "default"
 }
