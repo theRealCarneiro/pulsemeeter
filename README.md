@@ -52,16 +52,17 @@ Required Dependencies:
 
 ### For Ubuntu/Debian:
 ```sh
-sudo apt-get update && sudo apt-get install python3 python3-pip libappindicator3-dev libgirepository1.0-dev libpulse-dev appindicator gir1.2-appindicator3 libappindicator3-tools libdbusmenu-gtk3-dev libdbusmenu-gtk4 libdbusmenu-glib-dev
+sudo apt-get update && sudo apt install python3 python3-pip libappindicator3-1 gobject-introspection libpulse0 libdbusmenu-gtk3-dev libdbusmenu-glib-dev
+
 ```
 ### For Fedora:
 ```sh
-sudo dnf install python3 python3-pip libappindicator-gtk3-devel gobject-introspection-devel pulseaudio-libs-devel libappindicator-tools libdbusmenu-gtk3-devel libdbusmenu-gtk4-devel libdbusmenu-glib-devel
+sudo pacman -Syu && sudo pacman -S python python-pip libappindicator-gtk3 gobject-introspection-runtime pulseaudio libdbusmenu-gtk3 libdbusmenu-glib
 ```
 ### For Arch Linux:
 
 ```sh 
-sudo pacman -S python3 python-pip libappindicator-gtk3 gobject-introspection libpulse libappindicator-tools libdbusmenu-gtk3 libdbusmenu-gtk4 libdbusmenu-glib
+sudo dnf update && sudo dnf install python3 python3-pip libappindicator gobject-introspection pulseaudio-libs libdbusmenu-gtk3 libdbusmenu-glib
 ```
 
 
@@ -83,6 +84,7 @@ These dependencies are optional and will enable new features in the application
 ### Single user
 When installing for a single user (without sudo) you need to add ~/.local/bin to your path, [this section](#add-local-bin-to-path) will show you how to do it
 ```sh
+
 pip3 install pulsemeeter
 ```
 ### For all users
@@ -100,6 +102,8 @@ When installing for a single user (without sudo) you need to add ~/.local/bin to
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
+python3 -m venv myenv
+source myenv/bin/activate
 pip3 install .
 ```
 
@@ -107,6 +111,8 @@ pip3 install .
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
+python3 -m venv myenv
+source myenv/bin/activate
 sudo pip3 install .
 ```
 
@@ -114,7 +120,10 @@ sudo pip3 install .
 ```sh
 git clone https://github.com/theRealCarneiro/pulsemeeter.git
 cd pulsemeeter
+python3 -m venv myenv
+source myenv/bin/activate
 pip3 install -e .
+
 ```
 
 ### Uninstall
