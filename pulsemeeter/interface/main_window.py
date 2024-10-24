@@ -20,8 +20,7 @@ from gi import require_version as gi_require_version
 
 # from pulsectl import Pulse
 gi_require_version('Gtk', '3.0')
-gi_require_version('AppIndicator3', '0.1')
-from gi.repository import Gtk, GLib, AppIndicator3
+from gi.repository import Gtk, GLib
 
 
 class MainWindow(Gtk.Window):
@@ -699,6 +698,18 @@ class MainWindow(Gtk.Window):
         return menu
 
     def create_indicator(self):
+        # Try AyatanaAppIndicator3 first, fall back to AppIndicator3
+        try:
+            gi_require_version('AyatanaAppIndicator3', '0.1')
+            from gi.repository import AyatanaAppIndicator3 as AppIndicator3
+        except (ImportError, ValueError):
+            try:
+                gi_require_version('AppIndicator3', '0.1')
+                from gi.repository import AppIndicator3 as AppIndicator3
+            except (ImportError, ValueError):
+                print("Neither AyatanaAppIndicator3 nor AppIndicator3 found. System tray functionality will be disabled.")
+                return None
+
         indicator = AppIndicator3.Indicator.new(id='pulsemeetertray',
                 icon_name='Pulsemeeter',
                 category=AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
