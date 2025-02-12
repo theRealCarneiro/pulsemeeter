@@ -3,8 +3,8 @@ This module is for implementing the gtk signal callback for apps and making the
 requests to the server
 '''
 from gi.repository import Gtk
-from meexer.ipc.client import Client
-from meexer.schemas import requests_schema
+from meexer.ipc.client_async import Client
+from meexer.schemas import requests_schema, ipc_schema
 # from meexer.schemas.app_schema import AppSchema
 
 CLIENT_NAME = 'gtk'
@@ -41,3 +41,10 @@ def move(combobox: Gtk.ComboBox, app_type: str, app_index: int):
 
     requests_schema.AppMove(**data)
     Client.get_client(CLIENT_NAME).send_request('app_move', data)
+
+
+def list_apps(app_type: str) -> list:
+    data = {'app_type': app_type}
+    requests_schema.AppList(**data)
+    res: ipc_schema.Response = Client.get_client(CLIENT_NAME).send_request('app_list', data)
+    return res.data

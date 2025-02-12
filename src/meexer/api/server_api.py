@@ -1,13 +1,14 @@
 from meexer.schemas.ipc_schema import StatusCode
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
-from meexer.ipc.router import Router as ipc
+from meexer.ipc.router import Blueprint
 from meexer.model.config_model import ConfigModel
 
 CONFIG = ConfigModel()
+ipc = Blueprint('server')
 
 
 @ipc.command('exit', sflags.APP, True, True)
-def close_server(_):
+async def close_server(_):
     '''
     Closes server, saves the config file, and can save
     '''
@@ -18,7 +19,7 @@ def close_server(_):
 
 
 @ipc.command('save', 0, False, save_config=True)
-def save_config(_):
+async def save_config(_):
     '''
     Saves the current configuration to file by signaling the
     server that we want to save, and avoid having to call the
@@ -27,8 +28,8 @@ def save_config(_):
 
 
 @ipc.command('get_config', 0, False, save_config=False)
-def get_config(_):
+async def get_config(_):
     '''
     Returns the config
     '''
-    return StatusCode.OK, CONFIG.__dict__
+    return CONFIG.__dict__

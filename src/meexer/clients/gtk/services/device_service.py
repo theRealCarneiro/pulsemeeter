@@ -12,6 +12,17 @@ to the server
 '''
 
 
+def create():
+    '''
+    Called when the create button is pressed
+    '''
+    data = {
+    }
+
+    # requests_schema.CreateDevice(**data)
+    # Client.get_client(CLIENT_NAME).send_request('create_device', data)
+
+
 def connect(button, input_type, input_id, output_type, output_id):
     '''
     Called when the connect button is toggled

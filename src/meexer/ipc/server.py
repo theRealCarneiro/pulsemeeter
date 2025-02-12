@@ -12,7 +12,7 @@ from meexer.ipc import utils
 from meexer.schemas import ipc_schema as schemas
 from meexer.settings import CLIENT_ID_LEN, REQUEST_SIZE_LEN
 
-from meexer.ipc.router import Router
+from meexer.ipc.router import Blueprint
 
 LISTENER_TIMEOUT = 2
 
@@ -41,6 +41,21 @@ class Server:
         self.query_thread = None
         self.main_loop_thread = None
         self.clients = {}
+        self.routes = {}
+
+    def register_blueprint(self, blueprint: Blueprint):
+        '''
+        Register the routes of a blueprint
+        '''
+        for route_key, route in blueprint.routes.items():
+            self.routes[route_key] = route
+
+    def get_route(self, route_key: str):
+        route = self.routes.get(route_key)
+        if route is None:
+            LOG.error('No routes for command "`%s"', route_key)
+
+        return route
 
     def start_queries(self, daemon=False):
         '''
@@ -78,16 +93,14 @@ class Server:
             # Listen for commands
             while not self.exit_flag:
                 req = self.command_queue.get()
-                route = Router.get_route(req.command)
-
-                if route is None:
-                    LOG.error('No routes for command "`%s"', req.command)
+                route = self.get_route(req.command)
 
                 # close server without warning
                 if req.command == 'kill':
                     break
 
                 if route is None:
+                    LOG.error('No routes for command "`%s"', req.command)
                     continue
 
                 command_notify = route.notify

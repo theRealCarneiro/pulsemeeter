@@ -9,7 +9,6 @@ class DeviceFlags:
 
 
 class ConnectionSchema(BaseModel):
-    target: str
     nick: str
     state: bool = False
     latency: int | None

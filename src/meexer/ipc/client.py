@@ -39,8 +39,8 @@ class Client:
         # connect to server
         try:
             self.conn.connect(settings.SOCK_FILE)
-            self.id = int(self.conn.recv(CLIENT_ID_LEN))
-            self.conn.sendall(str(0).rjust(CLIENT_ID_LEN, '0').encode())
+            self.id = int(self.get_message())
+            # self.conn.sendall(str(0).rjust(CLIENT_ID_LEN, '0').encode())
             LOG.debug('connected to server, id %d', self.id)
         except socket.error:
             LOG.error(traceback.format_exc())
@@ -112,7 +112,12 @@ class Client:
         msg_len = len(msg)
         if msg_len == 0:
             raise ValueError('Empty message not allowed')
-        self.conn.sendall(utils.msg_len_to_str(msg_len))
+
+        bytes_msg_len = utils.msg_len_to_str(msg_len)
+        LOG.debug(bytes_msg_len)
+        LOG.debug(msg)
+
+        self.conn.sendall(bytes_msg_len)
         self.conn.sendall(msg)
 
     def send_request(self, command: str, data: dict) -> ipc_schema.Response:

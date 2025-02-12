@@ -117,7 +117,7 @@ async def set_primary(device_type: str, device_name: str, pulse=None):
     return 0
 
 
-async def set_volume(device_type: str, device_name: str, val: int, selected_channels: list = None):
+async def set_volume(device_type: str, device_name: str, volume: list):
     '''
     Change device volume
         "device_type" either sink or source
@@ -127,7 +127,7 @@ async def set_volume(device_type: str, device_name: str, val: int, selected_chan
     '''
 
     # limit volume from 0 to 153
-    val = min(max(0, val), 153)
+    # val = min(max(0, val), 153)
 
     # get device info from pulsectl
     async with pulsectl_asyncio.PulseAsync() as pulse:
@@ -135,7 +135,13 @@ async def set_volume(device_type: str, device_name: str, val: int, selected_chan
         # get device info from pulsectl
         info = pulse.get_sink_by_name if device_type == 'sink' else pulse.get_source_by_name
         device = await info(device_name)
+        volume = pulsectl.PulseVolumeInfo([x / 100 for x in volume])
+        await pulse.volume_set(device, volume)
 
+    return 0
+
+
+'''
         # set the volume
         volume_value = device.volume
         if selected_channels is None:
@@ -153,10 +159,7 @@ async def set_volume(device_type: str, device_name: str, val: int, selected_chan
                     volume_list[channel] = val / 100
 
             volume_value = pulsectl.PulseVolumeInfo(volume_list)
-
-        await pulse.volume_set(device, volume_value)
-
-    return 0
+'''
 
 
 async def app_mute(app_type: str, index: int, state: bool):
@@ -244,14 +247,30 @@ async def list_devices(device_type):
     '''
     async with pulsectl_asyncio.PulseAsync() as pulse:
         list_pa_devices = pulse.sink_list if device_type == 'sink' else pulse.source_list
-        device_list = []
+        device_list: list = []
+        pa_sink_hardware: hex = 0x0004
         for device in await list_pa_devices():
 
-            pa_sink_hardware = 0x0004
             if device.flags & pa_sink_hardware:
                 device_list.append(device)
 
     return device_list
+
+
+async def get_device(device_type: str, device_name: str):
+    '''
+    Get a specific device by their name
+        "device_type" is either sink or source
+        "device_name" is the name of the device
+    '''
+    async with pulsectl_asyncio.PulseAsync() as pulse:
+        device = None
+        if device_type == 'sink':
+            device = pulse.get_sink_by_name(device_name)
+        elif device_type == 'source':
+            device = pulse.get_source_by_name(device_name)
+
+        return device
 
 
 async def filter_results(app):

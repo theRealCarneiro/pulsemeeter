@@ -17,27 +17,6 @@ class AppModel(AppSchema):
         print(self)
         pmctl.move_app_device(self.app_type, self.index, device_name)
 
-    @staticmethod
-    def set_volume_by_index(index: int, app_type: str, volume: int):
-        '''
-        Set an app volume by the app's index
-        '''
-        pmctl.app_volume(app_type, index, volume)
-
-    @staticmethod
-    def set_mute_by_index(index: int, app_type: str, state: bool):
-        '''
-        Set an app mute state by the app's index
-        '''
-        pmctl.app_mute(app_type, index, state)
-
-    @staticmethod
-    def change_device_by_index(app_index: int, app_type: str, device: str):
-        '''
-        Change an app output by the app's index
-        '''
-        pmctl.move_app_device(app_type, app_index, device)
-
     @classmethod
     def pa_to_app_model(cls, app, app_type: str):
         '''
@@ -70,14 +49,14 @@ class AppModel(AppSchema):
         return app_model
 
     @classmethod
-    def list_apps(cls, app_type: str):
+    def list_apps(cls, app_type: str, pa_app_list: list):
         '''
         Returns a list of AppModels
             "index" is the index of the app
             "app_type" is either 'sink_input' or 'source_output'
         '''
         app_list = []
-        for app in pmctl.list_apps(app_type):
+        for app in pa_app_list:
             app = cls.pa_to_app_model(app, app_type)
             app_list.append(app)
         return app_list

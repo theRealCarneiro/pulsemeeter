@@ -1,3 +1,7 @@
+'''
+Schemas for the ipc
+'''
+
 import threading
 import socket
 from enum import Enum
@@ -26,7 +30,8 @@ class StatusCode(Enum):
 
 
 class Route(BaseModel):
-    command: Callable[[any], any]
+    command: Callable[[Any], Any]
+    schema_hint: Any
     notify: bool
     save_config: bool
     flags: int = 0
@@ -42,9 +47,9 @@ class Client(BaseModel):
         arbitrary_types_allowed = True
 
 
-class Request(BaseModel):
+class Event(BaseModel):
     '''
-    Schema for requests
+    Schema for events
         "command" is the name of the command/route
         "sender_id" is the id of the client who sent the msg
         "data" is a dict containing the actual request
@@ -59,6 +64,22 @@ class Request(BaseModel):
     run: bool = True
 
 
+class Request(BaseModel):
+    '''
+    Schema for requests
+        "command" is the name of the command/route
+        "sender_id" is the id of the client who sent the msg
+        "data" is a dict containing the actual request
+        "id" is a integer used by the client to know if it's own request when answerd
+        "run" is a bool, True means run the request,
+            False means don't run it
+    '''
+    command: str
+    sender_id: int
+    data: dict
+    run: bool = True
+
+
 class Response(BaseModel):
     '''
     Schema for requests
@@ -69,4 +90,3 @@ class Response(BaseModel):
     '''
     status: StatusCode
     data: Any
-    id: int

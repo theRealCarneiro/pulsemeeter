@@ -3,10 +3,10 @@ from meexer.clients.gtk.main_window import blocks
 from meexer.schemas.config_schema import ConfigSchema
 from meexer.schemas.device_schema import DeviceSchema
 from meexer.schemas.app_schema import AppSchema
-from meexer.model.app_model import AppModel
 
 from meexer.clients.gtk.widgets.device_widget import DeviceWidget
 from meexer.clients.gtk.widgets.app_widget import AppWidget, AppCombobox
+from meexer.clients.gtk.widgets.create_device_widget import CreateDevice
 from meexer.clients.gtk.services import app_service, device_service
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -22,18 +22,28 @@ class GtkClient(Gtk.Application):
         super().__init__(application_id='org.pulsemeeter.meexer')
         self.window = None
         self.client = Client(listen_flags=0, instance_name='gtk')
+        # self.client.start()
         res = self.client.send_request('get_config', {})
         self.config = ConfigSchema(**res.data)
         self.devices = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.apps = {'sink_input': {}, 'source_output': {}}
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
+        # self.quit_action = Gio.SimpleAction.new("quit", None)
+        # self.quit_action.connect("activate", self.on_quit)
+        # self.add_action(self.quit_action)
 
     def create_window(self):
         window = blocks.MainWindow(application=self)
+        # window.connect('delete-event', self.on_quit)
 
         # load devices
         for device_type in ('a', 'b', 'vi', 'hi'):
+
+            # create device button
+            window.device_box[device_type].add_device_button.connect('pressed', self.create_new_device_popover,
+                                                                     device_type)
+
             for device_id, device_schema in self.config.__dict__[device_type].items():
                 device = self.create_device(device_type, device_id, device_schema)
                 window.insert_device(device_type, device)
@@ -52,14 +62,14 @@ class GtkClient(Gtk.Application):
         AppCombobox.set_device_list('source_output', source_output_device_list)
 
         # load apps
-        for app_type in ('sink_input', 'source_output'):
-            for app_schema in AppModel.list_apps(app_type):
-                app = self.create_app(app_schema)
-                window.insert_app(app)
+        # for app_type in ('sink_input', 'source_output'):
+            # for app_schema in app_service.list_apps(app_type):
+                # app = self.create_app(app_schema)
+                # window.insert_app(app)
 
         return window
 
-    def do_activate(self):
+    def do_activate(self, *args, **kwargs):
 
         # TODO: layouts
         if self.window is None:
@@ -67,6 +77,11 @@ class GtkClient(Gtk.Application):
 
         self.window.show_all()
         self.window.present()
+
+    def create_new_device_popover(self, widget, device_type):
+        pop = CreateDevice(device_type)
+        pop.set_relative_to(widget)
+        pop.popup()
 
     def create_device(self, device_type: str, device_id: str, device_schema: DeviceSchema):
         '''
@@ -184,5 +199,6 @@ class GtkClient(Gtk.Application):
 
                 break
 
-    def on_quit(self):
+    def on_shutdown(self):
+        # self.client.close()
         self.quit()

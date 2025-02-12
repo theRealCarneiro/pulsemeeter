@@ -5,8 +5,8 @@ from meexer.schemas import device_schema
 
 
 class DeviceIndex(BaseModel):
-    device_type: str = Field(..., regex='[vi|hi|a|b]')
-    device_id: str = Field(..., regex='[1-9]+')
+    device_type: str = Field(..., pattern='[vi|hi|a|b]')
+    device_id: str = Field(..., pattern='[1-9]+')
 
 
 class CreateDevice(BaseModel):
@@ -65,6 +65,11 @@ class DeviceList(BaseModel):
 
 class AppList(BaseModel):
     app_type: Literal['sink_input', 'source_output']
+
+
+class AppGet(BaseModel):
+    app_type: Literal['sink_input', 'source_output']
+    app_index: int
 
 
 class AppVolume(BaseModel):

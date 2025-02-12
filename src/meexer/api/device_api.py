@@ -1,41 +1,34 @@
-from pydantic.error_wrappers import ValidationError
-from meexer.ipc.router import Router as ipc
-from meexer.schemas import ipc_schema, requests_schema as requests
+from meexer.ipc.router import Blueprint
+from meexer.schemas import device_schema, requests_schema as requests
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
 from meexer.model.device_model import DeviceModel
 from meexer.model.config_model import ConfigModel
+from meexer.scripts import pmctl_async as pmctl
 
 CONFIG = ConfigModel()
 
+ipc = Blueprint('device')
+
 
 @ipc.command('create_device', sflags.DEVICE_NEW | sflags.DEVICE)
-def create_device(req: requests.CreateDevice) -> DeviceModel:
+async def create_device(create_device_req: requests.CreateDevice) -> None:
     '''
     Recives a devices index and a device
     '''
 
-    # validate request
-    try:
-        create_device_req = requests.CreateDevice(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
-
     device = DeviceModel.construct(create_device_req.device)
     CONFIG.insert_device(device)
 
-    return ipc_schema.StatusCode.OK, None
+    if (device.device_class == 'virtual' and not
+            device.flags & device_schema.DeviceFlags.EXTERNAL):
+        await pmctl.init(device.device_type, device.name)
 
 
 @ipc.command('update_device', sflags.DEVICE_CHANGED | sflags.DEVICE)
-def update_device(req: requests.UpdateDevice):
+async def update_device(update_device_req: requests.UpdateDevice) -> None:
     '''
     Recives a device index and a device
     '''
-
-    try:
-        update_device_req = requests.UpdateDevice(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
 
     device_type = update_device_req.index.device_type
     device_id = update_device_req.index.device_id
@@ -44,27 +37,24 @@ def update_device(req: requests.UpdateDevice):
     device: DeviceModel = CONFIG.get_device(device_type, device_id)
     device.update_device_settings(new_device)
 
-    return ipc_schema.StatusCode.OK, None
-
 
 @ipc.command('remove_device', sflags.DEVICE_REMOVE | sflags.DEVICE)
-def remove_device(req: requests.RemoveDevice):
+async def remove_device(remove_device_req: requests.RemoveDevice) -> None:
     '''
     Recives a device index
     '''
 
     # request validation
-    try:
-        remove_device_req = requests.RemoveDevice(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None, None
-
     device_type = remove_device_req.index.device_index.device_type
     device_id = remove_device_req.index.device_index.device_id
     device: DeviceModel = CONFIG.remove_device(device_type, device_id)
-    device.destroy()
+    # device.destroy()
 
-    return ipc_schema.StatusCode.OK, None
+    # TODO: remove connections
+    # TODO: remove plugins
+    if (device.device_class == 'virtual' and not
+            device.flags & device_schema.DeviceFlags.EXTERNAL):
+        await pmctl.remove(device.name)
 
 
 # @ipc.command('reconnect', sflags.CONNECTION | sflags.DEVICE, False, False)
@@ -73,15 +63,10 @@ def remove_device(req: requests.RemoveDevice):
 
 
 @ipc.command('connect', sflags.CONNECTION | sflags.DEVICE)
-def connect(req: requests.Connect) -> int:
+async def connect(connection_req: requests.Connect) -> int:
     '''
     Recives a connection, and connects devices
     '''
-
-    try:
-        connection_req = requests.Connect(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None, None
 
     state = connection_req.state
     source_index = connection_req.source
@@ -91,67 +76,53 @@ def connect(req: requests.Connect) -> int:
     output = CONFIG.get_device(output_index.device_type, output_index.device_id)
 
     source.connect(output_index.device_type, output_index.device_id,
-                   output, state)
+                   state, output.nick)
 
-    return ipc_schema.StatusCode.OK, None
+    str_port_map = source.str_port_map(output_index.device_type, output_index.device_id, output)
+
+    await pmctl.connect(source.get_correct_name(), output.get_correct_name(),
+                        state, port_map=str_port_map)
 
 
 @ipc.command('mute', sflags.DEVICE, save_config=False)
-def mute(req: requests.Mute):
+async def mute(mute_req: requests.Mute) -> None:
     '''
     Recives a connection, and connects devices
     '''
-    try:
-        mute_req = requests.Mute(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None, None
-
     device = CONFIG.get_device(mute_req.index.device_type, mute_req.index.device_id)
     device.set_mute(mute_req.state)
-    return ipc_schema.StatusCode.OK, None
+    await pmctl.mute(device.device_type, device.name, mute_req.state)
 
 
 @ipc.command('default', sflags.DEVICE, save_config=False)
-def default(req: requests.Default):
+async def default(default_req: requests.Default) -> None:
     '''
     Recives an index, sets device as default, only works for virtual devices
     '''
-    try:
-        default_req = requests.Default(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None, None
-
     device = CONFIG.get_device(default_req.index.device_type, default_req.index.device_id)
-    device.set_default()
-    return ipc_schema.StatusCode.OK, None
+
+    if device.device_class == 'virtual':
+        device.set_default()
+        await pmctl.set_primary(device.device_type, device.name)
 
 
 @ipc.command('volume', sflags.VOLUME | sflags.DEVICE, save_config=False)
-def volume(req: requests.Volume):
+async def volume(volume_req: requests.Volume) -> None:
     '''
     Recives a volume request
     '''
-    try:
-        volume_req = requests.Volume(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None, None
-
     device = CONFIG.get_device(volume_req.index.device_type, volume_req.index.device_id)
     device.set_volume(volume_req.volume)
-    return ipc_schema.StatusCode.OK, None
+    await pmctl.set_volume(device.device_type, device.name, device.volume)
 
 
 @ipc.command('list_devices', flags=0, notify=False, save_config=False)
-def list_devices(req: requests.DeviceList):
+async def list_devices(device_list_req: requests.DeviceList) -> list:
     '''
     Returns a list of device schemas
     '''
 
-    try:
-        device_list_req = requests.DeviceList(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None, None
+    pa_device_list = await pmctl.list_devices(device_list_req.device_type)
+    device_list = DeviceModel.list_devices(pa_device_list, device_list_req.device_type)
 
-    device_list = DeviceModel.list_devices(device_list_req.device_type)
-
-    return ipc_schema.StatusCode.OK, device_list
+    return device_list

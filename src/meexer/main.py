@@ -2,16 +2,16 @@
 Entry point
 '''
 import logging
-import time
+# import time
 import sys
 
-# pylint: disable=unused-import
-from meexer.api import app_api, device_api, server_api  # noqa: F401
-# pylint: enable=unused-import
+from meexer.api.app_api import ipc as app_routes
+from meexer.api.device_api import ipc as device_routes
+from meexer.api.server_api import ipc as server_routes
 
-from meexer.scripts import argparser
+# from meexer.scripts import argparser
 from meexer.clients.gtk.gtk_client import GtkClient
-from meexer.ipc.server import Server
+from meexer.ipc.server_async import Server
 # from meexer.ipc.client import Client
 
 LOG = logging.getLogger("generic")
@@ -25,6 +25,9 @@ def main():
     try:
         server = Server()
         isserver = True
+        server.register_blueprint(app_routes)
+        server.register_blueprint(device_routes)
+        server.register_blueprint(server_routes)
 
     except ConnectionAbortedError:
         isserver = False
@@ -36,12 +39,13 @@ def main():
         case []:
             # trayonly = False
             if isserver:
-                start_server(server)
+                server.start_server(daemon=False)
 
             app = GtkClient()
             app.run()
 
-            server.exit_signal()
+            server.close_server()
+            # server.exit_signal()
 
         # daemon: start only the server
         case ['daemon']:
@@ -50,8 +54,8 @@ def main():
                 return 1
 
             # trayonly = True
-            start_server(server)
-            server.exit_signal()
+            server.start_server(daemon=True)
+            # server.exit_signal()
 
         # init: Just start devices and connections
         case ['init']:
@@ -69,11 +73,11 @@ def main():
 
         # default: call cli interface
         case _:
-            argparser.create_parser_args()
+            pass
+            # argparser.create_parser_args()
 
     return 0
 
 
-def start_server(server):
-    server.start_queries(daemon=True)
-    time.sleep(0.1)
+if __name__ == '__main__':
+    main()
