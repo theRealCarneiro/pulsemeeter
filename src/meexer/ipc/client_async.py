@@ -4,12 +4,12 @@ import asyncio
 from pydantic import ValidationError
 from meexer import settings
 from meexer.schemas import ipc_schema
-from meexer.ipc import utils
+from meexer.ipc import socket_async
 
 LOG = logging.getLogger("generic")
 
 
-class Client:
+class Client(socket_async.SocketAsync):
 
     _clients = {}
 
@@ -23,8 +23,9 @@ class Client:
         self.writer: asyncio.StreamWriter = None
         self.thread: threading.Thread = None
         self.loop: asyncio.AbstractEventLoop = None
-        self.default_id: int = None
+        self.client_id: int = None
         self.exit_signal: bool = False
+        self.listen_task = None
         self.listen_flags = listen_flags
         self.new_client(self, instance_name)
 
@@ -44,25 +45,13 @@ class Client:
         self.loop.stop()
         self.thread.join()
 
-    def send_request(self, command: str, data: dict) -> ipc_schema.Response:
-        '''
-        Send a request to the server, returns an answer
-            "command" is the str command
-            "data" is the data of the request
-        '''
-        future = asyncio.run_coroutine_threadsafe(
-            utils.send_request(self.writer, self.reader, command, data, self.default_id), self.loop
-        )
-        res: ipc_schema.Response = future.result()
-        return res
-
     async def _connect(self, client_ready: threading.Event) -> None:
         '''
         Connect to the server and start listening
         '''
         self.reader, self.writer = await asyncio.open_unix_connection(settings.SOCK_FILE)
-        self.default_id = int(await utils.get_message(self.reader))
-        LOG.info('Connected to server, id: %d', self.default_id)
+        self.client_id = int(await self.get_message())
+        LOG.info('Connected to server, id: %d', self.client_id)
         client_ready.set()
         self.listen_task = self.loop.create_task(self._listen())
 
@@ -72,7 +61,7 @@ class Client:
         '''
 
         while not self.exit_signal:
-            msg = await utils.get_message(self.reader)
+            msg = await self.get_message()
             try:
                 req = ipc_schema.Request.parse_raw(msg)
                 LOG.debug(req)

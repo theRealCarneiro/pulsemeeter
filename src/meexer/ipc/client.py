@@ -6,6 +6,7 @@ import traceback
 
 from meexer import settings
 from meexer.ipc import utils
+from meexer.ipc.socket import Socket
 from meexer.schemas import ipc_schema
 
 LISTENER_TIMEOUT = 2
@@ -15,7 +16,7 @@ REQUEST_SIZE_LEN = 5
 LOG = logging.getLogger("generic")
 
 
-class Client:
+class Client(Socket):
 
     _clients = {}
 
@@ -27,7 +28,7 @@ class Client:
         if sock_name is not None:
             settings.SOCK_FILE = f'/tmp/pulsemeeter.{sock_name}.sock'
 
-        self.conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.id = None
         self.listen_id = None
         self.listen_flags = listen_flags
@@ -39,14 +40,15 @@ class Client:
         # connect to server
         try:
             self.conn.connect(settings.SOCK_FILE)
-            self.id = int(self.get_message())
+            client_id = int(self.get_message())
             # self.conn.sendall(str(0).rjust(CLIENT_ID_LEN, '0').encode())
-            LOG.debug('connected to server, id %d', self.id)
+            LOG.debug('connected to server, id %d', client_id)
         except socket.error:
             LOG.error(traceback.format_exc())
             LOG.error("Could not connect to server")
             raise
 
+        super().__init__(self, sock, client_id)
         Client.new_client(self, instance_name)
 
         if listen_flags:
@@ -71,20 +73,6 @@ class Client:
     def close_connection(self) -> None:
         self.conn.close()
 
-    def get_message(self, sock: socket.socket = None) -> dict:
-        '''
-        Retrives a single message from the server
-        '''
-        if sock is None:
-            sock = self.conn
-
-        res = sock.recv(REQUEST_SIZE_LEN)
-        msg_len = int(res.decode())
-
-        msg = sock.recv(msg_len)
-        msg_dict = json.loads(msg.decode())
-        return msg_dict
-
     def listen(self) -> None:
         '''
         Listen to server events and do callbacks
@@ -102,43 +90,6 @@ class Client:
 
     def stop_listen(self) -> None:
         self.exit_flag = True
-
-    def send_message(self, req: ipc_schema.Request) -> None:
-        '''
-        Send a request to server
-        '''
-        json_string = req.json()
-        msg = json_string.encode('utf-8')
-        msg_len = len(msg)
-        if msg_len == 0:
-            raise ValueError('Empty message not allowed')
-
-        bytes_msg_len = utils.msg_len_to_str(msg_len)
-        LOG.debug(bytes_msg_len)
-        LOG.debug(msg)
-
-        self.conn.sendall(bytes_msg_len)
-        self.conn.sendall(msg)
-
-    def send_request(self, command: str, data: dict) -> ipc_schema.Response:
-        '''
-        Create a request and send it to server
-        '''
-        req = ipc_schema.Request(
-            command=command,
-            data=data,
-            sender_id=self.id,
-            id=self.request_id,
-            flags=0
-        )
-        self.send_message(req)
-
-        msg = self.get_message()
-        res = ipc_schema.Response(**msg)
-        LOG.debug('Response %s', res)
-
-        self.request_id += 1
-        return res
 
     @classmethod
     def new_client(cls, client, client_name: str = 'default'):
