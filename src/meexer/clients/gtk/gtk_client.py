@@ -62,11 +62,13 @@ class GtkClient(Gtk.Application):
         AppCombobox.set_device_list('source_output', source_output_device_list)
 
         # load apps
-        # for app_type in ('sink_input', 'source_output'):
-            # for app_schema in app_service.list_apps(app_type):
-                # app = self.create_app(app_schema)
-                # window.insert_app(app)
+        for app_type in ('sink_input', 'source_output'):
+            for schema in app_service.list_apps(app_type, self.client):
+                app_schema = AppSchema(**schema)
+                app = self.create_app(app_schema)
+                window.insert_app(app)
 
+        # window.show_all()
         return window
 
     def do_activate(self, *args, **kwargs):
@@ -80,6 +82,7 @@ class GtkClient(Gtk.Application):
 
     def create_new_device_popover(self, widget, device_type):
         pop = CreateDevice(device_type)
+        pop.create_button.connect('pressed', device_service.create, pop, device_type)
         pop.set_relative_to(widget)
         pop.popup()
 
@@ -114,7 +117,7 @@ class GtkClient(Gtk.Application):
             'toggled', self.change_default_state, device_type, device_id
         )
 
-        # interate connection buttons
+        # iterate connection buttons
         for output_type, buttons in device.connection_buttons.items():
             device_handle[output_type] = {}
             for output_id, button in buttons.items():

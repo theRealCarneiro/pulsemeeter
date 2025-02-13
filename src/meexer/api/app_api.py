@@ -74,15 +74,15 @@ async def app_list(req: requests.AppList):
     Recives an AppList request, returns a list of apps of a given type
     '''
 
-    try:
-        app_list_req = requests.AppList(**req)
-    except ValidationError:
-        return ipc_schema.StatusCode.INVALID, None
+    # try:
+    #     app_list_req = requests.AppList(**req)
+    # except ValidationError:
+    #     return ipc_schema.StatusCode.INVALID, None
 
-    pa_app_list = pmctl.list_apps(app_list_req.app_type)
-    apps = AppModel.list_apps(app_list_req.app_type, pa_app_list)
+    pa_app_list = await pmctl.list_apps(req.app_type)
+    apps = AppModel.list_apps(req.app_type, pa_app_list)
 
-    return ipc_schema.StatusCode.OK, apps
+    return apps
 
 
 @ipc.command('app_get', 0, notify=False, save_config=False)

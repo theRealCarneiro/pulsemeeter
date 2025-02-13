@@ -19,14 +19,13 @@ class MainWindow(Gtk.Window):
         vi_box = DeviceBox('Virtual Inputs')
         a_box = DeviceBox('Hardware Outputs')
         b_box = DeviceBox('Virtual Outputs')
+        sink_input_box = Gtk.VBox()
+        source_output_box = Gtk.VBox()
 
         self.device_grid.attach(hi_box, 0, 0, 1, 1)
         self.device_grid.attach(vi_box, 1, 0, 1, 1)
         self.device_grid.attach(a_box, 0, 1, 1, 1)
         self.device_grid.attach(b_box, 1, 1, 1, 1)
-
-        sink_input_box = Gtk.VBox()
-        source_output_box = Gtk.VBox()
         self.device_grid.attach(self._framed(sink_input_box, 'Application Outputs'), 0, 2, 1, 1)
         self.device_grid.attach(self._framed(source_output_box, 'Application Inputs'), 1, 2, 1, 1)
 

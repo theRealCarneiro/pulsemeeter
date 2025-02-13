@@ -318,9 +318,9 @@ async def list_apps(app_type: str):
                 continue
 
             if app_type == 'sink_input':
-                app.device_name = await pulse.sink_info(app.sink).name
+                app.device_name = (await pulse.sink_info(app.sink)).name
             else:
-                app.device_name = await pulse.source_info(app.sink).name
+                app.device_name = (await pulse.source_info(app.sink)).name
 
             app_list.append(app)
     return app_list

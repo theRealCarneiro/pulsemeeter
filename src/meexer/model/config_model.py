@@ -1,10 +1,13 @@
 import os
+import logging
 import json
 from meexer.schemas.config_schema import ConfigSchema
 from meexer.model.device_model import DeviceModel
 # from meexer.schemas.device_schema import DeviceSchema
 from meexer.settings import CONFIG_DIR, CONFIG_FILE
 CONFIG_FILE += '.test.json'
+
+LOG = logging.getLogger("generic")
 
 
 def singleton(class_):
@@ -40,7 +43,7 @@ class ConfigModel(ConfigSchema):
         '''
         if not os.path.isdir(CONFIG_DIR):
             os.mkdir(CONFIG_DIR)
-        # LOG.debug("writing config")
+        LOG.debug("Writing config")
         with open(CONFIG_FILE, 'w', encoding='utf-8') as outfile:
             json.dump(self.dict(), outfile, indent='\t', separators=(',', ': '))
 

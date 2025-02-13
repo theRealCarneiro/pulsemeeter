@@ -12,15 +12,31 @@ to the server
 '''
 
 
-def create():
+def create(_, popover, device_type_abstract):
     '''
     Called when the create button is pressed
     '''
+
+    nick_text = popover.name.get_option()
+    # device_text = self.device.get_active_text() or ""
+    ports_data = [0, 1]
+    # ports_data = self.ports.get_selected_ports()  # e.g., [0, 1]
+    channels = len(ports_data) if ports_data else 2
+    device_type = 'sink' if device_type_abstract in ('a', 'vi') else 'source'
+    device_class = 'virtual' if device_type_abstract in ('b', 'vi') else 'hardware'
+
     data = {
+        'device': {
+            'name': nick_text,
+            'channels': channels,
+            'channel_list': ['fl', 'fr'],
+            'selected_channels': [True, True],
+            'device_type': device_type,
+            'device_class': device_class
+        }
     }
 
-    # requests_schema.CreateDevice(**data)
-    # Client.get_client(CLIENT_NAME).send_request('create_device', data)
+    Client.get_client(CLIENT_NAME).send_request('create_device', data)
 
 
 def connect(button, input_type, input_id, output_type, output_id):

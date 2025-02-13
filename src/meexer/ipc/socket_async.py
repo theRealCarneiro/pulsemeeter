@@ -28,7 +28,7 @@ class SocketAsync:
         '''
 
         msg_len: bytes = await self.reader.readexactly(REQUEST_SIZE_LEN)
-        int_msg_len = msg_len.decode('utf-8')
+        int_msg_len = int(msg_len)
         LOG.debug("Recieving message len: %d", int_msg_len)
 
         msg: bytes = await self.reader.readexactly(int_msg_len)

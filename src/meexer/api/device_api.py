@@ -1,6 +1,7 @@
 from meexer.ipc.router import Blueprint
 from meexer.schemas import device_schema, requests_schema as requests
 from meexer.schemas.ipc_schema import SubscriptionFlags as sflags
+from meexer.schemas import ipc_schema
 from meexer.model.device_model import DeviceModel
 from meexer.model.config_model import ConfigModel
 from meexer.scripts import pmctl_async as pmctl
@@ -16,12 +17,13 @@ async def create_device(create_device_req: requests.CreateDevice) -> None:
     Recives a devices index and a device
     '''
 
-    device = DeviceModel.construct(create_device_req.device)
+    device = DeviceModel(**create_device_req.device.dict())
     CONFIG.insert_device(device)
 
     if (device.device_class == 'virtual' and not
             device.flags & device_schema.DeviceFlags.EXTERNAL):
         await pmctl.init(device.device_type, device.name)
+    return ipc_schema.StatusCode.OK, None
 
 
 @ipc.command('update_device', sflags.DEVICE_CHANGED | sflags.DEVICE)

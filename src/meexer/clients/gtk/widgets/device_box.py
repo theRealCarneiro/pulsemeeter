@@ -30,6 +30,7 @@ class DeviceBox(Gtk.Frame):
         self.set_label_align(0.5, 0)
 
         self.device_box = Gtk.VBox()
+        self.add(self.device_box)
 
         self.title = title
         self.add_device_button = button

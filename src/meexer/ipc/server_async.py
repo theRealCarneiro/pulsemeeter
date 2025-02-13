@@ -8,10 +8,12 @@ from meexer.ipc import utils, socket_async
 from meexer.schemas import ipc_schema
 # from meexer.ipc.router import Router
 from meexer.ipc.router import Blueprint
+from meexer.model.config_model import ConfigModel
 
 LISTENER_TIMEOUT = 2
 
 LOG = logging.getLogger("generic")
+CONFIG = ConfigModel()
 
 
 class Server:
@@ -118,9 +120,8 @@ class Server:
         LOG.debug('Client %d connected', client.client_id)
 
         # listen loop
-        while not self.exit_flag:
-
-            try:
+        try:
+            while not self.exit_flag:
 
                 # get req
                 req = await client.get_request()
@@ -135,14 +136,14 @@ class Server:
                 if res.status == ipc_schema.StatusCode.OK:
                     self.loop.create_task(self._notify(req))
 
-            # server/client closed the connection
-            except asyncio.exceptions.IncompleteReadError:
-                LOG.info('Connection closed with client #%d', client.client_id)
-                writer.close()
-                self.clients.pop(client.client_id)
+        # server/client closed the connection
+        except asyncio.exceptions.IncompleteReadError:
+            LOG.info('Connection closed with client #%d', client.client_id)
+            writer.close()
+            self.clients.pop(client.client_id)
 
-            finally:
-                self.exit_flag = True
+        finally:
+            self.exit_flag = True
 
     async def _handle_request(self, req: ipc_schema.Request) -> ipc_schema.Response:
         '''
@@ -165,12 +166,16 @@ class Server:
             status_code = ipc_schema.StatusCode.OK
 
         except ValidationError:
+            LOG.info("Schema validation error, hint: %s, req: %s", route.schema_hint, req)
             status_code = ipc_schema.StatusCode.INVALID
 
         res = ipc_schema.Response(
             status=status_code,
             data=ret_message,
         )
+
+        if route.save_config is True:
+            CONFIG.write()
 
         return res
 

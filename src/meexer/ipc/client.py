@@ -1,7 +1,6 @@
 import threading
 import logging
 import socket
-import json
 import traceback
 
 from meexer import settings
@@ -28,31 +27,37 @@ class Client(Socket):
         if sock_name is not None:
             settings.SOCK_FILE = f'/tmp/pulsemeeter.{sock_name}.sock'
 
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.id = None
         self.listen_id = None
         self.listen_flags = listen_flags
-        self.request_id = 0
         self.instance_name = instance_name
         self.exit_flag = False
         self.callbacks = {}
+        super().__init__()
 
         # connect to server
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.client_id: int = self.handshake()
+        Client.new_client(self, instance_name)
+
+        if listen_flags:
+            self.start_listen()
+
+    def handshake(self) -> int:
+        '''
+        Performs the handshake with the server
+        returns client id
+        '''
         try:
-            self.conn.connect(settings.SOCK_FILE)
+            self.sock.connect(settings.SOCK_FILE)
             client_id = int(self.get_message())
             # self.conn.sendall(str(0).rjust(CLIENT_ID_LEN, '0').encode())
-            LOG.debug('connected to server, id %d', client_id)
+            LOG.debug('Connected to server, id: %d', client_id)
         except socket.error:
             LOG.error(traceback.format_exc())
             LOG.error("Could not connect to server")
             raise
 
-        super().__init__(self, sock, client_id)
-        Client.new_client(self, instance_name)
-
-        if listen_flags:
-            self.start_listen()
+        return client_id
 
     def callback(self, command_str):
         '''
@@ -71,7 +76,7 @@ class Client(Socket):
         self.listen_thread.start()
 
     def close_connection(self) -> None:
-        self.conn.close()
+        self.sock.close()
 
     def listen(self) -> None:
         '''
@@ -81,11 +86,11 @@ class Client(Socket):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
             sock.connect(settings.SOCK_FILE)
             self.listen_id = int(sock.recv(CLIENT_ID_LEN))
-            sock.sendall(utils.id_to_str(self.listen_flags))
+            sock.sendall(utils.id_to_bytes(self.listen_flags))
             while not self.exit_flag:
-                msg_dict = self.get_message(sock)
+                msg_dict = self.get_message()
                 req = ipc_schema.Request(**msg_dict)
-                if req.sender_id != self.id:
+                if req.sender_id != self.client_id:
                     print(req)
 
     def stop_listen(self) -> None:

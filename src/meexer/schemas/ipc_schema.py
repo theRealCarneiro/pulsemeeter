@@ -79,6 +79,9 @@ class Request(BaseModel):
     data: dict
     run: bool = True
 
+    def encode(self) -> bytes:
+        return self.json().encode('utf-8')
+
 
 class Response(BaseModel):
     '''
@@ -90,3 +93,6 @@ class Response(BaseModel):
     '''
     status: StatusCode
     data: Any
+
+    def encode(self) -> bytes:
+        return self.json().encode('utf-8')

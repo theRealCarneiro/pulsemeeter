@@ -11,11 +11,14 @@ LOG = logging.getLogger("generic")
 
 
 class Socket:
+    sock: socket.socket
+    client_id: int
+    encoded_id: bytes
 
-    def __init__(self, sock: socket.socket, client_id: int):
-        self.sock = sock
-        self.client_id = client_id
-        self.encoded_id = utils.id_to_bytes(client_id)
+    # def __init__(self, sock: socket.socket, client_id: int):
+    #     self.sock = sock
+    #     self.client_id = client_id
+    #     self.encoded_id = utils.id_to_bytes(client_id)
 
     def get_message(self) -> str:
         '''
@@ -24,8 +27,8 @@ class Socket:
 
         # get msg length
         msg_len: bytes = self.sock.recv(REQUEST_SIZE_LEN)
-        int_msg_len = msg_len.decode('utf-8')
-        LOG.debug("Recieving message len: %d", int_msg_len)
+        int_msg_len = int(msg_len)
+        LOG.debug("Recieved message len: %d", int_msg_len)
 
         # get msg
         msg: bytes = self.sock.recv(int_msg_len)
@@ -74,7 +77,7 @@ class Socket:
         msg = res.encode()
         self.send_message(msg)
 
-    def send_request(self, command: str, data: dict, sender_id: int) -> ipc_schema.Response:
+    def send_request(self, command: str, data: dict) -> ipc_schema.Response:
         '''
         Send a request to the server
             "req" is the req object
@@ -82,7 +85,7 @@ class Socket:
 
         req = ipc_schema.Request(
             command=command,
-            sender_id=sender_id,
+            sender_id=self.client_id,
             data=data
         )
 

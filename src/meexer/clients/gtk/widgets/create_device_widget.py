@@ -17,10 +17,10 @@ class CreateDevice(Gtk.Popover):
         main_box = Gtk.VBox(margin=10, hexpand=True)
 
         if device_type in ('hi', 'a'):
-            self.nick = common.InputWidget('Nick: ')
+            self.name = common.InputWidget('Nick: ')
             self.device = common.LabeledCombobox('Device: ')
             self.ports = common.PortSelector()
-            main_box.pack_start(self.nick, False, False, 10)
+            main_box.pack_start(self.name, False, False, 10)
             main_box.pack_start(self.device, False, False, 10)
             main_box.pack_start(self.ports, False, False, 10)
 
@@ -33,6 +33,7 @@ class CreateDevice(Gtk.Popover):
 
         self.create_button = common.IconButton('check-filled')
         self.cancel_button = common.IconButton('cancel')
+
         self.cancel_button.connect('pressed', self.close_pressed)
 
         b = Gtk.HBox(halign=Gtk.Align.END)
@@ -42,6 +43,25 @@ class CreateDevice(Gtk.Popover):
 
         self.add(main_box)
         self.show_all()
+
+    def create_pressed(self, _):
+        nick_text = self.nick.get_option()
+        # device_text = self.device.get_active_text() or ""
+        ports_data = [0, 1]
+        # ports_data = self.ports.get_selected_ports()  # e.g., [0, 1]
+        channels = len(ports_data) if ports_data else 2
+
+        new_device = DeviceSchema(
+            name=nick_text,
+            # description=nick_text,
+            channels=channels,
+            channel_list=ports_data,
+            selected_channels=[True] * channels,
+            device_type='sink',  # Adjust as needed for hardware
+            device_class='hardware',
+            mute=False,
+            volume=[100] * channels  # Assuming volume is a percentage
+        )
 
     def close_pressed(self, _):
         self.popdown()
