@@ -181,7 +181,11 @@ class DeviceModel(DeviceSchema):
             "device" is either a PulseSinkInfo or a PulseSourceInfo
             "device_type" is either 'sink' or 'source'
         '''
-
+        pa_sink_hardware = 0x0004
+        print()
+        print(device.name, device.flags, device.flags & pa_sink_hardware)
+        print()
+        device_class = 'hardware' if device.flags & pa_sink_hardware else 'virtual'
         device_model = cls(
             name=device.name,
             description=device.description,
@@ -189,9 +193,9 @@ class DeviceModel(DeviceSchema):
             channel_list=device.channel_list,
             selected_channels=[True for _ in range(len(device.volume.values))],
             device_type=device_type,
-            device_class='hardware',
+            device_class=device_class,
             mute=bool(device.mute),
-            volume=[i * 100 for i in device.volume.values]
+            volume=[int(i * 100) for i in device.volume.values]
         )
 
         return device_model

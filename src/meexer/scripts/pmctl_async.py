@@ -248,10 +248,11 @@ async def list_devices(device_type):
     async with pulsectl_asyncio.PulseAsync() as pulse:
         list_pa_devices = pulse.sink_list if device_type == 'sink' else pulse.source_list
         device_list: list = []
-        pa_sink_hardware: hex = 0x0004
+        # pa_sink_hardware: hex = 0x0004
         for device in await list_pa_devices():
 
-            if device.flags & pa_sink_hardware:
+            if (device.proplist['factory.name'] != 'support.null-audio-sink' and
+                    device.proplist['device.class'] != "monitor"):
                 device_list.append(device)
 
     return device_list

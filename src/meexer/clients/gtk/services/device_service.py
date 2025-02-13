@@ -1,7 +1,8 @@
 from meexer.ipc.client import Client
+from meexer.clients.gtk.widgets.common import CHANNEL_MAPS
 # from meexer.schemas.ipc_schema import SubscriptionFlags
 
-from meexer.schemas import requests_schema
+from meexer.schemas import requests_schema, ipc_schema
 
 CLIENT_NAME = 'gtk'
 
@@ -12,15 +13,26 @@ to the server
 '''
 
 
-def create(_, popover, device_type_abstract):
+def create(_, popover, device_type_abstract, device_list):
     '''
     Called when the create button is pressed
     '''
 
+    if device_type_abstract in ('b', 'vi'):
+        nick_text = popover.name.get_option()
+        channel_map = popover.channel_map.combobox.get_active_text()
+        channel_list = CHANNEL_MAPS[channel_map]
+        selected_channels = [True for _ in channel_list]
+
+    else:
+        selected_device = popover.device.combobox.get_active()
+        channel_list = device_list[selected_device]['channel_list']
+        selected_channels = popover.ports.get_selected()
+
     nick_text = popover.name.get_option()
     # device_text = self.device.get_active_text() or ""
     ports_data = [0, 1]
-    # ports_data = self.ports.get_selected_ports()  # e.g., [0, 1]
+    # ports_data = self.ports.get_selected_channels()  # e.g., [0, 1]
     channels = len(ports_data) if ports_data else 2
     device_type = 'sink' if device_type_abstract in ('a', 'vi') else 'source'
     device_class = 'virtual' if device_type_abstract in ('b', 'vi') else 'hardware'
@@ -29,8 +41,8 @@ def create(_, popover, device_type_abstract):
         'device': {
             'name': nick_text,
             'channels': channels,
-            'channel_list': ['fl', 'fr'],
-            'selected_channels': [True, True],
+            'channel_list': channel_list,
+            'selected_channels': selected_channels,
             'device_type': device_type,
             'device_class': device_class
         }
@@ -110,3 +122,10 @@ def volume(scale, device_type, device_id):
 
     requests_schema.Volume(**data)
     Client.get_client(CLIENT_NAME).send_request('volume', data)
+
+
+def list_devices(device_type) -> list:
+    data = {'device_type': device_type}
+    requests_schema.DeviceList(**data)
+    res: ipc_schema.Response = Client.get_client(CLIENT_NAME).send_request('list_devices', data)
+    return res.data

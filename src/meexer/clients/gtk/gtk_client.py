@@ -81,8 +81,10 @@ class GtkClient(Gtk.Application):
         self.window.present()
 
     def create_new_device_popover(self, widget, device_type):
-        pop = CreateDevice(device_type)
-        pop.create_button.connect('pressed', device_service.create, pop, device_type)
+        dt = 'sink' if device_type in ('a', 'vi') else 'source'
+        device_list = device_service.list_devices(dt)
+        pop = CreateDevice(device_type, device_list)
+        pop.create_button.connect('pressed', device_service.create, pop, device_type, device_list)
         pop.set_relative_to(widget)
         pop.popup()
 

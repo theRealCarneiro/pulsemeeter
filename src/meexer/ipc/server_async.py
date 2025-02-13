@@ -161,13 +161,13 @@ class Server:
             else:
                 req = None
 
-            # run command
-            ret_message = await route.command(req)
-            status_code = ipc_schema.StatusCode.OK
-
         except ValidationError:
             LOG.info("Schema validation error, hint: %s, req: %s", route.schema_hint, req)
             status_code = ipc_schema.StatusCode.INVALID
+
+        # run command
+        ret_message = await route.command(req)
+        status_code = ipc_schema.StatusCode.OK
 
         res = ipc_schema.Response(
             status=status_code,

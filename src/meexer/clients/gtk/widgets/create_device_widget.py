@@ -12,14 +12,19 @@ class CreateDevice(Gtk.Popover):
     '''
     A widget for creating a new device
     '''
-    def __init__(self, device_type, device_schema: DeviceSchema = None):
+    def __init__(self, device_type, device_list, device_schema: DeviceSchema = None):
         super().__init__()
         main_box = Gtk.VBox(margin=10, hexpand=True)
+        self.set_modal(False)
+        self.device_list = device_list
 
         if device_type in ('hi', 'a'):
             self.name = common.InputWidget('Nick: ')
             self.device = common.LabeledCombobox('Device: ')
+            self.device.combobox.connect("changed", self.device_combo_changed)
             self.ports = common.PortSelector()
+            for device in device_list:
+                self.device.insert_entry(device['name'])
             main_box.pack_start(self.name, False, False, 10)
             main_box.pack_start(self.device, False, False, 10)
             main_box.pack_start(self.ports, False, False, 10)
@@ -27,7 +32,7 @@ class CreateDevice(Gtk.Popover):
         else:
 
             self.name = common.InputWidget('Name: ')
-            self.channel_map = common.LabeledCombobox('Channel Map: ')
+            self.channel_map = common.LabeledCombobox('Channel Map: ', list(common.CHANNEL_MAPS))
             main_box.pack_start(self.name, False, False, 10)
             main_box.pack_start(self.channel_map, False, False, 10)
 
@@ -44,24 +49,11 @@ class CreateDevice(Gtk.Popover):
         self.add(main_box)
         self.show_all()
 
-    def create_pressed(self, _):
-        nick_text = self.nick.get_option()
-        # device_text = self.device.get_active_text() or ""
-        ports_data = [0, 1]
-        # ports_data = self.ports.get_selected_ports()  # e.g., [0, 1]
-        channels = len(ports_data) if ports_data else 2
-
-        new_device = DeviceSchema(
-            name=nick_text,
-            # description=nick_text,
-            channels=channels,
-            channel_list=ports_data,
-            selected_channels=[True] * channels,
-            device_type='sink',  # Adjust as needed for hardware
-            device_class='hardware',
-            mute=False,
-            volume=[100] * channels  # Assuming volume is a percentage
-        )
+    def device_combo_changed(self, combo):
+        active = combo.get_active()
+        device = self.device_list[active]
+        self.name.input.set_text(device['name'])
+        self.ports.set_ports(device['channel_list'])
 
     def close_pressed(self, _):
         self.popdown()
