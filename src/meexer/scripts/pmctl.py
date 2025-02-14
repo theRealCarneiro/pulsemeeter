@@ -240,8 +240,11 @@ def list_devices(device_type):
     device_list = []
     for device in list_pa_devices():
 
-        pa_sink_hardware = 0x0004
-        if device.flags & pa_sink_hardware:
+        # pa_sink_hardware = 0x0004
+        # if device.flags & pa_sink_hardware:
+
+        if (device.proplist['factory.name'] != 'support.null-audio-sink' and
+                device.proplist['device.class'] != "monitor"):
             device_list.append(device)
 
     return device_list
