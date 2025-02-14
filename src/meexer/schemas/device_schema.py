@@ -1,6 +1,6 @@
 import re
-from typing import Literal
-from pydantic import BaseModel, root_validator, validator
+from typing import Literal, Dict
+from pydantic import BaseModel, root_validator, validator, Field
 
 
 class DeviceFlags:
@@ -8,12 +8,13 @@ class DeviceFlags:
     EXTERNAL = 1 << 0
 
 
+
 class ConnectionSchema(BaseModel):
     nick: str
     state: bool = False
-    latency: int | None
+    latency: int | None = None
     auto_ports: bool = True
-    port_map: list[list[int]] = []
+    port_map: list[str] = Field(default_factory=list)
 
 
 class PluginSchema(BaseModel):
@@ -39,7 +40,7 @@ class DeviceSchema(BaseModel):
     primary: bool | None
     channels: int
     channel_list: list[str]
-    connections: dict[str, dict[str, ConnectionSchema]] = {}
+    connections: dict[str, dict[str, dict]] = {}
     selected_channels: list[bool] | None
     plugins: list[PluginSchema] = []
 
@@ -93,3 +94,20 @@ class DeviceSchema(BaseModel):
             raise ValueError('Invalid name')
 
         return name
+
+    @root_validator(pre=True)
+    def set_connections(cls, values):
+        '''
+        '''
+        if (values['device_type'] == 'sink' and values['device_class'] == 'virtual' or
+                values['device_type'] == 'source' and values['device_class'] == 'hardware'):
+
+            if 'connections' not in values or values['connections'] is None:
+                values['connections'] = {}
+                for device_type in ('a', 'b'):
+                    values['connections'][device_type] = {}
+
+        return values
+
+    device_type: Literal['sink', 'source']
+    device_class: Literal['virtual', 'hardware']

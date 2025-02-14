@@ -38,9 +38,15 @@ class DeviceWidget(Gtk.Frame):
         # create connection buttons
         self.connection_buttons = {'a': {}, 'b': {}}
         self.connections_box = {'a': Gtk.Box(), 'b': Gtk.Box()}
+        print()
+        print(device_schema.connections)
+        print()
         for output_type, outputs in device_schema.connections.items():
             for output_id, output in outputs.items():
-                self.create_output_button(output_type, output_id, output.nick)
+                print()
+                print(output_type, output_id, output)
+                print()
+                self.create_output_button(output_type, output_id, output['nick'])
 
         self.add(main_grid)
 

@@ -25,11 +25,11 @@ def create(_, popover, device_type_abstract, device_list):
         selected_channels = [True for _ in channel_list]
 
     else:
+        nick_text = popover.name.get_option()
         selected_device = popover.device.combobox.get_active()
         channel_list = device_list[selected_device]['channel_list']
         selected_channels = popover.ports.get_selected()
 
-    nick_text = popover.name.get_option()
     # device_text = self.device.get_active_text() or ""
     ports_data = [0, 1]
     # ports_data = self.ports.get_selected_channels()  # e.g., [0, 1]
