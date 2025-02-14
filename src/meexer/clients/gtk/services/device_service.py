@@ -1,5 +1,4 @@
 from meexer.ipc.client import Client
-from meexer.clients.gtk.widgets.common import CHANNEL_MAPS
 # from meexer.schemas.ipc_schema import SubscriptionFlags
 
 from meexer.schemas import requests_schema, ipc_schema

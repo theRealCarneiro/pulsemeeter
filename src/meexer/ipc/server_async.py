@@ -144,6 +144,7 @@ class Server:
 
         finally:
             self.exit_flag = True
+            await self._close_server()
 
     async def _handle_request(self, req: ipc_schema.Request) -> ipc_schema.Response:
         '''
@@ -153,6 +154,9 @@ class Server:
         LOG.debug(req)
 
         route = self.get_route(req.command)
+
+        if req.command == 'exit':
+            self.exit_flag = 1
 
         try:
             # validate request
@@ -195,5 +199,17 @@ class Server:
             await client.send_message(msg)
 
     async def _close_server(self):
+
+        # close connections
+        for client in list(self.clients.values()):
+            client.writer.close()
+            try:
+                await client.writer.wait_closed()
+            except Exception as e:
+                LOG.error("Error closing client %d: %s", client.client_id, e)
+
+        CONFIG.write()
         self.server.close()
         await self.server.wait_closed()
+
+        # self.thread.join()

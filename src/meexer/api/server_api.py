@@ -12,9 +12,8 @@ async def close_server(_):
     '''
     Closes server, saves the config file, and can save
     '''
-    print('exit')
-    return StatusCode.OK, None
-    # CONFIG.write()
+    return 'exit'
+    # return StatusCode.OK, None
     # cleanup
 
 
@@ -25,6 +24,7 @@ async def save_config(_):
     server that we want to save, and avoid having to call the
     actual saving function
     '''
+    CONFIG.write()
 
 
 @ipc.command('get_config', 0, False, save_config=False)

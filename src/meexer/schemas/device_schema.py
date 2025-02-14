@@ -23,6 +23,16 @@ class PluginSchema(BaseModel):
     control: list[float]
 
 
+CHANNEL_MAPS = {
+    "mono": ["mono"],
+    "stereo": ["front-left", "front-right"],
+    "quad": ["front-left", "front-right", "rear-left", "rear-right"],
+    "5.0": ["front-left", "front-right", "front-center", "rear-left", "rear-right"],
+    "5.1": ["front-left", "front-right", "front-center", "lfe", "rear-left", "rear-right"],
+    "7.1": ["front-left", "front-right", "front-center", "lfe", "rear-left", "rear-right", "side-left", "side-right"]
+}
+
+
 # class VolumeSchema(BaseModel):
     # value: int = Field(100, ge=0, le=153, description='volume must be ge 0 le 153')
 

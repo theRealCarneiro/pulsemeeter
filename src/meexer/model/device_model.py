@@ -69,6 +69,7 @@ class DeviceModel(DeviceSchema):
         # change state
         print(self.connections)
         self.connections[output_type][output_id].state = state
+        return self.connections[output_type][output_id]
 
     def update_connection(self, output_type: str, output_id: str,
                           connection: ConnectionSchema):

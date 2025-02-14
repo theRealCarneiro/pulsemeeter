@@ -81,6 +81,8 @@ async def connect(connection_req: requests.Connect) -> int:
     source.connect(output_index.device_type, output_index.device_id,
                    state, output.nick)
 
+    # CONFIG.__dict__[source_index.device_type][source_index.device_id] = source
+
     str_port_map = source.str_port_map(output_index.device_type, output_index.device_id, output)
 
     await pmctl.connect(source.get_correct_name(), output.get_correct_name(),

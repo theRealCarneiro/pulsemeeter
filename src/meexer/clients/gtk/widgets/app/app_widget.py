@@ -1,9 +1,9 @@
 import logging
 
 from meexer.schemas.app_schema import AppSchema
-from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
-from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
-from meexer.clients.gtk.widgets.mute_widget import MuteWidget
+from meexer.clients.gtk.widgets.common.volume_widget import VolumeWidget
+from meexer.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
+from meexer.clients.gtk.widgets.common.mute_widget import MuteWidget
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi

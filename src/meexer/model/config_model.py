@@ -37,9 +37,6 @@ class ConfigModel(ConfigSchema):
     def __init__(self):
         config = self.load_config()
         super().__init__(**config)
-        print()
-        print(self)
-        print()
 
     def write(self):
         '''

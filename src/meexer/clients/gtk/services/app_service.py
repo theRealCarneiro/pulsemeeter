@@ -49,7 +49,4 @@ def list_apps(app_type: str, client=None) -> list:
     data = {'app_type': app_type}
     requests_schema.AppList(**data)
     res: ipc_schema.Response = client.send_request('app_list', data)
-    # print()
-    # print(res)
-    # print()
     return res.data

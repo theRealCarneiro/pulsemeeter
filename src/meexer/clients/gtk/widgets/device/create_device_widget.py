@@ -1,5 +1,8 @@
-from meexer.schemas.device_schema import DeviceSchema
-from meexer.clients.gtk.widgets import common
+from meexer.schemas.device_schema import DeviceSchema, CHANNEL_MAPS
+from meexer.clients.gtk.widgets.common.input_widget import InputWidget
+from meexer.clients.gtk.widgets.common.icon_button_widget import IconButton
+from meexer.clients.gtk.widgets.common.combobox_widget import LabeledCombobox
+from meexer.clients.gtk.widgets.device.port_selector_widget import PortSelector
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -20,10 +23,10 @@ class CreateDevice(Gtk.Popover):
         self.device_type = device_type
 
         if device_type in ('hi', 'a'):
-            self.name = common.InputWidget('Nick: ')
-            self.device = common.LabeledCombobox('Device: ')
+            self.name = InputWidget('Nick: ')
+            self.device = LabeledCombobox('Device: ')
             self.device.combobox.connect("changed", self.device_combo_changed)
-            self.ports = common.PortSelector()
+            self.ports = PortSelector()
             for device in device_list:
                 self.device.insert_entry(device['description'])
             main_box.pack_start(self.name, False, False, 10)
@@ -32,13 +35,13 @@ class CreateDevice(Gtk.Popover):
 
         else:
 
-            self.name = common.InputWidget('Name: ')
-            self.channel_map = common.LabeledCombobox('Channel Map: ', list(common.CHANNEL_MAPS))
+            self.name = InputWidget('Name: ')
+            self.channel_map = LabeledCombobox('Channel Map: ', list(CHANNEL_MAPS))
             main_box.pack_start(self.name, False, False, 10)
             main_box.pack_start(self.channel_map, False, False, 10)
 
-        self.create_button = common.IconButton('check-filled')
-        self.cancel_button = common.IconButton('cancel')
+        self.create_button = IconButton('check-filled')
+        self.cancel_button = IconButton('cancel')
 
         self.cancel_button.connect('pressed', self.close_pressed)
 
@@ -66,7 +69,7 @@ class CreateDevice(Gtk.Popover):
             name = nick
             description = nick
             channel_map = self.channel_map.combobox.get_active_text()
-            channel_list = common.CHANNEL_MAPS[channel_map]
+            channel_list = CHANNEL_MAPS[channel_map]
             channels = len(channel_list)
             selected_channels = [True] * channels
             volume = [100] * channels
