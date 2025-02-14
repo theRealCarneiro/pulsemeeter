@@ -17,6 +17,7 @@ class CreateDevice(Gtk.Popover):
         main_box = Gtk.VBox(margin=10, hexpand=True)
         self.set_modal(False)
         self.device_list = device_list
+        self.device_type = device_type
 
         if device_type in ('hi', 'a'):
             self.name = common.InputWidget('Nick: ')
@@ -54,6 +55,36 @@ class CreateDevice(Gtk.Popover):
         device = self.device_list[active]
         self.name.input.set_text(device['name'])
         self.ports.set_ports(device['channel_list'])
+
+    def to_schema(self) -> dict:
+        if self.device_type in ('b', 'vi'):
+            device_name = self.name.get_option()
+            channel_map = self.channel_map.combobox.get_active_text()
+            channel_list = common.CHANNEL_MAPS[channel_map]
+            selected_channels = [True for _ in channel_list]
+
+        else:
+            device_name = self.device.combobox.get_active_text()
+            selected_device = self.device.combobox.get_active()
+            channel_list = self.device_list[selected_device]['channel_list']
+            selected_channels = self.ports.get_selected()
+
+        nick_text = self.name.get_option()
+        channels = len(channel_list)
+        device_type = 'sink' if self.device_type in ('a', 'vi') else 'source'
+        device_class = 'virtual' if self.device_type in ('b', 'vi') else 'hardware'
+
+        data = {
+            'name': device_name,
+            'nick': nick_text,
+            'channels': channels,
+            'channel_list': channel_list,
+            'selected_channels': selected_channels,
+            'device_type': device_type,
+            'device_class': device_class
+        }
+
+        return data
 
     def close_pressed(self, _):
         self.popdown()

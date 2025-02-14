@@ -18,38 +18,9 @@ def create(_, popover, device_type_abstract, device_list):
     Called when the create button is pressed
     '''
 
-    if device_type_abstract in ('b', 'vi'):
-        nick_text = popover.name.get_option()
-        device_name = nick_text
-        channel_map = popover.channel_map.combobox.get_active_text()
-        channel_list = CHANNEL_MAPS[channel_map]
-        print(channel_list)
-        selected_channels = [True for _ in channel_list]
+    data = popover.to_schema()
 
-    else:
-        nick_text = popover.name.get_option()
-        selected_device = popover.device.combobox.get_active()
-        device_name = popover.device.combobox.get_active_text()
-        channel_list = device_list[selected_device]['channel_list']
-        selected_channels = popover.ports.get_selected()
-
-    channels = len(channel_list)
-    device_type = 'sink' if device_type_abstract in ('a', 'vi') else 'source'
-    device_class = 'virtual' if device_type_abstract in ('b', 'vi') else 'hardware'
-
-    data = {
-        'device': {
-            'name': device_name,
-            'nick': nick_text,
-            'channels': channels,
-            'channel_list': channel_list,
-            'selected_channels': selected_channels,
-            'device_type': device_type,
-            'device_class': device_class
-        }
-    }
-
-    Client.get_client(CLIENT_NAME).send_request('create_device', data)
+    Client.get_client(CLIENT_NAME).send_request('create_device', {'device': data})
 
 
 def connect(button, input_type, input_id, output_type, output_id):

@@ -85,8 +85,16 @@ class GtkClient(Gtk.Application):
         device_list = device_service.list_devices(dt)
         pop = CreateDevice(device_type, device_list)
         pop.create_button.connect('pressed', device_service.create, pop, device_type, device_list)
+        pop.create_button.connect('pressed', self.create_button_pressed, pop, device_type)
         pop.set_relative_to(widget)
         pop.popup()
+
+    def create_button_pressed(self, _, popover, device_type):
+        device_id = str(len(self.devices[device_type]) + 1)
+        device_schema = DeviceSchema(**popover.to_schema())
+        device = self.create_device(device_type, device_id, device_schema)
+        self.window.insert_device(device_type, device)
+        self.window.show_all()
 
     def create_device(self, device_type: str, device_id: str, device_schema: DeviceSchema):
         '''
