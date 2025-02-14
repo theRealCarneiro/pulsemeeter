@@ -57,29 +57,42 @@ class CreateDevice(Gtk.Popover):
         self.ports.set_ports(device['channel_list'])
 
     def to_schema(self) -> dict:
-        if self.device_type in ('b', 'vi'):
-            device_name = self.name.get_option()
-            channel_map = self.channel_map.combobox.get_active_text()
-            channel_list = common.CHANNEL_MAPS[channel_map]
-            selected_channels = [True for _ in channel_list]
 
-        else:
-            device_name = self.device.combobox.get_active_text()
-            selected_device = self.device.combobox.get_active()
-            channel_list = self.device_list[selected_device]['channel_list']
-            selected_channels = self.ports.get_selected()
-
-        nick_text = self.name.get_option()
-        channels = len(channel_list)
         device_type = 'sink' if self.device_type in ('a', 'vi') else 'source'
         device_class = 'virtual' if self.device_type in ('b', 'vi') else 'hardware'
 
+        if self.device_type in ('b', 'vi'):
+            nick = self.name.get_option()
+            name = nick
+            description = nick
+            channel_map = self.channel_map.combobox.get_active_text()
+            channel_list = common.CHANNEL_MAPS[channel_map]
+            channels = len(channel_list)
+            selected_channels = [True for _ in channel_list]
+            volume = 100
+
+        else:
+            selected_device = self.device.combobox.get_active()
+            device = self.device_list[selected_device]
+
+            nick = self.name.get_option()
+            name = device['name']
+            description = device['description']
+            channel_list = device['channel_list']
+            channels = device['channels']
+            selected_channels = self.ports.get_selected()
+
+            # TODO: perchannel volume
+            volume = device['volume'][0]
+
         data = {
-            'name': device_name,
-            'nick': nick_text,
+            'name': name,
+            'description': description,
+            'nick': nick,
             'channels': channels,
             'channel_list': channel_list,
             'selected_channels': selected_channels,
+            'volume': volume,
             'device_type': device_type,
             'device_class': device_class
         }
