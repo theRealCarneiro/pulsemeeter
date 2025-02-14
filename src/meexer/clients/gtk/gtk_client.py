@@ -1,7 +1,7 @@
 from meexer.ipc.client import Client
 from meexer.clients.gtk.main_window import blocks
 from meexer.schemas.config_schema import ConfigSchema
-from meexer.schemas.device_schema import DeviceSchema
+from meexer.schemas.device_schema import DeviceSchema, ConnectionSchema
 from meexer.schemas.app_schema import AppSchema
 
 from meexer.clients.gtk.widgets.device_widget import DeviceWidget
@@ -94,6 +94,24 @@ class GtkClient(Gtk.Application):
         device_schema = DeviceSchema(**popover.to_schema())
         device = self.create_device(device_type, device_id, device_schema)
         self.window.insert_device(device_type, device)
+        self.config.__dict__[device_type][device_id] = device_schema
+
+        # new output added
+        if device_type in ('a', 'b'):
+            for ndev_type in ('vi', 'hi'):
+                for ndev_id in self.config.__dict__[ndev_type]:
+                    conn = ConnectionSchema(nick=device_schema.nick)
+                    # self.config.__dict__[ndev_type][ndev_id].connections[device_type][device_id] = conn.__dict__
+                    self.devices[ndev_type][ndev_id].create_output_button(device_type, device_id, device_schema.nick)
+
+        # When a new input is added, we gotta create the buttons to existing outputs
+        else:
+            for ndev_type in ('a', 'b'):
+                for ndev_id in self.config.__dict__[ndev_type]:
+                    target_device = self.config.__dict__[ndev_type][ndev_id]
+                    conn = ConnectionSchema(nick=target_device.nick)
+                    # self.config.__dict__[device_type][device_id].connections[ndev_type][ndev_id] = conn
+                    self.devices[device_type][device_id].create_output_button(ndev_type, ndev_id, target_device.nick)
         self.window.show_all()
 
     def create_device(self, device_type: str, device_id: str, device_schema: DeviceSchema):

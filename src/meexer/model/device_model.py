@@ -183,9 +183,6 @@ class DeviceModel(DeviceSchema):
             "device_type" is either 'sink' or 'source'
         '''
         pa_sink_hardware = 0x0004
-        print()
-        print(device.name, device.flags, device.flags & pa_sink_hardware)
-        print()
         device_class = 'hardware' if device.flags & pa_sink_hardware else 'virtual'
         device_model = cls(
             name=device.name,

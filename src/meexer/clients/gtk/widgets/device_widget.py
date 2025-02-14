@@ -3,6 +3,7 @@ from meexer.clients.gtk.widgets.volume_widget import VolumeWidget
 from meexer.clients.gtk.widgets.mute_widget import MuteWidget
 from meexer.clients.gtk.widgets.default_widget import DefaultWidget
 from meexer.clients.gtk.widgets.vumeter_widget import VumeterWidget
+from meexer.clients.gtk.widgets import common
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -10,18 +11,30 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
+# class DeviceSchema(BaseModel):
+#     name: str
+#     nick: str
+#     description: str
+#     device_type: Literal['sink', 'source']
+#     device_class: Literal['virtual', 'hardware']
+#     volume: list[int] = None
+#     mute: bool = False
+#     flags: int = 0
+#     primary: bool | None
+#     channels: int
+#     channel_list: list[str]
+#     connections: dict[str, dict[str, ConnectionSchema]] = {}
+#     selected_channels: list[bool] | None
+#     plugins: list[PluginSchema] = []
+
 
 class DeviceWidget(Gtk.Frame):
 
     def __init__(self, device_schema: DeviceSchema):
         super().__init__(margin=10)
 
-        label = device_schema.nick
-        if device_schema.nick != device_schema.description:
-            label += f': {device_schema.description}'
-
-        # create widgets
-        self.label = Gtk.Label(label=label)
+        self.label = common.NameWidget(nick=device_schema.nick,
+                                       description=device_schema.description)
         self.volume = VolumeWidget(device_schema.volume[0])
         self.mute = MuteWidget(state=device_schema.mute)
         # if device_schema.primary is not None:
@@ -38,14 +51,9 @@ class DeviceWidget(Gtk.Frame):
         # create connection buttons
         self.connection_buttons = {'a': {}, 'b': {}}
         self.connections_box = {'a': Gtk.Box(), 'b': Gtk.Box()}
-        print()
-        print(device_schema.connections)
-        print()
+        self.connections = {'a': {}, 'b': {}}
         for output_type, outputs in device_schema.connections.items():
             for output_id, output in outputs.items():
-                print()
-                print(output_type, output_id, output)
-                print()
                 self.create_output_button(output_type, output_id, output.nick)
 
         self.add(main_grid)
@@ -69,16 +77,26 @@ class DeviceWidget(Gtk.Frame):
     def create_output_button(self, output_type, output_id, nick):
         button = Gtk.ToggleButton(label=nick)
         self.connection_buttons[output_type][output_id] = button
+        self.connections[output_type][output_id] = button
         box = self.connections_box[output_type]
         box.pack_start(button, False, False, 0)
+        return button
 
     def remove_output_button(self, output_type, output_id):
         button = self.connection_buttons[output_type].pop(output_id)
+        del self.connections[output_type][output_id]
         box = self.connections_box[output_type]
         box.remove(button)
         button.destroy()
 
     # def to_device_schema(self):
-        # for device_type, buttons in self.connection_buttons.items():
-            # for device_id, button in buttons:
-                # self.device_schema.connections[device_type][device_id]
+    #     for device_type, item in self.connection.items():
+    #         for device_id in item:
+    #             self.device_schema.connections[device_type][device_id]
+
+        # device = {
+        #     'nick':
+        #     'name':
+        #     'description':
+        #
+        # }

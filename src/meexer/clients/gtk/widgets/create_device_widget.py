@@ -25,7 +25,7 @@ class CreateDevice(Gtk.Popover):
             self.device.combobox.connect("changed", self.device_combo_changed)
             self.ports = common.PortSelector()
             for device in device_list:
-                self.device.insert_entry(device['name'])
+                self.device.insert_entry(device['description'])
             main_box.pack_start(self.name, False, False, 10)
             main_box.pack_start(self.device, False, False, 10)
             main_box.pack_start(self.ports, False, False, 10)
@@ -53,7 +53,7 @@ class CreateDevice(Gtk.Popover):
     def device_combo_changed(self, combo):
         active = combo.get_active()
         device = self.device_list[active]
-        self.name.input.set_text(device['name'])
+        self.name.input.set_text(device['description'])
         self.ports.set_ports(device['channel_list'])
 
     def to_schema(self) -> dict:
@@ -68,8 +68,8 @@ class CreateDevice(Gtk.Popover):
             channel_map = self.channel_map.combobox.get_active_text()
             channel_list = common.CHANNEL_MAPS[channel_map]
             channels = len(channel_list)
-            selected_channels = [True for _ in channel_list]
-            volume = 100
+            selected_channels = [True] * channels
+            volume = [100] * channels
 
         else:
             selected_device = self.device.combobox.get_active()
@@ -78,12 +78,18 @@ class CreateDevice(Gtk.Popover):
             nick = self.name.get_option()
             name = device['name']
             description = device['description']
-            channel_list = device['channel_list']
-            channels = device['channels']
             selected_channels = self.ports.get_selected()
 
-            # TODO: perchannel volume
-            volume = device['volume'][0]
+            channels = 0
+            volume = []
+            channel_list = []
+
+            # only grab channels that are sellected
+            for channel in range(len(selected_channels)):
+                if selected_channels[channel] is True:
+                    volume.append(device['volume'][channel])
+                    channel_list.append(device['channel_list'][channel])
+                    channels += 1
 
         data = {
             'name': name,
