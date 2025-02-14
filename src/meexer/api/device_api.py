@@ -17,12 +17,13 @@ async def create_device(create_device_req: requests.CreateDevice) -> None:
     Recives a devices index and a device
     '''
 
+    print(create_device_req)
     device = DeviceModel(**create_device_req.device.dict())
     CONFIG.insert_device(device)
 
     if (device.device_class == 'virtual' and not
             device.flags & device_schema.DeviceFlags.EXTERNAL):
-        await pmctl.init(device.device_type, device.name)
+        await pmctl.init(device.device_type, device.name, device.channels)
     return ipc_schema.StatusCode.OK, None
 
 

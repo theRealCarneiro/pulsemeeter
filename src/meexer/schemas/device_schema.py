@@ -1,12 +1,11 @@
 import re
-from typing import Literal, Dict
+from typing import Literal
 from pydantic import BaseModel, root_validator, validator, Field
 
 
 class DeviceFlags:
     NOFLAGS = 0
     EXTERNAL = 1 << 0
-
 
 
 class ConnectionSchema(BaseModel):
@@ -40,7 +39,7 @@ class DeviceSchema(BaseModel):
     primary: bool | None
     channels: int
     channel_list: list[str]
-    connections: dict[str, dict[str, dict]] = {}
+    connections: dict[str, dict[str, ConnectionSchema]] = {}
     selected_channels: list[bool] | None
     plugins: list[PluginSchema] = []
 

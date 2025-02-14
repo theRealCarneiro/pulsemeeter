@@ -20,26 +20,27 @@ def create(_, popover, device_type_abstract, device_list):
 
     if device_type_abstract in ('b', 'vi'):
         nick_text = popover.name.get_option()
+        device_name = nick_text
         channel_map = popover.channel_map.combobox.get_active_text()
         channel_list = CHANNEL_MAPS[channel_map]
+        print(channel_list)
         selected_channels = [True for _ in channel_list]
 
     else:
         nick_text = popover.name.get_option()
         selected_device = popover.device.combobox.get_active()
+        device_name = popover.device.combobox.get_active_text()
         channel_list = device_list[selected_device]['channel_list']
         selected_channels = popover.ports.get_selected()
 
-    # device_text = self.device.get_active_text() or ""
-    ports_data = [0, 1]
-    # ports_data = self.ports.get_selected_channels()  # e.g., [0, 1]
-    channels = len(ports_data) if ports_data else 2
+    channels = len(channel_list)
     device_type = 'sink' if device_type_abstract in ('a', 'vi') else 'source'
     device_class = 'virtual' if device_type_abstract in ('b', 'vi') else 'hardware'
 
     data = {
         'device': {
-            'name': nick_text,
+            'name': device_name,
+            'nick': nick_text,
             'channels': channels,
             'channel_list': channel_list,
             'selected_channels': selected_channels,

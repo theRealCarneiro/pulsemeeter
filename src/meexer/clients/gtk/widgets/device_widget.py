@@ -46,7 +46,7 @@ class DeviceWidget(Gtk.Frame):
                 print()
                 print(output_type, output_id, output)
                 print()
-                self.create_output_button(output_type, output_id, output['nick'])
+                self.create_output_button(output_type, output_id, output.nick)
 
         self.add(main_grid)
 
