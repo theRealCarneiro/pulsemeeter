@@ -7,7 +7,6 @@ LOG = logging.getLogger('generic')
 # PULSE = pulsectl.Pulse('pmctl')
 
 
-# TODO: channel mapping
 async def init(device_type: str, device_name: str, channel_num: int = 2):
     '''
     Create a device in pulse
@@ -309,6 +308,9 @@ async def list_apps(app_type: str):
 
         elif app_type == 'source_output':
             full_app_list = await pulse.source_output_list()
+
+        else:
+            return app_list
 
         for app in full_app_list:
 
