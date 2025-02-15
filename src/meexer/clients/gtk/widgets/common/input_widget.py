@@ -23,3 +23,6 @@ class InputWidget(Gtk.Grid):
 
     def get_option(self):
         return self.input.get_text()
+
+    def set_option(self, option: str):
+        self.input.set_text(option)

@@ -31,8 +31,4 @@ class PortSelector(Gtk.Grid):
         self.port_box.show_all()
 
     def get_selected(self):
-        selected_channels = []
-        for child in self.port_box.get_children():
-            selected_channels.append(True if child.get_active() else False)
-
-        return selected_channels
+        return [child.get_active() for child in self.port_box.get_children()]

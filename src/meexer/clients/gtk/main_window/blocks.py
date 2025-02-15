@@ -3,6 +3,7 @@ from meexer.schemas.app_schema import AppSchema
 from meexer.clients.gtk.widgets.device.device_widget import DeviceWidget
 from meexer.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
 from meexer.clients.gtk.widgets.common.icon_button_widget import IconButton
+from meexer.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -13,9 +14,20 @@ from gi.repository import Gtk, Gio  # noqa: E402
 
 class DeviceBox(Gtk.Frame):
 
-    def __init__(self, label):
+    device_label = {
+        'hi': 'Hardware Inputs',
+        'vi': 'Virtual Inputs',
+        'a': 'Hardware Outputs',
+        'b': 'Virtual Outputs',
+    }
+
+    def __init__(self, devices_schema: DeviceSchema, device_type: str):
         super().__init__(margin=5)
-        title = Gtk.Label(label, margin=10)
+
+        self.device_type = device_type
+        self.devices: dict[str, DeviceWidget] = {}
+
+        title = Gtk.Label(self.device_label[device_type], margin=10)
 
         button = IconButton('add')
 
@@ -31,35 +43,64 @@ class DeviceBox(Gtk.Frame):
 
         self.title = title
         self.add_device_button = button
+        self.add_device_button.connect('pressed', self.create_new_device_popover)
 
-    def add_device(self, device):
+        # get what popup should be used
+        dc = 'hardware' if device_type in ('a', 'hi') else 'virtual'
+        popup_type = HardwareDevicePopup if dc == 'hardware' else VirtualDevicePopup
+        self.popover = popup_type(device_type)
+        self.popover.set_relative_to(self.add_device_button)
+        # self.popover.popdown()
+
+        self.load_devices(devices_schema)
+
+    def load_devices(self, devices_schema: dict[str, DeviceSchema]):
+        for device_id, device_schema in devices_schema.items():
+            self.insert_device(device_schema, device_id)
+
+    def insert_device(self, device_schema: DeviceSchema, device_id: str) -> DeviceWidget:
+        device = DeviceWidget(device_schema, device_id)
         self.device_box.pack_start(device, False, False, 0)
+        self.devices[device_id] = device
+        return device
 
-    def remove_device(self, device):
-        self.remove(device)
+    def remove_device(self, device_id: str) -> DeviceWidget:
+        device_widget = self.devices.pop(device_id)
+        self.remove(device_widget)
+        device_widget.destroy()
+        return device_widget
+
+    def create_new_device_popover(self, _):
+        '''
+            Opens create device popover when clicking on the new device button
+        '''
+
+        # create popup
+        self.popover.show_all()
+        self.popover.popup()
 
 
 class MainWindow(Gtk.Window):
 
-    def __init__(self, application):
+    def __init__(self, application, config_schema):
         super().__init__(application=application)
         self.device_grid = Gtk.Grid()
 
-        hi_box = DeviceBox('Hardware Inputs')
-        vi_box = DeviceBox('Virtual Inputs')
-        a_box = DeviceBox('Hardware Outputs')
-        b_box = DeviceBox('Virtual Outputs')
+        self.device_box = {}
+        for device_type in ('hi', 'vi', 'a', 'b'):
+            self.device_box[device_type] = DeviceBox(config_schema.__dict__[device_type], device_type)
+
         sink_input_box = Gtk.VBox()
         source_output_box = Gtk.VBox()
 
-        self.device_grid.attach(hi_box, 0, 0, 1, 1)
-        self.device_grid.attach(vi_box, 1, 0, 1, 1)
-        self.device_grid.attach(a_box, 0, 1, 1, 1)
-        self.device_grid.attach(b_box, 1, 1, 1, 1)
+        self.device_grid.attach(self.device_box['hi'], 0, 0, 1, 1)
+        self.device_grid.attach(self.device_box['vi'], 1, 0, 1, 1)
+        self.device_grid.attach(self.device_box['a'], 0, 1, 1, 1)
+        self.device_grid.attach(self.device_box['b'], 1, 1, 1, 1)
         self.device_grid.attach(self._framed(sink_input_box, 'Application Outputs'), 0, 2, 1, 1)
         self.device_grid.attach(self._framed(source_output_box, 'Application Inputs'), 1, 2, 1, 1)
 
-        self.device_box = {'vi': vi_box, 'hi': hi_box, 'a': a_box, 'b': b_box}
+        # self.device_box = {'vi': vi_box, 'hi': hi_box, 'a': a_box, 'b': b_box}
 
         self.app_box = {'sink_input': sink_input_box, 'source_output': source_output_box}
 
@@ -68,50 +109,27 @@ class MainWindow(Gtk.Window):
         self.devices = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.apps = {'sink_input': [], 'source_output': []}
 
-    def update_connection_buttons(self, device_type, device_id):
-        device = self.devices[device_type][device_id]
-
-        # new output added
-        if device_type in ('a', 'b'):
-            for input_type, input_id in self.iter_input():
-                input_device = self.devices[input_type][input_id]
-                connection_schema = ConnectionSchema(nick=device.get_nick())
-                button = input_device.insert_connection_widget(device_type, device_id, connection_schema)
-                yield button, input_type, input_id
-
-        # When a new input is added, we gotta create the buttons to existing outputs
-        else:
-            for output_type, output_id in self.iter_output():
-                output_device = self.devices[output_type][output_id]
-                connection_schema = ConnectionSchema(nick=output_device.get_nick())
-                button = device.insert_connection_widget(output_type, output_id, connection_schema)
-                yield button, output_type, output_id
-
     def load_devices(self, devices_schema):
         for device_type in ('a', 'b', 'vi', 'hi'):
             for device_id, device_schema in devices_schema.__dict__[device_type].items():
                 device = self.insert_device(device_type, device_id, device_schema)
                 yield device_type, device_id, device
 
-    def insert_device(self, device_type: str, device_id: str, device_schema: DeviceSchema):
+    def insert_device(self, device_type: str, device_id: str, device_schema: DeviceSchema) -> DeviceWidget:
         '''
         Insert a device widget and add it to a device box
             "device_type" is [vi, hi, a, b]
             "device" is the device widget to insert in the box
         '''
-        device = DeviceWidget(device_schema, device_id)
-        self.device_box[device_type].add_device(device)
-        self.devices[device_type][device_id] = device
-        return device
+        return self.device_box[device_type].insert_device(device_schema, device_id)
 
-    def remove_device(self, device_type: str, device_id: str):
+    def remove_device(self, device_type: str, device_id: str) -> DeviceWidget:
         '''
         Destroy a device widget and remove it from a device box
             "device_type" is [vi, hi, a, b]
             "device" is the device widget to remove from the box
         '''
-        device = self.devices[device_type][device_id].pop()
-        self.device_box[device_type].remove_device(device)
+        return self.device_box[device_type].remove_device(device_id)
 
     def load_apps(self, app_list, sink_input_device_list, source_output_device_list):
         AppCombobox.set_device_list('sink_input', sink_input_device_list)

@@ -32,6 +32,8 @@ CHANNEL_MAPS = {
     "7.1": ["front-left", "front-right", "front-center", "lfe", "rear-left", "rear-right", "side-left", "side-right"]
 }
 
+INVERSE_CHANNEL_MAPS = {1: "1", 2: "2", 4: "3", 5: "4", 6: "5", 8: "6"}
+
 
 # class VolumeSchema(BaseModel):
     # value: int = Field(100, ge=0, le=153, description='volume must be ge 0 le 153')

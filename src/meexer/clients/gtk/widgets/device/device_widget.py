@@ -7,6 +7,8 @@ from meexer.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
 from meexer.clients.gtk.widgets.common.icon_button_widget import IconButton
 
 from meexer.clients.gtk.widgets.device.connection_widget import ConnectionWidget
+from meexer.clients.gtk.widgets.device.connection_box_widget import ConnectionBoxWidget
+from meexer.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
 # from meexer.clients.gtk.widgets.common.create_device_widget import CreateDevice
 
 from meexer.clients.gtk.widgets.device.name_widget import NameWidget
@@ -30,12 +32,16 @@ class DeviceWidget(Gtk.Frame):
         info_grid = Gtk.Grid(margin_start=5, hexpand=True)
         connection_grid = Gtk.Grid(hexpand=True)
         control_grid = Gtk.Grid(hexpand=True)
-        self.connections_box = {'a': Gtk.Box(), 'b': Gtk.Box()}
+        self.connections_box = {}
 
-        edit_button = IconButton('edit')
-        edit_button.set_halign(Gtk.Align.END)
-        # edit_button.set_valign(Gtk.Align.START)
-        self.edit_button = edit_button
+        # check if connections are empty (means they are outputs)
+        for device_type in ('a', 'b'):
+            connections = schema.connections.get(device_type)
+            self.connections_box[device_type] = ConnectionBoxWidget(device_type, connections)
+
+        self.edit_button = IconButton('edit')
+        self.edit_button.set_halign(Gtk.Align.END)
+        self.edit_button.connect('pressed', self.edit_device_popover)
 
         # self.edit_device_widget = CreateDevice(device_type, device_list)
         self.name_widget = NameWidget(schema.nick, schema.description)
@@ -45,12 +51,6 @@ class DeviceWidget(Gtk.Frame):
 
         # if schema.primary is not None:
         self.primary_widget = DefaultWidget(state=schema.primary)
-
-        # create connection buttons
-        self.connection_buttons = {'a': {}, 'b': {}}
-        for output_type, outputs in schema.connections.items():
-            for output_id, connection_schema in outputs.items():
-                self.insert_connection_widget(output_type, output_id, connection_schema)
 
         # atatch widgets to containers
         info_grid.attach(self.name_widget, 0, 0, 1, 1)
@@ -65,28 +65,41 @@ class DeviceWidget(Gtk.Frame):
         main_grid.attach(control_grid, 0, 1, 1, 1)
         main_grid.attach(connection_grid, 0, 2, 1, 1)
 
+        # get what popup should be used
+        popup_type = HardwareDevicePopup if schema.device_class == 'hardware' else VirtualDevicePopup
+        self.popover = popup_type(device_type, device_schema=schema)
+        self.popover.set_relative_to(self.edit_button)
+
+        # self.popover.name_widget.set_option(schema.nick)
+        # self.popover.combobox_widget.set_option(schema.nick)
+        # self.popover.popdown()
+
         self.add(main_grid)
 
         if schema.primary is not None:
             control_grid.attach(self.primary_widget, 2, 0, 1, 1)
 
-    def insert_connection_widget(self, output_type, output_id, connection_schema):
+    def edit_device_popover(self, _):
+        '''
+            Opens create device popover when clicking on the new device button
+        '''
+
+        # create popup
+        self.popover.show_all()
+        self.popover.popup()
+
+    def insert_connection_widget(self, connection_schema: ConnectionSchema, output_type: str, output_id: str):
         '''
             Create an output button
         '''
-        button = ConnectionWidget(connection_schema, output_type, output_id)
-        self.connection_buttons[output_type][output_id] = button
-        box = self.connections_box[output_type]
-        box.pack_start(button, False, False, 0)
-        button.connect('toggled', self.update_connection, output_type, output_id)
+        # Create widget
+        button = self.connections_box[output_type].insert_widget(connection_schema, output_id)
+        # button.connect('toggled', self.update_connection, output_type, output_id)
+
         return button
 
     def remove_connection_widget(self, output_type, output_id):
-        button = self.connection_buttons[output_type].pop(output_id)
-        del self.schema.connections[output_type][output_id]
-        box = self.connections_box[output_type]
-        box.remove(button)
-        button.destroy()
+        self.connections_box[output_type].remove_button(output_id)
 
     def update_volume_schema(self, _):
         volume = self.get_volume()
@@ -109,5 +122,6 @@ class DeviceWidget(Gtk.Frame):
     def get_volume(self) -> int:
         return self.volume_widget.get_value()
 
-    def to_schema(self) -> DeviceSchema:
-        return self.schema
+    # if we keep the schema updated, we just need to return it
+    # def to_schema(self) -> DeviceSchema:
+    #     return self.schema

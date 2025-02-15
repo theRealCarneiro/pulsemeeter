@@ -19,6 +19,7 @@ def create(_, popover, device_type_abstract, device_list):
 
     data = popover.to_schema()
 
+    # print(data)
     Client.get_client(CLIENT_NAME).send_request('create_device', {'device': data})
 
 
