@@ -1,3 +1,4 @@
+setuptools
 pylint
 pylint-pydantic
 flake8
