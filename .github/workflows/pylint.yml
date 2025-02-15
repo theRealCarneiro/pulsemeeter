@@ -20,10 +20,11 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt update
         sudo apt install libgirepository1.0-dev python3-gi gobject-introspection gir1.2-gtk-3.0
-        python -m pip install --upgrade pip --break--system-packages
-        pip install -r requirements.txt --break--system-packages
-        pip install pylint pylint_pydantic perflint --break--system-packages
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint pylint_pydantic perflint
         
       # if is pr get the sha of the pr
     - name: get pull-request files
