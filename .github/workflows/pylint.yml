@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install libgirepository1.0-dev python3-gi gobject-introspection gir1.2-gtk-3.0
+        sudo apt install libgirepository1.0-dev python3-gi gobject-introspection gir1.2-gtk-3.0 libcairo2-dev
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pylint pylint_pydantic perflint
