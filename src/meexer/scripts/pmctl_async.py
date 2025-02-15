@@ -314,7 +314,7 @@ async def list_apps(app_type: str):
 
             # filter pavu and pm peak sinks
             try:
-                filter_results(app)
+                await filter_results(app)
             except AssertionError:
                 continue
 
@@ -325,6 +325,15 @@ async def list_apps(app_type: str):
 
             app_list.append(app)
     return app_list
+
+
+async def subscribe_peak(name, device_type, callback, rate=5):
+    if device_type == 'sink':
+        name += '.monitor'
+
+    async with pulsectl_asyncio.PulseAsync() as pulse:
+        async for peak in pulse.subscribe_peak_sample(name, rate):
+            await callback(peak)
 
 
 async def runcmd(command: str, split_size: int = -1) -> int:

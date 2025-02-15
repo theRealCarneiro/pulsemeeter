@@ -1,8 +1,13 @@
+import time
+import asyncio
+import threading
+
 from meexer.ipc.client import Client
 from meexer.clients.gtk.main_window import blocks
 from meexer.schemas.config_schema import ConfigSchema
-from meexer.schemas.device_schema import DeviceSchema, ConnectionSchema
-from meexer.schemas.app_schema import AppSchema
+from meexer.schemas.device_schema import DeviceSchema
+# from meexer.schemas.app_schema import AppSchema
+from meexer.scripts.pmctl_async import subscribe_peak
 
 from meexer.clients.gtk.widgets.device.device_widget import DeviceWidget
 from meexer.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
@@ -24,6 +29,11 @@ class GtkClient(Gtk.Application):
         self.client = Client(listen_flags=0, instance_name='gtk')
         res = self.client.send_request('get_config', {})
         self.config = ConfigSchema(**res.data)
+        # self.vumeter_threads = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
+        self.vumeter_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+        self.vumeter_thread = threading.Thread(target=self.vumeter_loop.run_forever, daemon=True)
+        self.vumeter_thread.start()
+        self.vumeter_tasks = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
 
         self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
@@ -46,19 +56,19 @@ class GtkClient(Gtk.Application):
             self.connect_device_gtk_events(device_type, device_id, device)
 
         # Load app widget
-        sink_input_device_list = [device.name for _, device in self.config.vi.items()]
-        source_output_device_list = [device.name for _, device in self.config.b.items()]
-        source_output_device_list += sink_input_device_list
-        app_list = {
-            'sink_input': app_service.list_apps('sink_input', self.client),
-            'source_output': app_service.list_apps('source_output', self.client)
-        }
-        window.load_apps(app_list, sink_input_device_list, source_output_device_list)
-
-        # connect events to apps
-        for app_type in ('sink_input', 'source_output'):
-            for app in window.apps[app_type]:
-                self.connect_app_gtk_events(app)
+        # sink_input_device_list = [device.name for _, device in self.config.vi.items()]
+        # source_output_device_list = [device.name for _, device in self.config.b.items()]
+        # source_output_device_list += sink_input_device_list
+        # app_list = {
+        #     'sink_input': app_service.list_apps('sink_input', self.client),
+        #     'source_output': app_service.list_apps('source_output', self.client)
+        # }
+        # window.load_apps(app_list, sink_input_device_list, source_output_device_list)
+        #
+        # # connect events to apps
+        # for app_type in ('sink_input', 'source_output'):
+        #     for app in window.apps[app_type]:
+        #         self.connect_app_gtk_events(app)
 
         # window.show_all()
         return window
@@ -72,7 +82,7 @@ class GtkClient(Gtk.Application):
         if self.window is None:
             self.window = self.create_window()
 
-        # self.window.connect('destroy', self.on_shutdown)
+        self.window.connect('destroy', self.on_shutdown)
         self.window.show_all()
         self.window.present()
 
@@ -164,7 +174,10 @@ class GtkClient(Gtk.Application):
                 for output_id, button in device.connection_buttons[output_type].items():
                     self.connect_output_button(button, device_type, device_id, output_type, output_id)
 
-        # TODO: connect vumeters
+        self.vumeter_tasks[device_type][device_id] = asyncio.run_coroutine_threadsafe(
+            subscribe_peak(device.schema.name, device.schema.device_type, device.vumeter_widget.update_peak, rate=24),
+            self.vumeter_loop
+        )
 
         # connect connection buttons
         if new is True:
@@ -265,7 +278,7 @@ class GtkClient(Gtk.Application):
             for device_id in self.window.devices[device_type]:
                 yield device_type, device_id
 
-    # def on_shutdown(self, _):
-        # self.client.send_request('exit', {})
-        # self.quit()
-        # Gtk.main_quit()
+    def on_shutdown(self, _):
+        # cancel vumeters
+        for device_type, device_id in self.iter_all():
+            self.vumeter_tasks[device_type][device_id].cancel()

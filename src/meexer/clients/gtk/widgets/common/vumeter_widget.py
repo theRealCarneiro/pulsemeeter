@@ -23,7 +23,7 @@ class VumeterWidget(Gtk.ProgressBar):
             hexpand=True
         )
 
-    async def _update_peak(self, peak):
+    async def update_peak(self, peak):
         if peak <= 0.00 and self.get_sensitive is True:
             GLib.idle_add(self.set_fraction, 0)
             GLib.idle_add(self.set_sensitive, False)
