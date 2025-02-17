@@ -110,11 +110,14 @@ class DeviceWidget(Gtk.Frame):
         self.schema.connections[device_type][device_id].state = state
         button.schema.state = state
 
-    def update_mute(self, button, device_type, device_id):
-        self.schema.mute = self.mute_widget.get_active()
+    def update_mute(self, button):
+        self.schema.mute = button.get_active()
 
     def get_nick(self) -> str:
         return self.name_widget.nick
+
+    def get_name(self) -> str:
+        return self.schema.name
 
     def get_description(self) -> str:
         return self.name_widget.description

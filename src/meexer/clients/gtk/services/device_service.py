@@ -1,4 +1,5 @@
 from meexer.ipc.client import Client
+from meexer.scripts import pmctl
 # from meexer.schemas.ipc_schema import SubscriptionFlags
 
 from meexer.schemas import requests_schema, ipc_schema
@@ -79,21 +80,24 @@ def default(button, device_type, device_id):
     Client.get_client(CLIENT_NAME).send_request('default', data)
 
 
-def volume(scale, device_type, device_id):
+# def volume(scale, device_type, device_id):
+def volume(scale, device_type, device_name):
     '''
     Called when there's a value change in a volume scale
     '''
+    device_class = 'sink' if device_type in ['a', 'vi'] else 'source'
+    pmctl.set_volume(device_class, device_name, scale.get_value())
 
-    data = {
-        'index': {
-            'device_type': device_type,
-            'device_id': device_id
-        },
-        'volume': scale.get_value()
-    }
-
-    requests_schema.Volume(**data)
-    Client.get_client(CLIENT_NAME).send_request('volume', data)
+    # data = {
+    #     'index': {
+    #         'device_type': device_type,
+    #         'device_id': device_id
+    #     },
+    #     'volume': scale.get_value()
+    # }
+    #
+    # requests_schema.Volume(**data)
+    # Client.get_client(CLIENT_NAME).send_request('volume', data)
 
 
 def list_devices(device_type) -> list:

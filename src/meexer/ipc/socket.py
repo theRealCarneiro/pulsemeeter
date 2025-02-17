@@ -14,11 +14,15 @@ class Socket:
     sock: socket.socket
     client_id: int
     encoded_id: bytes
+    subscription_flags: int = ipc_schema.SubscriptionFlags.NO_LISTEN
 
     # def __init__(self, sock: socket.socket, client_id: int):
     #     self.sock = sock
     #     self.client_id = client_id
     #     self.encoded_id = utils.id_to_bytes(client_id)
+
+    def set_subscription_flags(self, subscription_flags):
+        self.subscription_flags = subscription_flags
 
     def get_message(self) -> str:
         '''
@@ -59,6 +63,9 @@ class Socket:
         '''
 
         msg: str = self.get_message()
+        # print()
+        # print(msg)
+        # print()
         msg_dict: dict = json.loads(msg)
         res: ipc_schema.Response = ipc_schema.Response(**msg_dict)
         return res

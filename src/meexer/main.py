@@ -8,6 +8,7 @@ import sys
 from meexer.api.app_api import ipc as app_routes
 from meexer.api.device_api import ipc as device_routes
 from meexer.api.server_api import ipc as server_routes
+# from meexer.api.pulse_events_api import task as pulse_events_task
 
 # from meexer.scripts import argparser
 from meexer.clients.gtk.gtk_client import GtkClient
@@ -28,6 +29,7 @@ def main():
         server.register_blueprint(app_routes)
         server.register_blueprint(device_routes)
         server.register_blueprint(server_routes)
+        server.register_task(device_routes)
 
     except ConnectionAbortedError:
         isserver = False

@@ -1,13 +1,14 @@
 import logging
 from typing import get_type_hints
 
-from meexer.schemas.ipc_schema import Route
+from meexer.schemas.ipc_schema import Route, Task
 
 LOG = logging.getLogger("generic")
 
 
 class Blueprint:
     routes = {}
+    tasks = {}
 
     def __init__(self, name: str):
         self.name = name
@@ -30,6 +31,22 @@ class Blueprint:
             )
 
             self.routes[command_str] = route
+            return function
+
+        return decorator
+
+    def create_task(self, command_str):
+        '''
+        Decorator for creating routes
+        '''
+        # quick hack to get the type hint
+        def decorator(function):
+
+            task = Task(
+                command=function,
+            )
+
+            self.tasks[command_str] = task
             return function
 
         return decorator

@@ -28,12 +28,14 @@ class Server:
 
         self.client_num: int = 0
         self.thread: threading.Thread = None
-        self.loop: asyncio.AbstractEventLoop = None
+        self.loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self.clients: dict = {}
         self.exit_flag: bool = False
         self.server_task: asyncio.Task = None
         self.server = None
         self.routes = {}
+        self.tasks = {}
+        self.server_tasks: dict[str, asyncio.Task] = {}
 
         if sock_name is not None:
             settings.SOCK_FILE = f'/tmp/pulsemeeter.{sock_name}.sock'
@@ -56,12 +58,27 @@ class Server:
 
         return route
 
+    def register_task(self, blueprint):
+        for task_key, task in blueprint.tasks.items():
+            self.tasks[task_key] = task
+            self.server_tasks[task_key] = self.loop.create_task(task.command(self._notify))
+
+    async def cancel_tasks(self):
+        for _, task in self.server_tasks.items():
+            task.cancel()
+            # await task
+
+    # def create_task(self, task_name, task_function, task_callback):
+    #     # self.server_tasks[task_name] = asyncio.ensure_future(task_function(task_callback), loop=self.loop)
+    #     self.server_tasks[task_name] = self.loop.create_task(task_function(task_callback))
+
     def start_server(self, daemon: bool = False) -> None:
         '''
         Start server loop in another thread
         '''
         server_ready = threading.Event()
-        self.loop = asyncio.new_event_loop()
+        # self.loop = asyncio.new_event_loop()
+        # self.loop.create_task()
 
         if daemon is False:
             self.thread = threading.Thread(target=self.loop.run_until_complete,
@@ -116,6 +133,10 @@ class Server:
 
         # send id to client
         await client.send_message(client.encoded_id)
+
+        #  get listen flags and store
+        subscription_flags = await client.get_message()
+        client.set_subscription_flags(int(subscription_flags))
 
         LOG.debug('Client %d connected', client.client_id)
 
@@ -187,12 +208,11 @@ class Server:
         '''
         Send event to clients
             "req" is the request
-            "sender_id" is the id of the client that emited the event
         '''
         for client_id, client in self.clients.items():
 
             # don't send event to client that triggered the event
-            if client_id == req.sender_id:
+            if client_id == req.sender_id or client.subscription_flags == 0:
                 continue
 
             msg = req.encode()
@@ -202,14 +222,17 @@ class Server:
 
         # close connections
         for client in list(self.clients.values()):
+            req = ipc_schema.Request(command='exit', sender_id=0, data={})
+            await client.send_message(req.encode())
             client.writer.close()
             try:
                 await client.writer.wait_closed()
             except Exception as e:
                 LOG.error("Error closing client %d: %s", client.client_id, e)
 
+        await self.cancel_tasks()
+        await asyncio.sleep(0.1)
+
         CONFIG.write()
         self.server.close()
         await self.server.wait_closed()
-
-        # self.thread.join()

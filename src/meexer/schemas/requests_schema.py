@@ -1,7 +1,34 @@
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 from meexer.schemas import device_schema
+
+
+class PulseEvent(BaseModel):
+    device_index: int
+    device_type: Literal['sink', 'source', 'sink_input', 'source_output', 'server']
+    event_type: Literal['change', 'new', 'remove']
+
+
+class PaDeviceChange(PulseEvent):
+    device_type: str
+    device_id: str
+    device_name: str
+    volume: list[int]
+    mute: bool
+
+
+class PaAppChange(PulseEvent):
+    device_index: int
+    device_type: Literal['sink_input', 'source_output']
+    output_name: str  # the name of the source or sink
+    volume: list[int]
+    mute: bool
+
+
+class PaServerChange(PulseEvent):
+    device_index: int
+    device_type: Literal['sink_input', 'source_output']
 
 
 class DeviceIndex(BaseModel):

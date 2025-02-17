@@ -63,6 +63,25 @@ class ConfigModel(ConfigSchema):
         '''
         return self.__dict__[dtype][did]
 
+    def get_primary(self, device_type: str):
+        '''
+        Get a device by it's id
+        '''
+        for _, item in self.__dict__['vi' if device_type == 'sink' else 'b'].items():
+            if item.primary is True:
+                return item.name
+
+        return None
+
+    def find_device(self, device_type, name):
+        dtypes = ('a', 'vi') if device_type == 'sink' else ('b', 'hi')
+        for dtype in dtypes:
+            for did, item in self.__dict__[dtype].items():
+                if item.name == name:
+                    return dtype, did, item
+
+        return None, None, None
+
     def get_max_id(self, device_type: str):
         pass
 

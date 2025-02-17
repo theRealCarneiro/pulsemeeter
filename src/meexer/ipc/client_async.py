@@ -4,7 +4,7 @@ import asyncio
 from pydantic import ValidationError
 from meexer import settings
 from meexer.schemas import ipc_schema
-from meexer.ipc import socket_async
+from meexer.ipc import socket_async, utils
 
 LOG = logging.getLogger("generic")
 
@@ -13,7 +13,7 @@ class Client(socket_async.SocketAsync):
 
     _clients = {}
 
-    def __init__(self, listen_flags: int = 0, instance_name: str = 'default',
+    def __init__(self, subscription_flags: int = 0, instance_name: str = 'default',
                  sock_name: str = None):
 
         if sock_name is not None:
@@ -26,7 +26,7 @@ class Client(socket_async.SocketAsync):
         self.client_id: int = None
         self.exit_signal: bool = False
         self.listen_task = None
-        self.listen_flags = listen_flags
+        self.subscription_flags = subscription_flags
         self.new_client(self, instance_name)
 
     def start(self) -> None:
@@ -51,6 +51,7 @@ class Client(socket_async.SocketAsync):
         '''
         self.reader, self.writer = await asyncio.open_unix_connection(settings.SOCK_FILE)
         self.client_id = int(await self.get_message())
+        self.send_message(utils.id_to_bytes(self.subscription_flags))  # listen flags
         LOG.info('Connected to server, id: %d', self.client_id)
         client_ready.set()
         self.listen_task = self.loop.create_task(self._listen())

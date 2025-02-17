@@ -25,5 +25,9 @@ class VolumeWidget(Gtk.Scale):
             width_request=100
         )
 
+        self.blocked = False
         self.add_mark(100, Gtk.PositionType.TOP, '')
         self.signal_handler = {}
+
+    def set_blocked(self, widget, _, state: bool):
+        self.blocked = state

@@ -19,7 +19,7 @@ class Client(Socket):
 
     _clients = {}
 
-    def __init__(self, listen_flags: int = 0, instance_name: str = 'default',
+    def __init__(self, subscription_flags: int = 0, instance_name: str = 'default',
                  sock_name: str = None):
         '''
         '''
@@ -28,18 +28,19 @@ class Client(Socket):
             settings.SOCK_FILE = f'/tmp/pulsemeeter.{sock_name}.sock'
 
         self.listen_id = None
-        self.listen_flags = listen_flags
+        self.subscription_flags = subscription_flags
         self.instance_name = instance_name
         self.exit_flag = False
         self.callbacks = {}
         super().__init__()
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
         # connect to server
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.client_id: int = self.handshake()
-        Client.new_client(self, instance_name)
+        if subscription_flags == 0:
+            self.client_id: int = self.handshake()
+            Client.new_client(self, instance_name)
 
-        if listen_flags:
+        if subscription_flags:
             self.start_listen()
 
     def handshake(self) -> int:
@@ -50,7 +51,7 @@ class Client(Socket):
         try:
             self.sock.connect(settings.SOCK_FILE)
             client_id = int(self.get_message())
-            # self.conn.sendall(str(0).rjust(CLIENT_ID_LEN, '0').encode())
+            self.send_message(utils.id_to_bytes(0))  # listen flags
             LOG.debug('Connected to server, id: %d', client_id)
         except socket.error:
             LOG.error(traceback.format_exc())
@@ -83,15 +84,17 @@ class Client(Socket):
         Listen to server events and do callbacks
         '''
 
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        with self.sock as sock:
             sock.connect(settings.SOCK_FILE)
-            self.listen_id = int(sock.recv(CLIENT_ID_LEN))
-            sock.sendall(utils.id_to_bytes(self.listen_flags))
+            _ = int(self.get_message())
+
+            self.send_message(str(ipc_schema.SubscriptionFlags.ALL).encode(encoding='utf-8'))
+
             while not self.exit_flag:
-                msg_dict = self.get_message()
-                req = ipc_schema.Request(**msg_dict)
-                if req.sender_id != self.client_id:
-                    print(req)
+                req = self.get_request()
+                if req.command == 'exit':
+                    break
+                # print(req)
 
     def stop_listen(self) -> None:
         self.exit_flag = True

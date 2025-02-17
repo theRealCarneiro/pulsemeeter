@@ -6,6 +6,8 @@ import pulsectl_asyncio
 LOG = logging.getLogger('generic')
 # PULSE = pulsectl.Pulse('pmctl')
 
+# TODO: Use a single PulseAsync object
+
 
 async def init(device_type: str, device_name: str, channel_num: int = 2):
     '''
@@ -273,6 +275,13 @@ async def get_device(device_type: str, device_name: str):
         return device
 
 
+async def get_device_by_id(device_type: str, device_id: int):
+    async with pulsectl_asyncio.PulseAsync() as pulse:
+        info = pulse.sink_info if device_type == 'sink' else pulse.source_info
+        device = await info(int(device_id))
+        return device
+
+
 async def filter_results(app):
     '''
     Filter pavu and pm peak sinks
@@ -329,6 +338,36 @@ async def list_apps(app_type: str):
     return app_list
 
 
+async def get_app_device_name(app_type: str, device_index: int):
+    async with pulsectl_asyncio.PulseAsync() as pulse:
+        if app_type == 'sink_input':
+            return (await pulse.sink_info(device_index)).name
+
+        return (await pulse.source_info(device_index)).name
+
+
+async def get_app_by_id(app_type, app_index: int):
+    async with pulsectl_asyncio.PulseAsync() as pulse:
+
+        if app_type == 'sink_input':
+            app = await pulse.sink_input_info(int(app_index))
+            device = await pulse.sink_info(int(app.sink))
+        else:
+            app = await pulse.source_output_info(int(app_index))
+            device = await pulse.source_info(int(app.source))
+
+        # app.device_name = device.name
+        return app
+
+
+async def get_primary(device_type: str):
+    async with pulsectl_asyncio.PulseAsync() as pulse:
+        if device_type == 'sink':
+            return (await pulse.server_info()).default_sink_name
+
+        return (await pulse.server_info()).default_source_name
+
+
 async def subscribe_peak(name, device_type, callback, rate=5):
     if device_type == 'sink':
         name += '.monitor'
@@ -336,6 +375,13 @@ async def subscribe_peak(name, device_type, callback, rate=5):
     async with pulsectl_asyncio.PulseAsync() as pulse:
         async for peak in pulse.subscribe_peak_sample(name, rate):
             await callback(peak)
+
+
+async def pulse_listener():
+    async with pulsectl_asyncio.PulseAsync('pulsemeeter-listener') as pulse:
+        async for event in pulse.subscribe_events('sink', 'source', 'sink_input', 'source_output', 'server'):
+            # print(event)
+            yield event
 
 
 async def runcmd(command: str, split_size: int = -1) -> int:

@@ -27,6 +27,7 @@ class StatusCode(Enum):
     OK = 0  # succefull
     INVALID = 1  # invalid input from client
     ERROR = 2  # internal error
+    IGNORE = 5  # internal error
 
 
 class Route(BaseModel):
@@ -35,6 +36,14 @@ class Route(BaseModel):
     notify: bool
     save_config: bool
     flags: int = 0
+
+
+class Task(BaseModel):
+    command: Callable[[Any], Any]
+    # schema_hint: Any
+    # notify: bool
+    # save_config: bool
+    # flags: int = 0
 
 
 class Client(BaseModel):
@@ -92,7 +101,7 @@ class Response(BaseModel):
         "id" is a integer used by the client to know if it's own request when answerd
     '''
     status: StatusCode
-    data: Any
+    data: Any | None
 
     def encode(self) -> bytes:
         return self.json().encode('utf-8')

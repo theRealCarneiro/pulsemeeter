@@ -1,3 +1,4 @@
+import math
 from meexer.schemas.device_schema import DeviceSchema, ConnectionSchema
 
 
@@ -118,6 +119,9 @@ class DeviceModel(DeviceSchema):
 
         self.volume = val
 
+    def get_volume(self):
+        return self.volume[0]
+
     # TODO: maybe use that instead of List[bool] for selected_channels ?
     def get_selected_channel_list(self) -> list[int]:
         '''
@@ -160,8 +164,38 @@ class DeviceModel(DeviceSchema):
 
         return ports
 
+    def check_volume_changes(self, volume: list[int]):
+
+        # pm volume lists don't have all the channels from the org device, so we need
+        # to check the selected_channels list to know what channel does that volume represent
+        vol_index = 0
+        for channel_index, selected_channel in enumerate(self.selected_channels):
+            print(volume, self.volume)
+
+            # if channel is not selected, we just ignore it
+            if selected_channel is False:
+                continue
+
+            # check if volume has changed
+            if self.volume[vol_index] != volume[channel_index]:
+                self.set_volume(volume[channel_index])
+                # print('Volume changed: ', self.volume[vol_index], volume[channel_index])
+                # return True, volume[channel_index]
+                return True
+
+            vol_index += 1
+
+        return False
+
+    def check_mute_changes(self, mute: bool):
+        return self.mute != mute
+
+    def check_for_changes(self, volume: list[int], mute: bool):
+        self.check_volume_changes(volume)
+        self.check_mute_changes(mute)
+
     @classmethod
-    def update_from_pa(cls, pa_device, device_model, device_type: str):
+    def update_from_pa(cls, pa_device, device_model):
         '''
         Convert a pulsectl device into an Device Model
             "pa_device" is either a PulseSinkInfo or a PulseSourceInfo
@@ -169,10 +203,10 @@ class DeviceModel(DeviceSchema):
             "device_type" is either 'sink' or 'source'
         '''
 
-        device_model.channel_list = pa_device.channel_list
-        device_model.device_type = device_type
+        # device_model.channel_list = pa_device.channel_list
+        # device_model.device_type = device_type
         device_model.mute = bool(pa_device.mute)
-        device_model.volume = [i * 100 for i in pa_device.volume.values]
+        device_model.volume = [round(i * 100) for i in pa_device.volume.values]
 
         return device_model
 
@@ -183,8 +217,9 @@ class DeviceModel(DeviceSchema):
             "device" is either a PulseSinkInfo or a PulseSourceInfo
             "device_type" is either 'sink' or 'source'
         '''
-        pa_sink_hardware = 0x0004
-        device_class = 'hardware' if device.flags & pa_sink_hardware else 'virtual'
+        # pa_sink_hardware = 0x0004
+        print(device.volume.values)
+        device_class = 'hardware' if device.proplist['factory.name'] != 'support.null-audio-sink' else 'virtual'
         device_model = cls(
             name=device.name,
             description=device.description,
@@ -194,7 +229,7 @@ class DeviceModel(DeviceSchema):
             device_type=device_type,
             device_class=device_class,
             mute=bool(device.mute),
-            volume=[int(i * 100) for i in device.volume.values]
+            volume=[round(i * 100) for i in device.volume.values]
         )
 
         return device_model

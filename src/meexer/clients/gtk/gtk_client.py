@@ -28,9 +28,10 @@ class GtkClient(Gtk.Application):
         self.window = None
 
         # create client and get config
-        self.client = Client(listen_flags=0, instance_name='gtk')
+        self.client = Client(subscription_flags=0, instance_name='gtk')
         res = self.client.send_request('get_config', {})
         self.config = ConfigSchema(**res.data)
+        self.client_subscribe = Client(subscription_flags=1, instance_name='gtk_callback')
 
         # create vumeter loop thread
         self.vumeter_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
@@ -121,7 +122,7 @@ class GtkClient(Gtk.Application):
         if device_type in ('a', 'b'):
             self.update_connection_buttons(device_type, device_id)
 
-        self.connect_device_gtk_events(device_type, device_id, device, new=True)
+        self.connect_device_gtk_events(device_type, device_id, device)
 
     def create_connections_schema(self, device_type) -> dict[str, dict[str, ConnectionSchema]]:
         '''
@@ -134,7 +135,7 @@ class GtkClient(Gtk.Application):
 
         connections_schema = {'a': {}, 'b': {}}
         for output_type, output_id, device_widget in self.iter_output():
-            connection_schema = ConnectionSchema(nick=device_widget.nick)
+            connection_schema = ConnectionSchema(nick=device_widget.get_nick())
             connections_schema[output_type][output_id] = connection_schema
 
         # for output_type in ('a', 'b'):
@@ -200,7 +201,14 @@ class GtkClient(Gtk.Application):
             popover.combobox_widget.empty()
             popover.combobox_widget.load_list(device_list, 'description')
 
-    def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget, new=False):
+    def connect_volume_gtk_events(self, device_type: str, device_id: str, device_widget):
+        volume_widget = device_widget.volume_widget
+        volume_widget.connect('button-press-event', volume_widget.set_blocked, True)
+        volume_widget.connect('button-release-event', volume_widget.set_blocked, False)
+        # return volume_widget.connect('value-changed', device_service.volume, device_type, device_id)
+        return volume_widget.connect('value-changed', device_service.volume, device_type, device_widget.get_name())
+
+    def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget):
         '''
         Connect a device widget
         '''
@@ -209,14 +217,11 @@ class GtkClient(Gtk.Application):
         device_handle = self.device_handlers[device_type][device_id]
         device.edit_button.connect_after('pressed', self.edit_device_popover_confirm, device_type, device_id)
 
+        device_handle['volume'] = self.connect_volume_gtk_events(device_type, device_id, device)
+
         # connect mute signal
         device_handle['mute'] = device.mute_widget.connect(
             'toggled', device_service.mute, device_type, device_id
-        )
-
-        # connect volume change signal
-        device_handle['volume'] = device.volume_widget.connect(
-            'value-changed', device_service.volume, device_type, device_id
         )
 
         # connect default signal
@@ -285,7 +290,7 @@ class GtkClient(Gtk.Application):
 
         # search device handler
         for target_id, device in self.window.device_box[device_type].devices.items():
-            if device_id != target_id and device.default.get_active():
+            if device_id != target_id and device.primary_widget.get_active():
 
                 # get handlers
                 device_handlers = self.device_handlers[device_type][target_id]
@@ -293,18 +298,21 @@ class GtkClient(Gtk.Application):
                 handler_after = device_handlers['default_after']
 
                 # block signal handler
-                device.default.handler_block(handler)
-                device.default.handler_block(handler_after)
+                device.primary_widget.handler_block(handler)
+                device.primary_widget.handler_block(handler_after)
 
                 # reset state and sensitivity
-                device.default.set_active(False)
-                device.default.set_sensitive(True)
+                device.primary_widget.set_active(False)
+                device.primary_widget.set_sensitive(True)
 
                 # unblock signal handler
-                device.default.handler_unblock(handler)
-                device.default.handler_unblock(handler_after)
+                device.primary_widget.handler_unblock(handler)
+                device.primary_widget.handler_unblock(handler_after)
 
                 break
+            # elif device_id == target_id:
+            #     # disable clicking when already the default
+            #     device.primary_widget.set_sensitive(True)
 
     def iter_input(self):
         for device_type in ('hi', 'vi'):
@@ -335,3 +343,4 @@ class GtkClient(Gtk.Application):
         # cancel vumeters
         for device_type, device_id, _ in self.iter_all():
             self.vumeter_tasks[device_type][device_id].cancel()
+        # self.client_subscribe.listen_thread.join()

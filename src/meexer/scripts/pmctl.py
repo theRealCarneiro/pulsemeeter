@@ -128,13 +128,7 @@ def set_volume(device_type: str, device_name: str, val: int, selected_channels: 
         "selected_channels" the channels that will have the volume changed
     '''
 
-    # limit volume at 153
-    if val > 153:
-        val = 153
-
-    # limit volume at 0
-    elif val < 0:
-        val = 0
+    val = min(max(0, val), 153)
 
     # get device info from pulsectl
     if device_type == 'sink':

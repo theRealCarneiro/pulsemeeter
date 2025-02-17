@@ -12,11 +12,16 @@ LOG = logging.getLogger("generic")
 
 class SocketAsync:
 
-    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, client_id: int):
+    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, client_id: int, flags=0):
         self.reader = reader
         self.writer = writer
         self.client_id = client_id
+        self.subscription_flags: ipc_schema.SubscriptionFlags = 0
+
         self.encoded_id = utils.id_to_bytes(client_id)
+
+    def set_subscription_flags(self, subscription_flags):
+        self.subscription_flags = subscription_flags
 
     # @property
     # def encoded_id(self) -> bytes:
