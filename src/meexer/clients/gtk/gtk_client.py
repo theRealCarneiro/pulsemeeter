@@ -203,9 +203,6 @@ class GtkClient(Gtk.Application):
 
     def connect_volume_gtk_events(self, device_type: str, device_id: str, device_widget):
         volume_widget = device_widget.volume_widget
-        volume_widget.connect('button-press-event', volume_widget.set_blocked, True)
-        volume_widget.connect('button-release-event', volume_widget.set_blocked, False)
-        # return volume_widget.connect('value-changed', device_service.volume, device_type, device_id)
         return volume_widget.connect('value-changed', device_service.volume, device_type, device_widget.get_name())
 
     def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget):
@@ -221,7 +218,7 @@ class GtkClient(Gtk.Application):
 
         # connect mute signal
         device_handle['mute'] = device.mute_widget.connect(
-            'toggled', device_service.mute, device_type, device_id
+            'toggled', device_service.mute, device_type, device.get_name()
         )
 
         # connect default signal
@@ -242,6 +239,8 @@ class GtkClient(Gtk.Application):
 
         self.vumeter_tasks[device_type][device_id] = self.start_vumeter(device)
         device.connect('destroy', self.stop_vumeter, device_type, device_id)
+
+        self.connect_callback_functions()
 
         return device
 
@@ -338,6 +337,25 @@ class GtkClient(Gtk.Application):
         for device_type, device_box in self.window.device_box.items():
             for device_id, device_widget in device_box.devices.items():
                 yield device_type, device_id, device_widget
+
+    def connect_callback_functions(self):
+        self.client_subscribe.create_callback('pa_device_change', self.device_change_event)
+
+    # @Client.create_callback('pa_device_change')
+    def device_change_event(self, req):
+        device = self.window.device_box[req['device_type']].devices[req['device_id']]
+        device_handler = self.device_handlers[req['device_type']][req['device_id']]
+        if device.volume_widget.blocked is False:
+
+            device.volume_widget.handler_block(device_handler['volume'])
+            device.volume_widget.set_value(req['volume'][0])
+            device.volume_widget.handler_unblock(device_handler['volume'])
+
+        if req['mute'] != device.mute_widget.get_active():
+            device.mute_widget.handler_block(device_handler['mute'])
+            device.mute_widget.set_active(req['mute'])
+            device.mute_widget.handler_unblock(device_handler['mute'])
+
 
     def on_shutdown(self, _):
         # cancel vumeters

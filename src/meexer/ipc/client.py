@@ -18,6 +18,7 @@ LOG = logging.getLogger("generic")
 class Client(Socket):
 
     _clients = {}
+    _callbacks = {}
 
     def __init__(self, subscription_flags: int = 0, instance_name: str = 'default',
                  sock_name: str = None):
@@ -60,17 +61,17 @@ class Client(Socket):
 
         return client_id
 
-    def callback(self, command_str):
-        '''
-        Decorator for creating callbacks
-        '''
-        def decorator(function):
-            if command_str not in self.callbacks:
-                self.callbacks[command_str] = []
-            self.callbacks[command_str].append(function)
-            return function
-
-        return decorator
+    # def callback(self, command_str):
+    #     '''
+    #     Decorator for creating callbacks
+    #     '''
+    #     def decorator(function):
+    #         if command_str not in self.callbacks:
+    #             self.callbacks[command_str] = []
+    #         self.callbacks[command_str].append(function)
+    #         return function
+    #
+    #     return decorator
 
     def start_listen(self):
         self.listen_thread = threading.Thread(target=self.listen, daemon=True)
@@ -94,10 +95,22 @@ class Client(Socket):
                 req = self.get_request()
                 if req.command == 'exit':
                     break
-                # print(req)
+                callback = self.get_callback(req.command)
+                if callback is not None:
+                    callback(req.data)
 
     def stop_listen(self) -> None:
         self.exit_flag = True
+
+    def create_callback(self, command_str, function):
+
+        # quick hack to get the type hint
+        # def decorator(function):
+
+        self.callbacks[command_str] = function
+
+    def get_callback(self, command_str):
+        return self.callbacks.get(command_str)
 
     @classmethod
     def new_client(cls, client, client_name: str = 'default'):

@@ -44,21 +44,30 @@ def connect(button, input_type, input_id, output_type, output_id):
     Client.get_client(CLIENT_NAME).send_request('connect', data)
 
 
-def mute(button, device_type, device_id):
+def mute(button, device_type, device_name):
+# def mute(button, device_type, device_id):
     '''
     Called when the mute button is toggled
     '''
 
-    data = {
-        'index': {
-            'device_type': device_type,
-            'device_id': device_id
-        },
-        'state': button.get_active()
-    }
 
-    requests_schema.Mute(**data)
-    Client.get_client(CLIENT_NAME).send_request('mute', data)
+    device_class = 'sink' if device_type in ['a', 'vi'] else 'source'
+    pmctl.mute(device_class, device_name, button.get_active())
+
+    # data = {
+    #     'index': {
+    #         'device_type': device_type,
+    #         'device_id': device_id
+    #     },
+    #     'state': button.get_active()
+    # }
+    #
+    # # print()
+    # # print(data)
+    # # print()
+    #
+    # requests_schema.Mute(**data)
+    # Client.get_client(CLIENT_NAME).send_request('mute', data)
 
 
 def default(button, device_type, device_id):

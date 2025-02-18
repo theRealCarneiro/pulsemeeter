@@ -18,7 +18,6 @@ async def create_device(create_device_req: requests.CreateDevice) -> None:
     Recives a devices index and a device
     '''
 
-    print(create_device_req)
     device = DeviceModel(**create_device_req.device.dict())
     CONFIG.insert_device(device)
 
@@ -181,16 +180,21 @@ async def event_listen(callback_function):
                 if pm_device is None:  # or not pm_device.check_volume_changes(data['volume']):
                     continue
 
+                vol = []
+                for index, channel in enumerate(pm_device.selected_channels):
+                    if channel is False:
+                        continue
+                    vol.append(round(pulsectl_device.volume.values[index] * 100))
+
                 data = {
                     'device_type': device_type,
                     'device_id': device_id,
                     'device_name': pulsectl_device.name,
-                    'volume': [round(i * 100) for i in pulsectl_device.volume.values],
+                    'volume': vol,
                     'mute': bool(pulsectl_device.mute)
                 }
 
                 # DeviceModel.update_from_pa(pulsectl_device, pm_device)
-                # print("AQ")
                 # continue
 
                 req = ipc_schema.Request(command='pa_device_change', sender_id=0, data=data)

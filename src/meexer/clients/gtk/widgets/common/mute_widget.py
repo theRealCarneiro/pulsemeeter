@@ -20,6 +20,3 @@ class MuteWidget(Gtk.ToggleButton):
         )
 
         self.signal_handler = {}
-
-    def to_schema(self) -> bool:
-        return self.get_active()

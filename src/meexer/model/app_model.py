@@ -14,7 +14,7 @@ class AppModel(AppSchema):
         pmctl.app_mute(self.app_type, self.index, state)
 
     def change_device(self, device_name: str):
-        print(self)
+        # print(self)
         pmctl.move_app_device(self.app_type, self.index, device_name)
 
     @classmethod
