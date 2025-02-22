@@ -1,28 +1,53 @@
+import traceback
 import logging
-import json
 import socket
+import json
 
-from meexer.settings import REQUEST_SIZE_LEN
+from typing import Callable
+
+from meexer import settings
 from meexer.schemas import ipc_schema
 from meexer.ipc import utils
+# from meexer.ipc.socket import Socket
 
 
 LOG = logging.getLogger("generic")
 
 
 class Socket:
-    sock: socket.socket
+
+    sock: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client_id: int
     encoded_id: bytes
     subscription_flags: int = ipc_schema.SubscriptionFlags.NO_LISTEN
+    callbacks: dict[str, Callable] = {}
 
-    # def __init__(self, sock: socket.socket, client_id: int):
-    #     self.sock = sock
-    #     self.client_id = client_id
-    #     self.encoded_id = utils.id_to_bytes(client_id)
+    _exit_flag: bool = False
 
     def set_subscription_flags(self, subscription_flags):
         self.subscription_flags = subscription_flags
+
+    def handshake(self) -> int:
+        '''
+        Performs the handshake with the server
+            returns client id
+        '''
+        # if self.sock is None:
+        #     socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        try:
+            self.sock.connect(settings.SOCK_FILE)
+            encoded_id = self.get_message()
+            client_id = int(encoded_id)
+            self.send_message(utils.id_to_bytes(0))  # listen flags
+            LOG.debug('Connected to server, id: %d', client_id)
+        except socket.error:
+            LOG.error(traceback.format_exc())
+            LOG.error("Could not connect to server")
+            raise
+
+        self.client_id = client_id
+        return client_id
 
     def get_message(self) -> str:
         '''
@@ -30,7 +55,7 @@ class Socket:
         '''
 
         # get msg length
-        msg_len: bytes = self.sock.recv(REQUEST_SIZE_LEN)
+        msg_len: bytes = self.sock.recv(settings.REQUEST_SIZE_LEN)
         int_msg_len = int(msg_len)
         LOG.debug("Recieved message len: %d", int_msg_len)
 
@@ -100,3 +125,32 @@ class Socket:
         self.send_message(msg_enc)
         res: ipc_schema.Response = self.get_response()
         return res
+
+    def create_callback(self, command_str, function):
+        self.callbacks[command_str] = function
+
+    def get_callback(self, command_str):
+        return self.callbacks.get(command_str)
+
+    def listen(self):
+        '''
+        Listen to server events and do callbacks
+        '''
+
+        with self.sock as sock:
+            _ = self.handshake()
+            self.send_message(str(ipc_schema.SubscriptionFlags.ALL).encode(encoding='utf-8'))
+            while not self._exit_flag:
+                req = self.get_request()
+
+                if req.command == 'exit':
+                    break
+
+                callback = self.get_callback(req.command)
+                if callback is None:
+                    continue
+
+                callback(req.data)
+
+    def stop_listen(self) -> None:
+        self._exit_flag = True

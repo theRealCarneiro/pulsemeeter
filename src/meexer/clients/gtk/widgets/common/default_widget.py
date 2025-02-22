@@ -25,3 +25,7 @@ class DefaultWidget(Gtk.ToggleButton):
         self.set_active(state)
         if state is True:
             self.set_sensitive(False)
+
+    def set_primary(self, state):
+        self.set_active(state)
+        self.set_sensitive(not state)

@@ -102,22 +102,22 @@ connect (){
 	# pipewire
 	else
 		local port_map="${@:3}"
-		local input_ports=$(get_ports output $input)
-		local output_ports=$(get_ports input $output)
 
+		# no port mapping was sent
 		if [ -z "$port_map" -o "$port_map" = 'None' ]; then
 			pw-link $input $output 2> /dev/null
-		else
-			for i in $(echo "$port_map"); do
-				input_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f1) + 1 ))
-				output_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f2) + 1 ))
-
-				input_port=$(printf "%s" "$input_ports" | head -$input_port_index | tail -1)
-				output_port=$(printf "%s" "$output_ports" | head -$output_port_index | tail -1)
-
-				pw-link $input:$input_port $output:$output_port 2> /dev/null
-			done
+			return
 		fi
+
+		readarray -t input_ports <<< $(get_ports output $input)
+		readarray -t output_ports <<< $(get_ports input $output)
+
+		for pair in $port_map; do
+			IFS=":" read -r input_port_index output_port_index <<< "$pair"
+			input_port=${input_ports[$input_port_index]}
+			output_port=${output_ports[$output_port_index]}
+			pw-link $input:$input_port $output:$output_port 2> /dev/null
+		done
 	fi
 }
 
@@ -136,22 +136,21 @@ disconnect (){
 	# pipewire
 	else
 		local port_map="${@:3}"
-		local input_ports=$(get_ports output $input)
-		local output_ports=$(get_ports input $output)
 
 		if [ -z "$port_map" -o "$port_map" = 'None' ]; then
 			pw-link -d $input $output 2> /dev/null
-		else
-			for i in $(echo "$port_map"); do
-				input_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f1) + 1 ))
-				output_port_index=$(( $(printf "%s" "$i" | cut -d ":" -f2) + 1 ))
-
-				input_port=$(printf "%s" "$input_ports" | head -$input_port_index | tail -1)
-				output_port=$(printf "%s" "$output_ports" | head -$output_port_index | tail -1)
-
-				pw-link -d $input:$input_port $output:$output_port 2> /dev/null
-			done
 		fi
+
+		readarray -t input_ports <<< $(get_ports output $input)
+		readarray -t output_ports <<< $(get_ports input $output)
+
+		for pair in $port_map; do
+			IFS=":" read -r input_port_index output_port_index <<< "$pair"
+			input_port=${input_ports[$input_port_index]}
+			output_port=${output_ports[$output_port_index]}
+
+			pw-link -d $input:$input_port $output:$output_port 2> /dev/null
+		done
 	fi
 }
 
@@ -195,7 +194,7 @@ get_port_name() {
 get_ports() {
 	type=$1
 	device=$2
-	ports=$(pw-link --$type | grep "$device" | cut -d ':' -f2)
+	ports=$(pw-link --$type | grep "$device:" | cut -d ':' -f2)
 	printf "%s" "$ports"
 }
 

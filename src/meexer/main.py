@@ -5,14 +5,14 @@ import logging
 # import time
 import sys
 
-from meexer.api.app_api import ipc as app_routes
-from meexer.api.device_api import ipc as device_routes
-from meexer.api.server_api import ipc as server_routes
+# from meexer.api.app_api import ipc as app_routes
+# from meexer.api.device_api import ipc as device_routes
+# from meexer.api.server_api import ipc as server_routes
 # from meexer.api.pulse_events_api import task as pulse_events_task
 
 # from meexer.scripts import argparser
 from meexer.clients.gtk.gtk_client import GtkClient
-from meexer.ipc.server_async import Server
+# from meexer.ipc.server_async import Server
 # from meexer.ipc.client import Client
 
 LOG = logging.getLogger("generic")
@@ -23,16 +23,16 @@ def main():
     Entry point and simple argparser
     '''
 
-    try:
-        server = Server()
-        isserver = True
-        server.register_blueprint(app_routes)
-        server.register_blueprint(device_routes)
-        server.register_blueprint(server_routes)
-        server.register_task(device_routes)
-
-    except ConnectionAbortedError:
-        isserver = False
+    # try:
+    #     server = Server()
+    #     isserver = True
+    #     server.register_blueprint(app_routes)
+    #     server.register_blueprint(device_routes)
+    #     server.register_blueprint(server_routes)
+    #     server.register_task(device_routes)
+    #
+    # except ConnectionAbortedError:
+    #     isserver = False
 
     # simple args parser
     match sys.argv[1:]:
@@ -40,14 +40,14 @@ def main():
         # no args: open window
         case []:
             # trayonly = False
-            if isserver:
-                server.start_server(daemon=False)
+
+            # if isserver:
+            #     server.start_server(daemon=False)
 
             app = GtkClient()
             app.run()
 
-            server.close_server()
-            # server.exit_signal()
+            # server.close_server()
 
         # daemon: start only the server
         case ['daemon']:

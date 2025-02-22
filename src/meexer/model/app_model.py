@@ -1,21 +1,46 @@
+from typing import Literal
+from pydantic import validator
 from meexer.scripts import pmctl
-from meexer.schemas.app_schema import AppSchema
+from meexer.schemas.typing import Volume
+from meexer.model.signal_model import SignalModel
 
 
-class AppModel(AppSchema):
+class AppModel(SignalModel):
     '''
-    Not sure yet if there should be an app model, or an app_list model
+    Model for sink_inputs and source_outputs
+        "index" is the app index in pulse
+        "label" is the app name
+        "icon" is name of the icon of the app
+        "volume" is the app volume in pulse
+        "device" is the sink or source it's bound into
     '''
+    app_type: Literal['sink_input', 'source_output']
+    index: int
+    label: str
+    icon: str | None
+    volume: Volume
+    mute: bool
+    device: str
 
-    def set_volume(self, val: int):
-        pmctl.app_volume(self.app_type, self.index, val)
+    @validator('icon')
+    def set_icon(cls, icon):
+        '''
+        Some applications don't have an icon name in pulse so we set a default one
+        '''
+        return icon or 'audio-card'
+
+    def set_volume(self, val: Volume):
+        self.volume = val
+        # pmctl.app_volume(self.app_type, self.index, val)
 
     def set_mute(self, state: bool):
-        pmctl.app_mute(self.app_type, self.index, state)
+        self.mute = state
+        # pmctl.app_mute(self.app_type, self.index, state)
 
     def change_device(self, device_name: str):
+        self.device = device_name
         # print(self)
-        pmctl.move_app_device(self.app_type, self.index, device_name)
+        # pmctl.move_app_device(self.app_type, self.index, device_name)
 
     @classmethod
     def pa_to_app_model(cls, app, app_type: str):

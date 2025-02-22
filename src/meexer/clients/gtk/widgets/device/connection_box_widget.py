@@ -1,37 +1,30 @@
+from meexer.clients.gtk.adapters.connection_box_adapter import ConnectionBoxAdapter
 from meexer.clients.gtk.widgets.device.connection_widget import ConnectionWidget
-from meexer.schemas.device_schema import ConnectionSchema
+from meexer.model.connection_model import ConnectionModel
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
-class ConnectionBoxWidget(Gtk.Box):
+class ConnectionBoxWidget(Gtk.Box, ConnectionBoxAdapter):
 
-    def __init__(self, output_type, connections_schemas: dict[str, ConnectionSchema]):
-        super().__init__()
+    # gtk wont allow to have this declaration only on parent
+    __gsignals__ = {
+        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool))
+    }
+
+    def __init__(self, output_type, connections_schemas: dict[str, dict[str, ConnectionModel]]):
+        self.model = connections_schemas
+        Gtk.Box.__init__(self)
+        ConnectionBoxAdapter.__init__(self)
+        self.a = Gtk.Box()
+        self.b = Gtk.Box()
+        self.add(self.a)
+        self.add(self.b)
+
         self.output_type = output_type
-        self.connection_widgets: dict[str, ConnectionWidget] = {}
         if connections_schemas is not None:
             self.load_widgets(connections_schemas)
-
-    def load_widgets(self, devices: dict[str, ConnectionSchema]):
-        for button_id, connection_schema in devices.items():
-            self.insert_widget(connection_schema, button_id)
-
-    def insert_widget(self, connection_schema: ConnectionSchema, button_id: str):
-        button = ConnectionWidget(connection_schema, self.output_type, button_id)
-        self.connection_widgets[button_id] = button
-        self.pack_start(button, False, False, 0)
-        return button
-
-    # def insert_button(self, button: ConnectionWidget, button_id: str):
-    #     self.connection_widgets[button_id] = button
-    #     self.pack_start(button, False, False, 0)
-
-    def remove_button(self, button_id):
-        button = self.connection_widgets.pop(button_id)
-        self.remove(button)
-        button.destroy()

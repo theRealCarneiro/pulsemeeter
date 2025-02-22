@@ -1,10 +1,14 @@
+import threading
 import logging
 import asyncio
 import json
 
+from pydantic import ValidationError
+
 from meexer.settings import REQUEST_SIZE_LEN
 from meexer.schemas import ipc_schema
 from meexer.ipc import utils
+from meexer import settings
 
 
 LOG = logging.getLogger("generic")
@@ -12,20 +16,52 @@ LOG = logging.getLogger("generic")
 
 class SocketAsync:
 
-    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, client_id: int, flags=0):
-        self.reader = reader
-        self.writer = writer
-        self.client_id = client_id
-        self.subscription_flags: ipc_schema.SubscriptionFlags = 0
+    reader:             asyncio.StreamReader
+    writer:             asyncio.StreamWriter
+    client_id:          int
 
-        self.encoded_id = utils.id_to_bytes(client_id)
+    thread:             threading.Thread
+    loop:               asyncio.AbstractEventLoop
+    listen_task:        asyncio.Task
+
+    subscription_flags: ipc_schema.SubscriptionFlags = 0
+    exit_signal:        bool = False
+
+    # def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, client_id: int, flags=0):
+    #     self.reader = reader
+    #     self.writer = writer
+    #     self.client_id = client_id
+    #     self.subscription_flags: ipc_schema.SubscriptionFlags = 0
+    #
+    #     self.encoded_id = utils.id_to_bytes(client_id)
 
     def set_subscription_flags(self, subscription_flags):
         self.subscription_flags = subscription_flags
 
-    # @property
-    # def encoded_id(self) -> bytes:
-    #     return utils.id_to_bytes(self.client_id)
+    async def handshake(self) -> None:
+        '''
+        Connect to the server and start listening
+        '''
+        event = threading.Event()
+
+        self.loop = asyncio.new_event_loop()
+        self.loop.create_task(self._connect(event))
+        self.thread = threading.Thread(target=self.loop.run_forever, daemon=False)
+        self.thread.start()
+        event.wait()
+
+    async def _connect(self, client_ready: threading.Event):
+        self.reader, self.writer = await asyncio.open_unix_connection(settings.SOCK_FILE)
+        self.client_id = int(await self.get_message())
+        self.send_message(utils.id_to_bytes(self.subscription_flags))  # listen flags
+        LOG.info('Connected to server, id: %d', self.client_id)
+
+        client_ready.set()
+        self.listen_task = self.loop.create_task(self._listen())
+
+    @property
+    def encoded_id(self) -> bytes:
+        return utils.id_to_bytes(self.client_id)
 
     async def get_message(self) -> str:
         '''
@@ -101,3 +137,18 @@ class SocketAsync:
         await self.send_message(msg_enc)
         res = await self.get_response()
         return res
+
+    async def _listen(self) -> None:
+        '''
+        Listen to events
+        '''
+
+        while not self.exit_signal:
+            msg = await self.get_message()
+            try:
+                req = ipc_schema.Request.parse_raw(msg)
+                LOG.debug(req)
+            except ValidationError:
+                res = ipc_schema.Response.parse_raw(msg)
+
+            # handle event

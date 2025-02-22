@@ -159,7 +159,6 @@ async def event_listen(callback_function):
 
         if event.t == 'change':
             if event.facility in ('sink_input', 'source_output'):
-                continue
                 pulsectl_device = await pmctl.get_app_by_id(event.facility, event.index)
                 data = {
                     'device_index': event.index,
@@ -169,7 +168,8 @@ async def event_listen(callback_function):
                     'mute': [pulsectl_device.mute]
                 }
 
-                # print(data)
+                print(data)
+                continue
 
             elif event.facility in ('sink', 'source'):
                 pulsectl_device = await pmctl.get_device_by_id(event.facility, event.index)

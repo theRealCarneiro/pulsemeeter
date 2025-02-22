@@ -59,6 +59,7 @@ def connect(input_name: str, output: str, status: bool, latency: bool = 200, por
     else:
         command = f'pmctl {conn_status} {input_name} {output} {port_map}'
 
+    # print(command)
     ret = runcmd(command, 4)
 
     return ret
@@ -322,7 +323,7 @@ def list_apps(app_type: str):
         if app_type == 'sink_input':
             app.device_name = PULSE.sink_info(app.sink).name
         else:
-            app.device_name = PULSE.source_info(app.sink).name
+            app.device_name = PULSE.source_info(app.source).name
 
         app_list.append(app)
     return app_list

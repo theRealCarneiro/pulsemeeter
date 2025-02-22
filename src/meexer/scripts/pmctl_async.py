@@ -8,6 +8,8 @@ LOG = logging.getLogger('generic')
 
 # TODO: Use a single PulseAsync object
 
+PULSE = pulsectl_asyncio.PulseAsync('pmctl_async')
+
 
 async def init(device_type: str, device_name: str, channel_num: int = 2):
     '''
@@ -368,12 +370,15 @@ async def get_primary(device_type: str):
         return (await pulse.server_info()).default_source_name
 
 
-async def subscribe_peak(name, device_type, callback, rate=5):
+async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30):
+    # print(name, device_type, stream_index)
     if device_type == 'sink':
         name += '.monitor'
+    else:
+        stream_index = None
 
-    async with pulsectl_asyncio.PulseAsync() as pulse:
-        async for peak in pulse.subscribe_peak_sample(name, rate):
+    async with pulsectl_asyncio.PulseAsync(f'{name}_{device_type}_peak') as pulse:
+        async for peak in pulse.subscribe_peak_sample(name, rate, stream_idx=stream_index):
             await callback(peak)
 
 

@@ -30,7 +30,7 @@ class LabeledCombobox(Gtk.Grid):
         # entry is a dict, insert entry field
         else:
             for entry in entry_list:
-                self.insert_entry(entry[field])
+                self.insert_entry(entry.__dict__[field])
 
     def empty(self):
         self.combobox.remove_all()

@@ -1,3 +1,5 @@
+from meexer.clients.gtk.adapters.volume_adapter import VolumeAdapter
+
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
@@ -5,9 +7,10 @@ from gi.repository import Gtk, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
-class VolumeWidget(Gtk.Scale):
+class VolumeWidget(Gtk.Scale, VolumeAdapter):
 
     def __init__(self, value: int = 100):
+
 
         self.adjustment = Gtk.Adjustment(
             value=value,
@@ -17,7 +20,8 @@ class VolumeWidget(Gtk.Scale):
             page_increment=10
         )
 
-        super().__init__(
+        Gtk.Scale.__init__(
+            self,
             hexpand=True,
             adjustment=self.adjustment,
             round_digits=0,
@@ -25,38 +29,5 @@ class VolumeWidget(Gtk.Scale):
             width_request=100
         )
 
-        self.blocked = False
-        self.signal_handler = {}
-        self.scroll_lock_timeout = None
-        self.blocked = False
-        self.is_pressed = False
         self.add_mark(100, Gtk.PositionType.TOP, '')
-        self.connect("scroll-event", self.on_scroll_event)
-        self.connect('button-press-event', self.set_blocked, True)
-        self.connect('button-release-event', self.set_blocked, False)
-
-    def on_scroll_event(self, widget, _):
-        if self.is_pressed is True:
-            return True
-
-        self.blocked = True
-        # print('Scroll locked: ', True)
-
-        if self.scroll_lock_timeout is not None:
-            GLib.source_remove(self.scroll_lock_timeout)
-
-        self.scroll_lock_timeout = GLib.timeout_add(100, self.clear_scroll_lock)
-
-        # process the other events regularly
-        return False
-
-    def clear_scroll_lock(self):
-        # print('Scroll locked: ', False)
-        self.blocked = False
-        self.scroll_lock_timeout = None
-        return False
-
-    def set_blocked(self, widget, _, state: bool):
-        # print('BUTTON LOCKED: ', state)
-        self.blocked = state
-        self.is_pressed = state
+        VolumeAdapter.__init__(self)

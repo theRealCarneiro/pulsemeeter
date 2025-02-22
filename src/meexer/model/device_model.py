@@ -1,12 +1,102 @@
-import math
-from meexer.schemas.device_schema import DeviceSchema, ConnectionSchema
+import re
+from typing import Literal
+from meexer.schemas.typing import Volume, PaDeviceType, DeviceClass
+from pydantic import BaseModel, root_validator, validator
+# from meexer.schemas.device_schema import ConnectionModel
+from meexer.scripts import pmctl
+from meexer.model.connection_model import ConnectionModel
+from meexer.model.connection_manager_model import ConnectionManagerModel
+from meexer.model.signal_model import SignalModel
 
 
-# TODO: Plugins, Change Device
-class DeviceModel(DeviceSchema):
+class DeviceModel(SignalModel):
     '''
-    Child class of DeviceSchema, implements pmctl calls
+    Child class of DeviceModel, implements pmctl calls
     '''
+    name: str
+    nick: str
+    # id: str
+    description: str
+    device_type: PaDeviceType
+    device_class: DeviceClass
+    volume: list[Volume] = None
+    mute: bool = False
+    flags: int = 0
+    primary: bool | None
+    channels: int
+    channel_list: list[str]
+    # connections: ConnectionManagerModel = {'a': {}, 'b': {}}
+    connections: dict[str, dict[str, ConnectionModel]] = {'a': {}, 'b': {}}
+    selected_channels: list[bool] | None
+    # plugins: list[PluginSchema] = []
+
+    @root_validator(pre=True)
+    def set_nick_description(cls, values):
+        '''
+        A validator that sets the nick and description of a device if none are
+        provided
+        '''
+        name = values.get('name')
+
+        if 'nick' not in values:
+            values['nick'] = name
+        if 'description' not in values:
+            values['description'] = name
+
+        return values
+
+    @root_validator(pre=True)
+    def check_volume(cls, values):
+        '''
+        Set volume list if None are set
+        '''
+        if 'volume' not in values:
+            values['volume'] = [100 for _ in range(values['channels'])]
+
+        if isinstance(values['volume'], int):
+            values['volume'] = [values['volume'] for _ in range(len(values['channels']))]
+
+        return values
+
+    @root_validator(pre=True)
+    def no_hardware_primary(cls, values):
+        '''
+        Sets hardware devices primary as None
+        '''
+        if values['device_class'] == 'hardware':
+            values['primary'] = None
+
+        elif 'primary' not in values:
+            values['primary'] = False
+
+        return values
+
+    @validator('name', always=True)
+    def check_name(cls, name):
+        '''
+        A validator that checks if the name is valid
+        '''
+        if not re.match('^[a-zA-Z-_.]+ ?([a-zA-z+-_.]+)?$', name):
+            raise ValueError('Invalid name')
+
+        return name
+
+    # @root_validator(pre=True)
+    # def set_connections(cls, values):
+    #     '''
+    #     '''
+    #     if (values['device_type'] == 'sink' and values['device_class'] == 'virtual' or
+    #             values['device_type'] == 'source' and values['device_class'] == 'hardware'):
+    #
+    #         if 'connections' not in values or values['connections'] is None:
+    #             values['connections'] = {}
+    #             for device_type in ('a', 'b'):
+    #                 values['connections'][device_type] = {}
+    #
+    #     return values
+
+    device_type: Literal['sink', 'source']
+    device_class: Literal['virtual', 'hardware']
 
     def get_correct_name(self):
         '''
@@ -26,7 +116,7 @@ class DeviceModel(DeviceSchema):
             return 'b'
         return 'hi'
 
-    def update_device_settings(self, device: DeviceSchema):
+    def update_device_settings(self, device):
         '''
         Update device settings
         '''
@@ -34,16 +124,64 @@ class DeviceModel(DeviceSchema):
         self.__dict__.update(device)
         return 0
 
-    def change_device(self):
-        '''
-        Changes the hardware device being used (perhaps not needed bc update_device_settings)
-        '''
-        # TODO: disconnect old device
-        # TODO: change name/description to new device
-        # TODO: recreate connections
-        raise NotImplementedError
+    # def change_device(self):
+    #     '''
+    #     Changes the hardware device being used (perhaps not needed bc update_device_settings)
+    #     '''
+    #     raise NotImplementedError
 
-    def connect(self, output_type: str, output_id: str, state: bool, nick: str):
+    def set_mute(self, state: bool, emit: bool = True):
+        '''
+        Mute device
+            "state": bool, True mean mute, False means unmute
+        '''
+        self.mute = state
+        # pmctl.mute(self.device_type, self.name, state)
+        if emit is True:
+            self.propagate('mute', self.mute)
+
+    def set_volume(self, val: int, emit: bool = True):
+        '''
+        Change device volume
+            "val" is the new volume level
+        '''
+
+        # convert to list if only int
+        if isinstance(val, int):
+            val = [val] * self.channels
+
+        # print(val)
+
+        # change volume only for selected channels
+        # if self.selected_channels is not None:
+        #     selected = self.selected_channels
+        #     val = [val[i] if selected[i] else self.volume[i] for i in range(self.channels)]
+
+        self.volume = val
+
+        # pmctl.set_volume(self.device_type, self.name, val[0])
+        if emit is True:
+            self.propagate('volume', self.volume[0])
+
+    def set_primary(self, state: bool = True, emit: bool = True):
+        '''
+        Set device as default
+        '''
+        self.primary = state
+        device_type = self.get_type()
+        # pmctl.set_primary(device_type, self.name)
+        if emit is True:
+            self.emit('primary', device_type, self.name)
+
+    def create_connection(self, device_type, device_id, connection_model):
+        # the new device can only be a or b, and this device can only be hi or vi
+        if self.get_type() in ('a', 'b') or device_type in ('hi', 'vi'):
+            return
+
+        connection_model.connect('connection', self.set_connection, device_type, device_id)
+        self.connections[device_type][device_id] = connection_model
+
+    def set_connection(self, output_type: str, output_id: str, state: bool = None, emit: bool = True):
         '''
         Changes the state of a connection, or create it if it does not exist
             "output_type" is either 'vi', 'hi', 'a' or 'b'
@@ -55,74 +193,22 @@ class DeviceModel(DeviceSchema):
                 useful for e.g. removing connections on cleanup
         '''
 
-        # toggle the state of the connection
-        if state is None:
-            state = not self.connections[output_type][output_id].state
+        connection_model = self.connections[output_type][output_id]
 
-        # check if output_type key is in the connections dict
-        if output_type not in self.connections:
-            self.connections[output_type] = {}
+        # pmctl is here on connection model (or should i put it here? hmm)
+        connection_model.set_connect(state)
 
-        # create connection if it doesn't exist
-        if output_id not in self.connections[output_type]:
-            self.connections[output_type][output_id] = ConnectionSchema(nick=nick)
+        if emit is True:
+            self.emit('connection', output_type, output_id, state)
 
-        # change state
-        # print(self.connections)
-        self.connections[output_type][output_id].state = state
-        return self.connections[output_type][output_id]
+        # pmctl.connect(self.input_name, self.output_name, state, port_map=self.str_port_map())
 
-    def update_connection(self, output_type: str, output_id: str,
-                          connection: ConnectionSchema):
-        '''
-        Changes the settings of connection, e.g. latency and portmap
-        '''
-        # target = connection.target
-        # state = connection.state
+        return connection_model
 
-        # disconnect
-        # self.connect(output_type, output_id, target, False, change_config=False)
+    # def get_volume(self):
+    #     return self.volume[0]
 
-        # update connection
-        self.connections[output_type][output_id].__dict__.update(connection)
-
-        # connect
-        # self.connect(output_type, output_id, target, state, change_config=False)
-
-    def set_mute(self, state: bool):
-        '''
-        Mute device
-            "state": bool, True mean mute, False means unmute
-        '''
-        self.mute = state
-
-    def set_default(self):
-        '''
-        Set device as default
-        '''
-        self.primary = True
-
-    def set_volume(self, val: int):
-        '''
-        Change device volume
-            "val" is the new volume level
-        '''
-
-        # convert to list if only int
-        if isinstance(val, int):
-            val = [val for _ in self.volume]
-
-        # change volume only for selected channels
-        if self.selected_channels is not None:
-            selected = self.selected_channels
-            val = [val[i] if selected[i] is True else self.volume[i] for i in range(self.channels)]
-
-        self.volume = val
-
-    def get_volume(self):
-        return self.volume[0]
-
-    # TODO: maybe use that instead of List[bool] for selected_channels ?
+    # maybe use that instead of List[bool] for selected_channels ?
     def get_selected_channel_list(self) -> list[int]:
         '''
         Returns a list with the index of the selected channels
@@ -135,12 +221,12 @@ class DeviceModel(DeviceSchema):
 
         return [i for i in range(len(sel_channels)) if sel_channels[i] is True]
 
-    def str_port_map(self, output_type: str, output_id: str, output: DeviceSchema):
+    def str_port_map(self, output_type: str, output_id: str, output):
         '''
         Returns a string formated portmap for pmctl
             "output_type" is either 'a' or 'b'
             "output_id" is an int > 0
-            "output" is the DeviceSchema of the output device
+            "output" is the DeviceModel of the output device
         '''
         output_ports = output.get_selected_channel_list()
         input_ports: list = self.get_selected_channel_list()
@@ -164,35 +250,35 @@ class DeviceModel(DeviceSchema):
 
         return ports
 
-    def check_volume_changes(self, volume: list[int]):
+    # def check_volume_changes(self, volume: list[int]):
+    #
+    #     # pm volume lists don't have all the channels from the org device, so we need
+    #     # to check the selected_channels list to know what channel does that volume represent
+    #     vol_index = 0
+    #     for channel_index, selected_channel in enumerate(self.selected_channels):
+    #         print(volume, self.volume)
+    #
+    #         # if channel is not selected, we just ignore it
+    #         if selected_channel is False:
+    #             continue
+    #
+    #         # check if volume has changed
+    #         if self.volume[vol_index] != volume[channel_index]:
+    #             self.set_volume(volume[channel_index])
+    #             # print('Volume changed: ', self.volume[vol_index], volume[channel_index])
+    #             # return True, volume[channel_index]
+    #             return True
+    #
+    #         vol_index += 1
+    #
+    #     return False
 
-        # pm volume lists don't have all the channels from the org device, so we need
-        # to check the selected_channels list to know what channel does that volume represent
-        vol_index = 0
-        for channel_index, selected_channel in enumerate(self.selected_channels):
-            print(volume, self.volume)
+    # def check_mute_changes(self, mute: bool):
+    #     return self.mute != mute
 
-            # if channel is not selected, we just ignore it
-            if selected_channel is False:
-                continue
-
-            # check if volume has changed
-            if self.volume[vol_index] != volume[channel_index]:
-                self.set_volume(volume[channel_index])
-                # print('Volume changed: ', self.volume[vol_index], volume[channel_index])
-                # return True, volume[channel_index]
-                return True
-
-            vol_index += 1
-
-        return False
-
-    def check_mute_changes(self, mute: bool):
-        return self.mute != mute
-
-    def check_for_changes(self, volume: list[int], mute: bool):
-        self.check_volume_changes(volume)
-        self.check_mute_changes(mute)
+    # def check_for_changes(self, volume: list[int], mute: bool):
+    #     self.check_volume_changes(volume)
+    #     self.check_mute_changes(mute)
 
     @classmethod
     def update_from_pa(cls, pa_device, device_model):
@@ -218,7 +304,7 @@ class DeviceModel(DeviceSchema):
             "device_type" is either 'sink' or 'source'
         '''
         # pa_sink_hardware = 0x0004
-        print(device.volume.values)
+        # print(device.volume.values)
         device_class = 'hardware' if device.proplist['factory.name'] != 'support.null-audio-sink' else 'virtual'
         device_model = cls(
             name=device.name,

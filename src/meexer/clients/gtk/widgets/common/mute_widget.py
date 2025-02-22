@@ -18,5 +18,3 @@ class MuteWidget(Gtk.ToggleButton):
             halign=Gtk.Align.END,
             image=image
         )
-
-        self.signal_handler = {}
