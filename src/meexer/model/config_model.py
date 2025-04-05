@@ -9,7 +9,7 @@ from meexer.model.device_manager_model import DeviceManagerModel
 from meexer.model.connection_manager_model import ConnectionManagerModel
 # from meexer.schemas.device_schema import DeviceSchema
 from meexer.settings import CONFIG_DIR, CONFIG_FILE
-CONFIG_FILE += '.test.json'
+# CONFIG_FILE += '.test.json'
 
 LOG = logging.getLogger("generic")
 
@@ -31,16 +31,20 @@ class ConfigModel(SignalModel):
     Model for the config file, has functions to load and write the file
     '''
 
-    device_manager: DeviceManagerModel
+    device_manager: DeviceManagerModel = DeviceManagerModel()
     vumeters: bool = True
     cleanup: bool = False
     tray: bool = False
     layout: str = 'blocks'
     # connection_manager: ConnectionManagerModel
 
-    def __init__(self):
-        config = self.load_config()
-        super().__init__(**config)
+    # def model_post_init(self, _):
+    #     config = self.load_config()
+    #     super().__init__(**config)
+    #
+    # def __init__(self):
+    #     config = self.load_config()
+    #     super().__init__(**config)
 
     def write(self):
         '''
@@ -52,14 +56,19 @@ class ConfigModel(SignalModel):
         with open(CONFIG_FILE, 'w', encoding='utf-8') as outfile:
             json.dump(self.dict(), outfile, indent='\t', separators=(',', ': '))
 
-    def load_config(self):
+    @classmethod
+    def load_config(cls):
         '''
         Load config from file
         '''
+        if not os.path.exists(CONFIG_FILE):
+            return cls()
+
         with open(CONFIG_FILE, 'r', encoding='utf-8') as outfile:
             config = json.load(outfile)
 
-        return config
+        instance = cls(**config)
+        return instance
 
     # def get_device(self, dtype: str, did: str):
     #     '''
