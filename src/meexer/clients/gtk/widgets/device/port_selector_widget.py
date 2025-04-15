@@ -1,7 +1,7 @@
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio  # noqa: E402
+from gi.repository import Gtk, Gio, Atk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -13,8 +13,9 @@ class PortSelector(Gtk.Grid):
     def __init__(self):
         super().__init__()
         self.label = Gtk.Label('Selected ports: ')
-        # self.port_grid = Gtk.Grid()
         self.port_box = Gtk.HBox()
+        self.port_box.get_accessible().set_name('Selected ports')
+        self.port_box.get_accessible().set_role(Atk.Role.PANEL)
         self.attach(self.label, 0, 0, 1, 1)
         self.attach(self.port_box, 1, 0, 1, 1)
 
@@ -27,6 +28,9 @@ class PortSelector(Gtk.Grid):
             enabled = selected_channels[port] if selected_channels is not None else True
             check = Gtk.CheckButton(label=port, active=enabled)
             self.port_box.pack_start(check, False, False, 0)
+
+            check.get_accessible().set_name(f"{port} port")
+            check.set_tooltip_text(f"Enable or disable the {port} port")
 
         self.port_box.show_all()
 

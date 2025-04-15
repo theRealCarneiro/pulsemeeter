@@ -22,6 +22,9 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
 
         Gtk.Popover.__init__(self)
         DeviceSettingsAdapter.__init__(self)
+        dt = 'Output' if device_type == 'a' else 'Input'
+        operation = "Create" if device_model is None else "Edit"
+        self.get_accessible().set_name(f'{operation} hardware {dt} device popover')
 
         self.device_list = device_list
         self.device_type = device_type
@@ -49,7 +52,8 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
 
         # add widgets to grid
         button_box = Gtk.HBox(halign=Gtk.Align.END)
-        # button_box.pack_start(self.remove_button, False, False, 2)
+        if device_model is not None:
+            button_box.pack_start(self.remove_button, False, False, 2)
         button_box.pack_start(self.cancel_button, False, False, 2)
         button_box.pack_start(self.confirm_button, False, False, 2)
 
@@ -58,6 +62,10 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         main_box.pack_start(self.combobox_widget, False, False, 10)
         main_box.pack_start(self.port_selector, False, False, 10)
         main_box.pack_start(button_box, False, False, 5)
+
+        self.cancel_button.get_accessible().set_name("Cancel")
+        self.remove_button.get_accessible().set_name("Delete device")
+        self.confirm_button.get_accessible().set_name("Create device")
 
         self.set_modal(False)
         self.add(main_box)
@@ -69,6 +77,9 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         super().__init__()
 
         self.device_type = device_type
+        dt = 'Output' if device_type == 'a' else 'Input'
+        operation = "Create" if device_model is None else "Edit"
+        self.get_accessible().set_name(f'{operation} virtual {dt} device popover')
 
         # create widgets
         self.name_widget = InputWidget('Nick: ')
@@ -88,7 +99,8 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
 
         # add widgets to grid
         button_box = Gtk.HBox(halign=Gtk.Align.END)
-        button_box.pack_start(self.remove_button, False, False, 2)
+        if device_model is not None:
+            button_box.pack_start(self.remove_button, False, False, 2)
         button_box.pack_start(self.cancel_button, False, False, 2)
         button_box.pack_start(self.confirm_button, False, False, 2)
 
@@ -96,6 +108,10 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         main_box.pack_start(self.name_widget, False, False, 10)
         main_box.pack_start(self.combobox_widget, False, False, 10)
         main_box.pack_start(button_box, False, False, 5)
+
+        self.cancel_button.get_accessible().set_name("Cancel")
+        self.remove_button.get_accessible().set_name("Delete device")
+        self.confirm_button.get_accessible().set_name("Create device")
 
         self.set_modal(False)
         self.add(main_box)

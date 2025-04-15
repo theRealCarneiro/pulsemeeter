@@ -31,14 +31,20 @@ class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
 
         self.device_type = device_type
         self.devices: dict[str, DeviceWidget] = {}
+        device_type_string = self.device_label[device_type]
 
-        title = Gtk.Label(self.device_label[device_type], margin=10)
+        title = Gtk.Label(device_type_string, margin=10)
 
-        button = IconButton('add')
+        add_button = IconButton('add')
+
+        add_button.set_tooltip_text(f"Create new {device_type_string} device")
+        add_button.get_accessible().set_name(f"Create {device_type_string} device")
 
         title_box = Gtk.HBox()
         title_box.add(title)
-        title_box.add(button)
+        title_box.add(add_button)
+
+        self.get_accessible().set_name(device_type_string)
 
         self.set_label_widget(title_box)
         self.set_label_align(0.5, 0)
@@ -47,7 +53,7 @@ class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
         self.add(self.device_box)
 
         self.title = title
-        self.add_device_button = button
+        self.add_device_button = add_button
         # self.add_device_button.connect('pressed', self.create_new_device_popover)
 
         # get what popup should be used

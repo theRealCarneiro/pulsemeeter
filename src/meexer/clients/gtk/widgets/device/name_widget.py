@@ -14,12 +14,18 @@ class NameWidget(Gtk.HBox):
         self.nick_label.set_markup(f'<b>{nick}</b>')
         self.pack_start(self.nick_label, False, False, 10)
 
+        # self.nick_label.get_accessible().set_name(f"Nick: {nick}")
+
         if description == nick:
+            # self.get_accessible().set_name(f"{nick}")
             return
 
         self.description_label = Gtk.Label(halign=Gtk.Align.START)
         self.description_label.set_markup(f'<small>{description}</small>')
+        # self.description_label.get_accessible().set_name(f"Description: {description}")
         self.pack_start(self.description_label, False, False, 10)
+
+        # self.get_accessible().set_name(f"{nick}, {description}")
 
     @property
     def description(self) -> str:
@@ -31,3 +37,11 @@ class NameWidget(Gtk.HBox):
     @property
     def nick(self) -> str:
         return self.nick_label.get_text()
+
+    def get_full_name(self) -> str:
+        nick = self.nick
+        description = self.description
+        if nick == description:
+            return nick
+
+        return f"{nick}, {description}"

@@ -30,6 +30,9 @@ class AppWidget(Gtk.Frame, AppAdapter):
     def __init__(self, app_model: AppModel):
         self.app_model = app_model
         Gtk.Frame.__init__(self, margin=10)
+
+        self.get_accessible().set_name(app_model.label)
+
         main_grid = Gtk.Grid(margin=5, hexpand=True)
         info_grid = Gtk.Grid(margin_start=8, hexpand=True)
         control_grid = Gtk.Grid(hexpand=True)
@@ -39,9 +42,9 @@ class AppWidget(Gtk.Frame, AppAdapter):
         self.app_type = app_model.app_type
         self.label = Gtk.Label(label=app_model.label, margin_left=10, halign=Gtk.Align.START)
         self.icon = IconWidget(app_model.icon)
-        self.volume = VolumeWidget(app_model.volume)
+        self.volume_widget = VolumeWidget(app_model.volume)
         self.combobox = AppCombobox(app_model.device, app_model.app_type)
-        self.mute = MuteWidget(app_model.mute)
+        self.mute_widget = MuteWidget(app_model.mute)
         self.vumeter = VumeterWidget()
         self.handlers = {}
 
@@ -53,6 +56,12 @@ class AppWidget(Gtk.Frame, AppAdapter):
         info_grid.attach(self.combobox, 2, 0, 1, 1)
 
         control_grid.attach(self.volume, 0, 0, 1, 1)
-        control_grid.attach(self.mute, 1, 0, 1, 1)
+        control_grid.attach(self.mute_widget, 1, 0, 1, 1)
         control_grid.attach(self.vumeter, 0, 1, 2, 1)
+
+        self.volume_widget.get_accessible().set_name("Volume")
+        self.mute_widget.get_accessible().set_name("Mute")
+        self.combobox.get_accessible().set_name("Select Device")
+        self.combobox.set_tooltip_text(f'Select the app {self.app_type.split(" ")[1]} device')
+
         AppAdapter.__init__(self)

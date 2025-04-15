@@ -14,6 +14,10 @@ class LabeledCombobox(Gtk.Grid):
         super().__init__()
         self.label = Gtk.Label(label)
         self.combobox = Gtk.ComboBoxText(hexpand=True)
+        self.combobox.get_accessible().set_name(label.strip(':'))
+        self.combobox.set_tooltip_text(f'Select the {label.strip(':')}')
+        self.label.set_mnemonic_widget(self.combobox)
+
         self.attach(self.label, 0, 0, 1, 1)
         self.attach(self.combobox, 1, 0, 1, 1)
 

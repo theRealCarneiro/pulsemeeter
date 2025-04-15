@@ -83,5 +83,14 @@ class DeviceWidget(Gtk.Frame, DeviceAdapter):
         if model.primary is not None:
             control_grid.attach(self.primary_widget, 2, 0, 1, 1)
 
+        # self.set_can_focus(True)
+        accessible_name = self.name_widget.get_full_name()
+        self.get_accessible().set_name(accessible_name)
+
+        self.volume_widget.get_accessible().set_name("Volume")
+        self.mute_widget.get_accessible().set_name("Mute")
+        self.edit_button.get_accessible().set_name("Edit")
+        self.primary_widget.get_accessible().set_name("Primary")
+
         super().__init__(model=model)
         self.show_all()

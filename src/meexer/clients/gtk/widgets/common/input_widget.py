@@ -18,6 +18,10 @@ class InputWidget(Gtk.Grid):
             option_value = ''
 
         self.input = Gtk.Entry(text=str(option_value), hexpand=True)
+        self.label.set_mnemonic_widget(self.input)
+        self.input.get_accessible().set_name(option_name.strip(": "))
+        self.input.set_tooltip_text(f"Enter the {option_name.strip(': ')}")
+
         self.attach(self.label, 0, 0, 1, 1)
         self.attach(self.input, 1, 0, 1, 1)
 
