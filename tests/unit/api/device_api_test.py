@@ -1,7 +1,7 @@
 import unittest
-from meexer.api import device_api
+from pulsemeeter.api import device_api
 from pydantic import error_wrappers
-# from meexer.schemas import requests_schema
+# from pulsemeeter.schemas import requests_schema
 
 
 class TestCreateDevice(unittest.TestCase):

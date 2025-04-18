@@ -1,5 +1,5 @@
 import unittest
-from meexer.scripts import pmctl
+from pulsemeeter.scripts import pmctl
 
 
 class TestCreation(unittest.TestCase):

@@ -1,4 +1,4 @@
-from meexer.schemas import requests_schema as schemas
+from pulsemeeter.schemas import requests_schema as schemas
 import unittest
 
 

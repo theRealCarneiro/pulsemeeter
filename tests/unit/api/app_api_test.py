@@ -1,6 +1,6 @@
 import unittest
-from meexer.api import app_api
-# from meexer.schemas import requests_schema
+from pulsemeeter.api import app_api
+# from pulsemeeter.schemas import requests_schema
 
 
 class TestAppList(unittest.TestCase):

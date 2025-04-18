@@ -1,5 +1,5 @@
 import unittest
-from meexer.model.config_model import ConfigModel
+from pulsemeeter.model.config_model import ConfigModel
 
 
 class TestConfig(unittest.TestCase):

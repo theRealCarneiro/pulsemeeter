@@ -1,5 +1,5 @@
 import unittest
-from meexer.model.device_model import DeviceModel
+from pulsemeeter.model.device_model import DeviceModel
 
 
 class TestDeviceModel(unittest.TestCase):

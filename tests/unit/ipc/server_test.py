@@ -1,10 +1,10 @@
 import unittest
 import time
 
-from meexer.ipc.server import Server
-from meexer.ipc.router import Blueprint
-from meexer.ipc.client import Client
-from meexer.schemas.ipc_schema import Request, StatusCode
+from pulsemeeter.ipc.server import Server
+from pulsemeeter.ipc.router import Blueprint
+from pulsemeeter.ipc.client import Client
+from pulsemeeter.schemas.ipc_schema import Request, StatusCode
 
 
 class TestIpc(unittest.TestCase):
