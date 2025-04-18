@@ -54,9 +54,10 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         if self.window is None:
             self.create_window()
 
-        # self.window.connect('destroy', self.on_shutdown)
+        self.window.connect('destroy', self.on_shutdown)
         self.window.show_all()
         self.window.present()
 
-    # def on_shutdown(self, _):
-    #     self.config_model.device_manager.cleanup()
+    def on_shutdown(self, _):
+        self.config_model.device_manager.cleanup()
+        self.config_model.write()
