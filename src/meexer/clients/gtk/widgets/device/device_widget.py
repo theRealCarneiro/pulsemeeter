@@ -35,6 +35,7 @@ class DeviceWidget(Gtk.Frame, DeviceAdapter):
 
     def __init__(self, model: DeviceModel):
         Gtk.Frame.__init__(self)
+        self.get_style_context().add_class("device-frame")
 
         self.handlers = {}
         self.model = model
@@ -84,6 +85,7 @@ class DeviceWidget(Gtk.Frame, DeviceAdapter):
             control_grid.attach(self.primary_widget, 2, 0, 1, 1)
 
         # self.set_can_focus(True)
+        self.name_widget.set_can_focus(True)
         accessible_name = self.name_widget.get_full_name()
         self.get_accessible().set_name(accessible_name)
 

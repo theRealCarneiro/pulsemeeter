@@ -8,7 +8,7 @@ from meexer.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject  # noqa: E402
+from gi.repository import Gtk, Gdk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -29,6 +29,7 @@ class MainWindowAdapter(GObject.GObject):
 
     def __init__(self, config_model, app_manager):
         super().__init__()
+        self.set_title("Pulsemeeter")
         self.config_model = config_model
         self.app_manager = app_manager
         for device_type in ('hi', 'vi', 'a', 'b'):

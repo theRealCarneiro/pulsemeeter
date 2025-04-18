@@ -6,7 +6,7 @@ from meexer.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAd
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject  # noqa: E402
+from gi.repository import Gtk, Gdk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -34,8 +34,15 @@ class DeviceBoxAdapter(GObject.GObject):
     def __init__(self, device_manager):
         super().__init__()
         self.device_manager = device_manager
-        self.popover.confirm_button.connect('pressed', self.create_pressed)
-        self.add_device_button.connect('pressed', self.new_device_popup)
+        self.popover.confirm_button.connect('clicked', self.create_pressed)
+        self.add_device_button.connect('clicked', self.new_device_popup)
+
+    def focus_box(self):
+        self.add_device_button.grab_focus()
+        # if len(self.devices) == 0: 
+        #     return
+        # first_item = next(iter(self.devices.values()))
+        # first_item.edit_button.grab_focus()
 
     def load_devices(self, devices_schema: dict[str, DeviceModel]):
         for device_id, device_schema in devices_schema.items():
@@ -46,6 +53,16 @@ class DeviceBoxAdapter(GObject.GObject):
         device.connect('remove_pressed', self.remove_pressed, device_id)
         self.device_box.pack_start(device, False, False, 0)
         self.devices[device_id] = device
+
+        # key = Gdk.KEY_1 + len(self.devices)
+        # self.accel_group.connect(
+        #     key,
+        #     0,
+        #     Gtk.AccelFlags.VISIBLE,
+        #     device.grab_focus()
+        # )
+        # print('aq')
+
         return device
 
     def remove_device(self, device_id: str) -> DeviceWidget:
@@ -63,6 +80,7 @@ class DeviceBoxAdapter(GObject.GObject):
         self.emit('add_device_pressed', self.device_type)
         self.popover.show_all()
         self.popover.popup()
+        self.popover.name_widget.input.grab_focus()
 
     def remove_pressed(self, _, device_type, device_id):
         self.emit('remove_pressed', device_type, device_id)

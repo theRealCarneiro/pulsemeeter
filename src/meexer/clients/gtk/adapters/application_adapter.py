@@ -13,7 +13,7 @@ from meexer.model.connection_model import ConnectionModel
 
 from meexer.clients.gtk import layouts
 from meexer.clients.gtk.widgets.device.device_widget import DeviceWidget
-from meexer.clients.gtk.widgets.app.app_widget import AppWidget  #, AppCombobox
+from meexer.clients.gtk.widgets.app.app_widget import AppWidget  # AppCombobox
 # from meexer.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
 
 from meexer.clients.gtk.services import app_service, device_service
@@ -50,6 +50,23 @@ class ApplicationAdapter(GObject.GObject):
             for app_index, app in app_dict.items():
                 self.connect_app_gtk_events(app_type, app_index, app)
 
+        accel_group = Gtk.AccelGroup()
+        self.window.add_accel_group(accel_group)
+        self.accel_group = accel_group
+        self.current_box = 0
+        self.current_device = 0
+
+        accel_group.connect(ord('j'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(1))
+        accel_group.connect(ord('k'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(-1))
+
+        accel_group.connect(ord('h'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(-1))
+        accel_group.connect(ord('l'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(1))
+
+        accel_group.connect(ord('m'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('mute', None))
+        accel_group.connect(ord('p'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('primary', None))
+        accel_group.connect(ord('-'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', -1))
+        accel_group.connect(ord('='), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', 1))
+
         # window.connect('delete-event', self.on_quit)
 
         # Load app widget
@@ -70,6 +87,61 @@ class ApplicationAdapter(GObject.GObject):
         # window.show_all()
         # return window
 
+    #
+    # # BINDS
+    #
+
+    def bind_runner(self, cmd, arg):
+        device_type = self.get_current_kb_device_type()
+        device_id = self.get_current_kb_device_id()
+
+        if cmd == 'device_type_cycle':
+            self.change_box_focus(arg)
+        elif cmd == 'device_cycle':
+            self.change_device_focus(arg)
+        elif cmd == 'mute':
+            self.window.device_box[device_type].devices[device_id].mute_widget.clicked()
+        elif cmd == 'primary':
+            self.window.device_box[device_type].devices[device_id].primary_widget.clicked()
+        elif cmd == 'volume':
+            widget = self.window.device_box[device_type].devices[device_id].volume_widget
+            widget.set_value(widget.get_value() + arg)
+        # elif cmd == 'connect':
+
+    def get_current_kb_device_id(self):
+        device_type = self.get_current_kb_device_type()
+        current_box = self.window.device_box[device_type]
+        device_len = len(current_box.devices)
+
+        if device_len == 0:
+            return None
+
+        current_device_key = list(current_box.devices)[self.current_device]
+        return current_device_key
+
+    def get_current_kb_device_type(self):
+        return list(self.window.device_box)[self.current_box]
+
+    def change_box_focus(self, factor):
+        self.current_device = -1
+        self.current_box = (self.current_box + factor - 4) % 4
+        self.window.device_box[self.get_current_kb_device_type()].focus_box()
+
+    def change_device_focus(self, factor):
+        device_type = self.get_current_kb_device_type()
+        current_box = self.window.device_box[device_type]
+        device_len = len(current_box.devices)
+        self.current_device = (self.current_device + factor - device_len) % device_len
+        self.focus_device(device_type)
+
+    def focus_device(self, device_type):
+        current_box = self.window.device_box[device_type]
+        current_box.devices[self.get_current_kb_device_id()].edit_button.grab_focus()
+
+    #
+    # # End BINDS
+    #
+
     # Connect device creation button press event
     def create_new_device_popover(self, widget, device_type):
         '''
@@ -85,8 +157,8 @@ class ApplicationAdapter(GObject.GObject):
             popover.combobox_widget.load_list(device_list, 'description')
 
         # connect gtk signals
-        popover.confirm_button.connect('pressed', device_service.create, popover, device_type, device_list)
-        popover.confirm_button.connect('pressed', self.confirm_button_pressed, popover, device_type)
+        popover.confirm_button.connect('clicked', device_service.create, popover, device_type, device_list)
+        popover.confirm_button.connect('clicked', self.confirm_button_pressed, popover, device_type)
 
     def confirm_button_pressed(self, _, popover, device_type):
         '''
@@ -241,6 +313,12 @@ class ApplicationAdapter(GObject.GObject):
         Set model mute
         '''
         self.app_manager.set_mute(app_type, app_index, state)
+
+    def set_app_device(self, _, device_nick: str, app_type, app_index):
+        '''
+        Set model mute
+        '''
+        self.app_manager.set_mute(app_type, app_index, device_nick)
 
     #
     # # End model update functions

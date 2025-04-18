@@ -48,7 +48,7 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
 
         # connect events
         self.combobox_widget.combobox.connect('changed', self.device_combo_changed)
-        self.cancel_button.connect('pressed', self.close_pressed)
+        self.cancel_button.connect('clicked', self.close_pressed)
 
         # add widgets to grid
         button_box = Gtk.HBox(halign=Gtk.Align.END)
@@ -70,6 +70,7 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.set_modal(False)
         self.add(main_box)
         # self.show_all()
+        # self.name_widget.input.grab_focus()
 
 
 class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
@@ -95,7 +96,7 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
             # self.port_selector.set_ports(device_model.selected_channels)
 
         # connect events
-        self.cancel_button.connect('pressed', self.close_pressed)
+        self.cancel_button.connect('clicked', self.close_pressed)
 
         # add widgets to grid
         button_box = Gtk.HBox(halign=Gtk.Align.END)

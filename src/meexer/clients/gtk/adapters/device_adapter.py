@@ -42,12 +42,12 @@ class DeviceAdapter(GObject.GObject):
         super().__init__()
         self.device_model = model
 
-        self.edit_button.connect('pressed', self.edit_device_popover)
+        self.edit_button.connect('clicked', self.edit_device_popover)
 
         self.handlers['volume'] = self.volume_widget.connect('value-changed', self.update_model_volume)
         self.handlers['mute'] = self.mute_widget.connect('toggled', self.update_model_mute)
-        self.handlers['primary'] = self.primary_widget.connect('pressed', self.update_model_primary)
-        self.handlers['remove_pressed'] = self.popover.remove_button.connect('pressed', self.update_model_remove)
+        self.handlers['primary'] = self.primary_widget.connect('clicked', self.update_model_primary)
+        self.handlers['remove_pressed'] = self.popover.remove_button.connect('clicked', self.update_model_remove)
         if model.get_type() in ('vi', 'hi'):
             self.handlers['connection'] = self.connections_widget.connect('connection', self.update_model_connection)
 
@@ -58,6 +58,7 @@ class DeviceAdapter(GObject.GObject):
     def edit_device_popover(self, _):
         self.popover.show_all()
         self.popover.popup()
+        self.popover.name_widget.input.grab_focus()
 
     def insert_connection_widget(self, connection_schema: ConnectionModel, output_type: str, output_id: str):
         button = self.connections_widget.insert_widget(connection_schema, output_type, output_id)

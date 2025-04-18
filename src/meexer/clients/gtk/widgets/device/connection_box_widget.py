@@ -5,7 +5,7 @@ from meexer.model.connection_model import ConnectionModel
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject  # noqa: E402
+from gi.repository import Gtk, GObject, Atk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -22,6 +22,10 @@ class ConnectionBoxWidget(Gtk.Box, ConnectionBoxAdapter):
         ConnectionBoxAdapter.__init__(self)
         self.a = Gtk.Box()
         self.b = Gtk.Box()
+        self.a.get_accessible().set_name('Hardware Output connection box')
+        self.a.get_accessible().set_role(Atk.Role.PANEL)
+        self.b.get_accessible().set_name('Hardware Input connection box')
+        self.b.get_accessible().set_role(Atk.Role.PANEL)
         self.add(self.a)
         self.add(self.b)
 

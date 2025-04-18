@@ -11,6 +11,7 @@ class ConnectionWidget(Gtk.ToggleButton):
 
     def __init__(self, connection_schema: ConnectionSchema, output_type: str, output_id: str):
         super().__init__(label=connection_schema.nick, active=connection_schema.state)
+        self.get_accessible().set_name(connection_schema.nick)
         self.schema = connection_schema
         self.output_type = output_type
         self.output_id = output_id

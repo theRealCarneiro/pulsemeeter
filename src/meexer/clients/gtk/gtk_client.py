@@ -8,11 +8,12 @@ from meexer.model.app_manager_model import AppManagerModel
 # from meexer.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
 # from meexer.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
 from meexer.clients.gtk.adapters.application_adapter import ApplicationAdapter
+from meexer.settings import STYLE_FILE
 
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gtk, Gdk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -21,6 +22,13 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
     def __init__(self):
         Gtk.Application.__init__(self, application_id='org.pulsemeeter.meexer')
         ApplicationAdapter.__init__(self)
+        style_provider = Gtk.CssProvider()
+        style_provider.load_from_path(STYLE_FILE)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
 
         self.window = None
 
@@ -29,7 +37,7 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         # res = self.client.send_request('get_config', {})
         # self.config = ConfigModel(**res.data)
         # self.client_subscribe = Client(subscription_flags=1, instance_name='gtk_callback')
-        self.config_model = ConfigModel()
+        self.config_model = ConfigModel.load_config()
         self.app_manager = AppManagerModel()
 
         # create vumeter loop thread
