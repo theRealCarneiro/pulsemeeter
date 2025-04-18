@@ -13,6 +13,7 @@ XDG_CONFIG_HOME = os.getenv('XDG_CONFIG_HOME', os.path.join(HOME, '.config'))
 XDG_RUNTIME_DIR = os.getenv('XDG_RUNTIME_DIR', '/tmp')
 CONFIG_DIR = os.path.join(XDG_CONFIG_HOME, 'pulsemeeter')
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.json')
+STYLE_FILE = os.path.join(CONFIG_DIR, 'style.css')
 
 # IPC SETTINGS
 LISTENER_TIMEOUT = 2
