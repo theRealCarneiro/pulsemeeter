@@ -9,7 +9,8 @@ from gi.repository import Gtk, GLib  # noqa: E402
 
 class AppCombobox(Gtk.ComboBox, AppComboboxAdapter):
 
-    def __init__(self, device: str, app_type: str):
+    def __init__(self, app_type: str):
+        self.app_type = app_type
         device_list = self._device_list[app_type]
         super().__init__(
             model=device_list,
@@ -25,16 +26,20 @@ class AppCombobox(Gtk.ComboBox, AppComboboxAdapter):
         self.pack_start(renderer, True)
         self.add_attribute(renderer, "text", 0)
 
+    def get_active_text(self):
+        active_iter = self.get_active_iter()
+        if active_iter is not None:
+            return self._device_list[self.app_type].get_value(active_iter, 0)
+
+        return None
+
+    def set_active_device(self, device):
+        device_list = self._device_list[self.app_type]
+
         count: int = 0
         for device_name in device_list:
             if device_name[0] == device:
-                GLib.idle_add(self.set_active, count)
+                print(device_name[0], device)
+                self.set_active(count)
                 break
             count += 1
-
-    def get_active_text(self, app_type):
-        active_iter = self.get_active_iter()
-        if active_iter is not None:
-            return self._device_list[app_type].get_value(active_iter, 0)
-
-        return None

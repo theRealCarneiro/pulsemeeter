@@ -204,6 +204,7 @@ class ApplicationAdapter(GObject.GObject):
 
         app_handler['app_volume'] = app.connect('app_volume', self.set_app_volume, app_type, app_index)
         app_handler['app_mute'] = app.connect('app_mute', self.set_app_mute, app_type, app_index)
+        app_handler['app_device'] = app.connect('app_device_change', self.set_app_device, app_type, app_index)
 
         stream_type = app_type.split('_')[0]
         vumeter = self.start_vumeter(stream_type, app.app_model.device, app.vumeter, app.app_model.index)
@@ -309,11 +310,11 @@ class ApplicationAdapter(GObject.GObject):
         '''
         self.app_manager.set_mute(app_type, app_index, state)
 
-    def set_app_device(self, _, device_nick: str, app_type, app_index):
+    def set_app_device(self, _, device_name: str, app_type, app_index):
         '''
-        Set model mute
+        Set model device
         '''
-        self.app_manager.set_mute(app_type, app_index, device_nick)
+        self.app_manager.change_device(app_type, app_index, device_name)
 
     #
     # # End model update functions

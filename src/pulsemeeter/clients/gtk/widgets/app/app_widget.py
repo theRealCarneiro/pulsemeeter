@@ -12,7 +12,7 @@ from pulsemeeter.clients.gtk.adapters.app_adapter import AppAdapter
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio, GObject  # noqa: E402
+from gi.repository import Gtk, Gio, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -43,10 +43,12 @@ class AppWidget(Gtk.Frame, AppAdapter):
         self.label = Gtk.Label(label=app_model.label, margin_left=10, halign=Gtk.Align.START)
         self.icon = IconWidget(app_model.icon)
         self.volume_widget = VolumeWidget(app_model.volume)
-        self.combobox = AppCombobox(app_model.device, app_model.app_type)
+        self.combobox = AppCombobox(app_model.app_type)
         self.mute_widget = MuteWidget(app_model.mute)
         self.vumeter = VumeterWidget()
         self.handlers = {}
+
+        GLib.idle_add(self.combobox.set_active_device, app_model.device)
 
         main_grid.attach(info_grid, 0, 0, 1, 1)
         main_grid.attach(control_grid, 0, 1, 1, 1)
