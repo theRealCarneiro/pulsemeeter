@@ -36,9 +36,11 @@ class AppManagerModel(SignalModel):
 
     def change_device(self, app_type, app_index, device_name: str):
         app = self.__dict__[app_type][app_index]
+
+        # if not changing
         if app.device == device_name:
-            print("FAIO")
             return
+
         app.change_device(device_name)
         pmctl.move_app_device(app_type, app_index, device_name)
         self.emit('app_device_change', app_type, app_index, device_name)
