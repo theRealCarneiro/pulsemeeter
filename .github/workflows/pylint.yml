@@ -4,23 +4,32 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.12"]
     steps:
     - uses: actions/checkout@v3
       with:
-            fetch-depth: 0
+        fetch-depth: 0
+
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install dependencies
       run: |
+        sudo apt update
+        sudo apt install  libgirepository-2.0-dev python3-gi gobject-introspection gir1.2-gtk-3.0 libcairo2-dev
         python -m pip install --upgrade pip
-        pip install pylint
-        pip install perflint
+        pip install -r requirements.txt
+        pip install -r dev-requirements.txt
+        
+      # pip install pylint pylint_pydantic perflint
         
       # if is pr get the sha of the pr
     - name: get pull-request files
@@ -36,21 +45,6 @@ jobs:
       id: changed-files-else
       uses: tj-actions/changed-files@v24
       
-      # W8201 = loop-invariant-statement
-      # W8205 = dotted-import-in-loop
-      # W0212 = Accessing protected attribute of client class
-      # W0613 = Unused argument
-      # R0903 = Too few public methods
-      # C0301 = Line too long
-      # C0103 = Invalid name
-      # R0914 = Too many local variables
-      # F0401 = Unable to import module
-      # W0402 = Uses of a deprecated module
-      # W0614 = Unused import from wildcard
-      # C0111 = Missing docstring
-      # C0321 multiple statements on one line
-      # C0413 = Used when code and imports are mixed (need to disable due to gtk)
-      
       # ----
       # COMMIT OR OTHER PUSH
       # ----
@@ -60,26 +54,12 @@ jobs:
 
       run: |
           for file in ${{ steps.changed-files-else.outputs.all_changed_files }}; do
-            if [[ $file == *.py ]]; then
+            if [[ $file == *.py ]] && [[ $file != test*.py ]]; then
               echo
               echo "-------[ $file ]-------"
               echo
           
-              pylint \
-              --load-plugins perflint \
-              --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321,C0413 \
-              --output-format colorized \
-              --max-module-lines 2000 \
-              --notes TODO \
-              --init-import n \
-              --max-args 5 \
-              --max-locals 15 \
-              --max-returns 10 \
-              --max-statements 50 \
-              --max-parents 7 \
-              --max-attributes 7 \
-              --fail-under 8 \
-              $file
+              pylint $file
             fi
           done
           
@@ -91,27 +71,11 @@ jobs:
 
       run: |          
           for file in ${{ steps.changed-files-pr.outputs.all_changed_files }}; do
-            if [[ $file == *.py ]]; then
+            if [[ $file == *.py ]] && [[ $file != test*.py ]]; then
               echo
               echo "-------[ $file ]-------"
               echo
           
-              pylint \
-              --load-plugins perflint \
-              --disable W8205,W8201,W0212,W0613,R0903,W0614,C0111,C0301,C0103,F0401,W0402,R0914,C0321,C0413 \
-              --output-format colorized \
-              --max-module-lines 2000 \
-              --notes TODO \
-              --init-import n \
-              --max-args 5 \
-              --max-locals 15 \
-              --max-returns 10 \
-              --max-statements 50 \
-              --max-parents 7 \
-              --max-attributes 7 \
-              --fail-under 8 \
-              $file
+              pylint $file
             fi
           done
-          
-        

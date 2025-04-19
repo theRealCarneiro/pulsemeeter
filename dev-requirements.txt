@@ -1,0 +1,5 @@
+setuptools
+pylint
+pylint-pydantic
+flake8
+python-lsp-server

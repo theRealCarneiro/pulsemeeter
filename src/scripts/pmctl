@@ -1,0 +1,337 @@
+#!/usr/bin/env bash
+
+CREATE_ERROR=1
+DEVICE_EXISTS=2
+
+init (){
+	local device_type=$1
+	local device=$2
+	local channels="$3"
+
+	# pulse
+	if [ $ISPULSE = true ]; then
+
+		# check if device exists
+		pactl list "$device_type"s short >/dev/null 2>&1 | grep $device && exit 1
+
+		# sink
+		if [ "$device_type" = "sink" ]; then
+
+			# load null sink
+			pactl load-module module-null-sink \
+				sink_name=$device \
+				sink_properties="device.description="$device"" >/dev/null 2>&1 || 
+					exit 126
+		# source
+		else
+
+			# pulseaudio does not allow routing audio into sources, so we need an aux sink
+			pactl load-module module-null-sink sink_name=$device"_sink" >/dev/null 2>&1 ||
+				exit 126
+
+			# load remap source that will remap the sink audio into itself
+			pactl load-module module-remap-source source_name=$device \
+				master=$device"_sink.monitor" \
+				source_properties=device.description=$device 2>/dev/null || 
+					exit 126
+
+		fi
+
+	# pipewire
+	else
+
+		# set media.class
+		case "$device_type" in
+			"sink") class="Sink" ;;
+			"source") class="Source/Virtual" ;;
+			*) exit
+		esac
+
+		# check if device exists
+		pw-cli info $device 2>&1 | grep -q Error || exit 1
+
+		# create device
+		pw-cli create-node adapter "{
+			factory.name=support.null-audio-sink
+			node.name=$device
+			node.description=$device
+			media.class=Audio/$class
+			audio.channels=$channels
+			monitor.channel-volumes = true
+			object.linger=true
+		}" >/dev/null || exit 126
+
+		#audio.position=[ $channel_map ]
+	fi
+}
+
+remove (){
+	local device=$1
+
+	# pulse
+	if [ $ISPULSE = true ]; then
+		index="$(LC_ALL=C pactl list modules | grep -B 2 "$device " | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] && exit 1 || pactl unload-module $index 
+		
+		aux_index="$(LC_ALL=C pactl list modules | grep -B 2 $device'_sink' | grep Module | sed 's/.*#//g')"
+		[ -z "$aux_index" ] && exit 1 || pactl unload-module $aux_index
+
+	# pipewire
+	else
+		pw-cli destroy $device 2>&1 | grep -q Error && exit 1 || exit 0
+	fi
+}
+
+connect (){
+	local input=$1
+	local output=$2
+	local latency=${3:-200}
+
+	[ -z "$input" -o -z "$output" ] && exit
+
+	# pulse
+	if [ $ISPULSE = true ]; then
+		index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
+			printf "Error disconnecting $input $2 to System:$3\n" >&2
+
+		LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" >/dev/null || \
+		pactl load-module module-loopback sink=$output source=$input sink_dont_move=true source_dont_move=true latency_msec=$latency 2>/dev/null ||
+			printf "Error connecting $input to $output\n" >&2
+
+	# pipewire
+	else
+		local port_map="${@:3}"
+
+		# no port mapping was sent
+		if [ -z "$port_map" -o "$port_map" = 'None' ]; then
+			pw-link $input $output 2> /dev/null
+			return
+		fi
+
+		readarray -t input_ports <<< $(get_ports output $input)
+		readarray -t output_ports <<< $(get_ports input $output)
+
+		for pair in $port_map; do
+			IFS=":" read -r input_port_index output_port_index <<< "$pair"
+			input_port=${input_ports[$input_port_index]}
+			output_port=${output_ports[$output_port_index]}
+			pw-link $input:$input_port $output:$output_port 2> /dev/null
+		done
+	fi
+}
+
+disconnect (){
+	local input=$1
+	local output=$2
+
+	[ -z "$input" -o -z "$output" ] && exit
+
+	# pulse
+	if [ $ISPULSE = true ]; then
+		index="$(LC_ALL=C pactl list modules 2>/dev/null | grep -B 2 "$output source=$input" | grep Module | sed 's/.*#//g')"
+		[ -z "$index" ] || pactl unload-module $index 2>/dev/null ||
+			printf "Error disconnecting $input $2 to System:$3\n" >&2
+	
+	# pipewire
+	else
+		local port_map="${@:3}"
+
+		if [ -z "$port_map" -o "$port_map" = 'None' ]; then
+			pw-link -d $input $output 2> /dev/null
+		fi
+
+		readarray -t input_ports <<< $(get_ports output $input)
+		readarray -t output_ports <<< $(get_ports input $output)
+
+		for pair in $port_map; do
+			IFS=":" read -r input_port_index output_port_index <<< "$pair"
+			input_port=${input_ports[$input_port_index]}
+			output_port=${output_ports[$output_port_index]}
+
+			pw-link -d $input:$input_port $output:$output_port 2> /dev/null
+		done
+	fi
+}
+
+set_primary () {
+	local device=$1
+	local name=$2
+	pactl set-default-$device $name >/dev/null 2>&1 || 
+		echo "Error setting $device $name as primary" >&2
+}
+
+mute (){
+	local device_type=$1
+	local device=$2
+	local status=$3
+
+	pactl set-$device_type-mute $device $status
+}
+
+get_pactl_version () {
+	version=$(pactl --version | grep pactl | sed 's/.* //; s/\..*//')
+	printf "%d" "$version"
+}
+
+list (){
+
+	local device_type=$1
+
+	# pulse 16.0 or later
+	pactl -f json list $device_type 2>/dev/null
+}
+
+get_port_name() {
+	type=$1
+	device=$2
+	for i in 'capture' 'monitor' 'playback' 'input'; do
+		pw-link --$type | grep "$device:$i" >/dev/null && port_name=$i
+	done
+	printf "%s" "$port_name"
+}
+
+get_ports() {
+	type=$1
+	device=$2
+	ports=$(pw-link --$type | grep "$device:" | cut -d ':' -f2)
+	printf "%s" "$ports"
+}
+
+eq (){
+	status=$1
+	sink_name=$2
+	master=$3
+	control=$4
+	map=$5
+	label=mbeq
+	plugin=mbeq_1197
+
+	for lib in '64' ''; do
+		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do
+			[ -f "$i/$plugin.so" ] && found=1
+		done
+	done
+
+	[ -z "$found" ] && exit
+
+	ladspa $status sink $master $sink_name $label $plugin $control $map
+}
+
+rnnoise() {
+	sink_name=$1
+	master=$2
+	control=$3
+	status=$4
+	lat_or_map=$5
+	map="$5"
+
+	label=noise_suppressor_mono
+	plugin=librnnoise_ladspa
+ 
+	for lib in '64' ''; do
+		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do
+			if [ -f "$i/rnnoise_ladspa.so" ]; then
+				label=noisetorch
+				plugin=rnnoise_ladspa
+				found=1
+				break
+			elif [ -f "$i/$plugin.so" ]; then
+				found=1
+				break
+			fi
+		done
+	done
+	
+	[ -z "$found" ] && exit 1
+	if [ $ISPULSE = false ]; then
+		lat_or_map=1
+	fi
+
+	ladspa $status source $master $sink_name $label $plugin $control $lat_or_map
+	connect $input "$sink_name"_in "$map"
+}
+
+ladspa() {
+
+	local status=$1
+	local device_type=$2
+	local master=$3
+	local sink_name=$4
+	local label=$5
+	local plugin=$6
+	local control=$7
+
+	# latency for pulse, channel map for pipewire
+	local latency=$8
+	local map=$8
+
+	#pactl list "$device_type"s short 2>&1 | grep $master >/dev/null || exit
+
+	# check if plugin existis in file system
+	for lib in '64' ''; do
+		for i in "/usr/lib$lib/ladspa" "/usr/local/lib$lib/ladspa"; do
+			if [ -f "$i/$plugin.so" ]; then
+				found=1
+				break
+			fi
+		done
+	done
+
+	[ -z "$found" ] && exit 1
+
+	## remove old sinks
+	# sources need one extra sink, so we need to remove it
+	remove $sink_name"_in"
+	remove $sink_name"_out"
+	remove $sink_name
+
+	## create devices
+	if [ "$status" = "connect" ]; then
+
+		# sources need an extra sink to work
+		if [ "$device_type" = "source" ]; then
+			init sink $sink_name $map
+			input=$master
+			master=$sink_name
+			sink_name+='_in'
+			channels="channels=$map"
+
+		elif [ $ISPULSE = false ]; then
+
+			# pipewire wont allow ladspa sinks to connect directly to virtual sources, 
+			# so we need to add a middleground sink
+			if ! pactl list sinks short | grep $master; then
+				init sink "$sink_name"_out $map
+				connect "$sink_name"_out $master
+				master="$sink_name"_out
+				#sink_name+='_in'
+				#channels="channels=$map"
+			fi
+		fi
+
+		#echo $channels
+		# create ladspa sink
+		pactl load-module module-ladspa-sink \
+			master=$master \
+			sink_name=$sink_name \
+			label=$label \
+			plugin=$plugin \
+			control=$control "$channels" ||
+				echo "Error loading $label ladspa sink $sink_name for $master"
+
+
+		[ $ISPULSE = false ] && latency=''
+		# we need to connect our source to the filter
+		[ "$device_type" = "source" ] && connect $input $sink_name $latency
+	fi
+}
+
+if ! pactl info >/dev/null 2>&1; then
+	echo "ERROR PULSEAUDIO NOT RUNNING" >&2 
+	exit 1
+fi
+
+which pulseaudio 2>/dev/null 1>&2 && ISPULSE=true || ISPULSE=false
+
+$@
