@@ -3,9 +3,9 @@ from typing import Literal
 from pulsemeeter.schemas.typing import Volume, PaDeviceType, DeviceClass
 from pydantic import BaseModel, root_validator, validator
 # from pulsemeeter.schemas.device_schema import ConnectionModel
-from pulsemeeter.scripts import pmctl
+# from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.connection_model import ConnectionModel
-from pulsemeeter.model.connection_manager_model import ConnectionManagerModel
+# from pulsemeeter.model.connection_manager_model import ConnectionManagerModel
 from pulsemeeter.model.signal_model import SignalModel
 
 

@@ -38,7 +38,7 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         # self.config = ConfigModel(**res.data)
         # self.client_subscribe = Client(subscription_flags=1, instance_name='gtk_callback')
         self.config_model = ConfigModel.load_config()
-        self.app_manager = AppManagerModel()
+        self.app_manager = AppManagerModel(config_model=self.config_model)
 
         # create vumeter loop thread
         self.vumeter_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
@@ -59,5 +59,6 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         self.window.present()
 
     def on_shutdown(self, _):
-        self.config_model.device_manager.cleanup()
+        if self.config_model.cleanup is True:
+            self.config_model.device_manager.cleanup()
         self.config_model.write()

@@ -1,6 +1,5 @@
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.config_model import ConfigModel
-from pulsemeeter.schemas.app_schema import AppSchema
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
 from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget

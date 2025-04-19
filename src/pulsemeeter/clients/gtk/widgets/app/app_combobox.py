@@ -1,19 +1,15 @@
+from pulsemeeter.clients.gtk.adapters.app_combobox_adapter import AppComboboxAdapter
+
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gtk, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
-class AppCombobox(Gtk.ComboBox):
-
-    _device_list = {
-        'sink_input': Gtk.ListStore(str),
-        'source_output': Gtk.ListStore(str)
-    }
+class AppCombobox(Gtk.ComboBox, AppComboboxAdapter):
 
     def __init__(self, device: str, app_type: str):
-        # print(device)
         device_list = self._device_list[app_type]
         super().__init__(
             model=device_list,
@@ -32,7 +28,7 @@ class AppCombobox(Gtk.ComboBox):
         count: int = 0
         for device_name in device_list:
             if device_name[0] == device:
-                self.set_active(count)
+                GLib.idle_add(self.set_active, count)
                 break
             count += 1
 
@@ -42,24 +38,3 @@ class AppCombobox(Gtk.ComboBox):
             return self._device_list[app_type].get_value(active_iter, 0)
 
         return None
-
-    @classmethod
-    def set_device_list(cls, app_type, device_list):
-        cls._device_list[app_type].clear()
-        for device in device_list:
-            cls._device_list[app_type].append([device])
-
-    @classmethod
-    def append_device_list(cls, app_type, device):
-        cls._device_list[app_type].append([device])
-
-    @classmethod
-    def remove_device_list(cls, app_type, device):
-        for row in cls._device_list[app_type]:
-            if device == row[0]:
-                cls._device_list[app_type].remove(row.iter)
-
-    @classmethod
-    def get_device_list(cls, app_type):
-        return cls._device_list[app_type]
-

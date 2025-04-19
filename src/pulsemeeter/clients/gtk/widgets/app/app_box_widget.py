@@ -1,5 +1,6 @@
 from pulsemeeter.model.app_model import AppModel
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget
+from pulsemeeter.clients.gtk.widgets.app.app_combobox import AppCombobox
 from pulsemeeter.clients.gtk.adapters.app_box_adapter import AppBoxAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position

@@ -13,7 +13,7 @@ from pulsemeeter.model.connection_model import ConnectionModel
 
 from pulsemeeter.clients.gtk import layouts
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
-from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget  # AppCombobox
+from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
 # from pulsemeeter.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
 
 from pulsemeeter.clients.gtk.services import app_service, device_service
@@ -66,26 +66,6 @@ class ApplicationAdapter(GObject.GObject):
         accel_group.connect(ord('p'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('primary', None))
         accel_group.connect(ord('-'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', -1))
         accel_group.connect(ord('='), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', 1))
-
-        # window.connect('delete-event', self.on_quit)
-
-        # Load app widget
-        # sink_input_device_list = [device.name for _, device in self.config_model.vi.items()]
-        # source_output_device_list = [device.name for _, device in self.config_model.b.items()]
-        # source_output_device_list += sink_input_device_list
-        # app_list = {
-        #     'sink_input': app_service.list_apps('sink_input', self.client),
-        #     'source_output': app_service.list_apps('source_output', self.client)
-        # }
-        # window.load_apps(app_list, sink_input_device_list, source_output_device_list)
-        #
-        # # connect events to apps
-        # for app_type in ('sink_input', 'source_output'):
-        #     for app in window.apps[app_type]:
-        #         self.connect_app_gtk_events(app)
-
-        # window.show_all()
-        # return window
 
     #
     # # BINDS
@@ -167,7 +147,6 @@ class ApplicationAdapter(GObject.GObject):
         self.window.create_device(popover.to_schema())
 
     def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None):
-        print(app_type, app_name, stream_index)
         return asyncio.run_coroutine_threadsafe(
             subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index),
             self.vumeter_loop
@@ -221,7 +200,6 @@ class ApplicationAdapter(GObject.GObject):
         '''
         Connect a device widget events to the model
         '''
-        print("AQQQQQQQQQQQQQQQQQ")
         app_handler = self.app_handlers[app_type][app_index] = {}
 
         app_handler['app_volume'] = app.connect('app_volume', self.set_app_volume, app_type, app_index)
@@ -289,12 +267,27 @@ class ApplicationAdapter(GObject.GObject):
         Add new device to model
         '''
         self.config_model.device_manager.create_device(device_schema)
+        if device_schema.device_class != 'virtual':
+            return
+
+        if device_schema.device_type == 'sink':
+            AppCombobox.append_device_list('sink_input', device_schema.name)
+            AppCombobox.append_device_list('source_output', device_schema.name + '.monitor')
+        else:
+            AppCombobox.append_device_list('source_output', device_schema.name)
 
     def device_remove(self, _, device_type, device_id):
         '''
         Remove model device
         '''
+        device_schema = self.config_model.device_manager.get_device(device_type, device_id)
         self.config_model.device_manager.remove_device(device_type, device_id)
+
+        if device_schema.device_type == 'sink':
+            AppCombobox.append_device_list('sink_input', device_schema.name)
+            AppCombobox.append_device_list('source_output', device_schema.name + '.monitor')
+        else:
+            AppCombobox.append_device_list('source_output', device_schema.name)
 
     def add_device_hijack(self, _, device_type):
         if device_type not in ('a', 'hi'):

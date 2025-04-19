@@ -46,7 +46,7 @@ class AppAdapter(GObject.GObject):
         self.emit('app_mute', mute.get_active())
 
     def update_model_device(self, app_combobox):
-        self.emit('app_device_change', app_combobox.get_active_text())
+        self.emit('app_device_change', app_combobox.get_active_text)
 
     def set_volume(self, volume):
         self.volume_widget.handler_block(self.handlers['app_volume'])

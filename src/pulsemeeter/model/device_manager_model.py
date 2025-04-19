@@ -1,8 +1,9 @@
 import logging
-# from typing import Callable
+from typing import Literal
 
 # from pydantic import BaseModel
 from pulsemeeter.scripts import pmctl
+from pulsemeeter.schemas.typing import PaDeviceType
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.model.connection_model import ConnectionModel
@@ -194,3 +195,16 @@ class DeviceManagerModel(SignalModel):
             device_list.append(device_model)
 
         return device_list
+
+    def list_device_names(self, pa_device_type: PaDeviceType, monitor=False):
+        dvl = []
+        device_type = 'vi' if pa_device_type == 'sink' else 'b'
+        for _, device in self.__dict__[device_type].items():
+
+            name = device.name
+            if monitor is True:
+                name += '.monitor'
+
+            dvl.append(device.name)
+
+        return dvl

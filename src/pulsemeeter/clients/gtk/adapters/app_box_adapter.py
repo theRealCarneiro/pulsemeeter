@@ -1,5 +1,6 @@
 from pulsemeeter.model.app_model import AppModel
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget
+from pulsemeeter.clients.gtk.widgets.app.app_combobox import AppCombobox
 # from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -23,6 +24,11 @@ class AppBoxAdapter(GObject.GObject):
     def __init__(self, app_manager):
         super().__init__()
         self.app_manager = app_manager
+        sink_input_device_list = app_manager.config_model.device_manager.list_device_names('sink')
+        source_output_device_list = app_manager.config_model.device_manager.list_device_names('source')
+        source_output_device_list += app_manager.config_model.device_manager.list_device_names('sink', True)
+        AppCombobox.set_device_list('sink_input', sink_input_device_list)
+        AppCombobox.set_device_list('source_output', source_output_device_list)
         # self.popover.confirm_button.connect('clicked', self.create_pressed)
         # self.add_app_button.connect('clicked', self.new_app_popup)
 
