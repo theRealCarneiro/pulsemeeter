@@ -1,4 +1,11 @@
 # Pulsemeeter
+
+# DISCLAIMER
+
+Pulsemeeter is being (slowly) rewritten in the [rewrite](https://github.com/theRealCarneiro/pulsemeeter/tree/rewrite) branch, and there's not much left to be done.
+If anyone wants to contribute, check out [\#138](https://github.com/theRealCarneiro/pulsemeeter/issues/138).
+
+
 A frontend to ease the use of pulseaudio's routing capabilities, mimicking voicemeeter's workflow
 
 [![pypi](https://img.shields.io/badge/pypi-v1.2.13-blue)](https://pypi.org/project/pulsemeeter/)
