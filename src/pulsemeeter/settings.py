@@ -6,7 +6,7 @@ import locale
 import os
 
 
-VERSION = '1.2.16'
+VERSION = '2.0.0-alpha.1'
 APP_NAME = "pulsemeeter"
 
 # config settings
@@ -37,5 +37,3 @@ LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")
 locale.setlocale(locale.LC_ALL, "")
 gettext.bindtextdomain(APP_NAME, LOCALE_DIR)
 gettext.textdomain(APP_NAME)
-#translation = gettext.translation(APP_NAME, localedir=LOCALE_DIR, languages=['pt_BR'])
-_ = gettext.gettext
