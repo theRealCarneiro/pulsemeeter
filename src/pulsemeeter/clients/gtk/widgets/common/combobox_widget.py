@@ -24,17 +24,22 @@ class LabeledCombobox(Gtk.Grid):
     def insert_entry(self, entry):
         self.combobox.append_text(entry)
 
-    def load_list(self, entry_list, field=None):
+    def load_list(self, entry_list, field=None, selected=None):
+        i = 0
 
         # insert entry itself
         if field is None:
             for entry in entry_list:
                 self.insert_entry(entry)
+                i += 1
+            return
 
         # entry is a dict, insert entry field
-        else:
-            for entry in entry_list:
-                self.insert_entry(entry.__dict__[field])
+        for entry in entry_list:
+            self.insert_entry(entry.__dict__[field])
+            if selected == entry.__dict__[field]:
+                self.combobox.set_active(i)
+            i += 1
 
     def empty(self):
         self.combobox.remove_all()

@@ -41,6 +41,21 @@ class DeviceManagerModel(SignalModel):
         if device_type in ('vi', 'b'):
             pmctl.init(device.device_type, device.name, device.channels)
 
+    def bulk_connect(self, device_type, device_id, state):
+        '''
+        Recreate the pipewire connections for a device
+        '''
+        device = self.__dict__[device_type][device_id]
+        if device_type in ('hi', 'vi'):
+            for output_type, connection_list in device.connections.items():
+                for output_id in connection_list:
+                    self.set_connection(device_type, device_id, output_type, output_id, state)
+            return
+
+        for input_type in ('hi', 'vi'):
+            for input_id in self.__dict__[input_type]:
+                self.set_connection(input_type, input_id, device_type, device_id, state)
+
     def reconnect(self, input_type, input_id):
         '''
         Recreate the pipewire connections for a device
@@ -49,6 +64,27 @@ class DeviceManagerModel(SignalModel):
         for output_type, connection_list in device.connections.items():
             for output_id, connection in connection_list.items():
                 self.set_connection(input_type, input_id, output_type, output_id, connection.state)
+
+    def update_device(self, device_schema, device_type, device_id):
+        device = self.__dict__[device_type][device_id]
+
+        # check if valid
+        DeviceModel(**device_schema)
+
+        self.bulk_connect(device_type, device_id, False)
+
+        if device_type in ('vi', 'b'):
+            pmctl.remove(device.name)
+
+        # update values
+        device.update_device_settings(device_schema)
+        # for key, item in device_schema.items():
+        #     device[key] = item
+
+        if device_type in ('vi', 'b'):
+            self.init_device(device_type, device_id)
+
+        self.bulk_connect(device_type, device_id, True)
 
     def cleanup(self):
         '''
@@ -185,6 +221,7 @@ class DeviceManagerModel(SignalModel):
     def list_pa_devices(self):
         pass
 
+    @classmethod
     def list_devices(self, device_type):
         dvtp = 'sink' if device_type == 'a' else 'source'
         pa_device_list = pmctl.list_devices(dvtp)
