@@ -1,8 +1,12 @@
+import gettext
+
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 class LabeledCombobox(Gtk.Grid):
@@ -15,7 +19,7 @@ class LabeledCombobox(Gtk.Grid):
         self.label = Gtk.Label(label)
         self.combobox = Gtk.ComboBoxText(hexpand=True)
         self.combobox.get_accessible().set_name(label.strip(':'))
-        self.combobox.set_tooltip_text(f'Select the {label.strip(':')}')
+        self.combobox.set_tooltip_text(_('Select the %s') % label.strip(':'))
         self.label.set_mnemonic_widget(self.combobox)
 
         self.attach(self.label, 0, 0, 1, 1)

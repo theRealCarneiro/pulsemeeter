@@ -1,10 +1,13 @@
 '''
 Settings for the runtime of pulsemeeter
 '''
+import gettext
+import locale
 import os
 
 
 VERSION = '1.2.16'
+APP_NAME = "pulsemeeter"
 
 # config settings
 USER = os.getenv('USER')
@@ -27,3 +30,12 @@ PIDFILE = os.path.join(XDG_RUNTIME_DIR, f'pulsemeeter.{USER}.pid')
 DEBUG = False
 LOGGING_FORMAT = "[%(levelname)s] in [%(module)s]: %(message)s"
 LOGGING_FORMAT_DEBUG = "[%(levelname)s] in [%(module)s@%(funcName)s]: %(message)s"
+
+LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")
+
+# Set up translation
+locale.setlocale(locale.LC_ALL, "")
+gettext.bindtextdomain(APP_NAME, LOCALE_DIR)
+gettext.textdomain(APP_NAME)
+#translation = gettext.translation(APP_NAME, localedir=LOCALE_DIR, languages=['pt_BR'])
+_ = gettext.gettext

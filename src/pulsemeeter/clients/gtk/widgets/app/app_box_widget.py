@@ -1,3 +1,5 @@
+import gettext
+
 from pulsemeeter.model.app_model import AppModel
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget
 from pulsemeeter.clients.gtk.widgets.app.app_combobox import AppCombobox
@@ -9,12 +11,14 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
+_ = gettext.gettext
+
 
 class AppBoxWidget(Gtk.Frame, AppBoxAdapter):
 
     app_label = {
-        'sink_input': 'Application Outputs',
-        'source_output': 'Application Inputs'
+        'sink_input': _('Application Outputs'),
+        'source_output': _('Application Inputs')
     }
 
     def __init__(self, app_type: str, app_manager):

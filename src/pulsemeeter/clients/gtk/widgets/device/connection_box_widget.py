@@ -1,3 +1,5 @@
+import gettext
+
 from pulsemeeter.clients.gtk.adapters.connection_box_adapter import ConnectionBoxAdapter
 from pulsemeeter.clients.gtk.widgets.device.connection_widget import ConnectionWidget
 from pulsemeeter.model.connection_model import ConnectionModel
@@ -7,6 +9,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, Atk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 class ConnectionBoxWidget(Gtk.Box, ConnectionBoxAdapter):
@@ -22,9 +26,9 @@ class ConnectionBoxWidget(Gtk.Box, ConnectionBoxAdapter):
         ConnectionBoxAdapter.__init__(self)
         self.a = Gtk.Box()
         self.b = Gtk.Box()
-        self.a.get_accessible().set_name('Hardware Output connection box')
+        self.a.get_accessible().set_name(_('Hardware Output connection box'))
         self.a.get_accessible().set_role(Atk.Role.PANEL)
-        self.b.get_accessible().set_name('Hardware Input connection box')
+        self.b.get_accessible().set_name(_('Hardware Input connection box'))
         self.b.get_accessible().set_role(Atk.Role.PANEL)
         self.add(self.a)
         self.add(self.b)

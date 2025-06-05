@@ -1,3 +1,5 @@
+import gettext
+
 from typing import Literal
 
 from pulsemeeter.model.device_model import DeviceModel
@@ -15,6 +17,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
+_ = gettext.gettext
+
 
 class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
 
@@ -24,15 +28,15 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         DeviceSettingsAdapter.__init__(self)
         dt = 'Output' if device_type == 'a' else 'Input'
         operation = "Create" if device_model is None else "Edit"
-        self.get_accessible().set_name(f'{operation} hardware {dt} device popover')
+        self.get_accessible().set_name(_(f'{operation} hardware {dt} device popover'))
 
         self.device_list = device_list
         self.device_type = device_type
 
         # create widgets
-        self.name_widget = InputWidget('Nick: ')
+        self.name_widget = InputWidget(_('Nick: '))
         self.port_selector = PortSelector()
-        self.combobox_widget = LabeledCombobox('Device: ')
+        self.combobox_widget = LabeledCombobox(_('Device: '))
         self.confirm_button = IconButton('check-filled')
         self.cancel_button = IconButton('cancel')
         self.remove_button = IconButton('trash')
@@ -63,9 +67,9 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         main_box.pack_start(self.port_selector, False, False, 10)
         main_box.pack_start(button_box, False, False, 5)
 
-        self.cancel_button.get_accessible().set_name("Cancel")
-        self.remove_button.get_accessible().set_name("Delete device")
-        self.confirm_button.get_accessible().set_name("Create device")
+        self.cancel_button.get_accessible().set_name(_("Cancel"))
+        self.remove_button.get_accessible().set_name(_("Delete device"))
+        self.confirm_button.get_accessible().set_name(_("Create device"))
 
         self.set_modal(False)
         self.add(main_box)
@@ -80,11 +84,11 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.device_type = device_type
         dt = 'Output' if device_type == 'a' else 'Input'
         operation = "Create" if device_model is None else "Edit"
-        self.get_accessible().set_name(f'{operation} virtual {dt} device popover')
+        self.get_accessible().set_name(_(f'{operation} virtual {dt} device popover'))
 
         # create widgets
-        self.name_widget = InputWidget('Nick: ')
-        self.combobox_widget = LabeledCombobox('Channel Map: ')
+        self.name_widget = InputWidget(_('Nick: '))
+        self.combobox_widget = LabeledCombobox(_('Channel Map: '))
         self.confirm_button = IconButton('check-filled')
         self.cancel_button = IconButton('cancel')
         self.remove_button = IconButton('trash')
@@ -110,9 +114,9 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         main_box.pack_start(self.combobox_widget, False, False, 10)
         main_box.pack_start(button_box, False, False, 5)
 
-        self.cancel_button.get_accessible().set_name("Cancel")
-        self.remove_button.get_accessible().set_name("Delete device")
-        self.confirm_button.get_accessible().set_name("Create device")
+        self.cancel_button.get_accessible().set_name(_("Cancel"))
+        self.remove_button.get_accessible().set_name(_("Delete device"))
+        self.confirm_button.get_accessible().set_name(_("Create device"))
 
         self.set_modal(False)
         self.add(main_box)

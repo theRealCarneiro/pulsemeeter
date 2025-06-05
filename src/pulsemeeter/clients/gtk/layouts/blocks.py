@@ -1,3 +1,5 @@
+import gettext
+
 from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
 from pulsemeeter.clients.gtk.widgets.app.app_box_widget import AppBoxWidget
 from pulsemeeter.clients.gtk.adapters.main_window_adapter import MainWindowAdapter
@@ -7,6 +9,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 class MainWindow(Gtk.Window, MainWindowAdapter):

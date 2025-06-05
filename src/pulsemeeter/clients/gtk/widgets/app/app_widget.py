@@ -1,3 +1,4 @@
+import gettext
 import logging
 
 from pulsemeeter.model.app_model import AppModel
@@ -14,6 +15,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 LOG = logging.getLogger("generic")
@@ -61,9 +64,9 @@ class AppWidget(Gtk.Frame, AppAdapter):
         control_grid.attach(self.mute_widget, 1, 0, 1, 1)
         control_grid.attach(self.vumeter, 0, 1, 2, 1)
 
-        self.volume_widget.get_accessible().set_name("Volume")
-        self.mute_widget.get_accessible().set_name("Mute")
-        self.combobox.get_accessible().set_name("Select Device")
-        self.combobox.set_tooltip_text(f'Select the app {self.app_type.split("_")[1]} device')
+        self.volume_widget.get_accessible().set_name(_("Volume"))
+        self.mute_widget.get_accessible().set_name(_("Mute"))
+        self.combobox.get_accessible().set_name(_("Select Device"))
+        self.combobox.set_tooltip_text(_('Select the app %s! device') % self.app_type.split("_")[1])
 
         AppAdapter.__init__(self)

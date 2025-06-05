@@ -1,3 +1,5 @@
+import gettext
+
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
 from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
@@ -10,14 +12,16 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
+_ = gettext.gettext
+
 
 class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
 
     device_label = {
-        'hi': 'Hardware Inputs',
-        'vi': 'Virtual Inputs',
-        'a': 'Hardware Outputs',
-        'b': 'Virtual Outputs',
+        'hi': _('Hardware Inputs'),
+        'vi': _('Virtual Inputs'),
+        'a': _('Hardware Outputs'),
+        'b': _('Virtual Outputs'),
     }
 
     __gsignals__ = {
@@ -37,8 +41,8 @@ class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
 
         add_button = IconButton('add')
 
-        add_button.set_tooltip_text(f"Create new {device_type_string} device")
-        add_button.get_accessible().set_name(f"Create {device_type_string} device")
+        add_button.set_tooltip_text(_(f"Create new {device_type_string} device"))
+        add_button.get_accessible().set_name(_(f"Create {device_type_string} device"))
 
         title_box = Gtk.HBox()
         title_box.add(title)

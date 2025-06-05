@@ -1,3 +1,5 @@
+import gettext
+
 from pulsemeeter.schemas.device_schema import ConnectionSchema
 # from pulsemeeter.clients.gtk.widgets.common
 from pulsemeeter.model.device_model import DeviceModel
@@ -21,6 +23,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 class DeviceWidget(Gtk.Frame, DeviceAdapter):
@@ -90,10 +94,10 @@ class DeviceWidget(Gtk.Frame, DeviceAdapter):
         accessible_name = self.name_widget.get_full_name()
         self.get_accessible().set_name(accessible_name)
 
-        self.volume_widget.get_accessible().set_name("Volume")
-        self.mute_widget.get_accessible().set_name("Mute")
-        self.edit_button.get_accessible().set_name("Edit")
-        self.primary_widget.get_accessible().set_name("Primary")
+        self.volume_widget.get_accessible().set_name(_("Volume"))
+        self.mute_widget.get_accessible().set_name(_("Mute"))
+        self.edit_button.get_accessible().set_name(_("Edit"))
+        self.primary_widget.get_accessible().set_name(_("Primary"))
 
         super().__init__(model=model)
         self.show_all()

@@ -1,3 +1,5 @@
+import gettext
+
 from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
 from pulsemeeter.clients.gtk.adapters.main_window_adapter import MainWindowAdapter
 
@@ -7,12 +9,14 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
+_ = gettext.gettext
+
 
 DEVICE_TYPE_PRETTY = {
-    'hi': 'Hardware Inputs',
-    'vi': 'Virtual Inputs',
-    'a': 'Hardware Outputs',
-    'b': 'Virtual Outputs'
+    'hi': _('Hardware Inputs'),
+    'vi': _('Virtual Inputs'),
+    'a': _('Hardware Outputs'),
+    'b': _('Virtual Outputs')
 }
 
 
@@ -26,7 +30,7 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
 
     def __init__(self, application, config_model, app_manager):
         Gtk.Window.__init__(self, application=application)
-        self.set_title("Tabbed Layout Example")
+        self.set_title("Tabbed Layout")
         # self.set_default_size(800, 600)
 
         # Create a Notebook to hold tabs.
@@ -43,11 +47,11 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
         sink_input_box = Gtk.VBox(spacing=6)
         source_output_box = Gtk.VBox(spacing=6)
 
-        framed_sink = self._framed(sink_input_box, 'Application Outputs')
-        framed_source = self._framed(source_output_box, 'Application Inputs')
+        framed_sink = self._framed(sink_input_box, _('Application Outputs'))
+        framed_source = self._framed(source_output_box, _('Application Inputs'))
 
-        notebook.append_page(framed_sink, Gtk.Label(label="Application Outputs"))
-        notebook.append_page(framed_source, Gtk.Label(label="Application Inputs"))
+        notebook.append_page(framed_sink, Gtk.Label(label=_("Application Outputs")))
+        notebook.append_page(framed_source, Gtk.Label(label=_("Application Inputs")))
 
         self.app_box = {'sink_input': sink_input_box, 'source_output': source_output_box}
         self.devices = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
