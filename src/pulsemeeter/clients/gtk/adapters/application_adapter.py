@@ -8,6 +8,7 @@ from pulsemeeter.ipc.client import Client
 from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.app_manager_model import AppManagerModel
+from pulsemeeter.model.device_manager_model import DeviceManagerModel
 from pulsemeeter.model.connection_model import ConnectionModel
 # from pulsemeeter.schemas.app_schema import AppModel
 
@@ -122,6 +123,9 @@ class ApplicationAdapter(GObject.GObject):
     # # End BINDS
     #
 
+    def update_device_model(self, _, schema, device_type, device_id):
+        self.config_model.device_manager.update_device(schema, device_type, device_id)
+
     # Connect device creation button press event
     def create_new_device_popover(self, widget, device_type):
         '''
@@ -129,6 +133,7 @@ class ApplicationAdapter(GObject.GObject):
         '''
         # get the device type list
         dt = 'sink' if device_type in ('a', 'vi') else 'source'
+        # print("CU")
         device_list = device_service.list_devices(dt)
 
         popover = self.window.device_box[device_type].popover
@@ -181,6 +186,7 @@ class ApplicationAdapter(GObject.GObject):
         # dev_man = self.config_model.device_manager
         device_handler = self.device_handlers[device_type][device_id] = {}
 
+        device_handler['settings'] = device.connect('device_change', self.update_device_model, device_type, device_id)
         device_handler['volume'] = device.connect('volume', self.set_volume, device_type, device_id)
         device_handler['mute'] = device.connect('mute', self.set_mute, device_type, device_id)
         device_handler['connection'] = device.connect('connection', self.set_connection, device_type, device_id)
@@ -294,7 +300,7 @@ class ApplicationAdapter(GObject.GObject):
         if device_type not in ('a', 'hi'):
             return
 
-        device_list = self.config_model.device_manager.list_devices(device_type)
+        device_list = DeviceManagerModel.list_devices(device_type)
         self.window.device_box[device_type].popover.device_list = device_list
         self.window.device_box[device_type].popover.combobox_widget.load_list(device_list, 'description')
 

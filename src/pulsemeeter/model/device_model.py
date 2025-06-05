@@ -120,8 +120,17 @@ class DeviceModel(SignalModel):
         '''
         Update device settings
         '''
-        device.connections = self.connections
+        # device.connections = self.connections
         self.__dict__.update(device)
+        self.name = device['name']
+        self.description = device['description']
+        self.nick = device['nick']
+        self.channels = device['channels']
+        self.channel_list = device['channel_list']
+        self.selected_channels = device['selected_channels']
+        # self.volume = device.volume
+        # self.device_type = device.device_type
+        # self.device_class = device.device_class
         return 0
 
     # def change_device(self):

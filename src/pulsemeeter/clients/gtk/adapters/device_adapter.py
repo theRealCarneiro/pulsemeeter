@@ -1,4 +1,7 @@
+import re
+
 from pulsemeeter.model.device_model import DeviceModel
+from pulsemeeter.model.device_manager_model import DeviceManagerModel
 from pulsemeeter.model.connection_model import ConnectionModel
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
@@ -35,6 +38,7 @@ class DeviceAdapter(GObject.GObject):
         "primary": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
         "remove_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool))
     }
 
@@ -43,6 +47,7 @@ class DeviceAdapter(GObject.GObject):
         self.device_model = model
 
         self.edit_button.connect('clicked', self.edit_device_popover)
+        self.popover.confirm_button.connect('clicked', self.update_model_settings)
 
         self.handlers['volume'] = self.volume_widget.connect('value-changed', self.update_model_volume)
         self.handlers['mute'] = self.mute_widget.connect('toggled', self.update_model_mute)
@@ -58,6 +63,13 @@ class DeviceAdapter(GObject.GObject):
     def edit_device_popover(self, _):
         self.popover.show_all()
         self.popover.popup()
+        device_type = self.device_model.get_type()
+        if device_type in ('hi', 'a'):
+            device_list = DeviceManagerModel.list_devices(device_type)
+            self.popover.device_list = device_list
+            self.popover.combobox_widget.empty()
+            self.popover.combobox_widget.load_list(device_list, 'description', self.model.description)
+
         self.popover.name_widget.input.grab_focus()
 
     def insert_connection_widget(self, connection_schema: ConnectionModel, output_type: str, output_id: str):
@@ -87,6 +99,13 @@ class DeviceAdapter(GObject.GObject):
 
     def update_model_remove(self, _):
         self.emit('remove_pressed', self.device_model.get_type())
+
+    def update_model_settings(self, _):
+        schema = self.popover.to_schema()
+        if len(schema['nick'].strip()) != 0 and re.match(r'^[a-zA-Z0-9_.\- ]+$', schema['nick']):
+            self.emit('device_change', schema)
+            self.popover.popdown()
+            self.name_widget.set_label(schema['nick'], schema['description'])
 
     def set_volume(self, value):
         print('Setting widget volume')

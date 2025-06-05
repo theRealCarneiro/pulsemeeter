@@ -27,6 +27,11 @@ class NameWidget(Gtk.HBox):
 
         # self.get_accessible().set_name(f"{nick}, {description}")
 
+    def set_label(self, nick, description=None):
+        self.nick_label.set_text(nick)
+        if description is not None and nick != description:
+            self.description_label.set_text(description)
+
     @property
     def description(self) -> str:
         if self.description_label is None:
