@@ -27,3 +27,9 @@ jobs:
       run: |
         python -m build
         ls dist/*
+
+    - name: Upload dist artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: meexer-dist
+        path: dist/
