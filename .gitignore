@@ -2,6 +2,8 @@ teste/*
 teste.py
 *.session
 *-env
+old
+link.sh
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm+all
@@ -259,3 +261,4 @@ cython_debug/
 
 # Glade temporary files
 *.glade~
+*.glade\#

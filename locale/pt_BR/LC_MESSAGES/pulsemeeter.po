@@ -1,0 +1,130 @@
+# Portuguese translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PULSEMEETER package.
+# theRealCarneiro <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Pulsemeeter\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-05 14:10-0300\n"
+"PO-Revision-Date: 2025-06-05 14:21-0300\n"
+"Last-Translator:  <therealcarneiro@gmail.com>\n"
+"Language-Team: Brazilian Portuguese <ldpbr-"
+"translation@lists.sourceforge.net>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: layouts/tabbed.py:16 widgets/device/device_box_widget.py:21
+msgid "Hardware Inputs"
+msgstr "Entradas de Hardware"
+
+#: layouts/tabbed.py:17 widgets/device/device_box_widget.py:22
+msgid "Virtual Inputs"
+msgstr "Entradas Virtuais"
+
+#: layouts/tabbed.py:18 widgets/device/device_box_widget.py:23
+msgid "Hardware Outputs"
+msgstr "Saídas de Hardware"
+
+#: layouts/tabbed.py:19 widgets/device/device_box_widget.py:24
+msgid "Virtual Outputs"
+msgstr "Saídas Virtuais"
+
+#: layouts/tabbed.py:50 layouts/tabbed.py:53 widgets/app/app_box_widget.py:20
+msgid "Application Outputs"
+msgstr "Saídas de Aplicativos"
+
+#: layouts/tabbed.py:51 layouts/tabbed.py:54 widgets/app/app_box_widget.py:21
+msgid "Application Inputs"
+msgstr "Entradas de Aplicativos"
+
+#: widgets/app/app_widget.py:67 widgets/device/device_widget.py:97
+msgid "Volume"
+msgstr "Volume"
+
+#: widgets/app/app_widget.py:68 widgets/device/device_widget.py:98
+msgid "Mute"
+msgstr "Silenciar"
+
+#: widgets/app/app_widget.py:69
+msgid "Select Device"
+msgstr "Selecionar Dispositivo"
+
+#: widgets/app/app_widget.py:70
+#, python-format
+msgid "Select the app %f! device"
+msgstr "Selecione o dispositivo do app %f!"
+
+#: widgets/common/combobox_widget.py:22
+#, python-format
+msgid "Select the %f"
+msgstr "Selecione o %f"
+
+#: widgets/common/input_widget.py:27
+msgid "Enter the "
+msgstr "Digite o "
+
+#: widgets/device/create_device_widget.py:37
+#: widgets/device/create_device_widget.py:90
+msgid "Nick: "
+msgstr "Apelido: "
+
+#: widgets/device/create_device_widget.py:39
+msgid "Device: "
+msgstr "Dispositivo: "
+
+#: widgets/device/create_device_widget.py:70
+#: widgets/device/create_device_widget.py:117
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: widgets/device/create_device_widget.py:71
+#: widgets/device/create_device_widget.py:118
+msgid "Delete device"
+msgstr "Excluir dispositivo"
+
+#: widgets/device/create_device_widget.py:72
+#: widgets/device/create_device_widget.py:119
+msgid "Create device"
+msgstr "Criar dispositivo"
+
+#: widgets/device/create_device_widget.py:91
+msgid "Channel Map: "
+msgstr "Mapa de Canais: "
+
+#: widgets/device/create_device_widget.py:92
+msgid "check-filled"
+msgstr "check-filled"
+
+#: widgets/device/device_widget.py:99
+msgid "Edit"
+msgstr "Editar"
+
+#: widgets/device/device_widget.py:100
+msgid "Primary"
+msgstr "Primário"
+
+#: widgets/device/connection_box_widget.py:29
+msgid "Hardware Output connection box"
+msgstr "Caixa de conexão de Saída de Hardware"
+
+#: widgets/device/connection_box_widget.py:31
+msgid "Hardware Input connection box"
+msgstr "Caixa de conexão de Entrada de Hardware"
+
+#: widgets/device/port_selector_widget.py:19
+msgid "Selected ports: "
+msgstr "Portas selecionadas: "
+
+#: widgets/device/port_selector_widget.py:21
+msgid "Selected ports"
+msgstr "Portas selecionadas"
+
+#: widgets/device/port_selector_widget.py:37
+msgid "Enable or disable the port "
+msgstr "Ativar ou desativar a porta "
+

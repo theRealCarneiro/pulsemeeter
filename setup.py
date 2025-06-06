@@ -1,56 +1,44 @@
 import os
-import pathlib
 from setuptools import setup
-
-with open('pulsemeeter/settings.py') as f:
-    for line in f:
-        if line.startswith('__version__'):
-            __version__ = line.replace("'", '').split()[2]
-            break
+from babel.messages import frontend as babel
+from setuptools.command.build_py import build_py as _build_py
 
 
-VERSION = __version__
-README = (pathlib.Path(__file__).parent / "README.md").read_text()
+class build_with_translations(_build_py):
+    def run(self):
+        self.run_command("compile_catalog")
+
+        # package .mo files
+        mo_files = []
+        for directory, _, filenames in os.walk('locale'):
+            if filenames:
+                files = [os.path.join(directory, filename) for filename in filenames if '.mo' in filename]
+                mo_files.append((os.path.join('share', directory), files))
+
+        self.distribution.data_files.extend(mo_files)
+        super().run()
+
+
 DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']), ]
-REQUIREMENTS = []
 
-with open('requirements.txt') as file:
-    for line in file:
-        REQUIREMENTS.append(line.rstrip())
-
-for directory, _, filenames in os.walk(u'share'):
+for directory, _, filenames in os.walk('share'):
     dest = directory[6:]
     if filenames:
         files = [os.path.join(directory, filename) for filename in filenames]
         DATA_FILES.append((os.path.join('share', dest), files))
 
 setup(
-    name='pulsemeeter',
-    version=VERSION,
-    description='A pulseaudio audio routing application',
-    long_description=README,
-    long_description_content_type="text/markdown",
-    author='Gabriel Carneiro',
-    author_email='therealcarneiro@gmail.com',
-    license="MIT",
-    license_files='LICENSE',
-    classifiers=[
-        "Environment :: X11 Applications",
-        "License :: OSI Approved :: MIT License",
-    ],
-    url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=['pulsemeeter', 'pulsemeeter.interface', 'pulsemeeter.socket', 'pulsemeeter.backends'],
-    install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
-    entry_points={
-        "console_scripts": [
-            "pulsemeeter = pulsemeeter.__main__:main",
+    cmdclass={
+        'build_py': build_with_translations,
+        'compile_catalog': babel.compile_catalog,
+        'extract_messages': babel.extract_messages,
+        'init_catalog': babel.init_catalog,
+        'update_catalog': babel.update_catalog
+    },
+    message_extractors={
+        'src': [
+            ('**/*.py', 'python', None),
         ],
     },
-
-    python_requires=">=3.5",
-    scripts=[
-        'scripts/pmctl',
-    ],
-    include_package_data=True
 )
