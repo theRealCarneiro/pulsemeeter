@@ -1,6 +1,6 @@
 recursive-include share/*
 recursive-include pulsemeeter/interface/layouts/*
-include pulsemeeter/config.json
+recursive-include locale/*
 include requirements.txt
 include LICENSE
 include MANIFEST.in

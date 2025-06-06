@@ -13,6 +13,7 @@ APP_NAME = "pulsemeeter"
 USER = os.getenv('USER')
 HOME = os.getenv('HOME', os.getenv('USERPROFILE'))
 XDG_CONFIG_HOME = os.getenv('XDG_CONFIG_HOME', os.path.join(HOME, '.config'))
+XDG_DATA_HOME = os.getenv('XDG_DATA_HOME', os.path.join(HOME, '.local/share'))
 XDG_RUNTIME_DIR = os.getenv('XDG_RUNTIME_DIR', '/tmp')
 CONFIG_DIR = os.path.join(XDG_CONFIG_HOME, 'pulsemeeter')
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.json')
@@ -31,9 +32,11 @@ DEBUG = False
 LOGGING_FORMAT = "[%(levelname)s] in [%(module)s]: %(message)s"
 LOGGING_FORMAT_DEBUG = "[%(levelname)s] in [%(module)s@%(funcName)s]: %(message)s"
 
-LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")
+#LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")
+LOCALE_DIR = os.path.join(XDG_DATA_HOME, "locale")
 
 # Set up translation
-locale.setlocale(locale.LC_ALL, "")
+# locale.setlocale(locale.LC_ALL, "")
 gettext.bindtextdomain(APP_NAME, LOCALE_DIR)
+# gettext.translation(APP_NAME, LOCALE_DIR)
 gettext.textdomain(APP_NAME)
