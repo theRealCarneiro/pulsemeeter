@@ -1,6 +1,7 @@
 # Pulsemeeter ZIP install
 .PHONY: zip install uninstall
 
+PREFIX=/usr/local
 BUILD_DIR=./buildzip
 DIST_DIR=${BUILD_DIR}/dist
 PKG_DIR=${BUILD_DIR}/pkg
