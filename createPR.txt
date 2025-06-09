@@ -1,0 +1,26 @@
+# Pulsemeeter Contribution Workflow for Nightly Branch
+# Run from 'j:/Cline Programming/Pulsemeeter' directory
+
+1. Clone your fork (first time only):
+git clone -b nightly https://github.com/XavierBit/pulsemeeter.git ../pulsemeeter-fork
+cd ../pulsemeeter-fork
+git remote add upstream https://github.com/theRealCarneiro/pulsemeeter.git
+
+2. Prepare changes (from main project dir):
+cd "j:\Cline Programming\Pulsemeeter"
+xcopy /E /Y "pulsemeeter\src\pulsemeeter\locale\pt_BR" "..\pulsemeeter-fork\src\pulsemeeter\locale\" 
+
+3. Commit changes:
+git add src/pulsemeeter/locale/pt_BR/LC_MESSAGES/pulsemeeter.po
+git commit -m "Add translations"
+
+4. Push to your fork:
+git push origin HEAD:nightly
+
+5. Create PR:
+https://github.com/theRealCarneiro/pulsemeeter/compare/nightly...XavierBit:nightly
+
+# Verification steps:
+- Check remotes: git remote -v
+- Verify file exists: Test-Path src/pulsemeeter/locale/pt_BR/LC_MESSAGES/pulsemeeter.po
+- Use PAT with repo scope for authentication
