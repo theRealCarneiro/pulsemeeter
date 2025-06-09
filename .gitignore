@@ -115,6 +115,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+buildzip/
+distzip/
 develop-eggs/
 dist/
 downloads/
