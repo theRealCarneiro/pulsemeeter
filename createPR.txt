@@ -1,6 +1,8 @@
 # Pulsemeeter Contribution Workflow for Nightly Branch
 # Run from 'j:/Cline Programming/Pulsemeeter' directory
 
+This file "createPR.txt" is only for local use. Do preserve it, do not overwrite it and never transmit it to the Github project!
+
 1. Clone your fork (first time only):
 git clone -b nightly https://github.com/XavierBit/pulsemeeter.git ../pulsemeeter-fork
 cd ../pulsemeeter-fork
