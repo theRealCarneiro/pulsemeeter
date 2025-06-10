@@ -128,3 +128,14 @@ msgstr "Portas selecionadas"
 msgid "Enable or disable the port "
 msgstr "Ativar ou desativar a porta "
 
+#: widgets/common/combobox_widget.py:22
+msgid "Select the %s "
+msgstr "Selecione o %s "
+
+#: widgets/common/input_widget.py:27
+msgid "Enter the %s "
+msgstr "Digite o %s "
+
+#: /widgets/app/app_widget.py:70
+msgid "Select the app %s! device "
+msgstr "Selecione o dispositivo do app %s! "
