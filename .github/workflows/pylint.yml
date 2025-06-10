@@ -1,0 +1,81 @@
+name: Pylint
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install  libgirepository-2.0-dev python3-gi gobject-introspection gir1.2-gtk-3.0 libcairo2-dev
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r dev-requirements.txt
+        
+      # pip install pylint pylint_pydantic perflint
+        
+      # if is pr get the sha of the pr
+    - name: get pull-request files
+      if: ${{ github.event_name == 'pull_request' }}
+      id: changed-files-pr
+      uses: tj-actions/changed-files@v24
+      with:
+        sha: ${{ github.event.pull_request.head.sha }}
+        
+      # if not pr get the last sha
+    - name: get commit files
+      if: ${{ github.event_name != 'pull_request' }}
+      id: changed-files-else
+      uses: tj-actions/changed-files@v24
+      
+      # ----
+      # COMMIT OR OTHER PUSH
+      # ----
+    - name: check code (OUTPUT)
+      if: ${{ github.event_name != 'pull_request' }}
+
+
+      run: |
+          for file in ${{ steps.changed-files-else.outputs.all_changed_files }}; do
+            if [[ $file == *.py ]] && [[ $file != test*.py ]]; then
+              echo
+              echo "-------[ $file ]-------"
+              echo
+          
+              pylint $file
+            fi
+          done
+          
+      # ----
+      # PULL REQUEST
+      # ----
+    - name: check PR (OUTPUT)
+      if: ${{ github.event_name == 'pull_request' }}
+
+      run: |          
+          for file in ${{ steps.changed-files-pr.outputs.all_changed_files }}; do
+            if [[ $file == *.py ]] && [[ $file != test*.py ]]; then
+              echo
+              echo "-------[ $file ]-------"
+              echo
+          
+              pylint $file
+            fi
+          done
