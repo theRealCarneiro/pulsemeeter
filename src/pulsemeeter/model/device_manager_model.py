@@ -204,7 +204,7 @@ class DeviceManagerModel(SignalModel):
         # add device to dict
         device_dict[device_id] = device
 
-        # pmctl.init(device_type, device.name, device.channels)
+        pmctl.init(device_type, device.name, device.channels)
         self.emit('device_new', device_type, device_id, device)
 
         return device_type, device_id, device

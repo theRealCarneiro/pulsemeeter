@@ -273,15 +273,15 @@ class ApplicationAdapter(GObject.GObject):
         '''
         Add new device to model
         '''
-        device_type, device_id, device = self.config_model.device_manager.create_device(device_schema)
+        _, _, device = self.config_model.device_manager.create_device(device_schema)
         if device.device_class != 'virtual':
             return
 
-        if device_schema.device_type == 'sink':
-            AppCombobox.append_device_list('sink_input', device_schema.name)
-            AppCombobox.append_device_list('source_output', device_schema.name + '.monitor')
+        if device.device_type == 'sink':
+            AppCombobox.append_device_list('sink_input', device.name)
+            AppCombobox.append_device_list('source_output', device.name + '.monitor')
         else:
-            AppCombobox.append_device_list('source_output', device_schema.name)
+            AppCombobox.append_device_list('source_output', device.name)
 
     def device_remove(self, _, device_type, device_id):
         '''
