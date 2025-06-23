@@ -182,7 +182,7 @@ class DeviceManagerModel(SignalModel):
                 connection_model = self.create_connection(input_device, output_device)
                 input_device.create_connection(output_type, output_id, connection_model)
 
-    def create_device(self, device_dict: dict) -> tuple(str, str, DeviceModel):
+    def create_device(self, device_dict: dict):
         '''
         Insert a device into config
         '''

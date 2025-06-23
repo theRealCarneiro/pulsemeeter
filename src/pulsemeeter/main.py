@@ -15,6 +15,7 @@ from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.clients.gtk.gtk_client import GtkClient
 # from pulsemeeter.ipc.server_async import Server
 # from pulsemeeter.ipc.client import Client
+from pulsemeeter.settings import VERSION
 
 LOG = logging.getLogger("generic")
 
@@ -64,6 +65,9 @@ def main():
         case ['init']:
             # server.init_audio()
             ConfigModel.load_config()
+
+        case ['--version']:
+            print(VERSION)
 
         # exit: close server, clients should close after they recive an exit signal
         case ['exit']:
