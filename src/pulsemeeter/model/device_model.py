@@ -22,6 +22,7 @@ class DeviceModel(SignalModel):
     volume: list[Volume] = None
     mute: bool = False
     flags: int = 0
+    external: bool = False
     primary: bool | None
     channels: int
     channel_list: list[str]

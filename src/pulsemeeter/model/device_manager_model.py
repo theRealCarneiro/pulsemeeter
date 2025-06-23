@@ -38,7 +38,7 @@ class DeviceManagerModel(SignalModel):
         Create Pulse device
         '''
         device = self.__dict__[device_type][device_id]
-        if device_type in ('vi', 'b'):
+        if device_type in ('vi', 'b') and not device.external:
             pmctl.init(device.device_type, device.name, device.channels)
 
     def bulk_connect(self, device_type, device_id, state):
@@ -204,9 +204,7 @@ class DeviceManagerModel(SignalModel):
         # add device to dict
         device_dict[device_id] = device
 
-        if device.device_class  == 'virtual':
-            self.init_device(device_type, device_id)
-            print(device_type, device.name, device.channels)
+        self.init_device(device_type, device_id)
 
         self.emit('device_new', device_type, device_id, device)
 
