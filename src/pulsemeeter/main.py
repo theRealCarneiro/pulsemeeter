@@ -11,6 +11,7 @@ import sys
 # from pulsemeeter.api.pulse_events_api import task as pulse_events_task
 
 # from pulsemeeter.scripts import argparser
+from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.clients.gtk.gtk_client import GtkClient
 # from pulsemeeter.ipc.server_async import Server
 # from pulsemeeter.ipc.client import Client
@@ -62,7 +63,7 @@ def main():
         # init: Just start devices and connections
         case ['init']:
             # server.init_audio()
-            pass
+            ConfigModel.load_config()
 
         # exit: close server, clients should close after they recive an exit signal
         case ['exit']:
