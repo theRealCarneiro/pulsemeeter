@@ -273,8 +273,8 @@ class ApplicationAdapter(GObject.GObject):
         '''
         Add new device to model
         '''
-        self.config_model.device_manager.create_device(device_schema)
-        if device_schema.device_class != 'virtual':
+        device_type, device_id, device = self.config_model.device_manager.create_device(device_schema)
+        if device.device_class != 'virtual':
             return
 
         if device_schema.device_type == 'sink':

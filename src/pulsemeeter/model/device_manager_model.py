@@ -213,13 +213,22 @@ class DeviceManagerModel(SignalModel):
         '''
         Remove a device from config
         '''
+
+        # if its a hardwre device, we have to disconnect them
+        if device_type in ('a', 'hi'):
+            self.bulk_connect(device_type, device_index, False)
+
         device = self.__dict__[device_type].pop(device_index)
+
+        # remove connection dict from input devices
         if device.get_type() in ('a', 'b'):
             for input_type in ('vi', 'hi'):
                 for _, input_device in self.__dict__[input_type].items():
                     input_device.connections[device_type].pop(device_index)
 
-        pmctl.remove(device.name)
+        if device.device_class == 'virtual':
+            pmctl.remove(device.name)
+
         self.emit('device_remove', device_type, device_index)
         return device
 
