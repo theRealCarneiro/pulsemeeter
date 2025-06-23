@@ -214,6 +214,11 @@ class DeviceManagerModel(SignalModel):
         Remove a device from config
         '''
         device = self.__dict__[device_type].pop(device_index)
+        if device.get_type() in ('a', 'b'):
+            for input_type in ('vi', 'hi'):
+                for _, input_device in self.__dict__[input_type].items():
+                    input_device.connections[device_type].pop(device_index)
+
         pmctl.remove(device.name)
         self.emit('device_remove', device_type, device_index)
         return device

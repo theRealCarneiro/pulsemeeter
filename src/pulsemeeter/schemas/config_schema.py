@@ -10,4 +10,4 @@ class ConfigSchema(BaseModel):
     vumeters: bool = True
     cleanup: bool = False
     tray: bool = False
-    layout: str = 'defaulth'
+    layout: str = 'blocks'

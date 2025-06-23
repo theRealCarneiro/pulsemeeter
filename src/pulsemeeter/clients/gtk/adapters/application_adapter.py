@@ -172,7 +172,7 @@ class ApplicationAdapter(GObject.GObject):
 
     def connect_devicemanager_events(self):
         self.config_model.device_manager.connect('device_new', self.device_new_callback)
-        self.config_model.device_manager.connect('device_remove', self.window.remove_device)
+        self.config_model.device_manager.connect('device_remove', self.device_remove_callback)
 
     def connect_window_gtk_events(self, window):
         window.connect('add_device_pressed', self.add_device_hijack)
