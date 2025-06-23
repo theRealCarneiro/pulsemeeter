@@ -18,7 +18,7 @@ zip:
 	mv ${DIST_DIR}/bin ${PKG_DIR}
 	mv ${DIST_DIR}/share ${PKG_DIR}
 	@echo Deleting unnecessary files
-	rm -rf ${DIST_DIR}/pydantic_core ${DIST_DIR}/include ${DIST_DIR}/*.dist-info
+	rm -rf ${DIST_DIR}/pydantic ${DIST_DIR}/pydantic_core ${DIST_DIR}/include ${DIST_DIR}/*.dist-info
 	@echo Zipping package
 	python -m zipapp ${DIST_DIR} -m "pulsemeeter.main:main" -o \
 		${PKG_DIR}/bin/pulsemeeter -p '/usr/bin/env python3'
