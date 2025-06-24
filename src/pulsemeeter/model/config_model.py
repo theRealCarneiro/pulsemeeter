@@ -2,12 +2,7 @@ import os
 import logging
 import json
 from pulsemeeter.model.signal_model import SignalModel
-# from pulsemeeter.schemas.config_schema import ConfigSchema
-# from pulsemeeter.schemas.device_schema import ConnectionSchema
-# from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.device_manager_model import DeviceManagerModel
-# from pulsemeeter.model.connection_manager_model import ConnectionManagerModel
-# from pulsemeeter.schemas.device_schema import DeviceSchema
 from pulsemeeter.settings import CONFIG_DIR, CONFIG_FILE
 # CONFIG_FILE += '.test.json'
 

@@ -14,6 +14,7 @@ from gi.repository import Gtk, Gdk, GObject  # noqa: E402
 class MainWindowAdapter(GObject.GObject):
 
     config_model: ConfigModel
+    settings_button: Gtk.Button
     device_grid: Gtk.Grid
     device_box: dict[str, dict[DeviceBoxWidget]]
     app_box: dict[str, Gtk.Box]
@@ -35,6 +36,8 @@ class MainWindowAdapter(GObject.GObject):
             self.device_box[device_type].connect('create_pressed', self.create_pressed)
             self.device_box[device_type].connect('remove_pressed', self.remove_pressed)
             self.device_box[device_type].connect('add_device_pressed', self.add_device_pressed)
+
+        self.settings_button.connect('clicked', self.open_settings)
 
         # self.config_model.device_manager.connect('device_new', self.insert_device)
         # self.config_model.device_manager.connect('device_remove', self.remove_device)
@@ -91,6 +94,10 @@ class MainWindowAdapter(GObject.GObject):
     #             app_schema = AppSchema(**schema)
     #             app = AppWidget(app_schema)
     #             self.insert_app(app)
+
+    def open_settings(self, _):
+        self.settings_popover.popup()
+        self.settings_popover.show_all()
 
     def insert_app(self, app_type, app_index, app_widget: AppWidget):
         '''

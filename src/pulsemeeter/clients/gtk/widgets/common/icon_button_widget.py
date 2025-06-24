@@ -10,7 +10,7 @@ class IconButton(Gtk.Button):
     A button with an icon
     '''
 
-    def __init__(self, icon_name: str):
+    def __init__(self, icon_name: str, label=''):
         icon = Gio.ThemedIcon(name=icon_name)
         image = Gtk.Image()
         image.set_from_gicon(icon, Gtk.IconSize.MENU)

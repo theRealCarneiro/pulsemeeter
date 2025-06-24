@@ -55,7 +55,7 @@ class DeviceWidget(Gtk.Frame, DeviceAdapter):
         if device_type in ('vi', 'hi'):
             self.connections_widget = ConnectionBoxWidget(device_type, model.connections)
 
-        self.edit_button = IconButton('edit')
+        self.edit_button = IconButton('document-edit-symbolic')
         self.edit_button.set_halign(Gtk.Align.END)
 
         # self.edit_device_widget = CreateDevice(device_type, device_list)

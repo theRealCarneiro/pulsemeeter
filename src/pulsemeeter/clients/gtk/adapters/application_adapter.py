@@ -51,22 +51,22 @@ class ApplicationAdapter(GObject.GObject):
             for app_index, app in self.window.app_box[app_type].apps.items():
                 self.connect_app_gtk_events(app_type, app_index, app)
 
-        accel_group = Gtk.AccelGroup()
-        self.window.add_accel_group(accel_group)
-        self.accel_group = accel_group
-        self.current_box = 0
-        self.current_device = 0
-
-        accel_group.connect(ord('j'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(1))
-        accel_group.connect(ord('k'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(-1))
-
-        accel_group.connect(ord('h'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(-1))
-        accel_group.connect(ord('l'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(1))
-
-        accel_group.connect(ord('m'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('mute', None))
-        accel_group.connect(ord('p'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('primary', None))
-        accel_group.connect(ord('-'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', -1))
-        accel_group.connect(ord('='), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', 1))
+        # accel_group = Gtk.AccelGroup()
+        # self.window.add_accel_group(accel_group)
+        # self.accel_group = accel_group
+        # self.current_box = 0
+        # self.current_device = 0
+        #
+        # accel_group.connect(ord('j'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(1))
+        # accel_group.connect(ord('k'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(-1))
+        #
+        # accel_group.connect(ord('h'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(-1))
+        # accel_group.connect(ord('l'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(1))
+        #
+        # accel_group.connect(ord('m'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('mute', None))
+        # accel_group.connect(ord('p'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('primary', None))
+        # accel_group.connect(ord('-'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', -1))
+        # accel_group.connect(ord('='), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', 1))
 
     #
     # # BINDS
@@ -170,6 +170,13 @@ class ApplicationAdapter(GObject.GObject):
             popover.combobox_widget.empty()
             popover.combobox_widget.load_list(device_list, 'description')
 
+    def settings_menu_apply(self, _):
+        config = self.window.settings_popover.to_schema()
+        self.config_model.vumeters = config['vumeters']
+        self.config_model.tray = config['tray']
+        self.config_model.layout = config['layout']
+        print(config)
+
     def connect_devicemanager_events(self):
         self.config_model.device_manager.connect('device_new', self.device_new_callback)
         self.config_model.device_manager.connect('device_remove', self.device_remove_callback)
@@ -178,6 +185,7 @@ class ApplicationAdapter(GObject.GObject):
         window.connect('add_device_pressed', self.add_device_hijack)
         window.connect('device_new', self.device_new)
         window.connect('device_remove', self.device_remove)
+        window.settings_popover.apply_button.connect('clicked', self.settings_menu_apply)
 
     def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget):
         '''

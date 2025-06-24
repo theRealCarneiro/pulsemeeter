@@ -35,6 +35,8 @@ class LabeledCombobox(Gtk.Grid):
         if field is None:
             for entry in entry_list:
                 self.insert_entry(entry)
+                if selected == entry:
+                    self.combobox.set_active(i)
                 i += 1
             return
 

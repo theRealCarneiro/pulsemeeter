@@ -27,8 +27,9 @@ class ConnectionSettingsPopup(Gtk.Popover, ConnectionSettingsAdapter):
 
         # create widgets
         self.auto_ports_check = Gtk.CheckButton(label=_("Auto ports"), )
-        self.confirm_button = IconButton('check-filled')
-        self.cancel_button = IconButton('cancel')
+        # self.confirm_button = IconButton('object-select-symbolic')
+        self.confirm_button = Gtk.Button(label=_('Apply'))
+        self.cancel_button = IconButton('window-close-symbolic')
         self.button_grid, self.checkboxes = self.create_routing_grid(connection_model)
 
         self.auto_ports_check.set_active(connection_model.auto_ports)
