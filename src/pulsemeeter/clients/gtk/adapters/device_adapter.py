@@ -39,7 +39,8 @@ class DeviceAdapter(GObject.GObject):
         "volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
         "remove_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
         "device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
-        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool))
+        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
+        "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT))
     }
 
     def __init__(self, model: DeviceModel):
@@ -55,6 +56,7 @@ class DeviceAdapter(GObject.GObject):
         self.handlers['remove_pressed'] = self.popover.remove_button.connect('clicked', self.update_model_remove)
         if model.get_type() in ('vi', 'hi'):
             self.handlers['connection'] = self.connections_widget.connect('connection', self.update_model_connection)
+            self.handlers['update_connection'] = self.connections_widget.connect('update_connection', self.update_model_connection_settings)
 
         # self.device_model.connect('connection', self.set)
         # self.device_model.connect('volume', self.set_volume)
@@ -96,6 +98,9 @@ class DeviceAdapter(GObject.GObject):
     def update_model_connection(self, button, device_type, device_id, state):
         # state = button.get_active()
         self.emit('connection', device_type, device_id, state)
+
+    def update_model_connection_settings(self, button, device_type, device_id, connection_model):
+        self.emit('update_connection', device_type, device_id, connection_model)
 
     def update_model_remove(self, _):
         self.emit('remove_pressed', self.device_model.get_type())

@@ -17,12 +17,19 @@ class ConnectionBoxAdapter(GObject.GObject):
     model: dict[str, dict[str, ConnectionModel]]
 
     __gsignals__ = {
-        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool))
+        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
+        "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT))
     }
 
     def emit_connect_signal(self, widget, device_type, device_id):
         state = widget.get_active()
+        # self.model[device_type][device_id].state = state
         self.emit('connection', device_type, device_id, state)
+
+    def emit_update_signal(self, widget, device_type, device_id, button):
+        popover = button.popover
+        connection_model = popover.get_connection_model()
+        self.emit('update_connection', device_type, device_id, connection_model)
 
     def refresh_connections(self):
         self.set_empty()
@@ -40,6 +47,7 @@ class ConnectionBoxAdapter(GObject.GObject):
 
         # connect button to emit event connection event
         button.connect('toggled', self.emit_connect_signal, device_type, button_id)
+        button.popover.confirm_button.connect('clicked', self.emit_update_signal, device_type, button_id, button)
         return button
 
     def remove_button(self, device_type, button_id):

@@ -190,6 +190,7 @@ class ApplicationAdapter(GObject.GObject):
         device_handler['volume'] = device.connect('volume', self.set_volume, device_type, device_id)
         device_handler['mute'] = device.connect('mute', self.set_mute, device_type, device_id)
         device_handler['connection'] = device.connect('connection', self.set_connection, device_type, device_id)
+        device_handler['update_connection'] = device.connect('update_connection', self.update_connection, device_type, device_id)
         device_handler['primary'] = device.connect('primary', self.set_primary, device_type, device_id)
 
         # self.vumeter_tasks[device_type][device_id] = self.start_vumeter(device)
@@ -268,6 +269,12 @@ class ApplicationAdapter(GObject.GObject):
         Set model connection
         '''
         self.config_model.device_manager.set_connection(input_type, input_id, output_type, output_id, state)
+
+    def update_connection(self, _, output_type, output_id, connection_model, input_type, input_id):
+        '''
+        Set model connection
+        '''
+        self.config_model.device_manager.update_connection(input_type, input_id, output_type, output_id, connection_model)
 
     def device_new(self, _, device_schema):
         '''

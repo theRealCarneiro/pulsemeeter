@@ -15,9 +15,9 @@ class ConnectionModel(SignalModel):
     auto_ports: bool = True
     # input_name: str
     # output_name: str
-    # input_sel_channels: list[bool]
-    # output_sel_channels: list[bool]
-    port_map: list[str] = Field(default_factory=list)
+    input_sel_channels: list[bool]
+    output_sel_channels: list[bool]
+    port_map: list[list[int]] = Field(default_factory=list)
 
     def str_port_map(self, input_sel_channels, output_sel_channels):
         '''

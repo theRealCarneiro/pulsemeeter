@@ -78,8 +78,12 @@ class DeviceManagerModel(SignalModel):
 
         # update values
         device.update_device_settings(device_schema)
-        # for key, item in device_schema.items():
-        #     device[key] = item
+
+        # change connection settings
+        if device_type in ('vi', 'hi'):
+            self.handle_input_change(device_type, device_id)
+        else:
+            self.handle_output_change(device_type, device_id)
 
         if device_type in ('vi', 'b'):
             self.init_device(device_type, device_id)
@@ -131,6 +135,20 @@ class DeviceManagerModel(SignalModel):
 
         # print(input_sel_channels, output_sel_channels, port_map)
 
+    def update_connection(self, input_type, input_id, output_type, output_id, connection_model):
+        input_device = self.__dict__[input_type][input_id]
+        cur_connection_model = input_device.connections[output_type][output_id]
+        state = connection_model.state
+        print(cur_connection_model, connection_model)
+        print(input_type, input_id, output_type, output_id)
+
+        self.set_connection(input_type, input_id, output_type, output_id, False)
+
+        cur_connection_model.auto_ports = connection_model.auto_ports
+        cur_connection_model.port_map = connection_model.port_map
+
+        self.set_connection(input_type, input_id, output_type, output_id, state)
+
     def get_device(self, device_type: str, device_id: str):
         '''
         Get a device by it's id
@@ -163,6 +181,26 @@ class DeviceManagerModel(SignalModel):
             input_sel_channels=input_device.selected_channels,
             output_sel_channels=output_device.selected_channels
         )
+
+    def handle_output_change(self, output_type, output_id):
+        '''
+        Creates connections to the output in all inputs
+        '''
+        output_device = self.__dict__[output_type][output_id]
+        for input_type in ('vi', 'hi'):
+            for _, input_device in self.__dict__[input_type].items():
+                connection_model = input_device.connections[output_type][output_id]
+                connection_model.output_sel_channels = output_device.selected_channels
+
+    def handle_input_change(self, input_type, input_id):
+        '''
+        Creates connections to existing output devices
+        '''
+        input_device = self.__dict__[input_type][input_id]
+        for output_type in input_device.connections:
+            for output_id in self.__dict__[output_type]:
+                connection_model = input_device.connections[output_type][output_id]
+                connection_model.input_sel_channels = input_device.selected_channels
 
     def handle_new_output(self, output_type, output_id, output_device):
         '''

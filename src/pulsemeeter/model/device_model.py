@@ -231,7 +231,36 @@ class DeviceModel(SignalModel):
 
         return [i for i in range(len(sel_channels)) if sel_channels[i] is True]
 
-    def str_port_map(self, output_type: str, output_id: str, output):
+    def make_port_map(self, output_type: str, output_id: str, output) -> str:
+        '''
+        Returns a string formated portmap for pmctl
+            "output_type" is either 'a' or 'b'
+            "output_id" is an int > 0
+            "output" is the DeviceModel of the output device
+        '''
+        output_ports = output.get_selected_channel_list()
+        input_ports: list = self.get_selected_channel_list()
+        ports: str = ''
+
+        # auto port mapping
+        if self.connections[output_type][output_id].auto_ports is True:
+
+            # iterate until when the shorter ends
+            for input_port, output_port in zip(input_ports, output_ports):
+                ports += f'{input_port}:{output_port} '
+
+        # manual port mapping
+        else:
+            port_map = self.connections[output_type][output_id].port_map
+            for input_port, target_ports in enumerate(port_map):
+                for target_port in target_ports:
+                    ports += f'{input_ports[input_port]}:{target_port} '
+
+        ports = ports[:-1]
+
+        return ports
+
+    def str_port_map(self, output_type: str, output_id: str, output) -> str:
         '''
         Returns a string formated portmap for pmctl
             "output_type" is either 'a' or 'b'

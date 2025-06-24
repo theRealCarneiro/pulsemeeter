@@ -17,7 +17,8 @@ class ConnectionBoxWidget(Gtk.Box, ConnectionBoxAdapter):
 
     # gtk wont allow to have this declaration only on parent
     __gsignals__ = {
-        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool))
+        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
+        "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT))
     }
 
     def __init__(self, output_type, connections_schemas: dict[str, dict[str, ConnectionModel]]):
