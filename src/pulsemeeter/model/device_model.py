@@ -319,8 +319,8 @@ class DeviceModel(SignalModel):
     #     self.check_volume_changes(volume)
     #     self.check_mute_changes(mute)
 
-    @classmethod
-    def update_from_pa(cls, pa_device, device_model):
+    # @classmethod
+    def update_from_pa(self, pa_device):
         '''
         Convert a pulsectl device into an Device Model
             "pa_device" is either a PulseSinkInfo or a PulseSourceInfo
@@ -328,12 +328,14 @@ class DeviceModel(SignalModel):
             "device_type" is either 'sink' or 'source'
         '''
 
-        # device_model.channel_list = pa_device.channel_list
-        # device_model.device_type = device_type
-        device_model.mute = bool(pa_device.mute)
-        device_model.volume = [round(i * 100) for i in pa_device.volume.values]
+        self.set_mute(bool(pa_device.mute), emit=True)
 
-        return device_model
+        vol = []
+        for index, channel in enumerate(self.selected_channels):
+            if channel is True:
+                vol.append(round(pa_device.volume.values[index] * 100))
+
+        self.set_volume(vol[0], emit=True)
 
     @classmethod
     def pa_to_device_model(cls, device, device_type: str):

@@ -3,6 +3,7 @@ from typing import Literal
 
 # from pydantic import BaseModel
 from pulsemeeter.scripts import pmctl
+from pulsemeeter.scripts import pmctl_async
 from pulsemeeter.schemas.typing import PaDeviceType
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.signal_model import SignalModel
@@ -96,7 +97,8 @@ class DeviceManagerModel(SignalModel):
         '''
         for _, device_list in self.__dict__.items():
             for _, device in device_list.items():
-                pmctl.remove(device.name)
+                if device.device_class == 'virtual':
+                    pmctl.remove(device.name)
 
     def set_volume(self, device_type, device_id, volume: int):
         device = self.__dict__[device_type][device_id]
@@ -298,3 +300,45 @@ class DeviceManagerModel(SignalModel):
             dvl.append(device.name)
 
         return dvl
+
+    async def event_listen(self, callback_function):
+        data = {}
+        async for event in pmctl_async.pulse_listener():
+            # req = None
+            # print(event)
+
+            if event.t == 'change':
+                if event.facility in ('sink_input', 'source_output'):
+                    # pulsectl_device = await pmctl.get_app_by_id(event.facility, event.index)
+                    # data = {
+                    #     'device_index': event.index,
+                    #     'device_type': event.facility,
+                    #     'output_name': pulsectl_device.device_name,
+                    #     'volume': [round(i * 100) for i in pulsectl_device.volume.values],
+                    #     'mute': [pulsectl_device.mute]
+                    # }
+
+                    # print(data)
+                    continue
+
+                elif event.facility in ('sink', 'source'):
+                    pulsectl_device = await pmctl_async.get_device_by_id(event.facility, event.index)
+
+                    device_type, device_id, pm_device = self.find_device(event.facility, pulsectl_device.name)
+
+                    if pm_device is None:
+                        continue
+
+                    pm_device.update_from_pa(pulsectl_device)
+                    self.emit('device_change', device_type, device_id, pm_device)
+                    continue
+
+                # primary changes
+                elif event.facility == 'server':
+                    continue
+
+                # else:
+                #     continue
+
+                # if req is not None:
+                #     await callback_function(req)

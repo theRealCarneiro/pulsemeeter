@@ -17,7 +17,7 @@ from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import GObject  # noqa: E402
+from gi.repository import GObject, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -112,17 +112,23 @@ class DeviceAdapter(GObject.GObject):
             self.popover.popdown()
             self.name_widget.set_label(schema['nick'], schema['description'])
 
+    def pa_device_change(self):
+        self.set_volume(self.device_model.volume[0])
+        self.set_mute(self.device_model.mute)
+
     def set_volume(self, value):
-        print('Setting widget volume')
+        # print('Setting widget volume')
         self.volume_widget.handler_block(self.handlers['volume'])
+        # GLib.idle_add(self.volume_widget.set_value, value)
         self.volume_widget.set_value(value)
         self.volume_widget.handler_unblock(self.handlers['volume'])
 
-    def set_mute(self, value):
-        print('Setting widget mute')
-        self.volume_widget.handler_block(self.handlers['mute'])
-        self.volume_widget.set_value(value)
-        self.volume_widget.handler_unblock(self.handlers['mute'])
+    def set_mute(self, state):
+        # print('Setting widget mute')
+        self.mute_widget.handler_block(self.handlers['mute'])
+        # GLib.idle_add(self.mute_widget.set_active, state)
+        self.mute_widget.set_active(state)
+        self.mute_widget.handler_unblock(self.handlers['mute'])
 
     def set_primary(self, state):
         print(self.device_model.name, state)

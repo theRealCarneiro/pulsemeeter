@@ -45,6 +45,11 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         self.vumeter_thread = threading.Thread(target=self.vumeter_loop.run_forever, daemon=True)
         self.vumeter_thread.start()
 
+        self.pa_listener_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+        self.pa_listener_thread = threading.Thread(target=self.pa_listener_loop.run_forever, daemon=True)
+        self.pa_listener_thread.start()
+
+        self.listen_task = None
         self.vumeter_tasks = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}, 'sink_input': {}, 'source_output': {}}
         self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.app_handlers = {'sink_input': {}, 'source_output': {}}

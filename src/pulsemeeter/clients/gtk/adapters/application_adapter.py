@@ -22,7 +22,7 @@ from pulsemeeter.clients.gtk.services import app_service, device_service
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject  # noqa: E402
+from gi.repository import Gtk, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
@@ -31,6 +31,8 @@ class ApplicationAdapter(GObject.GObject):
     config_model: ConfigModel
     app_manager: AppManagerModel
     vumeter_loop: asyncio.AbstractEventLoop
+    pa_listener_loop: asyncio.AbstractEventLoop
+    listen_task: asyncio.Task
     vumeter_thread: threading.Thread
     vumeter_tasks: dict[str, dict[str, asyncio.Task]]
     device_handlers: dict[str, dict[str, int]] = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
@@ -50,6 +52,8 @@ class ApplicationAdapter(GObject.GObject):
         for app_type in ('sink_input', 'source_output'):
             for app_index, app in self.window.app_box[app_type].apps.items():
                 self.connect_app_gtk_events(app_type, app_index, app)
+
+        self.listen_task = self.start_listen()
 
         # accel_group = Gtk.AccelGroup()
         # self.window.add_accel_group(accel_group)
@@ -151,6 +155,12 @@ class ApplicationAdapter(GObject.GObject):
         '''
         self.window.create_device(popover.to_schema())
 
+    def start_listen(self):
+        return asyncio.run_coroutine_threadsafe(
+            self.config_model.device_manager.event_listen(print),
+            self.pa_listener_loop
+        )
+
     def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None):
         return asyncio.run_coroutine_threadsafe(
             subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index),
@@ -180,6 +190,7 @@ class ApplicationAdapter(GObject.GObject):
     def connect_devicemanager_events(self):
         self.config_model.device_manager.connect('device_new', self.device_new_callback)
         self.config_model.device_manager.connect('device_remove', self.device_remove_callback)
+        self.config_model.device_manager.connect('device_change', self.device_change_callback)
 
     def connect_window_gtk_events(self, window):
         window.connect('add_device_pressed', self.add_device_hijack)
@@ -201,11 +212,13 @@ class ApplicationAdapter(GObject.GObject):
         device_handler['update_connection'] = device.connect('update_connection', self.update_connection, device_type, device_id)
         device_handler['primary'] = device.connect('primary', self.set_primary, device_type, device_id)
 
-        # self.vumeter_tasks[device_type][device_id] = self.start_vumeter(device)
         pa_device_type = device.device_model.device_type
-        vumeter = self.start_vumeter(pa_device_type, device.device_model.name, device.vumeter_widget)
-        self.vumeter_tasks[device_type][device_id] = vumeter
-        device.connect('destroy', self.stop_vumeter, device_type, device_id)
+        if self.config_model.vumeters:
+            vumeter = self.start_vumeter(pa_device_type, device.device_model.name, device.vumeter_widget)
+            self.vumeter_tasks[device_type][device_id] = vumeter
+
+        if self.config_model.vumeters:
+            device.connect('destroy', self.stop_vumeter, device_type, device_id)
 
         # self.connect_callback_functions()
 
@@ -222,10 +235,12 @@ class ApplicationAdapter(GObject.GObject):
         app_handler['app_device'] = app.connect('app_device_change', self.set_app_device, app_type, app_index)
 
         stream_type = app_type.split('_')[0]
-        vumeter = self.start_vumeter(stream_type, app.app_model.device, app.vumeter, app.app_model.index)
-        self.vumeter_tasks[app_type][app_index] = vumeter
+        if self.config_model.vumeters:
+            vumeter = self.start_vumeter(stream_type, app.app_model.device, app.vumeter, app.app_model.index)
+            self.vumeter_tasks[app_type][app_index] = vumeter
 
-        app.connect('destroy', self.stop_vumeter, app_type, app_index)
+        if self.config_model.vumeters:
+            app.connect('destroy', self.stop_vumeter, app_type, app_index)
 
         return app
 
@@ -241,7 +256,6 @@ class ApplicationAdapter(GObject.GObject):
         model_handler['connection'] = device.connect('connection', win_man.set_connection)
         model_handler['primary'] = device.connect('primary')
 
-        # self.vumeter_tasks[device_type][device_id] = self.start_vumeter(device.device_type, device.name, device.vumeter)
         # device.connect('destroy', self.stop_vumeter, device_type, device_id)
 
         # self.connect_callback_functions()
@@ -351,6 +365,11 @@ class ApplicationAdapter(GObject.GObject):
     def device_remove_callback(self, device_type: str, device_id: str):
         self.window.device_box[device_type].remove_device(device_id)
         self.device_handlers[device_type].pop(device_id)
+
+    def device_change_callback(self, device_type: str, device_id: str, device: DeviceModel):
+        device_widget = self.window.device_box[device_type].devices[device_id]
+        GLib.idle_add(device_widget.pa_device_change)
+        # GLib.idle_add(device.set_mute, data['mute'])
     #
     # # End Model Callback functions
     #
