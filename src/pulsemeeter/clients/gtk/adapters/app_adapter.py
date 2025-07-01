@@ -23,7 +23,7 @@ class AppAdapter(GObject.GObject):
     icon: IconWidget
     volume: VolumeWidget
     combobox: AppCombobox
-    mute: MuteWidget
+    mute_widget: MuteWidget
     vumeter: VumeterWidget
     handlers: dict[str, int]
 
@@ -48,17 +48,28 @@ class AppAdapter(GObject.GObject):
     def update_model_device(self, app_combobox):
         self.emit('app_device_change', app_combobox.get_active_text())
 
+    def pa_app_change(self, app):
+        self.set_volume(app.volume.values[0] * 100)
+        self.set_mute(bool(app.mute))
+        self.change_device(app.device_name)
+
     def set_volume(self, volume):
         self.volume_widget.handler_block(self.handlers['app_volume'])
         self.volume_widget.set_value(volume)
         self.volume_widget.handler_unblock(self.handlers['app_volume'])
 
     def set_mute(self, mute: bool):
+        if self.mute_widget.get_active() == mute:
+            return
+
         self.mute_widget.handler_block(self.handlers['app_mute'])
         self.mute_widget.set_active(mute)
         self.mute_widget.handler_unblock(self.handlers['app_mute'])
 
-    def change_device(self):
+    def change_device(self, device_name: str):
+        if self.combobox.get_active_text() == device_name:
+            return
+
         self.combobox.handler_block(self.handlers['app_device_change'])
-        # self.combobox.set_value(volume)
+        self.combobox.set_active_device(device_name)
         self.combobox.handler_unblock(self.handlers['app_device_change'])

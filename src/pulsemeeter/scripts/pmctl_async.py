@@ -358,7 +358,7 @@ async def get_app_by_id(app_type, app_index: int):
             app = await pulse.source_output_info(int(app_index))
             device = await pulse.source_info(int(app.source))
 
-        # app.device_name = device.name
+        app.device_name = device.name
         return app
 
 

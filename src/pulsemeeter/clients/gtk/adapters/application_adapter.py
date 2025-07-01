@@ -191,6 +191,7 @@ class ApplicationAdapter(GObject.GObject):
         self.config_model.device_manager.connect('device_new', self.device_new_callback)
         self.config_model.device_manager.connect('device_remove', self.device_remove_callback)
         self.config_model.device_manager.connect('device_change', self.device_change_callback)
+        self.config_model.device_manager.connect('app_change', self.app_change_callback)
 
     def connect_window_gtk_events(self, window):
         window.connect('add_device_pressed', self.add_device_hijack)
@@ -369,7 +370,24 @@ class ApplicationAdapter(GObject.GObject):
     def device_change_callback(self, device_type: str, device_id: str, device: DeviceModel):
         device_widget = self.window.device_box[device_type].devices[device_id]
         GLib.idle_add(device_widget.pa_device_change)
-        # GLib.idle_add(device.set_mute, data['mute'])
+
+    def app_change_callback(self, app_type: str, app_index: int, app: DeviceModel):
+        # print(app_type, app_index, app.volume)
+        app_widget = self.window.app_box[app_type].apps.get(app_index)
+        if app_widget:
+            GLib.idle_add(app_widget.pa_app_change, app)
+
+    def app_new_callback(self, app_type: str, app_index: int, app: DeviceModel):
+        # print(app_type, app_index, app.volume)
+        app_widget = self.window.app_box[app_type].apps.get(app_index)
+        if app_widget:
+            GLib.idle_add(app_widget.pa_app_change, app)
+
+    def app_remove_callback(self, app_type: str, app_index: int, app: DeviceModel):
+        # print(app_type, app_index, app.volume)
+        app_widget = self.window.app_box[app_type].apps.get(app_index)
+        if app_widget:
+            GLib.idle_add(app_widget.pa_app_change, app)
     #
     # # End Model Callback functions
     #

@@ -39,7 +39,9 @@ class AppCombobox(Gtk.ComboBox, AppComboboxAdapter):
         count: int = 0
         for device_name in device_list:
             if device_name[0] == device:
-                print(device_name[0], device)
+                # print(device_name[0], device)
                 self.set_active(count)
-                break
+                return
             count += 1
+
+            self.set_active(-1)

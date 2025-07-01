@@ -141,8 +141,8 @@ class DeviceManagerModel(SignalModel):
         input_device = self.__dict__[input_type][input_id]
         cur_connection_model = input_device.connections[output_type][output_id]
         state = connection_model.state
-        print(cur_connection_model, connection_model)
-        print(input_type, input_id, output_type, output_id)
+        # print(cur_connection_model, connection_model)
+        # print(input_type, input_id, output_type, output_id)
 
         self.set_connection(input_type, input_id, output_type, output_id, False)
 
@@ -309,7 +309,8 @@ class DeviceManagerModel(SignalModel):
 
             if event.t == 'change':
                 if event.facility in ('sink_input', 'source_output'):
-                    # pulsectl_device = await pmctl.get_app_by_id(event.facility, event.index)
+                    app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
+                    pulsectl_device = await pmctl_async.get_app_by_id(event.facility, event.index)
                     # data = {
                     #     'device_index': event.index,
                     #     'device_type': event.facility,
@@ -318,7 +319,8 @@ class DeviceManagerModel(SignalModel):
                     #     'mute': [pulsectl_device.mute]
                     # }
 
-                    # print(data)
+                    self.emit('app_change', app_type, event.index, pulsectl_device)
+
                     continue
 
                 elif event.facility in ('sink', 'source'):

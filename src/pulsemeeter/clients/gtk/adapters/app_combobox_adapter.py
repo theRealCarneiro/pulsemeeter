@@ -15,6 +15,7 @@ class AppComboboxAdapter(GObject.GObject):
     @classmethod
     def set_device_list(cls, app_type, device_list):
         cls._device_list[app_type].clear()
+        # cls._device_list[app_type].append([])
         for device in device_list:
             cls._device_list[app_type].append([device])
 

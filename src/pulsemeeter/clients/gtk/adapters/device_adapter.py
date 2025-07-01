@@ -131,7 +131,7 @@ class DeviceAdapter(GObject.GObject):
         self.mute_widget.handler_unblock(self.handlers['mute'])
 
     def set_primary(self, state):
-        print(self.device_model.name, state)
+        # print(self.device_model.name, state)
         self.primary_widget.handler_block(self.handlers['primary'])
         self.primary_widget.set_primary(state)
         self.primary_widget.handler_unblock(self.handlers['primary'])
