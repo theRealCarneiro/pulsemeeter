@@ -48,6 +48,6 @@ class AppBoxAdapter(GObject.GObject):
             return None
 
         app_widget = self.apps.pop(app_id)
-        self.remove(app_widget)
+        # self.remove(app_widget)
         app_widget.destroy()
         return app_widget

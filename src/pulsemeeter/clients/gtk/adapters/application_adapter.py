@@ -270,7 +270,7 @@ class ApplicationAdapter(GObject.GObject):
 
         stream_type = app_type.split('_')[0]
         if self.config_model.vumeters:
-            vumeter = self.start_vumeter(stream_type, app.app_model.device, app.vumeter, app.app_model.index)
+            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter, app.app_model.index)
             self.vumeter_tasks[app_type][app_index] = vumeter
 
         if self.config_model.vumeters:

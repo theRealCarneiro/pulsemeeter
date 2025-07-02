@@ -52,7 +52,7 @@ class ConnectionBoxAdapter(GObject.GObject):
 
     def remove_button(self, device_type, button_id):
         button = self.connection_widgets[device_type].pop(button_id)
-        self.__dict__[device_type].remove(button)
+        # self.__dict__[device_type].remove(button)
         button.destroy()
 
     def set_empty(self):

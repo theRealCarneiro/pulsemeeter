@@ -67,7 +67,7 @@ class DeviceBoxAdapter(GObject.GObject):
 
     def remove_device(self, device_id: str) -> DeviceWidget:
         device_widget = self.devices.pop(device_id)
-        self.remove(device_widget)
+        # self.remove(device_widget)
         device_widget.destroy()
         return device_widget
 
