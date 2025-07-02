@@ -44,6 +44,9 @@ class AppBoxAdapter(GObject.GObject):
         return app
 
     def remove_app(self, app_id: str) -> AppWidget:
+        if app_id not in self.apps:
+            return None
+
         app_widget = self.apps.pop(app_id)
         self.remove(app_widget)
         app_widget.destroy()

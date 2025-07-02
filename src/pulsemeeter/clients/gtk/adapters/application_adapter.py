@@ -1,15 +1,16 @@
+import logging
 import asyncio
+import traceback
 import threading
-from pulsectl_asyncio import PulseAsync
 
+
+from concurrent.futures._base import CancelledError
 from pulsemeeter.scripts.pmctl_async import subscribe_peak
-from pulsemeeter.ipc.client import Client
 
 from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.app_manager_model import AppManagerModel
 from pulsemeeter.model.device_manager_model import DeviceManagerModel
-from pulsemeeter.model.connection_model import ConnectionModel
 # from pulsemeeter.schemas.app_schema import AppModel
 
 from pulsemeeter.clients.gtk import layouts
@@ -24,6 +25,8 @@ from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+LOG = logging.getLogger("generic")
 
 
 class ApplicationAdapter(GObject.GObject):
@@ -155,17 +158,45 @@ class ApplicationAdapter(GObject.GObject):
         '''
         self.window.create_device(popover.to_schema())
 
+    def handle_listen_error(self, fut):
+        try:
+            fut.result()
+
+        except CancelledError:
+            LOG.debug("Listen task canceled")
+
+        except Exception as e:
+            tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            LOG.error("Vumeter task error: \n %s", tb_str)
+
+    def handle_vumeter_error(self, fut):
+        try:
+            fut.result()
+
+        except CancelledError:
+            LOG.debug("VUmeter task canceled")
+
+        except Exception as e:
+            tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            LOG.error("Vumeter task error: \n %s", tb_str)
+
     def start_listen(self):
-        return asyncio.run_coroutine_threadsafe(
+        future = asyncio.run_coroutine_threadsafe(
             self.config_model.device_manager.event_listen(print),
             self.pa_listener_loop
         )
 
+        future.add_done_callback(self.handle_listen_error)
+        return future
+
     def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None):
-        return asyncio.run_coroutine_threadsafe(
+        future = asyncio.run_coroutine_threadsafe(
             subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index),
             self.vumeter_loop
         )
+
+        future.add_done_callback(self.handle_vumeter_error)
+        return future
 
     def stop_vumeter(self, _, device_type, device_id):
         self.vumeter_tasks[device_type][device_id].cancel()
@@ -192,6 +223,8 @@ class ApplicationAdapter(GObject.GObject):
         self.config_model.device_manager.connect('device_remove', self.device_remove_callback)
         self.config_model.device_manager.connect('device_change', self.device_change_callback)
         self.config_model.device_manager.connect('app_change', self.app_change_callback)
+        self.config_model.device_manager.connect('app_new', self.app_new_callback)
+        self.config_model.device_manager.connect('app_remove', self.app_remove_callback)
 
     def connect_window_gtk_events(self, window):
         window.connect('add_device_pressed', self.add_device_hijack)
@@ -372,22 +405,18 @@ class ApplicationAdapter(GObject.GObject):
         GLib.idle_add(device_widget.pa_device_change)
 
     def app_change_callback(self, app_type: str, app_index: int, app: DeviceModel):
-        # print(app_type, app_index, app.volume)
         app_widget = self.window.app_box[app_type].apps.get(app_index)
         if app_widget:
             GLib.idle_add(app_widget.pa_app_change, app)
 
     def app_new_callback(self, app_type: str, app_index: int, app: DeviceModel):
-        # print(app_type, app_index, app.volume)
-        app_widget = self.window.app_box[app_type].apps.get(app_index)
-        if app_widget:
-            GLib.idle_add(app_widget.pa_app_change, app)
+        app_widget = self.window.app_box[app_type].insert_app(app, app_index)
 
-    def app_remove_callback(self, app_type: str, app_index: int, app: DeviceModel):
-        # print(app_type, app_index, app.volume)
-        app_widget = self.window.app_box[app_type].apps.get(app_index)
-        if app_widget:
-            GLib.idle_add(app_widget.pa_app_change, app)
+        GLib.idle_add(app_widget.show_all)
+        self.connect_app_gtk_events(app_type, app_index, app_widget)
+
+    def app_remove_callback(self, app_type: str, app_index: int):
+        self.window.app_box[app_type].remove_app(app_index)
     #
     # # End Model Callback functions
     #

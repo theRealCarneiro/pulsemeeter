@@ -292,6 +292,12 @@ async def filter_results(app):
     assert '_peak' not in app.proplist['application.name']
     assert app.proplist.get('application.id') != 'org.PulseAudio.pavucontrol'
 
+    # if ('application.name' not in app.proplist
+    #         or '_peak' in app.proplist['application.name']
+    #         or app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'):
+    #     return False
+    #
+    # return True
 
 async def app_by_id(index: int, app_type: str):
     '''
@@ -351,14 +357,28 @@ async def get_app_device_name(app_type: str, device_index: int):
 async def get_app_by_id(app_type, app_index: int):
     async with pulsectl_asyncio.PulseAsync() as pulse:
 
-        if app_type == 'sink_input':
-            app = await pulse.sink_input_info(int(app_index))
-            device = await pulse.sink_info(int(app.sink))
-        else:
-            app = await pulse.source_output_info(int(app_index))
-            device = await pulse.source_info(int(app.source))
+        try:
+            if app_type == 'sink_input':
+                app = await pulse.sink_input_info(int(app_index))
+                device = await pulse.sink_info(int(app.sink))
+            else:
+                app = await pulse.source_output_info(int(app_index))
+                device = await pulse.source_info(int(app.source))
+        except pulsectl.PulseIndexError:
+            return None
 
         app.device_name = device.name
+
+        if ('application.name' not in app.proplist or
+                '_peak' in app.proplist['application.name'] or
+                app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'):
+            return None
+
+        # try:
+        #     await filter_results(app)
+        # except AssertionError:
+        #     return None
+
         return app
 
 

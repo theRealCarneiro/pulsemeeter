@@ -99,21 +99,21 @@ class MainWindowAdapter(GObject.GObject):
         self.settings_popover.popup()
         self.settings_popover.show_all()
 
-    def insert_app(self, app_type, app_index, app_widget: AppWidget):
-        '''
-        Insert an app widget to a device box
-            "app_widget" is the app widget to remove from the box
-        '''
-        self.app_box[app_type].insert_app(app_widget, False, False, 0)
-        self.apps[app_type][app_index] = app_widget
-
-    def remove_app(self, app_widget: AppWidget):
-        '''
-        Insert an app widget to a device box
-            "app_widget" is the app widget to remove from the box
-        '''
-        self.app_box[app_widget.app_type].remove(app_widget)
-        self.apps[app_widget.app_type].remove(app_widget)
+    # def insert_app(self, app_type, app_index, app_widget: AppWidget):
+    #     '''
+    #     Insert an app widget to a device box
+    #         "app_widget" is the app widget to remove from the box
+    #     '''
+    #     self.app_box[app_type].insert_app(app_widget, False, False, 0)
+    #     self.apps[app_type][app_index] = app_widget
+    #
+    # def remove_app(self, app_widget: AppWidget):
+    #     '''
+    #     Insert an app widget to a device box
+    #         "app_widget" is the app widget to remove from the box
+    #     '''
+    #     self.app_box[app_widget.app_type].remove(app_widget)
+    #     self.apps[app_widget.app_type].remove(app_widget)
 
     def set_volume(self, device_type, device_id, volume: int):
         device = self.device_box.devices[device_type][device_id]
@@ -134,9 +134,9 @@ class MainWindowAdapter(GObject.GObject):
 
         device.set_primary(True, emit=False)
 
-    def set_connection(self, output_type, output_id, input_type, input_id, state: bool):
-        device = self.device_box.devices[input_type][input_id]
-        device.set_connection(output_type, output_id, state, emit=False)
+    # def set_connection(self, output_type, output_id, input_type, input_id, state: bool):
+    #     device = self.device_box.devices[input_type][input_id]
+    #     device.set_connection(output_type, output_id, state, emit=False)
 
     def add_device_pressed(self, _, device_type):
         self.emit('add_device_pressed', device_type)

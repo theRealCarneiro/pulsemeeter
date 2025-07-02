@@ -6,6 +6,7 @@ from pulsemeeter.scripts import pmctl
 from pulsemeeter.scripts import pmctl_async
 from pulsemeeter.schemas.typing import PaDeviceType
 from pulsemeeter.model.device_model import DeviceModel
+from pulsemeeter.model.app_model import AppModel
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.model.connection_model import ConnectionModel
 
@@ -302,28 +303,31 @@ class DeviceManagerModel(SignalModel):
         return dvl
 
     async def event_listen(self, callback_function):
-        data = {}
         async for event in pmctl_async.pulse_listener():
-            # req = None
-            # print(event)
 
-            if event.t == 'change':
-                if event.facility in ('sink_input', 'source_output'):
-                    app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
-                    pulsectl_device = await pmctl_async.get_app_by_id(event.facility, event.index)
-                    # data = {
-                    #     'device_index': event.index,
-                    #     'device_type': event.facility,
-                    #     'output_name': pulsectl_device.device_name,
-                    #     'volume': [round(i * 100) for i in pulsectl_device.volume.values],
-                    #     'mute': [pulsectl_device.mute]
-                    # }
+            if event.facility in ('sink_input', 'source_output'):
+                app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
 
-                    self.emit('app_change', app_type, event.index, pulsectl_device)
+                if event.t == 'change':
+                    app = await pmctl_async.get_app_by_id(event.facility, event.index)
+                    if app is None:
+                        continue
 
-                    continue
+                    self.emit('app_change', app_type, event.index, app)
 
-                elif event.facility in ('sink', 'source'):
+                elif event.t == 'new':
+                    app = await pmctl_async.get_app_by_id(event.facility, event.index)
+                    if app is None:
+                        continue
+
+                    app_model = AppModel.pa_to_app_model(app, app_type)
+                    self.emit('app_new', app_type, event.index, app_model)
+
+                elif event.t == ('remove'):
+                    self.emit('app_remove', app_type, event.index)
+
+            elif event.facility in ('sink', 'source'):
+                if event.t == 'change':
                     pulsectl_device = await pmctl_async.get_device_by_id(event.facility, event.index)
 
                     device_type, device_id, pm_device = self.find_device(event.facility, pulsectl_device.name)
@@ -335,12 +339,6 @@ class DeviceManagerModel(SignalModel):
                     self.emit('device_change', device_type, device_id, pm_device)
                     continue
 
-                # primary changes
-                elif event.facility == 'server':
-                    continue
-
-                # else:
-                #     continue
-
-                # if req is not None:
-                #     await callback_function(req)
+            # primary changes
+            elif event.facility == 'server':
+                continue
