@@ -1,8 +1,8 @@
 name: Publish git version on AUR
 on:
-  push:
-    tags:
-     - '*'
+  # push:
+  #   tags:
+  #    - '*'
   workflow_dispatch:
 
 jobs:

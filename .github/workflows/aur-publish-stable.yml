@@ -1,8 +1,8 @@
 name: Publish stable release on AUR
 
 on:
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
   workflow_dispatch:
 
 jobs:
