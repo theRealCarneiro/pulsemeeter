@@ -1,5 +1,6 @@
 recursive-include share *
 recursive-include locale *
+recursive-include src *.json
 include requirements.txt
 include LICENSE
 include MANIFEST.in
