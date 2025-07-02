@@ -1,56 +1,49 @@
 import os
-import pathlib
+from babel.messages import frontend as babel
 from setuptools import setup
+from setuptools.command.build_py import build_py as _build_py
 
-with open('pulsemeeter/settings.py') as f:
-    for line in f:
-        if line.startswith('__version__'):
-            __version__ = line.replace("'", '').split()[2]
-            break
+IS_ZIP = os.environ.get("ZIP_BUILD") == "1"
 
 
-VERSION = __version__
-README = (pathlib.Path(__file__).parent / "README.md").read_text()
+def gather_data_files(source_dir, target_dir, pattern=''):
+    datafiles = []
+    for directory, _, filenames in os.walk(source_dir):
+        if filenames:
+            files = [os.path.join(directory, filename) for filename in filenames if pattern in filename]
+            datafiles.append((os.path.join(target_dir, directory), files))
+
+    return datafiles
+
+
+class BuildWithTranslations(_build_py):
+    def run(self):
+        self.run_command("compile_catalog")
+
+        mo_files = gather_data_files('locale', 'share', '.mo')
+        self.distribution.data_files.extend(mo_files)
+
+        super().run()
+
+
 DATA_FILES = [('share/licenses/pulsemeeter/', ['LICENSE']), ]
-REQUIREMENTS = []
-
-with open('requirements.txt') as file:
-    for line in file:
-        REQUIREMENTS.append(line.rstrip())
-
-for directory, _, filenames in os.walk(u'share'):
-    dest = directory[6:]
-    if filenames:
-        files = [os.path.join(directory, filename) for filename in filenames]
-        DATA_FILES.append((os.path.join('share', dest), files))
+DATA_FILES += gather_data_files('share', '')
 
 setup(
-    name='pulsemeeter',
-    version=VERSION,
-    description='A pulseaudio audio routing application',
-    long_description=README,
-    long_description_content_type="text/markdown",
-    author='Gabriel Carneiro',
-    author_email='therealcarneiro@gmail.com',
-    license="MIT",
-    license_files='LICENSE',
-    classifiers=[
-        "Environment :: X11 Applications",
-        "License :: OSI Approved :: MIT License",
-    ],
-    url='https://github.com/theRealCarneiro/pulsemeeter',
-    packages=['pulsemeeter', 'pulsemeeter.interface', 'pulsemeeter.socket', 'pulsemeeter.backends'],
-    install_requires=REQUIREMENTS,
     data_files=DATA_FILES,
-    entry_points={
-        "console_scripts": [
-            "pulsemeeter = pulsemeeter.__main__:main",
-        ],
+
+    cmdclass={
+        'build_py': BuildWithTranslations,
+        # 'build_zip': BuildWithTranslations,
+        'compile_catalog': babel.compile_catalog,
+        'extract_messages': babel.extract_messages,
+        'init_catalog': babel.init_catalog,
+        'update_catalog': babel.update_catalog
     },
 
-    python_requires=">=3.5",
-    scripts=[
-        'scripts/pmctl',
-    ],
-    include_package_data=True
+    message_extractors={
+        'src': [
+            ('**/*.py', 'python', None),
+        ],
+    },
 )

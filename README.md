@@ -58,7 +58,6 @@ Pip will automaticly install these dependencies
  These dependencies are optional and will enable new features in the application
  - [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) for noise reduction
  - [swh-plugins](https://github.com/swh/ladspa) for equalizers (apt/dnf/pacman packages available)
- - [pulse-vumeter](https://github.com/theRealCarneiro/pulse-vumeter) for volume level information
 
 ## Any distro
 
