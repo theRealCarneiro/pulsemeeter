@@ -72,7 +72,7 @@ class DeviceAdapter(GObject.GObject):
             self.popover.combobox_widget.empty()
             self.popover.combobox_widget.load_list(device_list, 'description', self.model.description)
 
-        self.popover.name_widget.input.grab_focus()
+        self.popover.nick_widget.input.grab_focus()
 
     def insert_connection_widget(self, connection_schema: ConnectionModel, output_type: str, output_id: str):
         button = self.connections_widget.insert_widget(connection_schema, output_type, output_id)

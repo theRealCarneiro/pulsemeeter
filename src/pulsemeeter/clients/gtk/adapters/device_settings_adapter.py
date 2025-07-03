@@ -19,6 +19,7 @@ class DeviceSettingsAdapter(GObject.GObject):
     A widget for creating a new device
     '''
 
+    nick_widget: InputWidget
     name_widget: InputWidget
     combobox_widget: LabeledCombobox
     port_selector: PortSelector
@@ -46,14 +47,14 @@ class DeviceSettingsAdapter(GObject.GObject):
         device = self.device_list[active]
 
         found = False
-        cur_nick = self.name_widget.input.get_text()
+        cur_nick = self.nick_widget.input.get_text()
         for d in self.device_list:
             if cur_nick == d.description or cur_nick == '':
                 found = True
                 break
 
         if found is False:
-            self.name_widget.input.set_text(device.description)
+            self.nick_widget.input.set_text(device.description)
 
         self.port_selector.set_ports(device.channel_list)
         self.selected_device = device
@@ -70,14 +71,14 @@ class DeviceSettingsAdapter(GObject.GObject):
 
     @property
     def nick(self):
-        return self.name_widget.get_option()
+        return self.nick_widget.get_option()
 
     @property
     def description(self):
 
         # if virtual
         if self.device_type in ('b', 'vi'):
-            return self.name_widget.get_option()
+            return self.nick_widget.get_option()
 
         # if hardware
         return self.selected_device.description
@@ -116,6 +117,14 @@ class DeviceSettingsAdapter(GObject.GObject):
         return channel_list
 
     @property
+    def external(self) -> bool:
+        device_class = 'virtual' if self.device_type in ('b', 'vi') else 'hardware'
+        if device_class == 'hardware':
+            return False
+
+        return self.external_widget.get_active()
+
+    @property
     def volume(self):
 
         # if virtual
@@ -140,6 +149,7 @@ class DeviceSettingsAdapter(GObject.GObject):
             'name': self.name,
             'description': self.description,
             'nick': self.nick,
+            'external': self.external,
             'channels': self.channels,
             'channel_list': self.channel_list,
             'selected_channels': self.selected_channels,

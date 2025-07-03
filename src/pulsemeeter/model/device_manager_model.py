@@ -25,14 +25,14 @@ class DeviceManagerModel(SignalModel):
 
     def model_post_init(self, _):
 
-        # we have to create the devices first
-        for device_type, device_list in self.__dict__.items():
-            for device_id in device_list:
+        # we have to create the virtual devices first
+        for device_type in ('vi', 'b'):
+            for device_id in self.__dict__[device_type]:
                 self.init_device(device_type, device_id)
 
-        # we dont want to connect to a device that hasnt been created yet
-        for device_type, device_list in self.__dict__.items():
-            for device_id in device_list:
+        # now we connect the input devices
+        for device_type in ('vi', 'hi'):
+            for device_id in self.__dict__[device_type]:
                 self.reconnect(device_type, device_id)
 
     def init_device(self, device_type, device_id):
@@ -51,21 +51,33 @@ class DeviceManagerModel(SignalModel):
         if device_type in ('hi', 'vi'):
             for output_type, connection_list in device.connections.items():
                 for output_id in connection_list:
-                    self.set_connection(device_type, device_id, output_type, output_id, state)
+                    self.set_connection(device_type, device_id, output_type, output_id, state, soft=True)
             return
 
         for input_type in ('hi', 'vi'):
             for input_id in self.__dict__[input_type]:
-                self.set_connection(input_type, input_id, device_type, device_id, state)
+                self.set_connection(input_type, input_id, device_type, device_id, state, soft=True)
 
-    def reconnect(self, input_type, input_id):
+    def reconnect(self, device_type, device_id):
         '''
         Recreate the pipewire connections for a device
         '''
-        device = self.__dict__[input_type][input_id]
-        for output_type, connection_list in device.connections.items():
-            for output_id, connection in connection_list.items():
-                self.set_connection(input_type, input_id, output_type, output_id, connection.state)
+        device = self.__dict__[device_type][device_id]
+
+        if device_type in ('hi', 'vi'):
+            for output_type, connection_list in device.connections.items():
+                for output_id, connection in connection_list.items():
+                    self.set_connection(device_type, device_id, output_type, output_id, connection.state, soft=True)
+            return
+
+        for input_type in ('hi', 'vi'):
+            for input_id, input_device in self.__dict__[input_type].items():
+                connection = input_device.connections[device_type][device_id]
+                self.set_connection(input_type, input_id, device_type, device_id, connection.state, soft=True)
+
+        # for output_type, connection_list in device.connections.items():
+        #     for output_id, connection in connection_list.items():
+        #         self.set_connection(input_type, input_id, output_type, output_id, connection.state)
 
     def update_device(self, device_schema, device_type, device_id):
         device = self.__dict__[device_type][device_id]
@@ -90,7 +102,7 @@ class DeviceManagerModel(SignalModel):
         if device_type in ('vi', 'b'):
             self.init_device(device_type, device_id)
 
-        self.bulk_connect(device_type, device_id, True)
+        self.reconnect(device_type, device_id)
 
     def cleanup(self):
         '''
@@ -123,12 +135,14 @@ class DeviceManagerModel(SignalModel):
         device.set_primary(True, emit=False)
         pmctl.set_primary(device.device_type, device.name)
 
-    def set_connection(self, input_type, input_id, output_type, output_id, state: bool = None):
+    def set_connection(self, input_type, input_id, output_type, output_id, state: bool = None, soft=False):
         input_device = self.__dict__[input_type][input_id]
         output_device = self.__dict__[output_type][output_id]
         connection_model = input_device.connections[output_type][output_id]
 
-        input_device.set_connection(output_type, output_id, state, emit=False)
+        # by soft we mean dont save to config
+        if soft is False:
+            input_device.set_connection(output_type, output_id, state, emit=False)
 
         input_sel_channels = input_device.get_selected_channel_list()
         output_sel_channels = output_device.get_selected_channel_list()
@@ -194,6 +208,7 @@ class DeviceManagerModel(SignalModel):
             for _, input_device in self.__dict__[input_type].items():
                 connection_model = input_device.connections[output_type][output_id]
                 connection_model.output_sel_channels = output_device.selected_channels
+                connection_model.nick = output_device.nick
 
     def handle_input_change(self, input_type, input_id):
         '''

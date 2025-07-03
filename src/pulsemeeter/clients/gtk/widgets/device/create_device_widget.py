@@ -34,7 +34,7 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.device_type = device_type
 
         # create widgets
-        self.name_widget = InputWidget(_('Nick: '))
+        self.nick_widget = InputWidget(_('Nick: '))
         self.port_selector = PortSelector()
         self.combobox_widget = LabeledCombobox(_('Device: '))
         # self.confirm_button = IconButton('emblem-ok-symbolic')
@@ -43,7 +43,7 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.remove_button = IconButton('user-trash-symbolic')
 
         if device_model is not None:
-            self.name_widget.set_option(device_model.nick)
+            self.nick_widget.set_option(device_model.nick)
             # self.combobox_widget.empty(device_model.nick)
             self.port_selector.set_ports(device_model.selected_channels)
 
@@ -63,7 +63,7 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         button_box.pack_start(self.confirm_button, False, False, 2)
 
         main_box = Gtk.VBox(margin=10, hexpand=True)
-        main_box.pack_start(self.name_widget, False, False, 10)
+        main_box.pack_start(self.nick_widget, False, False, 10)
         main_box.pack_start(self.combobox_widget, False, False, 10)
         main_box.pack_start(self.port_selector, False, False, 10)
         main_box.pack_start(button_box, False, False, 5)
@@ -75,7 +75,7 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.set_modal(False)
         self.add(main_box)
         # self.show_all()
-        # self.name_widget.input.grab_focus()
+        # self.nick_widget.input.grab_focus()
 
 
 class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
@@ -88,7 +88,9 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.get_accessible().set_name(_(f'{operation} virtual {dt} device popover'))
 
         # create widgets
-        self.name_widget = InputWidget(_('Nick: '))
+        self.nick_widget = InputWidget(_('Nick: '))
+        self.name_widget = InputWidget(_('Name: '))
+        self.external_widget = Gtk.CheckButton(_('External'))
         self.combobox_widget = LabeledCombobox(_('Channel Map: '))
         # self.confirm_button = IconButton('emblem-ok-symbolic')
         self.confirm_button = Gtk.Button('Apply')
@@ -97,9 +99,14 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.combobox_widget.load_list(list(CHANNEL_MAPS))
 
         if device_model is not None:
-            self.name_widget.set_option(device_model.nick)
+            self.nick_widget.set_option(device_model.nick)
+            self.name_widget.set_option(device_model.name)
             self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)
             # self.port_selector.set_ports(device_model.selected_channels)
+
+        name_box = Gtk.VBox()
+        name_box.pack_start(self.nick_widget, False, False, 10)
+        name_box.pack_start(self.name_widget, False, False, 10)
 
         # connect events
         self.cancel_button.connect('clicked', self.close_pressed)
@@ -112,7 +119,8 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         button_box.pack_start(self.confirm_button, False, False, 2)
 
         main_box = Gtk.VBox(margin=10, hexpand=True)
-        main_box.pack_start(self.name_widget, False, False, 10)
+        main_box.pack_start(name_box, False, False, 10)
+        main_box.pack_start(self.external_widget, False, False, 10)
         main_box.pack_start(self.combobox_widget, False, False, 10)
         main_box.pack_start(button_box, False, False, 5)
 
