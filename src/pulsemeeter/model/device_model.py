@@ -77,7 +77,7 @@ class DeviceModel(SignalModel):
         '''
         A validator that checks if the name is valid
         '''
-        if not re.match('^[a-zA-Z-_.]+ ?([a-zA-z+-_.]+)?$', name):
+        if not re.match('^[a-zA-Z0-9._-]+$', name):
             raise ValueError('Invalid name')
 
         return name

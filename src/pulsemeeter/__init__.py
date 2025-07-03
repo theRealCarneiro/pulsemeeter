@@ -1,5 +1,6 @@
 from pulsemeeter.settings import VERSION
-from pulsemeeter.scripts.logger import init_log
+from pulsemeeter.logger.log_config import init_logger
+
 
 __version__ = VERSION
-init_log("generic")
+init_logger()

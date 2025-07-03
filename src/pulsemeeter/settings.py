@@ -29,8 +29,6 @@ PIDFILE = os.path.join(XDG_RUNTIME_DIR, f'pulsemeeter.{USER}.pid')
 
 # logging
 DEBUG = False
-LOGGING_FORMAT = "[%(levelname)s] in [%(module)s]: %(message)s"
-LOGGING_FORMAT_DEBUG = "[%(levelname)s] in [%(module)s@%(funcName)s]: %(message)s"
 
 # Translations
 LOCALE_DIR = ''
