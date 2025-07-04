@@ -40,12 +40,12 @@ class DeviceModel(SignalModel):
         A validator that sets the nick and description of a device if none are
         provided
         '''
-        name = values.get('name')
 
         if 'nick' not in values:
-            values['nick'] = name
+            values['nick'] = values.get('name')
+
         if 'description' not in values:
-            values['description'] = name
+            values['description'] = values.get('nick')
 
         return values
 
@@ -80,7 +80,8 @@ class DeviceModel(SignalModel):
         '''
         A validator that checks if the name is valid
         '''
-        if not re.match('^[a-zA-Z0-9._-]+$', name):
+        # if not re.match('^[a-zA-Z0-9._-]+$', name):
+        if not re.match('^[a-zA-Z-_.]+ ?([a-zA-z+-_.]+)?$', name):
             raise ValueError('Invalid name')
 
         return name
