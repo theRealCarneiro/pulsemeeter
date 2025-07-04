@@ -132,6 +132,7 @@ class ApplicationAdapter(GObject.GObject):
 
     def update_device_model(self, _, schema, device_type, device_id):
         self.config_model.device_manager.update_device(schema, device_type, device_id)
+        # TODO: update connection buttons and settings
 
     # Connect device creation button press event
     def create_new_device_popover(self, widget, device_type):
@@ -221,10 +222,10 @@ class ApplicationAdapter(GObject.GObject):
     def connect_devicemanager_events(self):
         self.config_model.device_manager.connect('device_new', self.device_new_callback)
         self.config_model.device_manager.connect('device_remove', self.device_remove_callback)
-        self.config_model.device_manager.connect('device_change', self.device_change_callback)
-        self.config_model.device_manager.connect('app_change', self.app_change_callback)
-        self.config_model.device_manager.connect('app_new', self.app_new_callback)
-        self.config_model.device_manager.connect('app_remove', self.app_remove_callback)
+        self.config_model.device_manager.connect('pa_device_change', self.device_change_callback)
+        self.config_model.device_manager.connect('pa_app_change', self.app_change_callback)
+        self.config_model.device_manager.connect('pa_app_new', self.app_new_callback)
+        self.config_model.device_manager.connect('pa_app_remove', self.app_remove_callback)
 
     def connect_window_gtk_events(self, window):
         window.connect('add_device_pressed', self.add_device_hijack)
@@ -401,6 +402,9 @@ class ApplicationAdapter(GObject.GObject):
         self.device_handlers[device_type].pop(device_id)
 
     def device_change_callback(self, device_type: str, device_id: str, device: DeviceModel):
+        '''
+        Called on device_change event
+        '''
         device_widget = self.window.device_box[device_type].devices[device_id]
         GLib.idle_add(device_widget.pa_device_change)
 

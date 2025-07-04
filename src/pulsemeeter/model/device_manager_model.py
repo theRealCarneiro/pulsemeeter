@@ -143,6 +143,7 @@ class DeviceManagerModel(SignalModel):
         # by soft we mean dont save to config
         if soft is False:
             input_device.set_connection(output_type, output_id, state, emit=False)
+            self.emit('connect', input_type, input_id, output_type, output_id, state)
 
         input_sel_channels = input_device.get_selected_channel_list()
         output_sel_channels = output_device.get_selected_channel_list()
@@ -328,7 +329,7 @@ class DeviceManagerModel(SignalModel):
                     if app is None:
                         continue
 
-                    self.emit('app_change', app_type, event.index, app)
+                    self.emit('pa_app_change', app_type, event.index, app)
 
                 elif event.t == 'new':
                     app = await pmctl_async.get_app_by_id(event.facility, event.index)
@@ -336,10 +337,10 @@ class DeviceManagerModel(SignalModel):
                         continue
 
                     app_model = AppModel.pa_to_app_model(app, app_type)
-                    self.emit('app_new', app_type, event.index, app_model)
+                    self.emit('pa_app_new', app_type, event.index, app_model)
 
                 elif event.t == ('remove'):
-                    self.emit('app_remove', app_type, event.index)
+                    self.emit('pa_app_remove', app_type, event.index)
 
             elif event.facility in ('sink', 'source'):
                 if event.t == 'change':
@@ -351,7 +352,7 @@ class DeviceManagerModel(SignalModel):
                         continue
 
                     pm_device.update_from_pa(pulsectl_device)
-                    self.emit('device_change', device_type, device_id, pm_device)
+                    self.emit('pa_device_change', device_type, device_id, pm_device)
                     continue
 
             # primary changes
