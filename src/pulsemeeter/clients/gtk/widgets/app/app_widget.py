@@ -51,7 +51,8 @@ class AppWidget(Gtk.Frame, AppAdapter):
         self.vumeter = VumeterWidget()
         self.handlers = {}
 
-        GLib.idle_add(self.combobox.set_active_device, app_model.device)
+        self.combobox.set_active_device(app_model.device)
+        # GLib.idle_add(self.combobox.set_active_device, app_model.device)
 
         main_grid.attach(info_grid, 0, 0, 1, 1)
         main_grid.attach(control_grid, 0, 1, 1, 1)

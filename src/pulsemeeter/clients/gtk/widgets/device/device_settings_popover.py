@@ -101,6 +101,7 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         if device_model is not None:
             self.nick_widget.set_option(device_model.nick)
             self.name_widget.set_option(device_model.name)
+            self.external_widget.set_active(device_model.external)
             self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)
             # self.port_selector.set_ports(device_model.selected_channels)
 

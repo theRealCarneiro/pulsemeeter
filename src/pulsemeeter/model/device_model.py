@@ -149,6 +149,9 @@ class DeviceModel(SignalModel):
         Mute device
             "state": bool, True mean mute, False means unmute
         '''
+        if self.mute == state:
+            return
+
         self.mute = state
         # pmctl.mute(self.device_type, self.name, state)
         if emit is True:
@@ -170,6 +173,9 @@ class DeviceModel(SignalModel):
         # if self.selected_channels is not None:
         #     selected = self.selected_channels
         #     val = [val[i] if selected[i] else self.volume[i] for i in range(self.channels)]
+
+        if self.volume == val:
+            return
 
         self.volume = val
 
@@ -332,14 +338,17 @@ class DeviceModel(SignalModel):
             "device_type" is either 'sink' or 'source'
         '''
 
-        self.set_mute(bool(pa_device.mute), emit=True)
-
         vol = []
         for index, channel in enumerate(self.selected_channels):
             if channel is True:
                 vol.append(round(pa_device.volume.values[index] * 100))
 
+        if vol == self.volume and bool(pa_device.mute) == self.mute:
+            return False
+
+        self.set_mute(bool(pa_device.mute), emit=True)
         self.set_volume(vol[0], emit=True)
+        return True
 
     @classmethod
     def pa_to_device_model(cls, device, device_type: str):

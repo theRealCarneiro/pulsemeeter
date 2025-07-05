@@ -371,6 +371,7 @@ async def get_app_by_id(app_type, app_index: int):
 
         if ('application.name' not in app.proplist or
                 '_peak' in app.proplist['application.name'] or
+                app.name == 'audio-volume-change' or
                 app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'):
             return None
 

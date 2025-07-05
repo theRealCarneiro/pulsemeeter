@@ -37,10 +37,6 @@ class ConfigModel(SignalModel):
         self.device_manager.connect('connect', self.device_manager_callbacks)
         self.device_manager.connect('device_new', self.device_manager_callbacks)
         self.device_manager.connect('device_remove', self.device_manager_callbacks)
-    #
-    # def __init__(self):
-    #     config = self.load_config()
-    #     super().__init__(**config)
 
     def device_manager_callbacks(self, *args):
         self.write()

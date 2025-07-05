@@ -1,10 +1,12 @@
 import gettext
 
-from pulsemeeter.model.device_model import DeviceModel
+# from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
+from pulsemeeter.clients.gtk.widgets.device.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
+
 from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
-from pulsemeeter.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
-from pulsemeeter.clients.gtk.adapters.device_box_adapter import DeviceBoxAdapter
+
+from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -15,7 +17,13 @@ from gi.repository import Gtk, GObject  # noqa: E402
 _ = gettext.gettext
 
 
-class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
+class DeviceBoxWidget(Gtk.Frame):
+
+    device_type: str
+    devices: dict[str, DeviceWidget] = {}
+    device_box: Gtk.Box
+    add_device_button: IconButton
+    popover: DeviceSettingsAdapter
 
     device_label = {
         'hi': _('Hardware Inputs'),
@@ -30,26 +38,26 @@ class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
         "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
-    def __init__(self, devices_schema: DeviceModel, device_type: str, device_manager):
-        Gtk.Frame.__init__(self, margin=5)
+    def __init__(self, device_type):
+        super().__init__(margin=5)
 
+        # set attributes
         self.device_type = device_type
         self.devices: dict[str, DeviceWidget] = {}
-        device_type_string = self.device_label[device_type]
 
+        # Create label
+        device_type_string = self.device_label[device_type]
         title = Gtk.Label(device_type_string, margin=10)
 
         add_button = IconButton('add')
-
-        add_button.set_tooltip_text(_(f"Create new {device_type_string} device"))
-        add_button.get_accessible().set_name(_(f"Create {device_type_string} device"))
+        add_button.set_tooltip_text(_("Create new %s device") % device_type_string)
+        add_button.get_accessible().set_name(_("Create a %s device") % device_type_string)
 
         title_box = Gtk.HBox()
         title_box.add(title)
         title_box.add(add_button)
 
         self.get_accessible().set_name(device_type_string)
-
         self.set_label_widget(title_box)
         self.set_label_align(0.5, 0)
 
@@ -58,15 +66,41 @@ class DeviceBoxWidget(Gtk.Frame, DeviceBoxAdapter):
 
         self.title = title
         self.add_device_button = add_button
-        # self.add_device_button.connect('pressed', self.create_new_device_popover)
 
         # get what popup should be used
         dc = 'hardware' if device_type in ('a', 'hi') else 'virtual'
         popup_type = HardwareDevicePopup if dc == 'hardware' else VirtualDevicePopup
         self.popover = popup_type(device_type)
         self.popover.set_relative_to(self.add_device_button)
-        # self.popover.popdown()
 
-        DeviceBoxAdapter.__init__(self, device_manager=device_manager)
+        self.popover.confirm_button.connect('clicked', self.create_pressed)
+        self.add_device_button.connect('clicked', self.open_popover)
 
-        self.load_devices(devices_schema)
+        # self.load_devices(devices_schema)
+
+    def insert_widget(self, device_widget, device_id: str):
+        self.device_box.pack_start(device_widget, False, False, 0)
+        self.devices[device_id] = device_widget
+
+    def remove_widget(self, device_id: str):
+        device_widget = self.devices.pop(device_id)
+        device_widget.destroy()
+        return device_widget
+
+    def open_popover(self, _):
+        '''
+            Opens create device popover when clicking on the new device button
+        '''
+
+        # create popup
+        self.emit('add_device_pressed', self.device_type)
+        self.popover.show_all()
+        self.popover.popup()
+        self.popover.nick_widget.input.grab_focus()
+
+    def remove_pressed(self, _, device_type, device_id):
+        self.emit('remove_pressed', device_type, device_id)
+
+    def create_pressed(self, _):
+        schema = self.popover.to_schema()
+        self.emit('create_pressed', schema)

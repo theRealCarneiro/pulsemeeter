@@ -31,9 +31,9 @@ class ConnectionBoxAdapter(GObject.GObject):
         connection_model = popover.get_connection_model()
         self.emit('update_connection', device_type, device_id, connection_model)
 
-    def refresh_connections(self):
-        self.set_empty()
-        self.load_widgets(self.model)
+    # def reload_connections(self):
+    #     self.set_empty()
+    #     self.load_widgets(self.model)
 
     def load_widgets(self, devices: dict[dict[str, ConnectionModel]]):
         for device_type in ('a', 'b'):

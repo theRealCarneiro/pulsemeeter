@@ -8,8 +8,8 @@ from gi.repository import Gtk, GObject  # noqa: E402
 class AppComboboxAdapter(GObject.GObject):
 
     _device_list = {
-        'sink_input': Gtk.ListStore(str),
-        'source_output': Gtk.ListStore(str)
+        'sink_input': Gtk.ListStore(str, str),
+        'source_output': Gtk.ListStore(str, str)
     }
 
     @classmethod
@@ -17,16 +17,16 @@ class AppComboboxAdapter(GObject.GObject):
         cls._device_list[app_type].clear()
         # cls._device_list[app_type].append([])
         for device in device_list:
-            cls._device_list[app_type].append([device])
+            cls._device_list[app_type].append(device)
 
     @classmethod
     def append_device_list(cls, app_type, device):
-        cls._device_list[app_type].append([device])
+        cls._device_list[app_type].append(device)
 
     @classmethod
     def remove_device_list(cls, app_type, device):
         for row in cls._device_list[app_type]:
-            if device == row[0]:
+            if device[0] == row[0]:
                 cls._device_list[app_type].remove(row.iter)
 
     @classmethod

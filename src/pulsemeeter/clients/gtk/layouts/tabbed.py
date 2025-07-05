@@ -1,7 +1,8 @@
 import gettext
 
-from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
+from pulsemeeter.clients.gtk.widgets.app.app_box_widget import AppBoxWidget
 from pulsemeeter.clients.gtk.adapters.main_window_adapter import MainWindowAdapter
+from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -26,37 +27,28 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
         "device_new": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         "device_remove": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str,)),
         "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
     }
 
-    def __init__(self, application, config_model, app_manager):
+    def __init__(self, application, config_model):
         Gtk.Window.__init__(self, application=application)
-        self.set_title("Tabbed Layout")
-        # self.set_default_size(800, 600)
 
-        # Create a Notebook to hold tabs.
         notebook = Gtk.Notebook()
+        self.settings_widget = None
 
         # Create a tab for each device box.
         self.device_box = {}
         for device_type in ('hi', 'vi', 'a', 'b'):
-            devices = getattr(config_model.device_manager, device_type)
-            self.device_box[device_type] = DeviceBoxWidget(devices, device_type)
+            self.device_box[device_type] = DeviceBoxWidget(device_type)
             tab_label = Gtk.Label(label=DEVICE_TYPE_PRETTY[device_type])
             notebook.append_page(self.device_box[device_type], tab_label)
 
-        sink_input_box = Gtk.VBox(spacing=6)
-        source_output_box = Gtk.VBox(spacing=6)
-
-        framed_sink = self._framed(sink_input_box, _('Application Outputs'))
-        framed_source = self._framed(source_output_box, _('Application Inputs'))
-
-        notebook.append_page(framed_sink, Gtk.Label(label=_("Application Outputs")))
-        notebook.append_page(framed_source, Gtk.Label(label=_("Application Inputs")))
-
+        sink_input_box = AppBoxWidget('sink_input')
+        source_output_box = AppBoxWidget('source_output')
         self.app_box = {'sink_input': sink_input_box, 'source_output': source_output_box}
-        self.devices = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
-        self.apps = {'sink_input': {}, 'source_output': {}}
+
+        notebook.append_page(sink_input_box, Gtk.Label(label=_("Application Outputs")))
+        notebook.append_page(source_output_box, Gtk.Label(label=_("Application Inputs")))
 
         self.add(notebook)
-        MainWindowAdapter.__init__(self, config_model=config_model, app_manager=app_manager)
-        # self.load_apps()
+        MainWindowAdapter.__init__(self)

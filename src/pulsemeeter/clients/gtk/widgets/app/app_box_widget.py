@@ -1,31 +1,32 @@
 import gettext
 
-from pulsemeeter.model.app_model import AppModel
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget
-from pulsemeeter.clients.gtk.widgets.app.app_combobox import AppCombobox
-from pulsemeeter.clients.gtk.adapters.app_box_adapter import AppBoxAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject  # noqa: E402
+from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
 
 
-class AppBoxWidget(Gtk.Frame, AppBoxAdapter):
+class AppBoxWidget(Gtk.Frame):
+
+    app_type: str
+    app_box = Gtk.Box()
+    apps: dict[int, AppWidget] = {}
 
     app_label = {
         'sink_input': _('Application Outputs'),
         'source_output': _('Application Inputs')
     }
 
-    def __init__(self, app_type: str, app_manager):
-        Gtk.Frame.__init__(self, margin=5)
+    def __init__(self, app_type: str):
+        super().__init__(margin=5)
 
         self.app_type = app_type
-        self.apps: dict[str, AppWidget] = {}
+        self.apps: dict[int, AppWidget] = {}
         app_type_string = self.app_label[app_type]
 
         title = Gtk.Label(app_type_string, margin=10)
@@ -39,7 +40,15 @@ class AppBoxWidget(Gtk.Frame, AppBoxAdapter):
 
         self.title = title
 
-        AppBoxAdapter.__init__(self, app_manager=app_manager)
+    def insert_widget(self, app_widget: AppWidget, app_index: int) -> AppWidget:
+        self.apps[app_index] = app_widget
+        self.app_box.pack_start(app_widget, False, False, 0)
+        return app_widget
 
-        apps_schema = app_manager.__dict__[app_type]
-        self.load_apps(apps_schema)
+    def remove_widget(self, app_index: int) -> AppWidget:
+        if app_index not in self.apps:
+            return None
+
+        app_widget = self.apps.pop(app_index)
+        app_widget.destroy()
+        return app_widget

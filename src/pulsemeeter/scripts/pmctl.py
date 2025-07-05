@@ -166,6 +166,16 @@ def set_volume(device_type: str, device_name: str, val: int, selected_channels: 
     return 0
 
 
+def get_device_by_name(device_type: str, device_name: str):
+    try:
+        if device_type == 'sink':
+            return PULSE.get_sink_by_name(device_name)
+
+        return PULSE.get_source_by_name(device_name)
+    except pulsectl.pulsectl.PulseIndexError:
+        return None
+
+
 def app_mute(app_type: str, index: int, state: bool):
     '''
     Mute an app by their type and index

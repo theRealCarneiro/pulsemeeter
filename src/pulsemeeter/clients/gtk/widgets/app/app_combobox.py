@@ -29,7 +29,7 @@ class AppCombobox(Gtk.ComboBox, AppComboboxAdapter):
     def get_active_text(self):
         active_iter = self.get_active_iter()
         if active_iter is not None:
-            return self._device_list[self.app_type].get_value(active_iter, 0)
+            return self._device_list[self.app_type].get_value(active_iter, 1)
 
         return None
 

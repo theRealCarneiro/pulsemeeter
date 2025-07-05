@@ -7,7 +7,7 @@ from pulsemeeter.clients.gtk import layouts
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
@@ -19,6 +19,10 @@ class SettingsMenuPopover(Gtk.Popover):
     cleanup: bool = False
     tray: bool = False
     layout: str = 'blocks'
+
+    __gsignals__ = {
+        "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
+    }
 
     def __init__(self, config_model):
         Gtk.Popover.__init__(self)
@@ -56,6 +60,7 @@ class SettingsMenuPopover(Gtk.Popover):
         mainbox.pack_start(self.layout, False, False, 5)
         mainbox.pack_start(button_box, False, False, 5)
 
+        self.apply_button.connect('clicked', self.apply_settings)
 
         self.set_modal(False)
         self.add(mainbox)
@@ -63,10 +68,18 @@ class SettingsMenuPopover(Gtk.Popover):
     def to_schema(self):
         return {
             'vumeters': self.vumeters.get_active(),
-            'cleanup': self.tray.get_active(),
+            'cleanup': self.cleanup.get_active(),
             'tray': self.tray.get_active(),
             'layout': self.layout.get_active_text(),
         }
 
+    def open_settings(self, _):
+        self.popup()
+        self.show_all()
+
+    def apply_settings(self, _):
+        self.emit('settings_change', self.to_schema())
+
     def close_pressed(self, _):
         self.popdown()
+        # self.destroy()

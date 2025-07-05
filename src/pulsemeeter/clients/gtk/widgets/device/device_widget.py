@@ -11,7 +11,7 @@ from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
 
 # from pulsemeeter.clients.gtk.widgets.device.connection_widget import ConnectionWidget
 from pulsemeeter.clients.gtk.widgets.device.connection_box_widget import ConnectionBoxWidget
-from pulsemeeter.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
+from pulsemeeter.clients.gtk.widgets.device.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
 # from pulsemeeter.clients.gtk.widgets.common.create_device_widget import CreateDevice
 
 from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget

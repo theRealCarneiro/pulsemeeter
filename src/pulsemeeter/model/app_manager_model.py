@@ -23,25 +23,14 @@ class AppManagerModel(SignalModel):
         return values
 
     def set_volume(self, app_type, app_index, val: Volume):
-        app = self.__dict__[app_type][app_index]
-        app.set_volume(val)
         pmctl.app_volume(app_type, app_index, val)
         self.emit('app_volume', app_type, app_index, val)
 
     def set_mute(self, app_type, app_index, state: bool):
-        app = self.__dict__[app_type][app_index]
-        app.set_mute(state)
         pmctl.app_mute(app_type, app_index, state)
         self.emit('app_mute', app_type, app_index, state)
 
     def change_device(self, app_type, app_index, device_name: str):
-        app = self.__dict__[app_type][app_index]
-
-        # if not changing
-        if app.device == device_name:
-            return
-
-        app.change_device(device_name)
         pmctl.move_app_device(app_type, app_index, device_name)
         self.emit('app_device_change', app_type, app_index, device_name)
 

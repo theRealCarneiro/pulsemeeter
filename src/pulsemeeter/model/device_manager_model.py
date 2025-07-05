@@ -1,7 +1,8 @@
 import logging
 from typing import Literal
+from collections import defaultdict
 
-# from pydantic import BaseModel
+from pydantic import PrivateAttr
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.scripts import pmctl_async
 from pulsemeeter.schemas.typing import PaDeviceType
@@ -22,26 +23,35 @@ class DeviceManagerModel(SignalModel):
     b: dict[str, DeviceModel] = {}
     hi: dict[str, DeviceModel] = {}
     a: dict[str, DeviceModel] = {}
+    _device_cache: dict[str, object] = PrivateAttr(default_factory=dict)
 
     def model_post_init(self, _):
 
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):
             for device_id in self.__dict__[device_type]:
-                self.init_device(device_type, device_id)
+                self.init_device(device_type, device_id, cache=False)
 
         # now we connect the input devices
         for device_type in ('vi', 'hi'):
             for device_id in self.__dict__[device_type]:
                 self.reconnect(device_type, device_id)
 
-    def init_device(self, device_type, device_id):
+        self.cache_devices()
+
+    def init_device(self, device_type, device_id, cache=True):
         '''
         Create Pulse device
         '''
         device = self.__dict__[device_type][device_id]
         if device_type in ('vi', 'b') and not device.external:
             pmctl.init(device.device_type, device.name, device.channels)
+
+        if cache:
+            self.append_device_cache(device_type, device_id, device)
+
+        # pa_device = pmctl.get_device_by_name(device.device_type, device.name)
+        # self._device_cache[pa_device.index].append((device_type, device_id))
 
     def bulk_connect(self, device_type, device_id, state):
         '''
@@ -267,7 +277,7 @@ class DeviceManagerModel(SignalModel):
 
         return device_type, device_id, device
 
-    def remove_device(self, device_type: str, device_index: str):
+    def remove_device(self, device_type: str, device_index: str, cache=True):
         '''
         Remove a device from config
         '''
@@ -283,6 +293,10 @@ class DeviceManagerModel(SignalModel):
             for input_type in ('vi', 'hi'):
                 for _, input_device in self.__dict__[input_type].items():
                     input_device.connections[device_type].pop(device_index)
+
+        # remove device from cache
+        if cache:
+            self.pop_device_cache(device_type, device_index, device)
 
         if device.device_class == 'virtual':
             pmctl.remove(device.name)
@@ -318,43 +332,105 @@ class DeviceManagerModel(SignalModel):
 
         return dvl
 
-    async def event_listen(self, callback_function):
+    def list_device_nicks(self, pa_device_type: PaDeviceType, monitor=False):
+        dvl = []
+        device_type = 'vi' if pa_device_type == 'sink' else 'b'
+        for _, device in self.__dict__[device_type].items():
+
+            nick = device.nick
+            if monitor is True:
+                nick += '.monitor'
+
+            dvl.append((nick, device.name))
+
+        return dvl
+
+    def append_device_cache(self, device_type, device_id, device):
+        pa_device = pmctl.get_device_by_name(device.device_type, device.name)
+        if pa_device is None:
+            return
+
+        # print(pa_device, pa_device.index)
+        if pa_device.index not in self._device_cache[device.device_type]:
+            self._device_cache[device.device_type][pa_device.index] = []
+
+        self._device_cache[device.device_type][pa_device.index].append((device_type, device_id))
+
+    def pop_device_cache(self, device_type, device_id, device):
+        pa_device = pmctl.get_device_by_name(device.device_type, device.name)
+
+        if pa_device is None or pa_device.index not in self._device_cache[device.device_type]:
+            return
+
+        self._device_cache[device.device_type][pa_device.index].remove((device_type, device_id))
+
+        # del index from cache if list is empty
+        if not self._device_cache[device.device_type][pa_device.index]:
+            del self._device_cache[device.device_type][pa_device.index]
+
+        pa_device = pmctl.get_device_by_name(device.device_type, device.name)
+        self._device_cache[device.device_type][pa_device.index].append((device_type, device_id))
+
+    def cache_devices(self):
+        self._device_cache = {'sink': {}, 'source': {}}
+        for device_type in ('hi', 'vi', 'a', 'b'):
+            for device_id, device in self.__dict__[device_type].items():
+                self.append_device_cache(device_type, device_id, device)
+
+    async def handle_app_new_event(self, event, app_type):
+        app = await pmctl_async.get_app_by_id(event.facility, event.index)
+        if app is not None:
+            app_model = AppModel.pa_to_app_model(app, app_type)
+            self.emit('pa_app_new', app_type, event.index, app_model)
+
+    async def handle_app_remove_event(self, event, app_type):
+        self.emit('pa_app_remove', app_type, event.index)
+
+    async def handle_app_change_event(self, event, app_type):
+        app = await pmctl_async.get_app_by_id(event.facility, event.index)
+        if app is not None:
+            self.emit('pa_app_change', app_type, event.index, app)
+
+    async def handle_app_event(self, event):
+        app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
+
+        if event.t == 'change':
+            await self.handle_app_change_event(event, app_type)
+
+        if event.t == 'new':
+            await self.handle_app_new_event(event, app_type)
+
+        if event.t == ('remove'):
+            await self.handle_app_remove_event(event, app_type)
+
+    async def handle_device_change_event(self, event):
+        if event.index not in self._device_cache[event.facility]:
+            return
+
+        pulsectl_device = await pmctl_async.get_device_by_id(event.facility, event.index)
+        for device_type, device_id in self._device_cache[event.facility][event.index]:
+            device_model = self.__dict__[device_type][device_id]
+
+            if not device_model.update_from_pa(pulsectl_device):
+                continue
+
+            self.emit('pa_device_change', device_type, device_id, device_model)
+
+    async def handle_device_event(self, event):
+        if event.t == 'change':
+            await self.handle_device_change_event(event)
+
+    async def event_listen(self):
         async for event in pmctl_async.pulse_listener():
 
+            # app creation, removal, volume and mute events
             if event.facility in ('sink_input', 'source_output'):
-                app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
+                await self.handle_app_event(event)
 
-                if event.t == 'change':
-                    app = await pmctl_async.get_app_by_id(event.facility, event.index)
-                    if app is None:
-                        continue
-
-                    self.emit('pa_app_change', app_type, event.index, app)
-
-                elif event.t == 'new':
-                    app = await pmctl_async.get_app_by_id(event.facility, event.index)
-                    if app is None:
-                        continue
-
-                    app_model = AppModel.pa_to_app_model(app, app_type)
-                    self.emit('pa_app_new', app_type, event.index, app_model)
-
-                elif event.t == ('remove'):
-                    self.emit('pa_app_remove', app_type, event.index)
-
-            elif event.facility in ('sink', 'source'):
-                if event.t == 'change':
-                    pulsectl_device = await pmctl_async.get_device_by_id(event.facility, event.index)
-
-                    device_type, device_id, pm_device = self.find_device(event.facility, pulsectl_device.name)
-
-                    if pm_device is None:
-                        continue
-
-                    pm_device.update_from_pa(pulsectl_device)
-                    self.emit('pa_device_change', device_type, device_id, pm_device)
-                    continue
+            # volume and mute events
+            if event.facility in ('sink', 'source'):
+                await self.handle_device_event(event)
 
             # primary changes
-            elif event.facility == 'server':
-                continue
+            if event.facility == 'server':
+                pass

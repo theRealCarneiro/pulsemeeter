@@ -113,13 +113,17 @@ class DeviceAdapter(GObject.GObject):
             self.name_widget.set_label(schema['nick'], schema['description'])
 
     def pa_device_change(self):
-        self.set_volume(self.device_model.volume[0])
-        self.set_mute(self.device_model.mute)
+        vol = self.device_model.volume[0]
+        mute = self.device_model.mute
+
+        if self.volume_widget.blocked is False and vol != self.volume_widget.get_value():
+            self.set_volume(vol)
+
+        if self.mute_widget.get_active != mute:
+            self.set_mute(mute)
 
     def set_volume(self, value):
-        # print('Setting widget volume')
         self.volume_widget.handler_block(self.handlers['volume'])
-        # GLib.idle_add(self.volume_widget.set_value, value)
         self.volume_widget.set_value(value)
         self.volume_widget.handler_unblock(self.handlers['volume'])
 

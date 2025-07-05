@@ -1,27 +1,50 @@
+import logging
 import asyncio
+import traceback
 import threading
 
-from pulsemeeter.model.config_model import ConfigModel
-from pulsemeeter.model.app_manager_model import AppManagerModel
-# from pulsemeeter.schemas.app_schema import AppModel
+from concurrent.futures._base import CancelledError
+from pulsemeeter.scripts.pmctl_async import subscribe_peak
 
-# from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
-# from pulsemeeter.clients.gtk.widgets.device.create_device_widget import VirtualDevicePopup, HardwareDevicePopup
-from pulsemeeter.clients.gtk.adapters.application_adapter import ApplicationAdapter
-from pulsemeeter.settings import STYLE_FILE
+from pulsemeeter.model.config_model import ConfigModel
+from pulsemeeter.model.device_model import DeviceModel
+from pulsemeeter.model.app_manager_model import AppManagerModel
+from pulsemeeter.model.device_manager_model import DeviceManagerModel
+
+from pulsemeeter.clients.gtk import layouts
+from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
+from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
+# from pulsemeeter.settings import STYLE_FILE
 
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk  # noqa: E402
+from gi.repository import Gtk, Gdk, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
+LOG = logging.getLogger("generic")
 
-class GtkClient(Gtk.Application, ApplicationAdapter):
+
+class GtkClient(Gtk.Application):
+
+    window: Gtk.Window
+    config_model: ConfigModel
+    app_manager: AppManagerModel
+    vumeter_loop: asyncio.AbstractEventLoop
+    pa_listener_loop: asyncio.AbstractEventLoop
+    listen_task: asyncio.Task
+    pa_listener_thread: threading.Thread
+    vumeter_thread: threading.Thread
+    vumeter_tasks: dict[str, dict[str, asyncio.Task]]
+    device_handlers: dict[str, dict[str, int]]
+    model_handlers: dict[str, dict[str, int]]
+    manager_handlers: dict[str, int]
+    app_handlers: dict[str, dict[str, int]]
+    event_timeout_id: int 
 
     def __init__(self):
-        Gtk.Application.__init__(self, application_id='org.pulsemeeter.pulsemeeter')
-        ApplicationAdapter.__init__(self)
+        super().__init__(application_id='org.pulsemeeter.pulsemeeter')
+
         # style_provider = Gtk.CssProvider()
         # style_provider.load_from_path(STYLE_FILE)
         # Gtk.StyleContext.add_provider_for_screen(
@@ -32,11 +55,6 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
 
         self.window = None
 
-        # create client and get config
-        # self.client = Client(subscription_flags=0, instance_name='gtk')
-        # res = self.client.send_request('get_config', {})
-        # self.config = ConfigModel(**res.data)
-        # self.client_subscribe = Client(subscription_flags=1, instance_name='gtk_callback')
         self.config_model = ConfigModel.load_config()
         self.app_manager = AppManagerModel(config_model=self.config_model)
 
@@ -53,6 +71,540 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         self.vumeter_tasks = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}, 'sink_input': {}, 'source_output': {}}
         self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
+        self.manager_handlers = {}
+
+    def create_window(self):
+        layout = layouts.LAYOUTS[self.config_model.layout]
+        self.window = layout.MainWindow(application=self, config_model=self.config_model)
+
+        self.connect_window_gtk_events(self.window)
+        self.connect_devicemanager_events()
+        self.load_device_list()
+        self.load_app_list()
+        self.listen_task = self.start_listen()
+
+    def create_device_widget(self, device_type, device_id, device_model, refresh=False):
+        '''
+        Insert a device widget and add it to a device box
+            "device_type" is [vi, hi, a, b]
+            "device" is the device widget to insert in the box
+        '''
+        device_widget = DeviceWidget(device_model)
+        self.window.device_box[device_type].insert_widget(device_widget, device_id)
+        self.connect_device_gtk_events(device_type, device_id, device_widget)
+
+        if refresh:
+            self.reload_connection_widgets()
+
+        return device_widget
+
+    def remove_device_widget(self, device_type, device_id, refresh=False):
+        '''
+        Destroy a device widget and remove it from a device box
+            "device_type" is [vi, hi, a, b]
+            "device" is the device widget to remove from the box
+        '''
+        device_widget = self.window.device_box[device_type].remove_widget(device_id)
+
+        if refresh:
+            self.reload_connection_widgets()
+            # TODO: refresh app devices
+
+        return device_widget
+
+    def reload_connection_widgets(self):
+        '''
+        Reloads all connection widgets
+        '''
+        for device_type in ('hi', 'vi'):
+            for _, device in self.window.device_box[device_type].items():
+                device.connections_widget.reload_connections()
+
+    def create_app_widget(self, app_type, app_index, app_model):
+        '''
+        Create a new app widget from a model, insert it and return it
+        '''
+        app_widget = AppWidget(app_model)
+        self.window.app_box[app_type].insert_widget(app_widget, app_index)
+        # app_widget.show_all()
+        self.connect_app_gtk_events(app_type, app_index, app_widget)
+        return app_widget
+
+    def remove_app_widget(self, app_type, app_index):
+        '''
+        Remove app widget and return it
+        '''
+        app_widget = self.window.app_box[app_type].remove_widget(app_index)
+        return app_widget
+
+    def load_device_list(self):
+        '''
+        Load the devices from config
+        '''
+        for device_type, device_dict in self.config_model.device_manager.__dict__.items():
+            for device_id, device_model in device_dict.items():
+                self.create_device_widget(device_type, device_id, device_model)
+
+    def load_app_list(self):
+        '''
+        Load the current available pulseaudio sink inputs and source outputs
+        '''
+
+        self.load_app_combobox()
+
+        for app_type in ('sink_input', 'source_output'):
+            for app_index, app_model in self.app_manager.__dict__[app_type].items():
+                self.create_app_widget(app_type, app_index, app_model)
+
+    def load_app_combobox(self):
+        self.block_app_combobox_handlers(True)
+        sink_input_device_list = self.config_model.device_manager.list_device_nicks('sink')
+        source_output_device_list = self.config_model.device_manager.list_device_nicks('source')
+        source_output_device_list += self.config_model.device_manager.list_device_nicks('sink', True)
+
+        AppCombobox.set_device_list('sink_input', sink_input_device_list)
+        AppCombobox.set_device_list('source_output', source_output_device_list)
+        self.block_app_combobox_handlers(False)
+
+    def append_app_combobox(self, device):
+        self.block_app_combobox_handlers(True)
+        if device.device_type == 'sink':
+            AppCombobox.append_device_list('sink_input', (device.nick, device.name))
+            AppCombobox.append_device_list('source_output', (device.nick + '.monitor', device.name))
+        else:
+            AppCombobox.append_device_list('source_output', (device.nick, device.name))
+        self.block_app_combobox_handlers(False)
+
+    def pop_app_combobox(self, device):
+        self.block_app_combobox_handlers(True)
+        if device.device_type == 'sink':
+            AppCombobox.remove_device_list('sink_input', (device.nick, device.name))
+            AppCombobox.remove_device_list('source_output', (device.nick + '.monitor', device.name))
+        else:
+            AppCombobox.remove_device_list('source_output', (device.nick, device.name))
+        self.block_app_combobox_handlers(False)
+
+    def block_app_combobox_handlers(self, state):
+        for app_type in ('sink_input', 'source_output'):
+            for app_index, app in self.window.app_box[app_type].apps.items():
+                handler = self.app_handlers[app_type][app_index]['app_device']
+                if state:
+                    app.handler_block(handler)
+                else:
+                    app.handler_unblock(handler)
+
+    def confirm_button_pressed(self, _, popover, device_type):
+        '''
+        Called when clicking the create device button
+        '''
+        self.window.create_device(popover.to_schema())
+
+    def settings_menu_apply(self, _, config_schema):
+        self.config_model.vumeters = config_schema['vumeters']
+        self.config_model.tray = config_schema['tray']
+        self.config_model.layout = config_schema['layout']
+        # print(config_schema)
+
+    def connect_devicemanager_events(self):
+        handler = self.manager_handlers
+        manager = self.config_model.device_manager
+        handler['device_new'] = manager.connect('device_new', self.device_new_callback)
+        handler['device_remove'] = manager.connect('device_remove', self.device_remove_callback)
+        handler['pa_device_change'] = manager.connect('pa_device_change', self.device_change_callback)
+        handler['pa_app_change'] = manager.connect('pa_app_change', self.app_change_callback)
+        handler['pa_app_new'] = manager.connect('pa_app_new', self.app_new_callback)
+        handler['pa_app_remove'] = manager.connect('pa_app_remove', self.app_remove_callback)
+
+    def connect_window_gtk_events(self, window):
+        window.connect('add_device_pressed', self.add_device_hijack)
+        window.connect('device_new', self.device_new)
+        window.connect('device_remove', self.device_remove)
+        window.connect('settings_change', self.settings_menu_apply)
+
+    def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget):
+        '''
+        Connect a device widget events to the model
+        '''
+        device_handler = self.device_handlers[device_type][device_id] = {}
+
+        device_handler['device_change'] = device.connect('device_change', self.update_device_model, device_type, device_id)
+        device_handler['volume'] = device.connect('volume', self.set_volume, device_type, device_id)
+        device_handler['mute'] = device.connect('mute', self.set_mute, device_type, device_id)
+        device_handler['connection'] = device.connect('connection', self.set_connection, device_type, device_id)
+        device_handler['update_connection'] = device.connect('update_connection', self.update_connection, device_type, device_id)
+        device_handler['primary'] = device.connect('primary', self.set_primary, device_type, device_id)
+
+        pa_device_type = device.device_model.device_type
+        if self.config_model.vumeters:
+            vumeter = self.start_vumeter(pa_device_type, device.device_model.name, device.vumeter_widget)
+            self.vumeter_tasks[device_type][device_id] = vumeter
+
+        if self.config_model.vumeters:
+            device.connect('destroy', self.stop_vumeter, device_type, device_id)
+
+        # self.connect_callback_functions()
+
+        return device
+
+    def connect_app_gtk_events(self, app_type: str, app_index: str, app: AppWidget):
+        '''
+        Connect a device widget events to the model
+        '''
+        app_handler = self.app_handlers[app_type][app_index] = {}
+
+        app_handler['app_volume'] = app.connect('app_volume', self.set_app_volume, app_type, app_index)
+        app_handler['app_mute'] = app.connect('app_mute', self.set_app_mute, app_type, app_index)
+        app_handler['app_device'] = app.connect('app_device_change', self.set_app_device, app_type, app_index)
+
+        stream_type = app_type.split('_')[0]
+        if self.config_model.vumeters:
+            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter, app.app_model.index)
+            self.vumeter_tasks[app_type][app_index] = vumeter
+            app.connect('destroy', self.stop_vumeter, app_type, app_index)
+
+        return app
+
+    def connect_device_model_events(self, device_type: str, device_id: str, device: DeviceModel):
+        '''
+        Connect a device widget
+        '''
+        win_man = self.window.device
+        model_handler = self.model_handlers[device_type][device_id]
+
+        model_handler['volume'] = device.connect('volume', win_man.set_volume)
+        model_handler['mute'] = device.connect('mute', win_man.set_mute)
+        model_handler['connection'] = device.connect('connection', win_man.set_connection)
+        model_handler['primary'] = device.connect('primary')
+
+        # device.connect('destroy', self.stop_vumeter, device_type, device_id)
+
+        # self.connect_callback_functions()
+
+        return device
+
+    # def event_timeout(self, 100):
+    #     self.event_timeout_id = GLib.timeout_add(100, self.config_model.device_manager.unblock(handler))
+    #     pass
+
+    #
+    # # Update model functions
+    #
+    def set_volume(self, _, volume: int, device_type, device_id):
+        '''
+        Set model volume
+        '''
+        # handler = self.manager_handlers['pa_device_change']
+        # self.config_model.device_manager.block(handler)
+        # GLib.timeout_add(100, self.config_model.device_manager.unblock(handler))
+        self.config_model.device_manager.set_volume(device_type, device_id, volume)
+
+    def set_mute(self, _, state: bool, device_type, device_id):
+        '''
+        Set model mute
+        '''
+        self.config_model.device_manager.set_mute(device_type, device_id, state)
+
+    def set_primary(self, _, state, device_type, device_id):
+        '''
+        Set model primary
+        '''
+        self.config_model.device_manager.set_primary(device_type, device_id)
+        for target_id, target_device in self.window.device_box[device_type].devices.items():
+            if target_id != device_id:
+                target_device.set_primary(False)
+
+    def set_connection(self, _, output_type, output_id, state: bool, input_type, input_id):
+        '''
+        Set model connection
+        '''
+        self.config_model.device_manager.set_connection(input_type, input_id, output_type, output_id, state)
+
+    def update_connection(self, _, output_type, output_id, connection_model, input_type, input_id):
+        '''
+        Set model connection
+        '''
+        self.config_model.device_manager.update_connection(input_type, input_id, output_type, output_id, connection_model)
+
+    def device_new(self, _, device_model):
+        '''
+        Create new device model
+        '''
+        _, _, device = self.config_model.device_manager.create_device(device_model)
+
+        if device.device_class != 'virtual':
+            return
+
+        self.append_app_combobox(device)
+
+    def device_remove(self, _, device_type, device_id):
+        '''
+        Remove model device
+        '''
+        device = self.config_model.device_manager.get_device(device_type, device_id)
+        self.config_model.device_manager.remove_device(device_type, device_id)
+
+        if device.device_class != 'virtual':
+            return
+
+        self.pop_app_combobox(device)
+
+    def update_device_model(self, _, schema, device_type, device_id):
+        '''
+        Load the current available pulseaudio sink inputs and source outputs
+        '''
+        self.config_model.device_manager.update_device(schema, device_type, device_id)
+        # TODO: update connection buttons and settings
+
+    def add_device_hijack(self, _, device_type):
+        '''
+            Populates the device combobox every time the popup opens
+        '''
+        if device_type not in ('a', 'hi'):
+            return
+
+        device_list = DeviceManagerModel.list_devices(device_type)
+        self.window.device_box[device_type].popover.device_list = device_list
+        self.window.device_box[device_type].popover.combobox_widget.load_list(device_list, 'description')
+
+    def set_app_volume(self, _, volume: int, app_type, app_index):
+        '''
+        Set model volume
+        '''
+        self.app_manager.set_volume(app_type, app_index, volume)
+
+    def set_app_mute(self, _, state: bool, app_type, app_index):
+        '''
+        Set model mute
+        '''
+        self.app_manager.set_mute(app_type, app_index, state)
+
+    def set_app_device(self, _, device_nick: str, app_type, app_index):
+        '''
+        Set model device
+        '''
+        # return
+        self.app_manager.change_device(app_type, app_index, device_nick)
+
+    #
+    # # End model update functions
+    #
+
+    #
+    # # Model Callback functions
+    #
+    def device_new_callback(self, device_type, device_id, device_model):
+        def wrapper():
+            device = self.create_device_widget(device_type, device_id, device_model, refresh=True)
+            device.show_all()
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def device_remove_callback(self, device_type: str, device_id: str):
+        def wrapper():
+            self.remove_device_widget(device_type, device_id, refresh=True)
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def device_change_callback(self, device_type: str, device_id: str, device_model: DeviceModel):
+        def wrapper():
+            device_widget = self.window.device_box[device_type].devices[device_id]
+            device_widget.pa_device_change()
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def app_new_callback(self, app_type: str, app_index: int, app_model: DeviceModel):
+        def wrapper():
+            app = self.create_app_widget(app_type, app_index, app_model)
+            app.show_all()
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def app_remove_callback(self, app_type: str, app_index: int):
+        def wrapper():
+            self.remove_app_widget(app_type, app_index)
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def app_change_callback(self, app_type: str, app_index: int, app: DeviceModel):
+        def wrapper():
+            app_widget = self.window.app_box[app_type].apps.get(app_index)
+            if app_widget:
+                app_widget.pa_app_change(app)
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def handle_listen_error(self, fut):
+        try:
+            fut.result()
+
+        except CancelledError:
+            LOG.debug("Listen task canceled")
+
+        except Exception as e:
+            tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            LOG.error("Vumeter task error: \n %s", tb_str)
+
+    def handle_vumeter_error(self, fut):
+        try:
+            fut.result()
+
+        except CancelledError:
+            LOG.debug("VUmeter task canceled")
+
+        except Exception as e:
+            tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            LOG.error("Vumeter task error: \n %s", tb_str)
+
+    def start_listen(self):
+        future = asyncio.run_coroutine_threadsafe(
+            self.config_model.device_manager.event_listen(),
+            self.pa_listener_loop
+        )
+
+        future.add_done_callback(self.handle_listen_error)
+        return future
+
+    def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None):
+        future = asyncio.run_coroutine_threadsafe(
+            subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index),
+            self.vumeter_loop
+        )
+
+        future.add_done_callback(self.handle_vumeter_error)
+        return future
+
+    def stop_vumeter(self, _, device_type, device_id):
+        self.vumeter_tasks[device_type][device_id].cancel()
+
+    def stop_listen(self):
+        self.listen_task.cancel()
+
+    #
+    # # End Model Callback functions
+    #
+
+    def iter_input(self):
+        for device_type in ('hi', 'vi'):
+            for device_id, device_widget in self.window.device_box[device_type].devices.items():
+                yield device_type, device_id, device_widget
+
+    def iter_output(self):
+        for device_type in ('a', 'b'):
+            for device_id, device_widget in self.window.device_box[device_type].devices.items():
+                yield device_type, device_id, device_widget
+
+    def iter_hardware(self):
+        for device_type in ('hi', 'a'):
+            for device_id, device_widget in self.window.device_box[device_type].devices.items():
+                yield device_type, device_id, device_widget
+
+    def iter_virtual(self):
+        for device_type in ('vi', 'b'):
+            for device_id, device_widget in self.window.device_box[device_type].devices.items():
+                yield device_type, device_id, device_widget
+
+    def iter_all(self):
+        for device_type, device_box in self.window.device_box.items():
+            for device_id, device_widget in device_box.devices.items():
+                yield device_type, device_id, device_widget
+
+    # Connect device creation button press event
+    # def create_new_device_popover(self, widget, device_type):
+    #     '''
+    #         Opens create device popover when clicking on the new device button
+    #     '''
+    #     # get the device type list
+    #     dt = 'sink' if device_type in ('a', 'vi') else 'source'
+    #     # print("CU")
+    #     device_list = device_service.list_devices(dt)
+    #
+    #     popover = self.window.device_box[device_type].popover
+    #     if device_type in ('a', 'hi'):
+    #         popover.combobox_widget.empty()
+    #         popover.combobox_widget.load_list(device_list, 'description')
+    #
+    #     # connect gtk signals
+    #     popover.confirm_button.connect('clicked', device_service.create, popover, device_type, device_list)
+    #     popover.confirm_button.connect('clicked', self.confirm_button_pressed, popover, device_type)
+
+    #
+    # # BINDS
+    #
+
+    # def add_accels(self):
+        # accel_group = Gtk.AccelGroup()
+        # self.window.add_accel_group(accel_group)
+        # self.accel_group = accel_group
+        # self.current_box = 0
+        # self.current_device = 0
+        #
+        # accel_group.connect(ord('j'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(1))
+        # accel_group.connect(ord('k'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(-1))
+        #
+        # accel_group.connect(ord('h'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(-1))
+        # accel_group.connect(ord('l'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(1))
+        #
+        # accel_group.connect(ord('m'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('mute', None))
+        # accel_group.connect(ord('p'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('primary', None))
+        # accel_group.connect(ord('-'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', -1))
+        # accel_group.connect(ord('='), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', 1))
+
+    def bind_runner(self, cmd, arg):
+        device_type = self.get_current_kb_device_type()
+        device_id = self.get_current_kb_device_id()
+
+        if cmd == 'device_type_cycle':
+            self.change_box_focus(arg)
+        elif cmd == 'device_cycle':
+            self.change_device_focus(arg)
+        elif cmd == 'mute':
+            self.window.device_box[device_type].devices[device_id].mute_widget.clicked()
+        elif cmd == 'primary':
+            self.window.device_box[device_type].devices[device_id].primary_widget.clicked()
+        elif cmd == 'volume':
+            widget = self.window.device_box[device_type].devices[device_id].volume_widget
+            widget.set_value(widget.get_value() + arg)
+        # elif cmd == 'connect':
+
+    def get_current_kb_device_id(self):
+        device_type = self.get_current_kb_device_type()
+        current_box = self.window.device_box[device_type]
+        device_len = len(current_box.devices)
+
+        if device_len == 0:
+            return None
+
+        current_device_key = list(current_box.devices)[self.current_device]
+        return current_device_key
+
+    def get_current_kb_device_type(self):
+        return list(self.window.device_box)[self.current_box]
+
+    def change_box_focus(self, factor):
+        self.current_device = -1
+        self.current_box = (self.current_box + factor - 4) % 4
+        self.window.device_box[self.get_current_kb_device_type()].focus_box()
+
+    def change_device_focus(self, factor):
+        device_type = self.get_current_kb_device_type()
+        current_box = self.window.device_box[device_type]
+        device_len = len(current_box.devices)
+        self.current_device = (self.current_device + factor - device_len) % device_len
+        self.focus_device(device_type)
+
+    def focus_device(self, device_type):
+        current_box = self.window.device_box[device_type]
+        current_box.devices[self.get_current_kb_device_id()].edit_button.grab_focus()
+
+    #
+    # # End BINDS
+    #
 
     def do_activate(self, *args, **kwargs):
 
@@ -64,6 +616,7 @@ class GtkClient(Gtk.Application, ApplicationAdapter):
         self.window.present()
 
     def on_shutdown(self, _):
+        self.stop_listen()
         if self.config_model.cleanup is True:
             self.config_model.device_manager.cleanup()
         self.config_model.write()
