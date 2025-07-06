@@ -30,14 +30,14 @@ class AppAdapter(GObject.GObject):
     __gsignals__ = {
         "app_mute": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "app_volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        "app_device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "app_device": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
     def __init__(self):
         super().__init__()
         self.handlers['app_volume'] = self.volume_widget.connect('value-changed', self.update_model_volume)
         self.handlers['app_mute'] = self.mute_widget.connect('toggled', self.update_model_mute)
-        self.handlers['app_device_change'] = self.combobox.connect('changed', self.update_model_device)
+        self.handlers['app_device'] = self.combobox.connect('changed', self.update_model_device)
 
     def update_model_volume(self, volume: VolumeWidget):
         self.emit('app_volume', volume.get_value())
@@ -46,7 +46,7 @@ class AppAdapter(GObject.GObject):
         self.emit('app_mute', mute.get_active())
 
     def update_model_device(self, app_combobox):
-        self.emit('app_device_change', app_combobox.get_active_text())
+        self.emit('app_device', app_combobox.get_active_text())
 
     def pa_app_change(self, app):
         self.set_volume(app.volume.values[0] * 100)
@@ -70,6 +70,6 @@ class AppAdapter(GObject.GObject):
         if self.combobox.get_active_text() == device_name:
             return
 
-        self.combobox.handler_block(self.handlers['app_device_change'])
+        self.combobox.handler_block(self.handlers['app_device'])
         self.combobox.set_active_device(device_name)
-        self.combobox.handler_unblock(self.handlers['app_device_change'])
+        self.combobox.handler_unblock(self.handlers['app_device'])

@@ -33,7 +33,7 @@ class DeviceWidget(Gtk.Frame, DeviceAdapter):
         "mute": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "primary": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        "remove_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "device_remove": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
         "device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
         "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT))

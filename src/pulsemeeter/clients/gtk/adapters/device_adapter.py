@@ -37,7 +37,7 @@ class DeviceAdapter(GObject.GObject):
         "mute": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "primary": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        "remove_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "device_remove": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
         "device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
         "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT))
@@ -48,12 +48,12 @@ class DeviceAdapter(GObject.GObject):
         self.device_model = model
 
         self.edit_button.connect('clicked', self.edit_device_popover)
-        self.popover.confirm_button.connect('clicked', self.update_model_settings)
 
+        self.handlers['device_change'] = self.popover.confirm_button.connect('clicked', self.update_model_settings)
         self.handlers['volume'] = self.volume_widget.connect('value-changed', self.update_model_volume)
         self.handlers['mute'] = self.mute_widget.connect('toggled', self.update_model_mute)
         self.handlers['primary'] = self.primary_widget.connect('clicked', self.update_model_primary)
-        self.handlers['remove_pressed'] = self.popover.remove_button.connect('clicked', self.update_model_remove)
+        self.handlers['device_remove'] = self.popover.remove_button.connect('clicked', self.update_model_remove)
         if model.get_type() in ('vi', 'hi'):
             self.handlers['connection'] = self.connections_widget.connect('connection', self.update_model_connection)
             self.handlers['update_connection'] = self.connections_widget.connect('update_connection', self.update_model_connection_settings)
@@ -95,22 +95,21 @@ class DeviceAdapter(GObject.GObject):
         primary_widget.set_primary(True)
         self.emit('primary', True)
 
-    def update_model_connection(self, button, device_type, device_id, state):
+    def update_model_connection(self, _, device_type, device_id, state):
         # state = button.get_active()
         self.emit('connection', device_type, device_id, state)
 
-    def update_model_connection_settings(self, button, device_type, device_id, connection_model):
+    def update_model_connection_settings(self, _, device_type, device_id, connection_model):
         self.emit('update_connection', device_type, device_id, connection_model)
 
     def update_model_remove(self, _):
-        self.emit('remove_pressed', self.device_model.get_type())
+        self.emit('device_remove')
 
     def update_model_settings(self, _):
         schema = self.popover.to_schema()
         if len(schema['nick'].strip()) != 0 and re.match(r'^[a-zA-Z0-9_.\- ]+$', schema['nick']):
             self.emit('device_change', schema)
             self.popover.popdown()
-            # self.name_widget.set_label(schema['nick'], schema['description'])
 
     def device_update(self, device_model):
         self.name_widget.set_label(device_model.nick, device_model.description)

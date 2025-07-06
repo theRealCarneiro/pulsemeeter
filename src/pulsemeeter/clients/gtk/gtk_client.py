@@ -198,47 +198,55 @@ class GtkClient(Gtk.Application):
                 else:
                     app.handler_unblock(handler)
 
-    def confirm_button_pressed(self, _, popover, device_type):
-        '''
-        Called when clicking the create device button
-        '''
-        self.window.create_device(popover.to_schema())
-
     def settings_menu_apply(self, _, config_schema):
         self.config_model.vumeters = config_schema['vumeters']
         self.config_model.tray = config_schema['tray']
         self.config_model.layout = config_schema['layout']
-        # print(config_schema)
 
     def connect_devicemanager_events(self):
-        handler = self.manager_handlers
+
+        signal_map = {
+            'device_new': self.device_new_callback,
+            'device_remove': self.device_remove_callback,
+            'device_change': self.device_change_callback,
+            'pa_device_change': self.pa_device_change_callback,
+            'pa_app_change': self.app_change_callback,
+            'pa_app_new': self.app_new_callback,
+            'pa_app_remove': self.app_remove_callback,
+        }
+
         manager = self.config_model.device_manager
-        handler['device_new'] = manager.connect('device_new', self.device_new_callback)
-        handler['device_remove'] = manager.connect('device_remove', self.device_remove_callback)
-        handler['device_change'] = manager.connect('device_change', self.device_change_callback)
-        handler['pa_device_change'] = manager.connect('pa_device_change', self.pa_device_change_callback)
-        handler['pa_app_change'] = manager.connect('pa_app_change', self.app_change_callback)
-        handler['pa_app_new'] = manager.connect('pa_app_new', self.app_new_callback)
-        handler['pa_app_remove'] = manager.connect('pa_app_remove', self.app_remove_callback)
+        for signal_name, callback in signal_map.items():
+            self.manager_handlers[signal_name] = manager.connect(signal_name, callback)
 
     def connect_window_gtk_events(self, window):
-        window.connect('add_device_pressed', self.add_device_hijack)
-        window.connect('device_new', self.device_new)
-        window.connect('device_remove', self.device_remove)
-        window.connect('settings_change', self.settings_menu_apply)
+        signal_map = {
+            'add_device_pressed': self.add_device_hijack,
+            'device_new': self.device_new,
+            'settings_change': self.settings_menu_apply,
+        }
+
+        for signal_name, callback in signal_map.items():
+            window.connect(signal_name, callback)
 
     def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget):
         '''
         Connect a device widget events to the model
         '''
-        device_handler = self.device_handlers[device_type][device_id] = {}
 
-        device_handler['device_change'] = device.connect('device_change', self.update_device_model, device_type, device_id)
-        device_handler['volume'] = device.connect('volume', self.set_volume, device_type, device_id)
-        device_handler['mute'] = device.connect('mute', self.set_mute, device_type, device_id)
-        device_handler['connection'] = device.connect('connection', self.set_connection, device_type, device_id)
-        device_handler['update_connection'] = device.connect('update_connection', self.update_connection, device_type, device_id)
-        device_handler['primary'] = device.connect('primary', self.set_primary, device_type, device_id)
+        signal_map = {
+            'volume': self.set_volume,
+            'mute': self.set_mute,
+            'connection': self.set_connection,
+            'primary': self.set_primary,
+            'device_change': self.update_device_model,
+            'device_remove': self.device_remove,
+            'update_connection': self.update_connection,
+        }
+
+        device_handler = self.device_handlers[device_type][device_id] = {}
+        for signal_name, callback in signal_map.items():
+            device_handler[signal_name] = device.connect(signal_name, callback, device_type, device_id)
 
         pa_device_type = device.device_model.device_type
         if self.config_model.vumeters:
@@ -248,20 +256,24 @@ class GtkClient(Gtk.Application):
         if self.config_model.vumeters:
             device.connect('destroy', self.stop_vumeter, device_type, device_id)
 
-        # self.connect_callback_functions()
-
         return device
 
     def connect_app_gtk_events(self, app_type: str, app_index: str, app: AppWidget):
         '''
         Connect a device widget events to the model
         '''
+        signal_map = {
+            'app_volume': self.set_app_volume,
+            'app_mute': self.set_app_mute,
+            'app_device': self.set_app_device
+        }
+
+        # connect signals to callbacks
         app_handler = self.app_handlers[app_type][app_index] = {}
+        for signal_name, callback in signal_map.items():
+            app_handler[signal_name] = app.connect(signal_name, callback, app_type, app_index)
 
-        app_handler['app_volume'] = app.connect('app_volume', self.set_app_volume, app_type, app_index)
-        app_handler['app_mute'] = app.connect('app_mute', self.set_app_mute, app_type, app_index)
-        app_handler['app_device'] = app.connect('app_device_change', self.set_app_device, app_type, app_index)
-
+        # start vumeter
         stream_type = app_type.split('_')[0]
         if self.config_model.vumeters:
             vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter, app.app_model.index)
@@ -270,6 +282,7 @@ class GtkClient(Gtk.Application):
 
         return app
 
+    # DEPRECATED
     def connect_device_model_events(self, device_type: str, device_id: str, device: DeviceModel):
         '''
         Connect a device widget
@@ -282,15 +295,7 @@ class GtkClient(Gtk.Application):
         model_handler['connection'] = device.connect('connection', win_man.set_connection)
         model_handler['primary'] = device.connect('primary')
 
-        # device.connect('destroy', self.stop_vumeter, device_type, device_id)
-
-        # self.connect_callback_functions()
-
         return device
-
-    # def event_timeout(self, 100):
-    #     self.event_timeout_id = GLib.timeout_add(100, self.config_model.device_manager.unblock(handler))
-    #     pass
 
     #
     # # Update model functions
@@ -359,7 +364,6 @@ class GtkClient(Gtk.Application):
         Load the current available pulseaudio sink inputs and source outputs
         '''
         self.config_model.device_manager.update_device(schema, device_type, device_id)
-        # TODO: update connection buttons and settings
 
     def add_device_hijack(self, _, device_type):
         '''

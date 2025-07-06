@@ -27,7 +27,7 @@ class AppWidget(Gtk.Frame, AppAdapter):
     __gsignals__ = {
         "app_mute": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
         "app_volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        "app_device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "app_device": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
     def __init__(self, app_model: AppModel):

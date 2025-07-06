@@ -34,7 +34,7 @@ class DeviceBoxWidget(Gtk.Frame):
 
     __gsignals__ = {
         "create_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
-        "remove_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str,)),
+        # "remove_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str,)),
         "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
@@ -81,7 +81,7 @@ class DeviceBoxWidget(Gtk.Frame):
     def insert_widget(self, device_widget, device_id: str):
         self.device_box.pack_start(device_widget, False, False, 0)
         self.devices[device_id] = device_widget
-        device_widget.connect('remove_pressed', self.remove_pressed, device_id)
+        # device_widget.connect('remove_pressed', self.remove_pressed, device_id)
 
     def remove_widget(self, device_id: str):
         device_widget = self.devices.pop(device_id)
@@ -99,9 +99,9 @@ class DeviceBoxWidget(Gtk.Frame):
         self.popover.popup()
         self.popover.nick_widget.input.grab_focus()
 
-    def remove_pressed(self, _, device_type, device_id):
+    # def remove_pressed(self, _, device_type, device_id):
         # print(device_type, device_id)
-        self.emit('remove_pressed', device_type, device_id)
+        # self.emit('remove_pressed', device_type, device_id)
 
     def create_pressed(self, _):
         schema = self.popover.to_schema()
