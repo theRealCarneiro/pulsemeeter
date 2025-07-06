@@ -18,7 +18,6 @@ class MainWindowAdapter(GObject.GObject):
 
     __gsignals__ = {
         "device_new": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
-        # "device_remove": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str,)),
         "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
         "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
     }

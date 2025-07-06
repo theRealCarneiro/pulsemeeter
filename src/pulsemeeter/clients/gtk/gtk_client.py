@@ -73,11 +73,26 @@ class GtkClient(Gtk.Application):
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
         self.manager_handlers = {}
 
+    def do_activate(self, *args, **kwargs):
+
+        if self.window is None:
+            self.create_window()
+
+        self.window.connect('destroy', self.on_shutdown)
+        self.window.show_all()
+        self.window.present()
+
+    def on_shutdown(self, _):
+        self.stop_listen()
+        if self.config_model.cleanup is True:
+            self.config_model.device_manager.cleanup()
+        self.config_model.write()
+
     def create_window(self):
         layout = layouts.LAYOUTS[self.config_model.layout]
         self.window = layout.MainWindow(application=self, config_model=self.config_model)
 
-        self.connect_window_gtk_events(self.window)
+        self.connect_window_gtk_events()
         self.connect_devicemanager_events()
         self.load_device_list()
         self.load_app_list()
@@ -219,7 +234,7 @@ class GtkClient(Gtk.Application):
         for signal_name, callback in signal_map.items():
             self.manager_handlers[signal_name] = manager.connect(signal_name, callback)
 
-    def connect_window_gtk_events(self, window):
+    def connect_window_gtk_events(self):
         signal_map = {
             'add_device_pressed': self.add_device_hijack,
             'device_new': self.device_new,
@@ -227,7 +242,7 @@ class GtkClient(Gtk.Application):
         }
 
         for signal_name, callback in signal_map.items():
-            window.connect(signal_name, callback)
+            self.window.connect(signal_name, callback)
 
     def connect_device_gtk_events(self, device_type: str, device_id: str, device: DeviceWidget):
         '''
@@ -304,9 +319,6 @@ class GtkClient(Gtk.Application):
         '''
         Set model volume
         '''
-        # handler = self.manager_handlers['pa_device_change']
-        # self.config_model.device_manager.block(handler)
-        # GLib.timeout_add(100, self.config_model.device_manager.unblock(handler))
         self.config_model.device_manager.set_volume(device_type, device_id, volume)
 
     def set_mute(self, _, state: bool, device_type, device_id):
@@ -392,7 +404,6 @@ class GtkClient(Gtk.Application):
         '''
         Set model device
         '''
-        # return
         self.app_manager.change_device(app_type, app_index, device_nick)
 
     #
@@ -622,18 +633,3 @@ class GtkClient(Gtk.Application):
     #
     # # End BINDS
     #
-
-    def do_activate(self, *args, **kwargs):
-
-        if self.window is None:
-            self.create_window()
-
-        self.window.connect('destroy', self.on_shutdown)
-        self.window.show_all()
-        self.window.present()
-
-    def on_shutdown(self, _):
-        self.stop_listen()
-        if self.config_model.cleanup is True:
-            self.config_model.device_manager.cleanup()
-        self.config_model.write()
