@@ -114,6 +114,8 @@ class DeviceManagerModel(SignalModel):
 
         self.reconnect(device_type, device_id)
 
+        self.emit('device_change', device_type, device_id, device)
+
     def cleanup(self):
         '''
         Removes all pulse devices from pulse
@@ -212,24 +214,25 @@ class DeviceManagerModel(SignalModel):
 
     def handle_output_change(self, output_type, output_id):
         '''
-        Creates connections to the output in all inputs
+        Reconfigures connections to the output in all inputs
         '''
         output_device = self.__dict__[output_type][output_id]
         for input_type in ('vi', 'hi'):
             for _, input_device in self.__dict__[input_type].items():
                 connection_model = input_device.connections[output_type][output_id]
-                connection_model.output_sel_channels = output_device.selected_channels
                 connection_model.nick = output_device.nick
+                connection_model.reload_settings(output_sel_channels=output_device.selected_channels)
 
     def handle_input_change(self, input_type, input_id):
         '''
-        Creates connections to existing output devices
+        Reconfigure connections on a specific input devices
+            Iterates on all connections on a input device and updates them
         '''
         input_device = self.__dict__[input_type][input_id]
         for output_type in input_device.connections:
             for output_id in self.__dict__[output_type]:
                 connection_model = input_device.connections[output_type][output_id]
-                connection_model.input_sel_channels = input_device.selected_channels
+                connection_model.reload_settings(input_sel_channels=input_device.selected_channels)
 
     def handle_new_output(self, output_type, output_id, output_device):
         '''
@@ -368,8 +371,8 @@ class DeviceManagerModel(SignalModel):
         if not self._device_cache[device.device_type][pa_device.index]:
             del self._device_cache[device.device_type][pa_device.index]
 
-        pa_device = pmctl.get_device_by_name(device.device_type, device.name)
-        self._device_cache[device.device_type][pa_device.index].append((device_type, device_id))
+        # pa_device = pmctl.get_device_by_name(device.device_type, device.name)
+        # self._device_cache[device.device_type][pa_device.index].append((device_type, device_id))
 
     def cache_devices(self):
         self._device_cache = {'sink': {}, 'source': {}}

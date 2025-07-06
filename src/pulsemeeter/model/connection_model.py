@@ -49,6 +49,21 @@ class ConnectionModel(SignalModel):
 
         return ports
 
+    def reload_settings(self, input_sel_channels=None, output_sel_channels=None):
+        '''
+        Should be called on device change event to reset the port mapping if the
+        channel map changed
+        '''
+        if input_sel_channels and self.input_sel_channels != input_sel_channels:
+            self.input_sel_channels = input_sel_channels
+            self.auto_ports = True
+            self.port_map = []
+
+        if output_sel_channels and self.output_sel_channels != output_sel_channels:
+            self.output_sel_channels = output_sel_channels
+            self.auto_ports = True
+            self.port_map = []
+
     def set_connect(self, state):
         if state is None:
             state = not self.state

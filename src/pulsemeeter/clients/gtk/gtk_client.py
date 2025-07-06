@@ -112,12 +112,17 @@ class GtkClient(Gtk.Application):
 
         return device_widget
 
+    def change_device_widget(self, device_type, device_id, device_model):
+        device_widget = self.window.device_box[device_type].devices[device_id]
+        device_widget.device_update(device_model)
+        self.reload_connection_widgets()
+
     def reload_connection_widgets(self):
         '''
         Reloads all connection widgets
         '''
         for device_type in ('hi', 'vi'):
-            for _, device in self.window.device_box[device_type].items():
+            for _, device in self.window.device_box[device_type].devices.items():
                 device.connections_widget.reload_connections()
 
     def create_app_widget(self, app_type, app_index, app_model):
@@ -210,7 +215,8 @@ class GtkClient(Gtk.Application):
         manager = self.config_model.device_manager
         handler['device_new'] = manager.connect('device_new', self.device_new_callback)
         handler['device_remove'] = manager.connect('device_remove', self.device_remove_callback)
-        handler['pa_device_change'] = manager.connect('pa_device_change', self.device_change_callback)
+        handler['device_change'] = manager.connect('device_change', self.device_change_callback)
+        handler['pa_device_change'] = manager.connect('pa_device_change', self.pa_device_change_callback)
         handler['pa_app_change'] = manager.connect('pa_app_change', self.app_change_callback)
         handler['pa_app_new'] = manager.connect('pa_app_new', self.app_new_callback)
         handler['pa_app_remove'] = manager.connect('pa_app_remove', self.app_remove_callback)
@@ -407,7 +413,14 @@ class GtkClient(Gtk.Application):
 
         GLib.idle_add(wrapper)
 
-    def device_change_callback(self, device_type: str, device_id: str, device_model: DeviceModel):
+    def device_change_callback(self, device_type: str, device_id: str, device_model):
+        def wrapper():
+            self.change_device_widget(device_type, device_id, device_model)
+            return False
+
+        GLib.idle_add(wrapper)
+
+    def pa_device_change_callback(self, device_type: str, device_id: str, device_model: DeviceModel):
         def wrapper():
             device_widget = self.window.device_box[device_type].devices[device_id]
             device_widget.pa_device_change()

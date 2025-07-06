@@ -110,7 +110,10 @@ class DeviceAdapter(GObject.GObject):
         if len(schema['nick'].strip()) != 0 and re.match(r'^[a-zA-Z0-9_.\- ]+$', schema['nick']):
             self.emit('device_change', schema)
             self.popover.popdown()
-            self.name_widget.set_label(schema['nick'], schema['description'])
+            # self.name_widget.set_label(schema['nick'], schema['description'])
+
+    def device_update(self, device_model):
+        self.name_widget.set_label(device_model.nick, device_model.description)
 
     def pa_device_change(self):
         vol = self.device_model.volume[0]
