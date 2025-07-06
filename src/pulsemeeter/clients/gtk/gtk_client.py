@@ -225,6 +225,7 @@ class GtkClient(Gtk.Application):
             'device_remove': self.device_remove_callback,
             'device_change': self.device_change_callback,
             'pa_device_change': self.pa_device_change_callback,
+            'pa_primary_change': self.pa_primary_change_callback,
             'pa_app_change': self.app_change_callback,
             'pa_app_new': self.app_new_callback,
             'pa_app_remove': self.app_remove_callback,
@@ -443,6 +444,15 @@ class GtkClient(Gtk.Application):
 
         GLib.idle_add(wrapper)
 
+    def pa_primary_change_callback(self, device_type: str, device_id: str):
+        def wrapper():
+            for target_id, target_device in self.window.device_box[device_type].devices.items():
+                target_device.set_primary(target_id == device_id)
+
+            return False
+
+        GLib.idle_add(wrapper)
+
     def app_new_callback(self, app_type: str, app_index: int, app_model: DeviceModel):
         def wrapper():
             app = self.create_app_widget(app_type, app_index, app_model)
@@ -541,25 +551,6 @@ class GtkClient(Gtk.Application):
         for device_type, device_box in self.window.device_box.items():
             for device_id, device_widget in device_box.devices.items():
                 yield device_type, device_id, device_widget
-
-    # Connect device creation button press event
-    # def create_new_device_popover(self, widget, device_type):
-    #     '''
-    #         Opens create device popover when clicking on the new device button
-    #     '''
-    #     # get the device type list
-    #     dt = 'sink' if device_type in ('a', 'vi') else 'source'
-    #     # print("CU")
-    #     device_list = device_service.list_devices(dt)
-    #
-    #     popover = self.window.device_box[device_type].popover
-    #     if device_type in ('a', 'hi'):
-    #         popover.combobox_widget.empty()
-    #         popover.combobox_widget.load_list(device_list, 'description')
-    #
-    #     # connect gtk signals
-    #     popover.confirm_button.connect('clicked', device_service.create, popover, device_type, device_list)
-    #     popover.confirm_button.connect('clicked', self.confirm_button_pressed, popover, device_type)
 
     #
     # # BINDS

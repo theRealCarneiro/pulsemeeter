@@ -140,12 +140,14 @@ class DeviceManagerModel(SignalModel):
         if device.primary is True:
             return
 
-        for other_device_id, other_device in self.__dict__[device_type].items():
-            if device_id != other_device_id:
-                other_device.set_primary(False, emit=False)
+        self.unset_primary(device_type)
 
         device.set_primary(True, emit=False)
         pmctl.set_primary(device.device_type, device.name)
+
+    def unset_primary(self, device_type):
+        for device_id, device in self.__dict__[device_type].items():
+            device.set_primary(False, emit=False)
 
     def set_connection(self, input_type, input_id, output_type, output_id, state: bool = None, soft=False):
         input_device = self.__dict__[input_type][input_id]
@@ -163,14 +165,10 @@ class DeviceManagerModel(SignalModel):
 
         pmctl.connect(input_device.name, output_device.name, state, port_map=port_map)
 
-        # print(input_sel_channels, output_sel_channels, port_map)
-
     def update_connection(self, input_type, input_id, output_type, output_id, connection_model):
         input_device = self.__dict__[input_type][input_id]
         cur_connection_model = input_device.connections[output_type][output_id]
         state = connection_model.state
-        # print(cur_connection_model, connection_model)
-        # print(input_type, input_id, output_type, output_id)
 
         self.set_connection(input_type, input_id, output_type, output_id, False)
 
@@ -199,7 +197,7 @@ class DeviceManagerModel(SignalModel):
         '''
         for _, device in self.vi.items() if device_type == 'sink' else self.b.items():
             if device.primary is True:
-                return device.name
+                return device
 
         return None
 
@@ -353,7 +351,6 @@ class DeviceManagerModel(SignalModel):
         if pa_device is None:
             return
 
-        # print(pa_device, pa_device.index)
         if pa_device.index not in self._device_cache[device.device_type]:
             self._device_cache[device.device_type][pa_device.index] = []
 
@@ -394,18 +391,6 @@ class DeviceManagerModel(SignalModel):
         if app is not None:
             self.emit('pa_app_change', app_type, event.index, app)
 
-    async def handle_app_event(self, event):
-        app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
-
-        if event.t == 'change':
-            await self.handle_app_change_event(event, app_type)
-
-        if event.t == 'new':
-            await self.handle_app_new_event(event, app_type)
-
-        if event.t == ('remove'):
-            await self.handle_app_remove_event(event, app_type)
-
     async def handle_device_change_event(self, event):
         if event.index not in self._device_cache[event.facility]:
             return
@@ -419,7 +404,49 @@ class DeviceManagerModel(SignalModel):
 
             self.emit('pa_device_change', device_type, device_id, device_model)
 
+    async def handle_server_change_event(self, event):
+        for pa_device_type in ('sink', 'source'):
+            primary = await pmctl_async.get_primary(pa_device_type)
+            pm_primary = self.get_primary(pa_device_type)
+
+            if pm_primary is not None:
+
+                # if nothing changed just ignore it
+                if pm_primary.name == primary.name:
+                    continue
+
+                # unset primary
+                pm_primary.primary = False
+
+            # if the primary is not a pm device, emit None
+            if primary.index not in self._device_cache[pa_device_type]:
+                device_type = 'vi' if pa_device_type == 'sink' else 'b'
+                self.emit('pa_primary_change', device_type, None)
+                continue
+
+            # if its a pm device, set model as primary
+            device_type, device_id = self._device_cache[pa_device_type][primary.index][0]
+            self.__dict__[device_type][device_id].primary = True
+            self.emit('pa_primary_change', device_type, device_id)
+            return
+
+    async def handle_app_event(self, event):
+        app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
+
+        if event.t == 'change':
+            await self.handle_app_change_event(event, app_type)
+
+        if event.t == 'new':
+            await self.handle_app_new_event(event, app_type)
+
+        if event.t == ('remove'):
+            await self.handle_app_remove_event(event, app_type)
+
     async def handle_device_event(self, event):
+        if event.t == 'change':
+            await self.handle_device_change_event(event)
+
+    async def handle_server_event(self, event):
         if event.t == 'change':
             await self.handle_device_change_event(event)
 
@@ -436,4 +463,4 @@ class DeviceManagerModel(SignalModel):
 
             # primary changes
             if event.facility == 'server':
-                pass
+                await self.handle_server_change_event(event)

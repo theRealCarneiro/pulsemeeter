@@ -120,6 +120,23 @@ def set_primary(device_type: str, device_name: str, pulse=None):
     return 0
 
 
+def get_primary(device_type: str, pulse=None):
+    '''
+    Change mute state of a device
+        "device_type" is the enum DeviceType
+        "device_name" is the device name
+    '''
+
+    if pulse is None:
+        pulse = PULSE
+
+    if device_type == 'sink':
+        return pulse.sink_default_get()
+    return pulse.source_default_get()
+
+    return 0
+
+
 def set_volume(device_type: str, device_name: str, val: int, selected_channels: list = None):
     '''
     Change device volume

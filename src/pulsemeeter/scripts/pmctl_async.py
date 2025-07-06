@@ -386,9 +386,8 @@ async def get_app_by_id(app_type, app_index: int):
 async def get_primary(device_type: str):
     async with pulsectl_asyncio.PulseAsync() as pulse:
         if device_type == 'sink':
-            return (await pulse.server_info()).default_sink_name
-
-        return (await pulse.server_info()).default_source_name
+            return await pulse.sink_default_get()
+        return await pulse.source_default_get()
 
 
 async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30):

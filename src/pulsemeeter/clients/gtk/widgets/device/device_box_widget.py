@@ -106,3 +106,4 @@ class DeviceBoxWidget(Gtk.Frame):
     def create_pressed(self, _):
         schema = self.popover.to_schema()
         self.emit('create_pressed', schema)
+        self.popover.popdown()
