@@ -266,7 +266,8 @@ def list_devices(device_type):
         # if device.flags & pa_sink_hardware:
 
         if (device.proplist['factory.name'] != 'support.null-audio-sink' and
-                device.proplist['device.class'] != "monitor"):
+                device.proplist['device.class'] != "monitor" or
+                'easyeffects_' in device.name and 'device.class' not in device.proplist):
             device_list.append(device)
 
     return device_list
