@@ -132,6 +132,10 @@ class DeviceManagerModel(SignalModel):
 
     def set_mute(self, device_type, device_id, state: bool):
         device = self.__dict__[device_type][device_id]
+
+        if state is None:
+            state = not device.mute
+
         device.set_mute(state, emit=False)
         pmctl.mute(device.device_type, device.name, state)
 
@@ -153,6 +157,9 @@ class DeviceManagerModel(SignalModel):
         input_device = self.__dict__[input_type][input_id]
         output_device = self.__dict__[output_type][output_id]
         connection_model = input_device.connections[output_type][output_id]
+
+        if state is None:
+            state = not connection_model.state
 
         # by soft we mean dont save to config
         if soft is False:

@@ -152,6 +152,9 @@ class DeviceModel(SignalModel):
         if self.mute == state:
             return
 
+        if state is None:
+            state = not self.mute
+
         self.mute = state
         # pmctl.mute(self.device_type, self.name, state)
         if emit is True:
