@@ -49,7 +49,7 @@ class DeviceBoxWidget(Gtk.Frame):
         device_type_string = self.device_label[device_type]
         title = Gtk.Label(device_type_string, margin=10)
 
-        add_button = IconButton('add')
+        add_button = IconButton('list-add-symbolic')
         add_button.set_tooltip_text(_("Create new %s device") % device_type_string)
         add_button.get_accessible().set_name(_("Create a %s device") % device_type_string)
 
