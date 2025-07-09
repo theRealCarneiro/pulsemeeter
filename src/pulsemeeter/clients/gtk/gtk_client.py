@@ -19,8 +19,8 @@ from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobo
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-gi_require_version('AppIndicator3', '0.1')
-from gi.repository import Gtk, GLib, AppIndicator3  # noqa: E402
+gi_require_version('AyatanaAppIndicator3', '0.1')
+from gi.repository import Gtk, GLib, AyatanaAppIndicator3  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
@@ -110,19 +110,19 @@ class GtkClient(Gtk.Application):
 
     def create_indicator(self):
 
-        indicator = AppIndicator3.Indicator.new(
+        indicator = AyatanaAppIndicator3.Indicator.new(
             "pulsemeeter",
             "pulsemeeter",
-            AppIndicator3.IndicatorCategory.APPLICATION_STATUS
+            AyatanaAppIndicator3.IndicatorCategory.APPLICATION_STATUS
         )
 
         indicator.set_menu(self.build_tray_menu())
 
         if self.config_model.tray is True:
-            indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
+            indicator.set_status(AyatanaAppIndicator3.IndicatorStatus.ACTIVE)
             self.hold()
         else:
-            indicator.set_status(AppIndicator3.IndicatorStatus.PASSIVE)
+            indicator.set_status(AyatanaAppIndicator3.IndicatorStatus.PASSIVE)
 
         return indicator
 

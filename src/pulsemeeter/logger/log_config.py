@@ -1,11 +1,9 @@
-import os
-import json
 import logging
 import logging.config
 from dataclasses import dataclass
 
 from pulsemeeter import settings
-from pulsemeeter.logger.logger_config_dict import config
+# from pulsemeeter.logger.logger_config_dict import config
 
 
 @dataclass
@@ -16,11 +14,73 @@ class Colors:
     RESET = '\x1b[0m'
 
 
+CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "simple": {
+            "()": "pulsemeeter.logger.log_config.FormatLog",
+            "format": "[%(levelname)s]: %(message)s",
+            "datefmt": "%H:%M:%S"
+        },
+
+        "default": {
+            "()": "pulsemeeter.logger.log_config.FormatLog",
+            "format": "[%(asctime)s] [%(levelname)s]: %(message)s",
+            "datefmt": "%H:%M:%S"
+        },
+
+        "debug": {
+            "()": "pulsemeeter.logger.log_config.FormatLog",
+            "format": "[%(asctime)s] [%(levelname)s] in [%(module)s@%(funcName)s]: %(message)s",
+            "datefmt": "%y/%m/%Y %H:%M:%S"
+        }
+    },
+
+    "filters": {
+        "info_and_below": {
+            "()": "pulsemeeter.logger.log_config.filter_maker",
+            "max_level": "INFO"
+        }
+    },
+
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "default",
+            "stream": "ext://sys.stdout",
+            "filters": ["info_and_below"]
+        },
+
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "level": "WARNING",
+            "formatter": "default",
+            "stream": "ext://sys.stderr"
+        }
+    },
+
+    "loggers": {
+        "root": {
+            "level": "INFO",
+            "handlers": ["stdout", "stderr"]
+        },
+
+        "generic": {
+            "level": "INFO"
+        }
+
+    }
+}
+
+
 def init_logger():
     level = "DEBUG" if settings.DEBUG else "INFO"
-    config["loggers"]["root"]["level"] = level
-    config["loggers"]["generic"]["level"] = level
-    logging.config.dictConfig(config)
+    CONFIG["loggers"]["root"]["level"] = level
+    CONFIG["loggers"]["generic"]["level"] = level
+    logging.config.dictConfig(CONFIG)
 
 
 class FormatLog(logging.Formatter):

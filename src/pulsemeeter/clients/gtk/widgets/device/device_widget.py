@@ -1,6 +1,5 @@
 import gettext
 
-from pulsemeeter.schemas.device_schema import ConnectionSchema
 # from pulsemeeter.clients.gtk.widgets.common
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
