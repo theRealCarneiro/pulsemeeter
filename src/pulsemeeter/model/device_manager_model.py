@@ -399,7 +399,8 @@ class DeviceManagerModel(SignalModel):
             self.emit('pa_app_change', app_type, event.index, app)
 
     async def handle_device_change_event(self, event):
-        if event.index not in self._device_cache[event.facility]:
+        facility = 'source' if event.facility == 'source' else 'sink'
+        if event.index not in self._device_cache[facility]:
             return
 
         pulsectl_device = await pmctl_async.get_device_by_id(event.facility, event.index)
@@ -455,7 +456,7 @@ class DeviceManagerModel(SignalModel):
 
     async def handle_server_event(self, event):
         if event.t == 'change':
-            await self.handle_device_change_event(event)
+            await self.handle_server_change_event(event)
 
     async def event_listen(self):
         async for event in pmctl_async.pulse_listener():
@@ -470,4 +471,4 @@ class DeviceManagerModel(SignalModel):
 
             # primary changes
             if event.facility == 'server':
-                await self.handle_server_change_event(event)
+                await self.handle_server_event(event)
