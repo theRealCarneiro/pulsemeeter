@@ -19,7 +19,8 @@ from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobo
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib  # noqa: E402
+gi_require_version('AppIndicator3', '0.1')
+from gi.repository import Gtk, GLib, AppIndicator3  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
@@ -66,6 +67,7 @@ class GtkClient(Gtk.Application):
         self.pa_listener_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self.pa_listener_thread = threading.Thread(target=self.pa_listener_loop.run_forever, daemon=True)
         self.pa_listener_thread.start()
+        self.indicator = self.create_indicator()
 
         self.listen_task = None
         self.vumeter_tasks = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}, 'sink_input': {}, 'source_output': {}}
@@ -79,16 +81,22 @@ class GtkClient(Gtk.Application):
             self.create_window()
 
         self.window.connect('destroy', self.on_shutdown)
-        self.window.show_all()
-        self.window.present()
+        # self.window.connect('delete-event', self.on_shutdown)
+        # self.window.show_all()
+        # self.window.present()
 
-    def on_shutdown(self, _):
+    def on_shutdown(self, *_):
         self.stop_listen()
         if self.config_model.cleanup is True:
             self.config_model.device_manager.cleanup()
         self.config_model.write()
 
-    def create_window(self):
+    def tray_exit(self, _):
+        self.release()
+        self.on_shutdown()
+        self.quit()
+
+    def create_window(self, *_):
         layout = layouts.LAYOUTS[self.config_model.layout]
         self.window = layout.MainWindow(application=self, config_model=self.config_model)
 
@@ -97,6 +105,40 @@ class GtkClient(Gtk.Application):
         self.load_device_list()
         self.load_app_list()
         self.listen_task = self.start_listen()
+        self.window.show_all()
+        self.window.present()
+
+    def create_indicator(self):
+
+        indicator = AppIndicator3.Indicator.new(
+            "pulsemeeter",
+            "pulsemeeter",
+            AppIndicator3.IndicatorCategory.APPLICATION_STATUS
+        )
+
+        indicator.set_menu(self.build_tray_menu())
+
+        if self.config_model.tray is True:
+            indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
+            self.hold()
+        else:
+            indicator.set_status(AppIndicator3.IndicatorStatus.PASSIVE)
+
+        return indicator
+
+    def build_tray_menu(self):
+        menu = Gtk.Menu()
+
+        show_item = Gtk.MenuItem(label="Show")
+        show_item.connect("activate", self.create_window)
+        menu.append(show_item)
+
+        quit_item = Gtk.MenuItem(label="Quit")
+        quit_item.connect("activate", self.tray_exit)
+        menu.append(quit_item)
+
+        menu.show_all()
+        return menu
 
     def create_device_widget(self, device_type, device_id, device_model, refresh=False):
         '''
@@ -486,7 +528,7 @@ class GtkClient(Gtk.Application):
 
         except Exception as e:
             tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-            LOG.error("Vumeter task error: \n %s", tb_str)
+            LOG.error("Listen task error: \n %s", tb_str)
 
     def handle_vumeter_error(self, fut):
         try:
