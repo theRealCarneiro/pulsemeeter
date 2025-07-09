@@ -5,6 +5,7 @@ import logging.config
 from dataclasses import dataclass
 
 from pulsemeeter import settings
+from pulsemeeter.logger.logger_config_dict import config
 
 
 @dataclass
@@ -16,13 +17,10 @@ class Colors:
 
 
 def init_logger():
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    with open(f'{script_dir}/logger_config.json', 'r', encoding='utf-8') as fp:
-        config = json.load(fp)
-        level = "DEBUG" if settings.DEBUG else "INFO"
-        config["loggers"]["root"]["level"] = level
-        config["loggers"]["generic"]["level"] = level
-        logging.config.dictConfig(config)
+    level = "DEBUG" if settings.DEBUG else "INFO"
+    config["loggers"]["root"]["level"] = level
+    config["loggers"]["generic"]["level"] = level
+    logging.config.dictConfig(config)
 
 
 class FormatLog(logging.Formatter):
