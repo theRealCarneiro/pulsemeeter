@@ -19,6 +19,11 @@ def init_devices():
     ConfigModel.load_config()
 
 
+def cleanup_devices():
+    config = ConfigModel.load_config()
+    config.device_manager.cleanup()
+
+
 def mute(device_type, device_id, state):
     config = ConfigModel.load_config()
     config.device_manager.set_mute(device_type, device_id, state)
@@ -44,6 +49,7 @@ def main():
     arg_map = {
         None: start_gui,
         'init': init_devices,
+        'cleanup': cleanup_devices,
         'mute': mute,
         'volume': volume,
         'primary': primary,

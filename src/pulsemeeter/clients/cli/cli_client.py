@@ -58,6 +58,8 @@ def parse_args():
 
     subparser.add_parser('init', help='INIT')
 
+    subparser.add_parser('cleanup', help='Removes all virtual devices and connections made by pulsemeeter')
+
     volume_parser = subparser.add_parser('volume', help='Set the volume')
     add_device_args(volume_parser)
     volume_parser.add_argument('value', type=int)
