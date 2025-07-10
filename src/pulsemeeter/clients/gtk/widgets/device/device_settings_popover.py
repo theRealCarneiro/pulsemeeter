@@ -42,10 +42,10 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.cancel_button = IconButton('window-close-symbolic')
         self.remove_button = IconButton('user-trash-symbolic')
 
-        if device_model is not None:
-            self.nick_widget.set_option(device_model.nick)
-            # self.combobox_widget.empty(device_model.nick)
-            self.port_selector.set_ports(device_model.selected_channels)
+        # if device_model is not None:
+        #     self.nick_widget.set_option(device_model.nick)
+        #     # self.combobox_widget.empty(device_model.nick)
+        #     self.port_selector.set_ports(device_model.selected_channels)
 
         # load device combobox
         if device_list is not None:
@@ -77,6 +77,11 @@ class HardwareDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         # self.show_all()
         # self.nick_widget.input.grab_focus()
 
+    def fill_settings(self, device_model):
+        self.nick_widget.set_option(device_model.nick)
+        self.port_selector.set_ports(device_model.selected_channels)
+
+
 
 class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
     def __init__(self, device_type, device_list=None, device_model: DeviceModel = None):
@@ -98,11 +103,11 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.remove_button = IconButton('user-trash-symbolic')
         self.combobox_widget.load_list(list(CHANNEL_MAPS))
 
-        if device_model is not None:
-            self.nick_widget.set_option(device_model.nick)
-            self.name_widget.set_option(device_model.name)
-            self.external_widget.set_active(device_model.external)
-            self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)
+        # if device_model is not None:
+        #     self.nick_widget.set_option(device_model.nick)
+        #     self.name_widget.set_option(device_model.name)
+        #     self.external_widget.set_active(device_model.external)
+        #     self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)
             # self.port_selector.set_ports(device_model.selected_channels)
 
         name_box = Gtk.VBox()
@@ -132,3 +137,9 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.set_modal(False)
         self.add(main_box)
         # self.show_all()
+
+    def fill_settings(self, device_model):
+        self.nick_widget.set_option(device_model.nick)
+        self.name_widget.set_option(device_model.name)
+        self.external_widget.set_active(device_model.external)
+        self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)

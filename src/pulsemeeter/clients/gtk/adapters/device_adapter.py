@@ -64,6 +64,7 @@ class DeviceAdapter(GObject.GObject):
 
     def edit_device_popover(self, _):
         self.popover.show_all()
+        self.popover.fill_settings(self.device_model)
         self.popover.popup()
         device_type = self.device_model.get_type()
         if device_type in ('hi', 'a'):

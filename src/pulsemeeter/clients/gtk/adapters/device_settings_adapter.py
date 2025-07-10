@@ -46,16 +46,6 @@ class DeviceSettingsAdapter(GObject.GObject):
         active = combo.get_active()
         device = self.device_list[active]
 
-        found = False
-        cur_nick = self.nick_widget.input.get_text()
-        for d in self.device_list:
-            if cur_nick == d.description or cur_nick == '':
-                found = True
-                break
-
-        if found is False:
-            self.nick_widget.input.set_text(device.description)
-
         self.port_selector.set_ports(device.channel_list)
         self.selected_device = device
 
