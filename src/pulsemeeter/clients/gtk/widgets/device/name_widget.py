@@ -13,23 +13,14 @@ class NameWidget(Gtk.HBox):
 
     def __init__(self, nick: str, description: str):
         super().__init__(spacing=1)
-        self.description_label = None
+        self.description_label = Gtk.Label(halign=Gtk.Align.START)
         self.nick_label = Gtk.Label(halign=Gtk.Align.START)
         self.nick_label.set_markup(f'<b>{nick}</b>')
         self.pack_start(self.nick_label, False, False, 10)
-
-        # self.nick_label.get_accessible().set_name(f"Nick: {nick}")
-
-        if description == nick:
-            # self.get_accessible().set_name(f"{nick}")
-            return
-
-        self.description_label = Gtk.Label(halign=Gtk.Align.START)
-        self.description_label.set_markup(f'<small>{description}</small>')
-        # self.description_label.get_accessible().set_name(f"Description: {description}")
         self.pack_start(self.description_label, False, False, 10)
 
-        # self.get_accessible().set_name(f"{nick}, {description}")
+        if description != nick:
+            self.description_label.set_markup(f'<small>{description}</small>')
 
     def set_label(self, nick, description=None):
         self.nick_label.set_text(nick)
