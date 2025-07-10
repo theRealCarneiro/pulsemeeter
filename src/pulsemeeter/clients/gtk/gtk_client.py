@@ -33,15 +33,15 @@ class GtkClient(Gtk.Application):
     app_manager: AppManagerModel
     vumeter_loop: asyncio.AbstractEventLoop
     pa_listener_loop: asyncio.AbstractEventLoop
-    listen_task: asyncio.Task
     pa_listener_thread: threading.Thread
     vumeter_thread: threading.Thread
+
+    listen_task: asyncio.Task
     vumeter_tasks: dict[str, dict[str, asyncio.Task]]
     device_handlers: dict[str, dict[str, int]]
     model_handlers: dict[str, dict[str, int]]
     manager_handlers: dict[str, int]
     app_handlers: dict[str, dict[str, int]]
-    event_timeout_id: int 
 
     def __init__(self):
         super().__init__(application_id='org.pulsemeeter.pulsemeeter')
@@ -62,11 +62,10 @@ class GtkClient(Gtk.Application):
         # create vumeter loop thread
         self.vumeter_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self.vumeter_thread = threading.Thread(target=self.vumeter_loop.run_forever, daemon=True)
-        self.vumeter_thread.start()
 
         self.pa_listener_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self.pa_listener_thread = threading.Thread(target=self.pa_listener_loop.run_forever, daemon=True)
-        self.pa_listener_thread.start()
+
         self.indicator = self.create_indicator()
 
         self.listen_task = None
@@ -75,33 +74,41 @@ class GtkClient(Gtk.Application):
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
         self.manager_handlers = {}
 
-    def do_activate(self, *args, **kwargs):
+        self.connect('shutdown', self.on_shutdown)
 
+    def do_activate(self, *args, **kwargs):
+        '''
+        Called when the Application starts
+        '''
+
+        self.vumeter_thread.start()
+        self.pa_listener_thread.start()
         if self.window is None:
             self.create_window()
 
-        self.window.connect('destroy', self.on_shutdown)
-        # self.window.connect('delete-event', self.on_shutdown)
-        # self.window.show_all()
-        # self.window.present()
+        # device manager is not shut down so we only call this here once
+        self.connect_devicemanager_events()
 
     def on_shutdown(self, *_):
-        self.stop_listen()
+        '''
+        Called when the Application quits (different from window destroy)
+        '''
         if self.config_model.cleanup is True:
             self.config_model.device_manager.cleanup()
+
         self.config_model.write()
 
-    def tray_exit(self, _):
-        self.release()
-        self.on_shutdown()
-        self.quit()
+    def on_window_destroy(self, _):
+        '''
+        Called when the main window gets destroyed
+        '''
+        self.stop_listen()
 
     def create_window(self, *_):
         layout = layouts.LAYOUTS[self.config_model.layout]
         self.window = layout.MainWindow(application=self, config_model=self.config_model)
-
         self.connect_window_gtk_events()
-        self.connect_devicemanager_events()
+
         self.load_device_list()
         self.load_app_list()
         self.listen_task = self.start_listen()
@@ -126,6 +133,13 @@ class GtkClient(Gtk.Application):
 
         return indicator
 
+    def tray_exit(self, _):
+        '''
+        Called by the tray to close the application
+        '''
+        self.release()
+        self.quit()
+
     def build_tray_menu(self):
         menu = Gtk.Menu()
 
@@ -149,6 +163,7 @@ class GtkClient(Gtk.Application):
         device_widget = DeviceWidget(device_model)
         self.window.device_box[device_type].insert_widget(device_widget, device_id)
         self.connect_device_gtk_events(device_type, device_id, device_widget)
+        self.append_app_combobox(device_model)
 
         if refresh:
             self.reload_connection_widgets()
@@ -162,10 +177,10 @@ class GtkClient(Gtk.Application):
             "device" is the device widget to remove from the box
         '''
         device_widget = self.window.device_box[device_type].remove_widget(device_id)
+        self.pop_app_combobox(device_widget.device_model)
 
         if refresh:
             self.reload_connection_widgets()
-            # TODO: refresh app devices
 
         return device_widget
 
@@ -173,6 +188,15 @@ class GtkClient(Gtk.Application):
         device_widget = self.window.device_box[device_type].devices[device_id]
         device_widget.device_update(device_model)
         self.reload_connection_widgets()
+        self.append_app_combobox(device_model)
+
+    def on_device_widget_destroy(self, _, device_type, device_id):
+        self.stop_vumeter(device_type, device_id)
+        del self.device_handlers[device_type][device_id]
+
+    def on_app_widget_destroy(self, _, app_type, app_id):
+        self.stop_vumeter(app_type, app_id)
+        del self.app_handlers[app_type][app_id]
 
     def reload_connection_widgets(self):
         '''
@@ -188,7 +212,6 @@ class GtkClient(Gtk.Application):
         '''
         app_widget = AppWidget(app_model)
         self.window.app_box[app_type].insert_widget(app_widget, app_index)
-        # app_widget.show_all()
         self.connect_app_gtk_events(app_type, app_index, app_widget)
         return app_widget
 
@@ -213,9 +236,10 @@ class GtkClient(Gtk.Application):
         '''
 
         self.load_app_combobox()
+        # self.app_manager.load_app_list()
 
         for app_type in ('sink_input', 'source_output'):
-            for app_index, app_model in self.app_manager.__dict__[app_type].items():
+            for app_index, app_model in self.app_manager.list_apps(app_type).items():
                 self.create_app_widget(app_type, app_index, app_model)
 
     def load_app_combobox(self):
@@ -278,10 +302,15 @@ class GtkClient(Gtk.Application):
             self.manager_handlers[signal_name] = manager.connect(signal_name, callback)
 
     def connect_window_gtk_events(self):
+        '''
+        Connect window events to the model
+        '''
+
         signal_map = {
             'add_device_pressed': self.add_device_hijack,
             'device_new': self.device_new,
             'settings_change': self.settings_menu_apply,
+            'destroy': self.on_window_destroy
         }
 
         for signal_name, callback in signal_map.items():
@@ -300,6 +329,7 @@ class GtkClient(Gtk.Application):
             'device_change': self.update_device_model,
             'device_remove': self.device_remove,
             'update_connection': self.update_connection,
+            'destroy': self.on_device_widget_destroy
         }
 
         device_handler = self.device_handlers[device_type][device_id] = {}
@@ -311,22 +341,21 @@ class GtkClient(Gtk.Application):
             vumeter = self.start_vumeter(pa_device_type, device.device_model.name, device.vumeter_widget)
             self.vumeter_tasks[device_type][device_id] = vumeter
 
-        if self.config_model.vumeters:
-            device.connect('destroy', self.stop_vumeter, device_type, device_id)
-
         return device
 
     def connect_app_gtk_events(self, app_type: str, app_index: str, app: AppWidget):
         '''
         Connect a device widget events to the model
         '''
+
         signal_map = {
             'app_volume': self.set_app_volume,
             'app_mute': self.set_app_mute,
-            'app_device': self.set_app_device
+            'app_device': self.set_app_device,
+            'destroy': self.on_app_widget_destroy
         }
 
-        # connect signals to callbacks
+        # connect gtk signals to callbacks
         app_handler = self.app_handlers[app_type][app_index] = {}
         for signal_name, callback in signal_map.items():
             app_handler[signal_name] = app.connect(signal_name, callback, app_type, app_index)
@@ -334,26 +363,10 @@ class GtkClient(Gtk.Application):
         # start vumeter
         stream_type = app_type.split('_')[0]
         if self.config_model.vumeters:
-            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter, app.app_model.index)
+            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter, app_index)
             self.vumeter_tasks[app_type][app_index] = vumeter
-            app.connect('destroy', self.stop_vumeter, app_type, app_index)
 
         return app
-
-    # DEPRECATED
-    def connect_device_model_events(self, device_type: str, device_id: str, device: DeviceModel):
-        '''
-        Connect a device widget
-        '''
-        win_man = self.window.device
-        model_handler = self.model_handlers[device_type][device_id]
-
-        model_handler['volume'] = device.connect('volume', win_man.set_volume)
-        model_handler['mute'] = device.connect('mute', win_man.set_mute)
-        model_handler['connection'] = device.connect('connection', win_man.set_connection)
-        model_handler['primary'] = device.connect('primary')
-
-        return device
 
     #
     # # Update model functions
@@ -381,30 +394,28 @@ class GtkClient(Gtk.Application):
 
     def set_connection(self, _, output_type, output_id, state: bool, input_type, input_id):
         '''
-        Set model connection
+        Call to device model to set model connection
         '''
         self.config_model.device_manager.set_connection(input_type, input_id, output_type, output_id, state)
 
     def update_connection(self, _, output_type, output_id, connection_model, input_type, input_id):
         '''
-        Set model connection
+        Call to device model to set model connection
         '''
         self.config_model.device_manager.update_connection(input_type, input_id, output_type, output_id, connection_model)
 
     def device_new(self, _, device_model):
         '''
-        Create new device model
+        Call to device model to create new device model
         '''
         _, _, device = self.config_model.device_manager.create_device(device_model)
 
         if device.device_class != 'virtual':
             return
 
-        self.append_app_combobox(device)
-
     def device_remove(self, _, device_type, device_id):
         '''
-        Remove model device
+        Call device manager to remove device model
         '''
         device = self.config_model.device_manager.get_device(device_type, device_id)
         self.config_model.device_manager.remove_device(device_type, device_id)
@@ -412,17 +423,18 @@ class GtkClient(Gtk.Application):
         if device.device_class != 'virtual':
             return
 
-        self.pop_app_combobox(device)
-
     def update_device_model(self, _, schema, device_type, device_id):
         '''
-        Load the current available pulseaudio sink inputs and source outputs
+        Call to device model to update a device settings
         '''
+        device_widget = self.window.device_box[device_type].devices[device_id]
+        self.pop_app_combobox(device_widget.device_model)
         self.config_model.device_manager.update_device(schema, device_type, device_id)
 
     def add_device_hijack(self, _, device_type):
         '''
-            Populates the device combobox every time the popup opens
+        Populates the device combobox every time the popup opens, so that the
+        devices are always up to date
         '''
         if device_type not in ('a', 'hi'):
             return
@@ -559,11 +571,23 @@ class GtkClient(Gtk.Application):
         future.add_done_callback(self.handle_vumeter_error)
         return future
 
-    def stop_vumeter(self, _, device_type, device_id):
+    def stop_vumeter(self, device_type, device_id):
+        if not self.config_model.vumeters:
+            return
+
         self.vumeter_tasks[device_type][device_id].cancel()
+        del self.vumeter_tasks[device_type][device_id]
 
     def stop_listen(self):
         self.listen_task.cancel()
+
+        # async def await_cancel():
+        #     try:
+        #         await self.listen_task
+        #     except asyncio.CancelledError:
+        #         print("listen_task was cancelled cleanly")
+        #
+        # asyncio.ensure_future(await_cancel())
 
     #
     # # End Model Callback functions

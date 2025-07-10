@@ -111,6 +111,9 @@ class DeviceManagerModel(SignalModel):
 
         if device_type in ('vi', 'b'):
             self.init_device(device_type, device_id)
+            if device.primary:
+                print("AQ")
+                pmctl.set_primary(device.device_type, device.name)
 
         self.reconnect(device_type, device_id)
 
@@ -150,7 +153,7 @@ class DeviceManagerModel(SignalModel):
         pmctl.set_primary(device.device_type, device.name)
 
     def unset_primary(self, device_type):
-        for device_id, device in self.__dict__[device_type].items():
+        for _, device in self.__dict__[device_type].items():
             device.set_primary(False, emit=False)
 
     def set_connection(self, input_type, input_id, output_type, output_id, state: bool = None, soft=False):
