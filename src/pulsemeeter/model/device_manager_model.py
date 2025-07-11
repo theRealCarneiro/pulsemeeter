@@ -112,7 +112,6 @@ class DeviceManagerModel(SignalModel):
         if device_type in ('vi', 'b'):
             self.init_device(device_type, device_id)
             if device.primary:
-                print("AQ")
                 pmctl.set_primary(device.device_type, device.name)
 
         self.reconnect(device_type, device_id)

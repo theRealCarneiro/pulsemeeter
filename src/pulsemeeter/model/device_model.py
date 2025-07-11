@@ -4,7 +4,7 @@ from typing import Literal
 from pulsemeeter.schemas.typing import Volume, PaDeviceType, DeviceClass
 from pydantic import BaseModel, root_validator, validator
 # from pulsemeeter.schemas.device_schema import ConnectionModel
-# from pulsemeeter.scripts import pmctl
+from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.connection_model import ConnectionModel
 # from pulsemeeter.model.connection_manager_model import ConnectionManagerModel
 from pulsemeeter.model.signal_model import SignalModel
@@ -169,8 +169,6 @@ class DeviceModel(SignalModel):
         # convert to list if only int
         if isinstance(val, int):
             val = [val] * self.channels
-
-        # print(val)
 
         # change volume only for selected channels
         # if self.selected_channels is not None:
@@ -360,13 +358,8 @@ class DeviceModel(SignalModel):
             "device" is either a PulseSinkInfo or a PulseSourceInfo
             "device_type" is either 'sink' or 'source'
         '''
-        # pa_sink_hardware = 0x0004
-        # print(device.volume.values)
 
-        if 'factory.name' not in device.proplist or device.proplist['factory.name'] != 'support.null-audio-sink':
-            device_class = 'hardware'
-        else:
-            device_class = 'virtual'
+        device_class = 'hardware' if pmctl.is_hardware_device(device) else 'virtual'
 
         device_model = cls(
             name=device.name,

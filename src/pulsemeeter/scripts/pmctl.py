@@ -256,19 +256,23 @@ def move_app_device(app_type: str, index: int, device_name: str):
     return 0
 
 
+def is_hardware_device(device):
+    is_easy = 'easyeffects_' in device.name
+    is_monitor = device.proplist.get('device.class') == "monitor"
+    is_null = device.proplist.get('factory.name') == 'support.null-audio-sink'
+
+    if not is_monitor and (not is_null or is_easy):
+        return True
+
+    return False
+
+
 def list_devices(device_type):
     pulse = pulsectl.Pulse()
     list_pa_devices = pulse.sink_list if device_type == 'sink' else pulse.source_list
     device_list = []
     for device in list_pa_devices():
-
-        # pa_sink_hardware = 0x0004
-        # if device.flags & pa_sink_hardware:
-
-        if (('factory.name' not in device.proplist or
-            device.proplist['factory.name'] != 'support.null-audio-sink') and
-                device.proplist['device.class'] != "monitor" or
-                'easyeffects_' in device.name and 'device.class' not in device.proplist):
+        if is_hardware_device(device):
             device_list.append(device)
 
     return device_list
