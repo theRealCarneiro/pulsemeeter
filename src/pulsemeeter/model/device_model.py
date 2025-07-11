@@ -362,7 +362,12 @@ class DeviceModel(SignalModel):
         '''
         # pa_sink_hardware = 0x0004
         # print(device.volume.values)
-        device_class = 'hardware' if device.proplist['factory.name'] != 'support.null-audio-sink' else 'virtual'
+
+        if 'factory.name' not in device.proplist or device.proplist['factory.name'] != 'support.null-audio-sink':
+            device_class = 'hardware'
+        else:
+            device_class = 'virtual'
+
         device_model = cls(
             name=device.name,
             description=device.description,
