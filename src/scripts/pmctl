@@ -327,6 +327,11 @@ ladspa() {
 	fi
 }
 
+is_pulse() {
+	echo $ISPULSE
+	exit 0
+}
+
 if ! pactl info >/dev/null 2>&1; then
 	echo "ERROR PULSEAUDIO NOT RUNNING" >&2 
 	exit 1

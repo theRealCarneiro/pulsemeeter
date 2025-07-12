@@ -1,3 +1,4 @@
+import sys
 import logging
 from typing import Literal
 from collections import defaultdict
@@ -26,6 +27,11 @@ class DeviceManagerModel(SignalModel):
     _device_cache: dict[str, object] = PrivateAttr(default_factory=dict)
 
     def model_post_init(self, _):
+
+        if pmctl.is_pulse():
+            LOG.error('ERROR: Pipewire not detected, pipewire-pulse is required')
+            sys.exit(1)
+            # raise Exception('ERROR: Pipewire not detected, pipewire-pulse is required')
 
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):

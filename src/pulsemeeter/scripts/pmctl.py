@@ -339,6 +339,7 @@ def app_by_id(index: int, app_type: str):
 def list_apps(app_type: str):
     app_list = []
 
+    full_app_list = None
     if app_type == 'sink_input':
         full_app_list = PULSE.sink_input_list()
 
@@ -360,6 +361,10 @@ def list_apps(app_type: str):
 
         app_list.append(app)
     return app_list
+
+
+def is_pulse():
+    return cmd('pmctl is_pulse').strip() == 'true'
 
 
 def get_pactl_version():
