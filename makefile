@@ -12,7 +12,7 @@ zip:
 	@echo Removing old build files
 	rm -rf ${BUILD_DIR}
 	@echo Building source
-	python3 -m pip install . -t ${DIST_DIR}
+	python3 -m pip install . pulsectl pulsectl-asyncio -t ${DIST_DIR} --no-deps
 	@echo Moving data files to package
 	mkdir -p ${PKG_DIR}
 	mv ${DIST_DIR}/bin ${PKG_DIR}
