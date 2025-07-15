@@ -24,7 +24,7 @@ class DeviceManagerModel(SignalModel):
     b: dict[str, DeviceModel] = {}
     hi: dict[str, DeviceModel] = {}
     a: dict[str, DeviceModel] = {}
-    _device_cache: dict[str, object] = PrivateAttr(default_factory=dict)
+    _device_cache: dict[str, object] = PrivateAttr(default_factory=lambda: {'sink': {}, 'source': {}})
 
     def model_post_init(self, _):
 
