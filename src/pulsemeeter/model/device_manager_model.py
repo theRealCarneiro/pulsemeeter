@@ -83,6 +83,9 @@ class DeviceManagerModel(SignalModel):
         if device_type in ('hi', 'vi'):
             for output_type, connection_list in device.connections.items():
                 for output_id, connection in connection_list.items():
+                    if not connection.state:
+                        continue
+
                     self.set_connection(device_type, device_id, output_type, output_id, connection.state, soft=True)
             return
 
