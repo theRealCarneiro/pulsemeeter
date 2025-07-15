@@ -440,6 +440,7 @@ class GtkClient(Gtk.Application):
             return
 
         device_list = DeviceManagerModel.list_devices(device_type)
+        self.window.device_box[device_type].popover.combobox_widget.empty()
         self.window.device_box[device_type].popover.device_list = device_list
         self.window.device_box[device_type].popover.combobox_widget.load_list(device_list, 'description')
 
