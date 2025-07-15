@@ -15,12 +15,36 @@ def init(device_type: str, device_name: str, channel_num: int = 2):
         "device_name" is the device name
         "channel_num" is the number of channels
     '''
-    command = f'pmctl init {device_type} {device_name} {channel_num}'
 
-    ret = runcmd(command)
+    class_map = {
+        'sink': 'Sink',
+        'source': 'Source/Virtual'
+    }
 
-    if ret == 126:
-        LOG.error('Could not create %s %s', device_type, device_name)
+    if device_type not in class_map:
+        LOG.error("Invalid device type %s", device_type)
+        return
+
+    data = f'''{{
+        factory.name=support.null-audio-sink
+        node.name="{device_name}"
+        node.description="{device_name}"
+        media.class=Audio/{class_map[device_type]}
+        audio.channels={channel_num}
+        monitor.channel-volumes = true
+        object.linger=true
+    }}'''
+
+    source_exists = get_device_by_name('source', device_name) is not None
+    sink_exists = get_device_by_name('sink', device_name) is not None
+
+    if source_exists or sink_exists:
+        LOG.debug("Device already instantiated %s", device_name)
+        return
+
+    command = ['pw-cli', 'create-node', 'adapter', data]
+
+    ret = runcmdlist(command)
 
     return ret
 
@@ -30,9 +54,9 @@ def remove(device_name: str):
     Destroy a device in pulse
         "device_name" is the device name
     '''
-    command = f'pmctl remove {device_name}'
+    # command = f'pw-cli destroy {device_name}'
 
-    ret = runcmd(command)
+    ret = runcmdlist(['pw-cli', 'destroy', device_name])
 
     return ret
 
@@ -383,6 +407,11 @@ def cmd(command):
 def runcmd(command: str, split_size: int = -1):
     LOG.debug(command)
     command = command.split(' ', split_size)
+    return runcmdlist(command)
+
+
+def runcmdlist(command: list[str]):
+    LOG.debug(command)
     with subprocess.Popen(command) as process:
         process.wait()
         return_code = process.returncode
