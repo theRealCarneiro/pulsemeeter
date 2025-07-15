@@ -54,39 +54,45 @@ def remove(device_name: str):
     Destroy a device in pulse
         "device_name" is the device name
     '''
-    # command = f'pw-cli destroy {device_name}'
-
     ret = runcmdlist(['pw-cli', 'destroy', device_name])
 
     return ret
 
 
-def connect(input_name: str, output: str, status: bool, latency: bool = 200, port_map=None):
+def connect(input_name: str, output: str, status: bool, port_map=None):
     '''
     Connect two devices (pulse or pipewire)
         "input_name" is the name of the input_name device
         "output" is the name of the output device
         "status" is a bool, True means connect, False means disconnect
-        "latency" is the latency of the connection (pulseaudio only)
         "port_map" is a list of channels that will be connected,
             leave empty to let pipewire decide
     '''
+    operation = '' if status else '-d'
 
-    command = ''
-    conn_status = 'connect' if status else 'disconnect'
-
-    # auto port mapping
     if port_map is None:
-        command = f'pmctl {conn_status} {input_name} {output} {latency}'
+        command = ['pw-link', operation, input_name, output]
+        print(command)
+        runcmdlist(command)
+        return
 
-    # manual port mapping
-    else:
-        command = f'pmctl {conn_status} {input_name} {output} {port_map}'
+    input_ports = get_ports('output', input_name)
+    output_ports = get_ports('input', output)
 
-    # print(command)
-    ret = runcmd(command, 4)
+    for pair in port_map.split(' '):
+        input_id, output_id = pair.split(':')
+        input_port = input_ports[int(input_id)]
+        output_port = output_ports[int(output_id)]
+        command = ['pw-link', f'{input_name}:{input_port}', f'{output}:{output_port}',  operation]
+        runcmdlist(command)
 
-    return ret
+
+def get_ports(port_type, device_name):
+    '''
+    port_type is either input or output
+    '''
+    command = f'pmctl get_ports {port_type} {device_name}'
+    return cmd(command).split('\n')
 
 
 def ladspa(status, device_type, name, sink_name, label, plugin, control,

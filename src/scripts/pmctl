@@ -48,7 +48,7 @@ init (){
 		esac
 
 		# check if device exists
-		pw-cli info $device 2>&1 | grep -q Error || exit 1
+		pw-cli info "$device" #2>&1 | grep -q Error || exit 1
 
 		# create device
 		pw-cli create-node adapter "{
@@ -193,7 +193,7 @@ get_port_name() {
 
 get_ports() {
 	type=$1
-	device=$2
+	device="${@:2}"
 	ports=$(pw-link --$type | grep "$device:" | cut -d ':' -f2)
 	printf "%s" "$ports"
 }
