@@ -118,8 +118,8 @@ class GtkClient(Gtk.Application):
     def create_indicator(self):
 
         indicator = AyatanaAppIndicator3.Indicator.new(
-            "pulsemeeter",
-            "pulsemeeter",
+            "Pulsemeeter",
+            "Pulsemeeter",
             AyatanaAppIndicator3.IndicatorCategory.APPLICATION_STATUS
         )
 
