@@ -79,6 +79,10 @@ def connect(input_name: str, output: str, status: bool, port_map=None):
     input_ports = get_ports('output', input_name)
     output_ports = get_ports('input', output)
 
+    if len(input_ports) == 0 or len(output_ports) == 0:
+        LOG.error('Device ports not found for devices %s %s', input_name, output)
+        return
+
     for pair in port_map.split(' '):
         input_id, output_id = pair.split(':')
         input_port = input_ports[int(input_id)]
