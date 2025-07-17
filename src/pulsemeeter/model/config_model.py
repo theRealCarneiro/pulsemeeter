@@ -39,7 +39,7 @@ class ConfigModel(SignalModel):
         self.device_manager.connect('device_change', self.device_manager_callbacks)
         self.device_manager.connect('device_remove', self.device_manager_callbacks)
 
-    def device_manager_callbacks(self, *args):
+    def device_manager_callbacks(self, *_):
         self.write()
 
     def write(self):

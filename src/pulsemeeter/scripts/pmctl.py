@@ -1,7 +1,8 @@
-import logging
 import sys
-import subprocess
+import shutil
+import logging
 import pulsectl
+import subprocess
 
 LOG = logging.getLogger('generic')
 PULSE = pulsectl.Pulse('pmctl')
@@ -423,16 +424,12 @@ def list_apps(app_type: str):
 
 
 def is_pulse():
-    return cmd('pmctl is_pulse').strip() == 'true'
-
-
-def get_pactl_version():
-    return int(cmd('pmctl get-pactl-version'))
+    return shutil.which('pulseaudio') is not None
 
 
 def cmd(command):
     sys.stdout.flush()
-    with subprocess.Popen(command.split(' '), stdout=subprocess.PIPE) as proc:
+    with subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
         stdout, stderr = proc.communicate()
         if proc.returncode:
             LOG.warning('%s \ncmd "%s" returned %d', stderr, command, proc.returncode)
@@ -447,8 +444,12 @@ def runcmd(command: str, split_size: int = -1):
 
 def runcmdlist(command: list[str]):
     LOG.debug(command)
-    with subprocess.Popen(command) as process:
+    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+        # stdout, stderr = process.communicate()
         process.wait()
         return_code = process.returncode
+
+    # if stderr:
+    #     LOG.error(stderr.decode().strip())
 
     return return_code
