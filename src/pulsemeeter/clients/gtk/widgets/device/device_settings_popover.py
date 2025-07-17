@@ -2,6 +2,7 @@ import gettext
 
 from typing import Literal
 
+from pulsemeeter.schemas import pulse_mappings
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.schemas.device_schema import CHANNEL_MAPS, INVERSE_CHANNEL_MAPS
 from pulsemeeter.clients.gtk.widgets.common.input_widget import InputWidget
@@ -101,7 +102,7 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.confirm_button = Gtk.Button('Apply')
         self.cancel_button = IconButton('window-close-symbolic')
         self.remove_button = IconButton('user-trash-symbolic')
-        self.combobox_widget.load_list(list(CHANNEL_MAPS))
+        self.combobox_widget.load_list(list(pulse_mappings.CHANNEL_MAPS))
 
         # if device_model is not None:
         #     self.nick_widget.set_option(device_model.nick)
@@ -142,4 +143,5 @@ class VirtualDevicePopup(Gtk.Popover, DeviceSettingsAdapter):
         self.nick_widget.set_option(device_model.nick)
         self.name_widget.set_option(device_model.name)
         self.external_widget.set_active(device_model.external)
-        self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)
+        # self.combobox_widget.combobox.set_active(int(INVERSE_CHANNEL_MAPS[device_model.channels]) - 1)
+        self.combobox_widget.set_active_name(pulse_mappings.get_channel_map_name(device_model.channel_list))

@@ -47,6 +47,12 @@ class LabeledCombobox(Gtk.Grid):
                 self.combobox.set_active(i)
             i += 1
 
+    def set_active_name(self, item):
+        model = self.combobox.get_model()
+        for i, row in enumerate(model):
+            if row[0] == item:
+                self.combobox.set_active(i)
+
     def empty(self):
         self.combobox.remove_all()
 

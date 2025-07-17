@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pulsemeeter.schemas import pulse_mappings
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.schemas.device_schema import CHANNEL_MAPS
 from pulsemeeter.clients.gtk.widgets.common.input_widget import InputWidget
@@ -91,7 +92,7 @@ class DeviceSettingsAdapter(GObject.GObject):
         # if virtual
         if self.device_type in ('b', 'vi'):
             channel_map = self.combobox_widget.get_active_text()
-            channel_list = CHANNEL_MAPS[channel_map]
+            channel_list = pulse_mappings.CHANNEL_MAPS[channel_map]
             return channel_list
 
         # if hardware
@@ -147,6 +148,7 @@ class DeviceSettingsAdapter(GObject.GObject):
             'device_type': device_type,
             'device_class': device_class
         }
+        print(data)
 
         return data
 

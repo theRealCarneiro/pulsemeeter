@@ -8,7 +8,7 @@ PULSE = pulsectl.Pulse('pmctl')
 
 
 # TODO: channel mapping
-def init(device_type: str, device_name: str, channel_num: int = 2):
+def init(device_type: str, device_name: str, channel_num: int = 2, position=['FL', 'FR']):
     '''
     Create a device in pulse
         "device_type" is either sink or source
@@ -25,22 +25,23 @@ def init(device_type: str, device_name: str, channel_num: int = 2):
         LOG.error("Invalid device type %s", device_type)
         return
 
-    data = f'''{{
-        factory.name=support.null-audio-sink
-        node.name="{device_name}"
-        node.description="{device_name}"
-        media.class=Audio/{class_map[device_type]}
-        audio.channels={channel_num}
-        monitor.channel-volumes = true
-        object.linger=true
-    }}'''
-
     source_exists = get_device_by_name('source', device_name) is not None
     sink_exists = get_device_by_name('sink', device_name) is not None
 
     if source_exists or sink_exists:
         LOG.debug("Device already instantiated %s", device_name)
         return
+
+    data = f'''{{
+        factory.name=support.null-audio-sink
+        node.name="{device_name}"
+        node.description="{device_name}"
+        media.class=Audio/{class_map[device_type]}
+        audio.channels={channel_num}
+        audio.position="{' '.join(position)}"
+        monitor.channel-volumes = true
+        object.linger=true
+    }}'''
 
     command = ['pw-cli', 'create-node', 'adapter', data]
 
@@ -68,27 +69,46 @@ def connect(input_name: str, output: str, status: bool, port_map=None):
         "port_map" is a list of channels that will be connected,
             leave empty to let pipewire decide
     '''
-    operation = '' if status else '-d'
 
-    if port_map is None:
-        command = ['pw-link', operation, input_name, output]
-        print(command)
-        runcmdlist(command)
+    if not device_exists(input_name):
+        LOG.error('Input device not found: %s', input_name)
         return
+
+    if not device_exists(output):
+        LOG.error('Output device not found: %s', output)
+        return
+
+    operation = '' if status else '-d'
 
     input_ports = get_ports('output', input_name)
     output_ports = get_ports('input', output)
 
-    if len(input_ports) == 0 or len(output_ports) == 0:
-        LOG.error('Device ports not found for devices %s %s', input_name, output)
+    if '' in (input_ports[0], output_ports[0]):
+        LOG.error('Ports not found for devices %s %s', input_name, output)
+        return
+
+    if port_map is None:
+        command = ['pw-link', input_name, output, '-w', operation]
+        runcmdlist(command)
         return
 
     for pair in port_map.split(' '):
         input_id, output_id = pair.split(':')
         input_port = input_ports[int(input_id)]
         output_port = output_ports[int(output_id)]
-        command = ['pw-link', f'{input_name}:{input_port}', f'{output}:{output_port}',  operation]
+        command = ['pw-link', f'{input_name}:{input_port}', f'{output}:{output_port}', '-w',  operation]
+        print(command)
         runcmdlist(command)
+
+
+def device_exists(device_name):
+    source_exists = get_device_by_name('source', device_name)
+    sink_exists = get_device_by_name('sink', device_name)
+
+    if not source_exists or not sink_exists:
+        return False
+
+    return True
 
 
 def get_ports(port_type, device_name):
@@ -130,8 +150,12 @@ def mute(device_type: str, device_name: str, state: bool, pulse=None):
     if pulse is None:
         pulse = PULSE
 
-    info = pulse.get_sink_by_name if device_type == 'sink' else pulse.get_source_by_name
-    device = info(device_name)
+    device = get_device_by_name(device_type, device_name)
+
+    if device is None:
+        LOG.error('Device not found %s', device_name)
+        return
+
     pulse.mute(device, state)
 
     return 0
@@ -147,8 +171,12 @@ def set_primary(device_type: str, device_name: str, pulse=None):
     if pulse is None:
         pulse = PULSE
 
-    info = pulse.get_sink_by_name if device_type == 'sink' else pulse.get_source_by_name
-    device = info(device_name)
+    device = get_device_by_name(device_type, device_name)
+
+    if device is None:
+        LOG.error('Device not found %s', device_name)
+        return
+
     pulse.default_set(device)
 
     return 0
@@ -168,8 +196,6 @@ def get_primary(device_type: str, pulse=None):
         return pulse.sink_default_get()
     return pulse.source_default_get()
 
-    return 0
-
 
 def set_volume(device_type: str, device_name: str, val: int, selected_channels: list = None):
     '''
@@ -182,11 +208,11 @@ def set_volume(device_type: str, device_name: str, val: int, selected_channels: 
 
     val = min(max(0, val), 153)
 
-    # get device info from pulsectl
-    if device_type == 'sink':
-        device = PULSE.get_sink_by_name(device_name)
-    else:
-        device = PULSE.get_source_by_name(device_name)
+    device = get_device_by_name(device_type, device_name)
+
+    if device is None:
+        LOG.error('Device not found %s', device_name)
+        return
 
     # set the volume
     volume_value = device.volume

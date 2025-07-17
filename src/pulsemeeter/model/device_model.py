@@ -5,6 +5,7 @@ from pulsemeeter.schemas.typing import Volume, PaDeviceType, DeviceClass
 from pydantic import BaseModel, root_validator, validator
 # from pulsemeeter.schemas.device_schema import ConnectionModel
 from pulsemeeter.scripts import pmctl
+from pulsemeeter.schemas import pulse_mappings
 from pulsemeeter.model.connection_model import ConnectionModel
 # from pulsemeeter.model.connection_manager_model import ConnectionManagerModel
 from pulsemeeter.model.signal_model import SignalModel
@@ -86,6 +87,22 @@ class DeviceModel(SignalModel):
 
         return name
 
+    @validator('channel_list', always=True)
+    def check_channel_list(cls, channel_list):
+        '''
+        A validator that converts pulseaudio style channel names to pipewire
+        '''
+        correct_channel_list = []
+        for channel in channel_list:
+            alias = pulse_mappings.CHANNEL_NAME_ALIASES.get(channel)
+            if alias is not None:
+                channel = alias
+
+            correct_channel_list.append(channel)
+
+        # print(correct_channel_list)
+        return correct_channel_list
+
     # @root_validator(pre=True)
     # def set_connections(cls, values):
     #     '''
@@ -131,6 +148,7 @@ class DeviceModel(SignalModel):
         self.description = device['description']
         self.nick = device['nick']
         self.channels = device['channels']
+        self.external = device['external']
         self.channel_list = device['channel_list']
         self.selected_channels = device['selected_channels']
         # self.volume = device.volume

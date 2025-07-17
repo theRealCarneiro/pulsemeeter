@@ -51,7 +51,7 @@ class DeviceManagerModel(SignalModel):
         '''
         device = self.__dict__[device_type][device_id]
         if device_type in ('vi', 'b') and not device.external:
-            pmctl.init(device.device_type, device.name, device.channels)
+            pmctl.init(device.device_type, device.name, device.channels, device.channel_list)
 
         if cache:
             self.append_device_cache(device_type, device_id, device)
@@ -106,7 +106,7 @@ class DeviceManagerModel(SignalModel):
 
         self.bulk_connect(device_type, device_id, False)
 
-        if device_type in ('vi', 'b'):
+        if device_type in ('vi', 'b') and device.external is False:
             pmctl.remove(device.name)
 
         # update values
