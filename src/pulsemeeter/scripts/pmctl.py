@@ -97,7 +97,6 @@ def connect(input_name: str, output: str, status: bool, port_map=None):
         input_port = input_ports[int(input_id)]
         output_port = output_ports[int(output_id)]
         command = ['pw-link', f'{input_name}:{input_port}', f'{output}:{output_port}', '-w',  operation]
-        print(command)
         runcmdlist(command)
 
 
@@ -105,7 +104,7 @@ def device_exists(device_name):
     source_exists = get_device_by_name('source', device_name)
     sink_exists = get_device_by_name('sink', device_name)
 
-    if not source_exists or not sink_exists:
+    if source_exists is None and sink_exists is None:
         return False
 
     return True
