@@ -5,8 +5,6 @@ import subprocess
 
 from pulsectl import PulseSinkInfo, PulseSourceInfo, PulseSinkInputInfo, PulseSourceOutputInfo
 
-from pulsemeeter.backends.utils import run_command
-
 LOG = logging.getLogger('generic')
 PULSE = pulsectl.Pulse('pmctl')
 
