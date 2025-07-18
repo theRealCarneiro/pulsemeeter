@@ -1,152 +1,138 @@
-import sys
 import shutil
 import logging
 import pulsectl
 import subprocess
 
+from pulsectl import PulseSinkInfo, PulseSourceInfo, PulseSinkInputInfo, PulseSourceOutputInfo
+
+from pulsemeeter.backends.utils import run_command
+
 LOG = logging.getLogger('generic')
 PULSE = pulsectl.Pulse('pmctl')
 
 
-# TODO: channel mapping
-def init(device_type: str, device_name: str, channel_num: int = 2, position=['FL', 'FR']):
+def create_device(device_type: str, name: str, channels: int, position: list[str]) -> bool:
     '''
-    Create a device in pulse
-        "device_type" is either sink or source
-        "device_name" is the device name
-        "channel_num" is the number of channels
+    Create a PipeWire device.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        name (str): Name of the device.
+        channels (int): Number of audio channels.
+        position (list[str]): Channel map positions.
+    Returns:
+        bool: True on success, raises on failure.
     '''
 
-    class_map = {
-        'sink': 'Sink',
-        'source': 'Source/Virtual'
-    }
-
-    if device_type not in class_map:
-        LOG.error("Invalid device type %s", device_type)
-        return
-
-    source_exists = get_device_by_name('source', device_name) is not None
-    sink_exists = get_device_by_name('sink', device_name) is not None
-
-    if source_exists or sink_exists:
-        LOG.debug("Device already instantiated %s", device_name)
-        return
+    class_map = {'sink': 'Sink', 'source': 'Source/Virtual'}
 
     data = f'''{{
         factory.name=support.null-audio-sink
-        node.name="{device_name}"
-        node.description="{device_name}"
+        node.name="{name}"
+        node.description="{name}"
         media.class=Audio/{class_map[device_type]}
-        audio.channels={channel_num}
+        audio.channels={channels}
         audio.position="{' '.join(position)}"
-        monitor.channel-volumes = true
+        monitor.channel-volumes=true
         object.linger=true
     }}'''
-
     command = ['pw-cli', 'create-node', 'adapter', data]
+    ret, stdout, stderr = run_command(command, split=False)
+    if ret != 0:
+        raise RuntimeError(f"Failed to create device: {stderr}")
+    return True
 
-    ret = runcmdlist(command)
 
-    return ret
-
-
-def remove(device_name: str):
+def remove_device(name: str) -> bool:
     '''
-    Destroy a device in pulse
-        "device_name" is the device name
+    Remove a PipeWire device by name.
+    Args:
+        name (str): Name of the device to remove.
+    Returns:
+        bool: True on success, raises on failure.
     '''
-    ret = runcmdlist(['pw-cli', 'destroy', device_name])
+    command = ['pw-cli', 'destroy', name]
+    ret, stdout, stderr = run_command(command)
+    if ret != 0:
+        raise RuntimeError(f"Failed to remove device: {stderr}")
+    return True
 
-    return ret
 
-
-def connect(input_name: str, output: str, status: bool, port_map=None):
+def link(input_name: str, output_name: str, state: bool = True) -> bool:
     '''
-    Connect two devices (pulse or pipewire)
-        "input_name" is the name of the input_name device
-        "output" is the name of the output device
-        "status" is a bool, True means connect, False means disconnect
-        "port_map" is a list of channels that will be connected,
-            leave empty to let pipewire decide
+    Link or unlink two PipeWire devices (all channels).
+    Args:
+        input_name (str): Name of the input device.
+        output_name (str): Name of the output device.
+        state (bool): True to link, False to unlink.
+    Returns:
+        bool: True on success, raises on failure.
     '''
+    operation = [] if state else ['-d']
+    command = ['pw-link', input_name, output_name, *operation]
+    ret, stdout, stderr = run_command(command)
+    #if ret != 0:
+        #raise RuntimeError(f"Failed to {'link' if state else 'unlink'} devices: {stderr}")
+    return True
 
-    if not device_exists(input_name):
-        LOG.error('Input device not found: %s', input_name)
-        return
 
-    if not device_exists(output):
-        LOG.error('Output device not found: %s', output)
-        return
-
-    operation = '' if status else '-d'
-
+def link_channels(input_name: str, output_name: str, channel_map: str, state: bool = True) -> bool:
+    '''
+    Link or unlink two PipeWire devices using a channel map string (e.g. '0:0 1:1').
+    Args:
+        input_name (str): Name of the input device.
+        output_name (str): Name of the output device.
+        channel_map (str): Channel map string, e.g. '0:0 1:1'.
+        state (bool): True to link, False to unlink.
+    Returns:
+        bool: True on success, raises on failure.
+    '''
     input_ports = get_ports('output', input_name)
-    output_ports = get_ports('input', output)
+    output_ports = get_ports('input', output_name)
 
-    if '' in (input_ports[0], output_ports[0]):
-        LOG.error('Ports not found for devices %s %s', input_name, output)
-        return
+    if not input_ports or not output_ports:
+        raise RuntimeError(f'Ports not found for devices {input_name} {output_name}')
 
-    if port_map is None:
-        command = ['pw-link', input_name, output, '-w', operation]
-        runcmdlist(command)
-        return
-
-    for pair in port_map.split(' '):
+    for pair in channel_map.split(' '):
         input_id, output_id = pair.split(':')
-        input_port = input_ports[int(input_id)]
-        output_port = output_ports[int(output_id)]
-        command = ['pw-link', f'{input_name}:{input_port}', f'{output}:{output_port}', '-w',  operation]
-        runcmdlist(command)
-
-
-def device_exists(device_name):
-    source_exists = get_device_by_name('source', device_name)
-    sink_exists = get_device_by_name('sink', device_name)
-
-    if source_exists is None and sink_exists is None:
-        return False
+        input_port = f'{input_name}:{input_ports[int(input_id)]}'
+        output_port = f'{output_name}:{output_ports[int(output_id)]}'
+        link(input_port, output_port, state=state)
 
     return True
 
 
-def get_ports(port_type, device_name):
+def get_ports(port_type: str, device_name: str) -> list[str]:
     '''
-    port_type is either input or output
+    Get ports for a device in PipeWire.
+    Args:
+        port_type (str): 'input' or 'output'.
+        device_name (str): Name of the device.
+    Returns:
+        list[str]: list of port names.
     '''
-    command = f'pmctl get_ports {port_type} {device_name}'
-    return cmd(command).split('\n')
+    command = ['pmctl', 'get_ports', port_type, device_name]
+    ret, stdout, stderr = run_command(command)
+    if ret != 0:
+        raise RuntimeError(f"Failed to get ports: {stderr}")
+
+    ports = stdout.split()
+    if ports[0] == '':
+        return []
+
+    return ports
 
 
-def ladspa(status, device_type, name, sink_name, label, plugin, control,
-        chann_or_lat):
-
-    status = 'connect' if status else 'disconnect'
-
-    command = f'pmctl ladspa {status} {device_type} {name} {sink_name} {label} {plugin} {control} {chann_or_lat}'
-
-    runcmd(command)
-
-
-def rnnoise(status, name, sink_name, control,
-        chann_or_lat):
-
-    status = 'connect' if status else 'disconnect'
-
-    command = f'pmctl rnnoise {sink_name} {name} {control} {status} "{chann_or_lat}"'
-
-    runcmd(command)
-
-
-def mute(device_type: str, device_name: str, state: bool, pulse=None):
+def mute(device_type: str, device_name: str, state: bool, pulse=None) -> int:
     '''
-    Change mute state of a device
-        "device_type" is the enum DeviceType
-        "device_name" is the device name
-        "state" is bool, True means mute, False means unmute
+    Change mute state of a device.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_name (str): Name of the device.
+        state (bool): True to mute, False to unmute.
+        pulse: Optional Pulse object. If None, PULSE is used.
+    Returns:
+        int: 0 on success, -1 on failure.
     '''
-
     if pulse is None:
         pulse = PULSE
 
@@ -154,20 +140,22 @@ def mute(device_type: str, device_name: str, state: bool, pulse=None):
 
     if device is None:
         LOG.error('Device not found %s', device_name)
-        return
+        return False
 
     pulse.mute(device, state)
+    return True
 
-    return 0
 
-
-def set_primary(device_type: str, device_name: str, pulse=None):
+def set_primary(device_type: str, device_name: str, pulse=None) -> bool:
     '''
-    Change mute state of a device
-        "device_type" is the enum DeviceType
-        "device_name" is the device name
+    Set a device as primary.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_name (str): Name of the device.
+        pulse: Optional Pulse object. If None, PULSE is used.
+    Returns:
+        int: 0 on success, -1 on failure.
     '''
-
     if pulse is None:
         pulse = PULSE
 
@@ -175,44 +163,31 @@ def set_primary(device_type: str, device_name: str, pulse=None):
 
     if device is None:
         LOG.error('Device not found %s', device_name)
-        return
+        return False
 
     pulse.default_set(device)
 
-    return 0
+    return True
 
 
-def get_primary(device_type: str, pulse=None):
+def set_volume(device_type: str, device_name: str, val: int, selected_channels: list[bool] = None) -> bool:
     '''
-    Change mute state of a device
-        "device_type" is the enum DeviceType
-        "device_name" is the device name
+    Change device volume.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_name (str): Name of the device.
+        val (int): Volume value (0-153).
+        selected_channels (list): List of booleans indicating which channels to change.
+    Returns:
+        int: 0 on success, -1 on failure.
     '''
-
-    if pulse is None:
-        pulse = PULSE
-
-    if device_type == 'sink':
-        return pulse.sink_default_get()
-    return pulse.source_default_get()
-
-
-def set_volume(device_type: str, device_name: str, val: int, selected_channels: list = None):
-    '''
-    Change device volume
-        "device_type" either sink or source
-        "device_name" device name
-        "val" new volume level
-        "selected_channels" the channels that will have the volume changed
-    '''
-
     val = min(max(0, val), 153)
 
     device = get_device_by_name(device_type, device_name)
 
     if device is None:
         LOG.error('Device not found %s', device_name)
-        return
+        return False
 
     # set the volume
     volume_value = device.volume
@@ -221,29 +196,66 @@ def set_volume(device_type: str, device_name: str, val: int, selected_channels: 
     channels = len(device.volume.values)
     volume_list = []
 
-    # change specific channels
-    if selected_channels is not None:
-        for channel in range(channels):
-
-            # change volume for selected channel
-            if selected_channels[channel] is True:
-                volume_list.append(val / 100)
-
-            # channels that are not selected don't have their volume changed
-            else:
-                volume_list.append(device.volume.values[channel])
-
-        volume_value = pulsectl.PulseVolumeInfo(volume_list)
-
-    # all channels
-    else:
+    if selected_channels is None:
         volume_value.value_flat = val / 100
+        PULSE.volume_set(device, volume_value)
+        return True
+
+    for channel in range(channels):
+
+        # change volume for selected channel
+        if selected_channels[channel] is True:
+            volume_list.append(val / 100)
+
+        # channels that are not selected don't have their volume changed
+        else:
+            volume_list.append(device.volume.values[channel])
+
+    volume_value = pulsectl.PulseVolumeInfo(volume_list)
 
     PULSE.volume_set(device, volume_value)
-    return 0
+    return True
 
 
-def get_device_by_name(device_type: str, device_name: str):
+def device_exists(device_name: str) -> bool:
+    '''
+    Check if a device exists by name (sink or source).
+    Args:
+        device_name (str): The name of the device to check.
+    Returns:
+        bool: True if the device exists, False otherwise.
+    '''
+    source_exists = get_device_by_name('source', device_name)
+    sink_exists = get_device_by_name('sink', device_name)
+    return source_exists is not None or sink_exists is not None
+
+
+def get_primary(device_type: str, pulse=None) -> PulseSinkInfo | PulseSourceInfo:
+    '''
+    Get the primary device.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        pulse: Optional Pulse object. If None, PULSE is used.
+    Returns:
+        Device object or None.
+    '''
+    if pulse is None:
+        pulse = PULSE
+
+    if device_type == 'sink':
+        return pulse.sink_default_get()
+    return pulse.source_default_get()
+
+
+def get_device_by_name(device_type: str, device_name: str) -> PulseSinkInfo | PulseSourceInfo:
+    '''
+    Get a device object by type and name.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_name (str): Name of the device.
+    Returns:
+        Device object or None if not found.
+    '''
     try:
         if device_type == 'sink':
             return PULSE.get_sink_by_name(device_name)
@@ -253,70 +265,71 @@ def get_device_by_name(device_type: str, device_name: str):
         return None
 
 
-def app_mute(app_type: str, index: int, state: bool):
+def app_mute(app_type: str, index: int, state: bool) -> bool:
     '''
-    Mute an app by their type and index
-        "app_type" is either sink_input or source_output
-        "index" is the index of the app in pulse
-        "state" True is mute and False is unmute
+    Mute or unmute an application stream by type and index.
+    Args:
+        app_type (str): 'sink_input' or 'source_output'.
+        index (int): Index of the application stream.
+        state (bool): True to mute, False to unmute.
+    Returns:
+        int: 0 on success, -1 on failure.
     '''
-
-    if app_type == 'sink_input':
-        app = PULSE.sink_input_info(index)
-    else:
-        app = PULSE.source_output_info(index)
-
+    app = app_by_id(index, app_type)
     PULSE.mute(app, state)
 
-    return 0
+    return True
 
 
-def app_volume(app_type: str, index: int, val: int):
+def app_volume(app_type: str, index: int, val: int) -> bool:
+    '''
+    Set the volume of an application stream by type and index.
+    Args:
+        app_type (str): 'sink_input' or 'source_output'.
+        index (int): Index of the application stream.
+        val (int): Volume value (0-153).
+    Returns:
+        int: 0 on success, -1 on failure.
+    '''
+    app = app_by_id(index, app_type)
+    channels = len(app.volume.values)
+    volume = pulsectl.PulseVolumeInfo(val / 100, channels)
+    PULSE.volume_set(app, volume)
+    return True
 
-    # limit volume at 153
-    if val > 153:
-        val = 153
-    elif val < 0:
-        val = 0
 
-    # set volume object
+def move_app_device(app_type: str, index: int, device_name: str) -> bool:
+    '''
+    Move an application stream to a different device.
+    Args:
+        app_type (str): 'sink_input' or 'source_output'.
+        index (int): Index of the application stream.
+        device_name (str): Name of the new device.
+    Returns:
+        int: 0 on success, -1 on failure.
+    '''
+    device_type = 'sink' if app_type == 'sink_input' else 'source'
+    device = get_device_by_name(device_type, device_name)
+    move = PULSE.sink_input_move if app_type == 'sink_input' else PULSE.source_output_move
+
     try:
-        if app_type == 'sink_input':
-            device = PULSE.sink_input_info(index)
-            chann = len(device.volume.values)
-            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
-            PULSE.sink_input_volume_set(index, volume)
-        else:
-            device = PULSE.source_output_info(index)
-            chann = len(device.volume.values)
-            volume = pulsectl.PulseVolumeInfo(val / 100, chann)
-            PULSE.source_output_volume_set(index, volume)
-
-    # trying to change volume of a device that just desapears
-    # better to just ignore it, nothing bad comes from doing so
-    except pulsectl.PulseIndexError:
-        LOG.debug('App #%d already removed', index)
-
-    return 0
-
-
-def move_app_device(app_type: str, index: int, device_name: str):
-    try:
-        if app_type == 'sink_input':
-            sink = PULSE.get_sink_by_name(device_name)
-            PULSE.sink_input_move(index, sink.index)
-        else:
-            source = PULSE.get_source_by_name(device_name)
-            PULSE.source_output_move(index, source.index)
+        move(index, device.index)
 
     # some apps have DONT MOVE flag, the app will crash
     except pulsectl.PulseOperationFailed:
         LOG.debug('App #%d device cant be moved', index)
 
-    return 0
+    return True
 
 
-def is_hardware_device(device):
+def is_hardware_device(device: PulseSinkInfo | PulseSourceInfo) -> bool:
+    '''
+    Determine if a device is a hardware device (not a monitor or null sink).
+    Args:
+        device: The device object to check.
+    Returns:
+        bool: True if hardware, False otherwise.
+    '''
     is_easy = 'easyeffects_' in device.name
     is_monitor = device.proplist.get('device.class') == "monitor"
     is_null = device.proplist.get('factory.name') == 'support.null-audio-sink'
@@ -327,7 +340,14 @@ def is_hardware_device(device):
     return False
 
 
-def list_devices(device_type):
+def list_devices(device_type: str) -> list[PulseSinkInfo | PulseSourceInfo]:
+    '''
+    List all hardware devices of a given type (sink or source).
+    Args:
+        device_type (str): 'sink' or 'source'.
+    Returns:
+        list: List of hardware device objects.
+    '''
     pulse = pulsectl.Pulse()
     list_pa_devices = pulse.sink_list if device_type == 'sink' else pulse.source_list
     device_list = []
@@ -338,118 +358,65 @@ def list_devices(device_type):
     return device_list
 
 
-def list_sinks(hardware=False):
-    pulse = pulsectl.Pulse()
-    device_list = []
-    if hardware is True:
-        for device in pulse.sink_list():
-
-            pa_sink_hardware = 0x0004
-            if device.flags & pa_sink_hardware:
-                device_list.append(device)
-
-    return device_list
-
-
-def list_sources(hardware=False, virtual=False):
-    pulse = pulsectl.Pulse()
-    pulse_devices = pulse.source_list()
-    device_list = []
-    if hardware is True or virtual is True:
-        for device in pulse_devices:
-
-            pa_sink_hardware = 0x0004
-            if device.flags & pa_sink_hardware:
-                if hardware and device.proplist['device.class'] != 'monitor':
-                    device_list.append(device)
-            elif virtual:
-                device_list.append(device)
-    else:
-        device_list = pulse_devices
-
-    return device_list
-
-
-def filter_results(app):
+def app_by_id(index: int, app_type: str) -> PulseSinkInputInfo | PulseSourceOutputInfo:
     '''
-    Filter pavu and pm peak sinks
-    '''
-    assert 'application.name' in app.proplist
-    assert '_peak' not in app.proplist['application.name']
-    assert app.proplist.get('application.id') != 'org.PulseAudio.pavucontrol'
-
-
-def app_by_id(index: int, app_type: str):
-    '''
-    Return a specific app
-        "index" is the index of the desidered app
-        "app_type" is sink_input or source_output
+    Return a specific app by index and type.
+    Args:
+        index (int): Index of the application stream.
+        app_type (str): 'sink_input' or 'source_output'.
+    Returns:
+        App object.
     '''
     app_info = PULSE.sink_input_info if app_type == 'sink_input' else PULSE.source_output_info
     app = app_info(index)
-
-    if app_type == 'sink_input':
-        app.device_name = PULSE.sink_info(app.sink).name
-    else:
-        app.device_name = PULSE.source_info(app.sink).name
-
+    device_type = 'sink' if app_type == 'sink_input' else 'source'
+    device = get_device_by_name(device_type, app.sink)
+    app.device_name = device.name
     return app
 
 
-def list_apps(app_type: str):
+def list_apps(app_type: str) -> list[PulseSinkInputInfo | PulseSourceOutputInfo]:
+    '''
+    List all application streams of a given type, filtering out pavucontrol and peak sinks.
+    Args:
+        app_type (str): 'sink_input' or 'source_output'.
+    Returns:
+        list: List of application stream objects.
+    '''
     app_list = []
-
-    full_app_list = None
-    if app_type == 'sink_input':
-        full_app_list = PULSE.sink_input_list()
-
-    elif app_type == 'source_output':
-        full_app_list = PULSE.source_output_list()
+    full_app_list = PULSE.sink_input_list() if app_type == 'sink_input' else PULSE.source_output_list()
 
     for app in full_app_list:
 
-        # filter pavu and pm peak sinks
-        try:
-            filter_results(app)
-        except AssertionError:
+        is_peak = '_peak' in app.proplist.get('application.name', '')
+        is_pavucontrol = app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'
+        if is_peak or is_pavucontrol:
             continue
 
-        if app_type == 'sink_input':
-            app.device_name = PULSE.sink_info(app.sink).name
-        else:
-            app.device_name = PULSE.source_info(app.source).name
-
+        device_type = 'sink' if app_type == 'sink_input' else 'source'
+        app.device_name = get_device_by_name(device_type, app.device_name).name
         app_list.append(app)
+
     return app_list
 
 
-def is_pulse():
+def is_pulse() -> bool:
+    '''
+    Check if pulseaudio is available on the system.
+    Returns:
+        bool: True if pulseaudio is available, False otherwise.
+    '''
     return shutil.which('pulseaudio') is not None
 
 
-def cmd(command):
-    sys.stdout.flush()
-    with subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
-        stdout, stderr = proc.communicate()
-        if proc.returncode:
-            LOG.warning('%s \ncmd "%s" returned %d', stderr, command, proc.returncode)
-    return stdout.decode()
-
-
-def runcmd(command: str, split_size: int = -1):
-    LOG.debug(command)
-    command = command.split(' ', split_size)
-    return runcmdlist(command)
-
-
-def runcmdlist(command: list[str]):
-    LOG.debug(command)
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
-        # stdout, stderr = process.communicate()
-        process.wait()
-        return_code = process.returncode
-
-    # if stderr:
-    #     LOG.error(stderr.decode().strip())
-
-    return return_code
+def run_command(command: list[str], split: bool = False) -> tuple[int, str, str]:
+    """
+    Run a shell command and return (returncode, stdout, stderr).
+    If split is True, split the command string into a list.
+    """
+    if split and isinstance(command, str):
+        command = command.split()
+    LOG.debug('Running command: %s', command)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    return proc.returncode, stdout.decode(), stderr.decode()
