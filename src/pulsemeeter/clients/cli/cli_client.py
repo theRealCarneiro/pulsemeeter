@@ -51,6 +51,14 @@ def add_device_args(parser, device_class='device'):
     parser.add_argument(f"{device_class}_id", type=parse_device_id)
 
 
+def parse_bool(value):
+    if value.lower() in ('yes', 'true', 't', '1', 'on'):
+        return True
+    elif value.lower() in ('no', 'false', 'f', '0', 'off'):
+        return False
+    raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def parse_args():
     LOG.debug('Parsing args...')
     parser = argparse.ArgumentParser(description='Pulsemeeter')
@@ -66,7 +74,7 @@ def parse_args():
 
     mute_parser = subparser.add_parser('mute', help='Set the mute state')
     add_device_args(mute_parser)
-    mute_parser.add_argument('value', type=bool, nargs='?', default=None)
+    mute_parser.add_argument('value', type=parse_bool, nargs='?', default=None)
 
     primary_parser = subparser.add_parser('primary', help='Set the primary device')
     add_device_args(primary_parser)
@@ -74,7 +82,7 @@ def parse_args():
     connect_parser = subparser.add_parser('connect', help='Set the connection state')
     add_device_args(connect_parser, 'input')
     add_device_args(connect_parser, 'output')
-    connect_parser.add_argument('value', type=bool, nargs='?', default=None)
+    connect_parser.add_argument('value', type=parse_bool, nargs='?', default=None)
 
     parser.add_argument('-v', '--version', action='version', version=VERSION)
 
