@@ -30,8 +30,7 @@ class MainWindowAdapter(GObject.GObject):
             # self.device_box[device_type].connect('remove_pressed', self.remove_pressed)
             self.device_box[device_type].connect('add_device_pressed', self.add_device_pressed)
 
-        if self.settings_widget is not None:
-            self.settings_widget.connect('settings_change', self.save_settings)
+        self.settings_widget.connect('settings_change', self.save_settings)
 
     def save_settings(self, _, config_schema):
         self.emit('settings_change', config_schema)

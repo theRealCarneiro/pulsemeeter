@@ -3,6 +3,7 @@ import gettext
 from pulsemeeter.clients.gtk.widgets.app.app_box_widget import AppBoxWidget
 from pulsemeeter.clients.gtk.adapters.main_window_adapter import MainWindowAdapter
 from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
+from pulsemeeter.clients.gtk.widgets.common.settings_menu_box import SettingsMenuBox
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -33,7 +34,7 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
         Gtk.Window.__init__(self, application=application)
 
         notebook = Gtk.Notebook()
-        self.settings_widget = None
+        self.settings_widget = SettingsMenuBox(config_model)
 
         # Create a tab for each device box.
         self.device_box = {}
@@ -48,6 +49,7 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
 
         notebook.append_page(sink_input_box, Gtk.Label(label=_("Application Outputs")))
         notebook.append_page(source_output_box, Gtk.Label(label=_("Application Inputs")))
+        notebook.append_page(self.settings_widget, Gtk.Label('Settings'))
 
         self.add(notebook)
         MainWindowAdapter.__init__(self)

@@ -4,7 +4,8 @@ from pulsemeeter.clients.gtk.widgets.app.app_box_widget import AppBoxWidget
 from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
 from pulsemeeter.clients.gtk.adapters.main_window_adapter import MainWindowAdapter
 from pulsemeeter.clients.gtk.widgets.device.device_box_widget import DeviceBoxWidget
-from pulsemeeter.clients.gtk.widgets.common.settings_popover import SettingsMenuPopover
+# from pulsemeeter.clients.gtk.widgets.common.settings_popover import SettingsMenuPopover
+from pulsemeeter.clients.gtk.widgets.common.settings_menu_box import SettingsMenuBox
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -27,9 +28,13 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
         Gtk.Window.__init__(self, application=application)
         self.device_grid = Gtk.Grid()
 
-        self.settings_widget = SettingsMenuPopover(config_model)
+        self.settings_widget = SettingsMenuBox(config_model)
         self.settings_button = IconButton('open-menu-symbolic')
-        self.settings_widget.set_relative_to(self.settings_button)
+
+        self.settings_popover = Gtk.Popover(margin=10)
+        self.settings_popover.set_modal(False)
+        self.settings_popover.add(self.settings_widget)
+        self.settings_popover.set_relative_to(self.settings_button)
 
         self.device_box = {}
         for device_type in ('hi', 'vi', 'a', 'b'):
@@ -56,4 +61,8 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
         self.add(mainbox)
 
         MainWindowAdapter.__init__(self)
-        self.settings_button.connect('clicked', self.settings_widget.open_settings)
+        self.settings_button.connect('clicked', self.open_settings)
+
+    def open_settings(self, _):
+        self.settings_popover.popup()
+        self.settings_popover.show_all()
