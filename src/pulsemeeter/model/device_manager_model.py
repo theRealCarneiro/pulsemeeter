@@ -25,10 +25,10 @@ class DeviceManagerModel(SignalModel):
 
     def model_post_init(self, _):
         '''
-        Initialize the device manager model, check for pmctl, create and connect devices, and cache them.
+        Initialize the device manager model, check for pipewire-pulse, create and connect devices, and cache them.
         '''
         if pmctl.is_pulse():
-            LOG.error('ERROR: pmctl not detected, pmctl-pulse is required')
+            LOG.error('ERROR: pipewire-pulse not detected, pipewire-pulse is required')
             sys.exit(1)
 
         # we have to create the virtual devices first
@@ -138,7 +138,6 @@ class DeviceManagerModel(SignalModel):
         '''
         Removes all pulse devices from pulse.
         '''
-        print("AQ")
         for _, device_list in self.__dict__.items():
             for _, device in device_list.items():
                 if device.device_class == 'virtual':
