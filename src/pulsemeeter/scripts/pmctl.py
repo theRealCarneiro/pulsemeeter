@@ -263,6 +263,42 @@ def get_device_by_name(device_type: str, device_name: str) -> PulseSinkInfo | Pu
         return None
 
 
+def get_device_by_index(device_type: str, device_index: str) -> PulseSinkInfo | PulseSourceInfo:
+    '''
+    Get a device object by type and name.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_index (str): Index of the device on pulse.
+    Returns:
+        Device object or None if not found.
+    '''
+    try:
+        if device_type == 'sink':
+            return PULSE.sink_info(device_index)
+
+        return PULSE.source_info(device_index)
+    except pulsectl.pulsectl.PulseIndexError:
+        return None
+
+
+def get_app_device(app_type: str, app: PulseSinkInputInfo | PulseSourceOutputInfo) -> PulseSinkInfo | PulseSourceInfo:
+    '''
+    Get a device object by type and name.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_index (str): Index of the device on pulse.
+    Returns:
+        Device object or None if not found.
+    '''
+    try:
+        if app_type == 'sink_input':
+            return PULSE.sink_info(app.sink)
+
+        return PULSE.source_info(app.source)
+    except pulsectl.pulsectl.PulseIndexError:
+        return None
+
+
 def app_mute(app_type: str, index: int, state: bool) -> bool:
     '''
     Mute or unmute an application stream by type and index.
@@ -391,8 +427,7 @@ def list_apps(app_type: str) -> list[PulseSinkInputInfo | PulseSourceOutputInfo]
         if is_peak or is_pavucontrol:
             continue
 
-        device_type = 'sink' if app_type == 'sink_input' else 'source'
-        app.device_name = get_device_by_name(device_type, app.device_name).name
+        app.device_name = get_app_device(app_type, app).name
         app_list.append(app)
 
     return app_list
