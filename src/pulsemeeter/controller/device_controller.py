@@ -39,7 +39,7 @@ class DeviceController(SignalModel):
         super().__init__()
 
         self.device_repository = device_repository
-        if pmctl.is_pipewire():
+        if not pmctl.is_pipewire():
             LOG.error('ERROR: pipewire-pulse not detected, pipewire-pulse is required')
             sys.exit(1)
 
