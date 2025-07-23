@@ -95,7 +95,6 @@ class GtkClient(Gtk.Application):
         Args:
             *_: Additional positional arguments.
         '''
-        # TODO: Cleanup
         if self.config_model.cleanup is True:
             self.device_controller.cleanup()
 

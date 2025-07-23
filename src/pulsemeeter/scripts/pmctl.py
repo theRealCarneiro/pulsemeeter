@@ -433,6 +433,15 @@ def list_apps(app_type: str) -> list[PulseSinkInputInfo | PulseSourceOutputInfo]
     return app_list
 
 
+def is_pipewire() -> bool:
+    '''
+    Check if pulseaudio is available on the system.
+    Returns:
+        bool: True if pulseaudio is available, False otherwise.
+    '''
+    return shutil.which('pipewire-pulse') is not None
+
+
 def is_pulse() -> bool:
     '''
     Check if pulseaudio is available on the system.

@@ -245,6 +245,7 @@ class GtkController(SignalModel):
 
     def settings_menu_apply(self, _, config_schema):
         self.config_model.vumeters = config_schema['vumeters']
+        self.config_model.cleanup = config_schema['cleanup']
         self.config_model.tray = config_schema['tray']
         self.config_model.layout = config_schema['layout']
 
