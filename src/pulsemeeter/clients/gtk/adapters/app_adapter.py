@@ -49,9 +49,9 @@ class AppAdapter(GObject.GObject):
         self.emit('app_device', app_combobox.get_active_text())
 
     def pa_app_change(self, app):
-        self.set_volume(app.volume.values[0] * 100)
+        self.set_volume(app.volume)
         self.set_mute(bool(app.mute))
-        self.change_device(app.device_name)
+        self.change_device(app.device)
 
     def set_volume(self, volume):
         self.volume_widget.handler_block(self.handlers['app_volume'])

@@ -1,7 +1,6 @@
 import re
 
 from pulsemeeter.model.device_model import DeviceModel
-from pulsemeeter.model.device_manager_model import DeviceManagerModel
 from pulsemeeter.model.connection_model import ConnectionModel
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
@@ -40,7 +39,8 @@ class DeviceAdapter(GObject.GObject):
         "device_remove": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
         "device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
-        "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT))
+        "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT)),
+        "settings_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
     }
 
     def __init__(self, model: DeviceModel):
@@ -67,12 +67,7 @@ class DeviceAdapter(GObject.GObject):
         self.popover.fill_settings(self.device_model)
         self.popover.popup()
         device_type = self.device_model.get_type()
-        if device_type in ('hi', 'a'):
-            device_list = DeviceManagerModel.list_devices(device_type)
-            self.popover.device_list = device_list
-            self.popover.combobox_widget.empty()
-            self.popover.combobox_widget.load_list(device_list, 'description', self.model.description)
-
+        self.emit('settings_pressed', self.device_model, self.popover)
         self.popover.nick_widget.input.grab_focus()
 
     def insert_connection_widget(self, connection_schema: ConnectionModel, output_type: str, output_id: str):

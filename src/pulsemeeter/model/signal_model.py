@@ -1,14 +1,17 @@
 from typing import Callable
-from pydantic import BaseModel
 
 
-class SignalEntry(BaseModel):
-    callback: Callable
-    blocked: bool = False
+class SignalEntry:
+
+    def __init__(self, callback: Callable):
+        self.callback: Callable = callback
+        self.blocked: bool = False
 
 
-class SignalModel(BaseModel):
-    _signals: dict[str, list[SignalEntry]] = {}
+class SignalModel:
+
+    def __init__(self):
+        self._signals: dict[str, list[SignalEntry]] = {}
 
     def connect(self, signal_name: str, callback: Callable, *args, **kwargs) -> int:
         '''
@@ -30,6 +33,7 @@ class SignalModel(BaseModel):
         # print(signal_name)
         for entry, entry_args, entry_kwargs in self._signals.get(signal_name, []):
             if not entry.blocked:
+                # print(entry.callback, *(args + entry_args), **{**kwargs, **entry_kwargs})
                 entry.callback(*(args + entry_args), **{**kwargs, **entry_kwargs})
 
     def propagate(self, signal_name: str, *args, **kwargs):
@@ -46,11 +50,11 @@ class SignalModel(BaseModel):
         Block the callback at the given index for the signal.
         '''
         if signal_name in self._signals and 0 <= index < len(self._signals[signal_name]):
-            self._signals[signal_name][index].blocked = True
+            self._signals[signal_name][index][0].blocked = True
 
     def unblock(self, signal_name: str, index: int):
         '''
         Unblock the callback at the given index for the signal.
         '''
         if signal_name in self._signals and 0 <= index < len(self._signals[signal_name]):
-            self._signals[signal_name][index].blocked = False
+            self._signals[signal_name][index][0].blocked = False

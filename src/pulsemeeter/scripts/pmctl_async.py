@@ -3,6 +3,8 @@ import logging
 import pulsectl
 import pulsectl_asyncio
 
+from pulsemeeter.model.types import PulseEvent
+
 LOG = logging.getLogger('generic')
 # PULSE = pulsectl.Pulse('pmctl')
 
@@ -390,8 +392,20 @@ async def get_primary(device_type: str):
         return await pulse.source_default_get()
 
 
+def decode_event(event: pulsectl.PulseEventInfo) -> tuple[str, str, int]:
+    '''
+    Receives a PulseEventInfo and returns the str version of .t and .facility
+    Returns:
+        tuple[str, str, int]: facility, event type and object index respectively
+    '''
+    facility = getattr(event.facility, '_value', None)
+    event_type = getattr(event.t, '_value', None)
+    device_index = event.index
+
+    return facility, event_type, device_index
+
+
 async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30):
-    # print(name, device_type, stream_index)
     if device_type == 'sink':
         name += '.monitor'
     else:
@@ -405,8 +419,8 @@ async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30
 async def pulse_listener():
     async with pulsectl_asyncio.PulseAsync('pulsemeeter-listener') as pulse:
         async for event in pulse.subscribe_events('sink', 'source', 'sink_input', 'source_output', 'server'):
-            # print(event)
-            yield event
+            pm_event = PulseEvent(type=event.t._value, facility=event.facility._value, index=event.index)
+            yield pm_event
 
 
 async def runcmd(command: str, split_size: int = -1) -> int:

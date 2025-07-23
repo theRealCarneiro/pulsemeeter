@@ -1,26 +1,26 @@
 # from typing import Literal
-from pydantic import validator, root_validator
-from pulsemeeter.model.config_model import ConfigModel
+# from pydantic import validator, root_validator
+# from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.schemas.typing import Volume
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.model.app_model import AppModel
 
 
-class AppManagerModel(SignalModel):
+class AppController(SignalModel):
     '''
     '''
-    sink_input: dict[int, AppModel]
-    source_output: dict[int, AppModel]
-    config_model: ConfigModel
+    # sink_input: dict[int, AppModel]
+    # source_output: dict[int, AppModel]
+    # config_model: ConfigModel
 
-    @root_validator(pre=True)
-    def load_app_list(cls, values):
-        for app_type in ('sink_input', 'source_output'):
-            # print(cls.list_apps(app_type))
-            values[app_type] = cls.list_apps(app_type)
-
-        return values
+    # @root_validator(pre=True)
+    # def load_app_list(cls, values):
+    #     for app_type in ('sink_input', 'source_output'):
+    #         # print(cls.list_apps(app_type))
+    #         values[app_type] = cls.list_apps(app_type)
+    #
+    #     return values
 
     def set_volume(self, app_type, app_index, val: Volume):
         pmctl.app_volume(app_type, app_index, val)

@@ -1,12 +1,12 @@
 from itertools import product
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 # from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.signal_model import SignalModel
 # from pulsemeeter.model.device_model import DeviceModel
 
 
-class ConnectionModel(SignalModel):
+class ConnectionModel(BaseModel):
     nick: str  # output nick
     # output_type: str
     # output_id: str

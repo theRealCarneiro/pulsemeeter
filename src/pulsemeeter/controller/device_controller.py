@@ -1,47 +1,57 @@
 import sys
 import logging
-from typing import Literal
-from collections import defaultdict
 
 from pydantic import PrivateAttr
 from pulsemeeter.scripts import pmctl
-from pulsemeeter.scripts import pmctl_async
 from pulsemeeter.schemas.typing import PaDeviceType
 from pulsemeeter.model.device_model import DeviceModel
-from pulsemeeter.model.app_model import AppModel
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.model.connection_model import ConnectionModel
+from pulsemeeter.repository.device_repository import DeviceRepository
 
 LOG = logging.getLogger("generic")
 
 
-class DeviceManagerModel(SignalModel):
+class DeviceController(SignalModel):
+    '''
+    DeviceController manages device operations and emits signals for UI and other components.
 
-    vi: dict[str, DeviceModel] = {}
-    b: dict[str, DeviceModel] = {}
-    hi: dict[str, DeviceModel] = {}
-    a: dict[str, DeviceModel] = {}
-    _device_cache: dict[str, object] = PrivateAttr(default_factory=lambda: {'sink': {}, 'source': {}})
+    Signals:
+        device_new(device_type: str, device_id: str, device: DeviceModel):
+            Emitted when a new device is created.
+        device_remove(device_type: str, device_id: str):
+            Emitted when a device is removed.
+        device_change(device_type: str, device_id: str, device: DeviceModel):
+            Emitted when a device's configuration changes.
+        connect(input_type: str, input_id: str, output_type: str, output_id: str, state: bool):
+            Emitted when a connection between devices is changed.
 
-    def model_post_init(self, _):
+    Attributes:
+        device_repository (DeviceRepository): The repository managing device data.
+    '''
+
+    device_repository: DeviceRepository
+
+    def __init__(self, device_repository: DeviceRepository, noinit=False):
         '''
-        Initialize the device manager model, check for pipewire-pulse, create and connect devices, and cache them.
+        Initialize the device manager model, check for pmctl, create and connect devices, and cache them.
         '''
+        super().__init__()
+
+        self.device_repository = device_repository
         if pmctl.is_pulse():
-            LOG.error('ERROR: pipewire-pulse not detected, pipewire-pulse is required')
+            LOG.error('ERROR: pmctl not detected, pmctl-pulse is required')
             sys.exit(1)
 
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):
-            for device_id in self.__dict__[device_type]:
+            for device_id in self.device_repository.get_devices_by_type(device_type):
                 self.init_device(device_type, device_id, cache=False)
 
         # now we connect the input devices
         for device_type in ('vi', 'hi'):
-            for device_id in self.__dict__[device_type]:
+            for device_id in self.device_repository.get_devices_by_type(device_type):
                 self.reconnect(device_type, device_id)
-
-        self.cache_devices()
 
     def init_device(self, device_type, device_id, cache=True):
         '''
@@ -51,12 +61,12 @@ class DeviceManagerModel(SignalModel):
             device_id (str): Device identifier.
             cache (bool): Whether to cache the device.
         '''
-        device = self.__dict__[device_type][device_id]
+        device = self.device_repository.get_device(device_type, device_id)
         if device_type in ('vi', 'b') and not device.external and not pmctl.device_exists(device.name):
             pmctl.create_device(device.device_type, device.name, device.channels, device.channel_list)
 
-        if cache:
-            self.append_device_cache(device_type, device_id, device)
+        # if cache:
+        #     self.append_device_cache(device_type, device_id, device)
 
     def bulk_connect(self, device_type, device_id, state):
         '''
@@ -66,7 +76,7 @@ class DeviceManagerModel(SignalModel):
             device_id (str): Device identifier.
             state (bool): Connection state.
         '''
-        device = self.__dict__[device_type][device_id]
+        device = self.device_repository.get_device(device_type, device_id)
         if device_type in ('hi', 'vi'):
             for output_type, connection_list in device.connections.items():
                 for output_id in connection_list:
@@ -74,7 +84,7 @@ class DeviceManagerModel(SignalModel):
             return
 
         for input_type in ('hi', 'vi'):
-            for input_id in self.__dict__[input_type]:
+            for input_id in self.device_repository.get_devices_by_type(input_type):
                 self.set_connection(input_type, input_id, device_type, device_id, state, soft=True)
 
     def reconnect(self, device_type: str, device_id: str):
@@ -84,7 +94,7 @@ class DeviceManagerModel(SignalModel):
             device_type (str): Type of device.
             device_id (str): Device identifier.
         '''
-        device = self.__dict__[device_type][device_id]
+        device = self.device_repository.get_device(device_type, device_id)
 
         if device_type in ('hi', 'vi'):
             for output_type, connection_list in device.connections.items():
@@ -96,7 +106,8 @@ class DeviceManagerModel(SignalModel):
             return
 
         for input_type in ('hi', 'vi'):
-            for input_id, input_device in self.__dict__[input_type].items():
+            input_dict = self.device_repository.get_devices_by_type(input_type)
+            for input_id, input_device in input_dict.items():
                 connection = input_device.connections[device_type][device_id]
                 self.set_connection(input_type, input_id, device_type, device_id, connection.state, soft=True)
 
@@ -108,8 +119,7 @@ class DeviceManagerModel(SignalModel):
             device_type (str): Type of device.
             device_id (str): Device identifier.
         '''
-        device = self.__dict__[device_type][device_id]
-        DeviceModel(**device_schema)
+        device = self.device_repository.get_device(device_type, device_id)
 
         self.bulk_connect(device_type, device_id, False)
 
@@ -117,7 +127,7 @@ class DeviceManagerModel(SignalModel):
             pmctl.remove_device(device.name)
 
         # update values
-        device.update_device_settings(device_schema)
+        self.device_repository.update_device(device_type, device_id, device_schema)
 
         # change connection settings
         if device_type in ('vi', 'hi'):
@@ -138,9 +148,10 @@ class DeviceManagerModel(SignalModel):
         '''
         Removes all pulse devices from pulse.
         '''
-        for _, device_list in self.__dict__.items():
+        device_dict = self.device_repository.get_all_devices()
+        for _, device_list in device_dict.items():
             for _, device in device_list.items():
-                if device.device_class == 'virtual':
+                if device.device_class == 'virtual' and not device.external:
                     pmctl.remove_device(device.name)
 
     def set_volume(self, device_type, device_id, volume: int):
@@ -151,7 +162,7 @@ class DeviceManagerModel(SignalModel):
             device_id (str): Device identifier.
             volume (int): Volume value.
         '''
-        device = self.__dict__[device_type][device_id]
+        device = self.device_repository.get_device(device_type, device_id)
         device.set_volume(volume, emit=False)
         pmctl.set_volume(device.device_type, device.name, volume)
 
@@ -163,7 +174,7 @@ class DeviceManagerModel(SignalModel):
             device_id (str): Device identifier.
             state (bool): Mute state.
         '''
-        device = self.__dict__[device_type][device_id]
+        device = self.device_repository.get_device(device_type, device_id)
         if state is None:
             state = not device.mute
 
@@ -177,7 +188,7 @@ class DeviceManagerModel(SignalModel):
             device_type (str): Type of device.
             device_id (str): Device identifier.
         '''
-        device = self.__dict__[device_type][device_id]
+        device = self.device_repository.get_device(device_type, device_id)
         if device.primary is True:
             return
 
@@ -192,7 +203,7 @@ class DeviceManagerModel(SignalModel):
         Args:
             device_type (str): Type of device.
         '''
-        for _, device in self.__dict__[device_type].items():
+        for _, device in self.device_repository.get_devices_by_type(device_type).items():
             device.set_primary(False, emit=False)
 
     def set_connection(self, input_type, input_id, output_type, output_id, state: bool = None, soft=False):
@@ -206,8 +217,8 @@ class DeviceManagerModel(SignalModel):
             state (bool, optional): Connection state. If None, toggles state.
             soft (bool): If True, do not save to config.
         '''
-        input_device = self.__dict__[input_type][input_id]
-        output_device = self.__dict__[output_type][output_id]
+        input_device = self.device_repository.get_device(input_type, input_id)
+        output_device = self.device_repository.get_device(output_type, output_id)
         connection_model = input_device.connections[output_type][output_id]
 
         if state is None:
@@ -234,7 +245,7 @@ class DeviceManagerModel(SignalModel):
             output_id (str): Output device identifier.
             connection_model: New connection model.
         '''
-        input_device = self.__dict__[input_type][input_id]
+        input_device = self.device_repository.get_device(input_type, input_id)
         cur_connection_model = input_device.connections[output_type][output_id]
         state = connection_model.state
 
@@ -245,46 +256,19 @@ class DeviceManagerModel(SignalModel):
 
         self.set_connection(input_type, input_id, output_type, output_id, state)
 
-    def get_device(self, device_type: str, device_id: str):
-        '''
-        Get a device by its id.
-        Args:
-            device_type (str): Type of device.
-            device_id (str): Device identifier.
-        Returns:
-            DeviceModel: The device object.
-        '''
-        return self.__dict__[device_type][device_id]
-
-    def find_device(self, device_class, name):
-        '''
-        Find a device by class and name.
-        Args:
-            device_class (str): Device class ('sink', 'source', etc.).
-            name (str): Device name.
-        Returns:
-            Tuple of (device_type, device_id, device) or (None, None, None) if not found.
-        '''
-        for device_type in ('a', 'vi') if device_class == 'sink' else ('b', 'hi'):
-            for device_id, device in self.__dict__[device_type].items():
-                if device.name == name:
-                    return device_type, device_id, device
-
-        return None, None, None
-
-    def get_primary(self, device_type: str):
-        '''
-        Get the primary device from device_type.
-        Args:
-            device_type (str): Type of device ('sink' or 'source').
-        Returns:
-            DeviceModel or None.
-        '''
-        for _, device in self.vi.items() if device_type == 'sink' else self.b.items():
-            if device.primary is True:
-                return device
-
-        return None
+    # def get_primary(self, device_type: str):
+    #     '''
+    #     Get the primary device from device_type.
+    #     Args:
+    #         device_type (str): Type of device ('sink' or 'source').
+    #     Returns:
+    #         DeviceModel or None.
+    #     '''
+    #     for _, device in self.vi.items() if device_type == 'sink' else self.b.items():
+    #         if device.primary is True:
+    #             return device
+    #
+    #     return None
 
     def create_connection(self, input_device, output_device):
         '''
@@ -310,9 +294,9 @@ class DeviceManagerModel(SignalModel):
             output_type (str): Output device type.
             output_id (str): Output device identifier.
         '''
-        output_device = self.__dict__[output_type][output_id]
+        output_device = self.device_repository.get_device(output_type, output_id)
         for input_type in ('vi', 'hi'):
-            for _, input_device in self.__dict__[input_type].items():
+            for _, input_device in self.device_repository.get_devices_by_type(input_type).items():
                 connection_model = input_device.connections[output_type][output_id]
                 connection_model.nick = output_device.nick
                 connection_model.reload_settings(output_sel_channels=output_device.selected_channels)
@@ -324,9 +308,9 @@ class DeviceManagerModel(SignalModel):
             input_type (str): Input device type.
             input_id (str): Input device identifier.
         '''
-        input_device = self.__dict__[input_type][input_id]
+        input_device = self.device_repository.get_device(input_type, input_id)
         for output_type in input_device.connections:
-            for output_id in self.__dict__[output_type]:
+            for output_id in self.device_repository.get_devices_by_type(output_type):
                 connection_model = input_device.connections[output_type][output_id]
                 connection_model.reload_settings(input_sel_channels=input_device.selected_channels)
 
@@ -339,7 +323,7 @@ class DeviceManagerModel(SignalModel):
             output_device (DeviceModel): Output device object.
         '''
         for input_type in ('vi', 'hi'):
-            for _, input_device in self.__dict__[input_type].items():
+            for _, input_device in self.device_repository.get_devices_by_type(input_type).items():
                 connection_model = self.create_connection(input_device, output_device)
                 input_device.create_connection(output_type, output_id, connection_model)
 
@@ -350,7 +334,7 @@ class DeviceManagerModel(SignalModel):
             input_device (DeviceModel): The new input device.
         '''
         for output_type in input_device.connections:
-            for output_id, output_device in self.__dict__[output_type].items():
+            for output_id, output_device in self.device_repository.get_devices_by_type(output_type).items():
                 connection_model = self.create_connection(input_device, output_device)
                 input_device.create_connection(output_type, output_id, connection_model)
 
@@ -362,21 +346,17 @@ class DeviceManagerModel(SignalModel):
         Returns:
             Tuple of (device_type, device_id, device).
         '''
-        device = DeviceModel(**device_dict)
-        device_type = device.get_type()
-        device_dicts = self.__dict__[device_type]
-        device_id = max(device_dicts, key=int, default='0')
-        device_id = str(int(device_id) + 1)
+        device_type, device_id, device = self.device_repository.create_device(device_dict)
         if device_type in ('vi', 'hi'):
             self.handle_new_input(device)
         else:
             self.handle_new_output(device_type, device_id, device)
-        device_dicts[device_id] = device
+
         self.init_device(device_type, device_id)
         self.emit('device_new', device_type, device_id, device)
         return device_type, device_id, device
 
-    def remove_device(self, device_type: str, device_index: str, cache=True):
+    def remove_device(self, device_type: str, device_id: str, cache=True):
         '''
         Remove a device from config.
         Args:
@@ -387,24 +367,24 @@ class DeviceManagerModel(SignalModel):
             DeviceModel: The removed device object.
         '''
         if device_type in ('a', 'hi'):
-            self.bulk_connect(device_type, device_index, False)
+            self.bulk_connect(device_type, device_id, False)
 
-        device = self.__dict__[device_type].pop(device_index)
+        device = self.device_repository.remove_device(device_type, device_id)
 
         # remove connection dict from input devices
         if device.get_type() in ('a', 'b'):
             for input_type in ('vi', 'hi'):
-                for _, input_device in self.__dict__[input_type].items():
-                    input_device.connections[device_type].pop(device_index)
+                for input_device in self.device_repository.get_devices_by_type(input_type).values():
+                    input_device.connections[device_type].pop(device_id)
 
         # remove device from cache
-        if cache:
-            self.pop_device_cache(device_type, device_index, device)
+        # if cache:
+        #     self.pop_device_cache(device_type, device_id, device)
 
         if device.device_class == 'virtual':
             pmctl.remove_device(device.name)
 
-        self.emit('device_remove', device_type, device_index)
+        self.emit('device_remove', device_type, device_id)
         return device
 
     @classmethod
@@ -435,7 +415,7 @@ class DeviceManagerModel(SignalModel):
         '''
         dvl = []
         device_type = 'vi' if pa_device_type == 'sink' else 'b'
-        for _, device in self.__dict__[device_type].items():
+        for _, device in self.device_repository.get_devices_by_type(device_type).items():
 
             name = device.name
             if monitor is True:
@@ -456,7 +436,7 @@ class DeviceManagerModel(SignalModel):
         '''
         dvl = []
         device_type = 'vi' if pa_device_type == 'sink' else 'b'
-        for _, device in self.__dict__[device_type].items():
+        for _, device in self.device_repository.get_devices_by_type(device_type).items():
 
             nick = device.nick
             if monitor is True:
@@ -465,179 +445,3 @@ class DeviceManagerModel(SignalModel):
             dvl.append((nick, device.name))
 
         return dvl
-
-    def append_device_cache(self, device_type, device_id, device):
-        '''
-        Add a device to the internal cache.
-        Args:
-            device_type (str): Type of device.
-            device_id (str): Device identifier.
-            device (DeviceModel): Device object.
-        '''
-        pa_device = pmctl.get_device_by_name(device.device_type, device.name)
-        if pa_device is None:
-            return
-
-        if pa_device.index not in self._device_cache[device.device_type]:
-            self._device_cache[device.device_type][pa_device.index] = []
-
-        self._device_cache[device.device_type][pa_device.index].append((device_type, device_id))
-
-    def pop_device_cache(self, device_type, device_id, device):
-        '''
-        Remove a device from the internal cache.
-        Args:
-            device_type (str): Type of device.
-            device_id (str): Device identifier.
-            device (DeviceModel): Device object.
-        '''
-        pa_device = pmctl.get_device_by_name(device.device_type, device.name)
-        if pa_device is None or pa_device.index not in self._device_cache[device.device_type]:
-            return
-
-        self._device_cache[device.device_type][pa_device.index].remove((device_type, device_id))
-
-        # del index from cache if list is empty
-        if not self._device_cache[device.device_type][pa_device.index]:
-            del self._device_cache[device.device_type][pa_device.index]
-
-    def cache_devices(self):
-        '''
-        Rebuild the internal device cache from current devices.
-        '''
-        self._device_cache = {'sink': {}, 'source': {}}
-        for device_type in ('hi', 'vi', 'a', 'b'):
-            for device_id, device in self.__dict__[device_type].items():
-                self.append_device_cache(device_type, device_id, device)
-
-    async def handle_app_new_event(self, event, app_type):
-        '''
-        Handle a new application event.
-        Args:
-            event: The event object.
-            app_type (str): Application type.
-        '''
-        app = await pmctl_async.get_app_by_id(event.facility, event.index)
-        if app is not None:
-            app_model = AppModel.pa_to_app_model(app, app_type)
-            self.emit('pa_app_new', app_type, event.index, app_model)
-
-    async def handle_app_remove_event(self, event, app_type):
-        '''
-        Handle an application removal event.
-        Args:
-            event: The event object.
-            app_type (str): Application type.
-        '''
-        self.emit('pa_app_remove', app_type, event.index)
-
-    async def handle_app_change_event(self, event, app_type):
-        '''
-        Handle an application change event.
-        Args:
-            event: The event object.
-            app_type (str): Application type.
-        '''
-        app = await pmctl_async.get_app_by_id(event.facility, event.index)
-        if app is not None:
-            self.emit('pa_app_change', app_type, event.index, app)
-
-    async def handle_device_change_event(self, event):
-        '''
-        Handle a device change event.
-        Args:
-            event: The event object.
-        '''
-        facility = 'source' if event.facility == 'source' else 'sink'
-        if event.index not in self._device_cache[facility]:
-            return
-
-        pulsectl_device = await pmctl_async.get_device_by_id(event.facility, event.index)
-        for device_type, device_id in self._device_cache[event.facility][event.index]:
-            device_model = self.__dict__[device_type][device_id]
-
-            if not device_model.update_from_pa(pulsectl_device):
-                continue
-
-            self.emit('pa_device_change', device_type, device_id, device_model)
-
-    async def handle_server_change_event(self, event):
-        '''
-        Handle a server change event.
-        Args:
-            event: The event object.
-        '''
-        for pa_device_type in ('sink', 'source'):
-            primary = await pmctl_async.get_primary(pa_device_type)
-            pm_primary = self.get_primary(pa_device_type)
-
-            if pm_primary is not None:
-
-                # if nothing changed just ignore it
-                if pm_primary.name == primary.name:
-                    continue
-
-                # unset primary
-                pm_primary.primary = False
-
-            # if the primary is not a pm device, emit None
-            if primary.index not in self._device_cache[pa_device_type]:
-                device_type = 'vi' if pa_device_type == 'sink' else 'b'
-                self.emit('pa_primary_change', device_type, None)
-                continue
-
-            # if its a pm device, set model as primary
-            device_type, device_id = self._device_cache[pa_device_type][primary.index][0]
-            self.__dict__[device_type][device_id].primary = True
-            self.emit('pa_primary_change', device_type, device_id)
-            return
-
-    async def handle_app_event(self, event):
-        '''
-        Handle an application event (new, change, remove).
-        Args:
-            event: The event object.
-        '''
-        app_type = 'sink_input' if event.facility == 'sink_input' else 'source_output'
-        if event.t == 'change':
-            await self.handle_app_change_event(event, app_type)
-
-        if event.t == 'new':
-            await self.handle_app_new_event(event, app_type)
-
-        if event.t == ('remove'):
-            await self.handle_app_remove_event(event, app_type)
-
-    async def handle_device_event(self, event):
-        '''
-        Handle a device event (change).
-        Args:
-            event: The event object.
-        '''
-        if event.t == 'change':
-            await self.handle_device_change_event(event)
-
-    async def handle_server_event(self, event):
-        '''
-        Handle a server event (change).
-        Args:
-            event: The event object.
-        '''
-        if event.t == 'change':
-            await self.handle_server_change_event(event)
-
-    async def event_listen(self):
-        '''
-        Listen for and handle events from pmctl_async.pulse_listener().
-        '''
-        async for event in pmctl_async.pulse_listener():
-            if event.facility in ('sink_input', 'source_output'):
-                await self.handle_app_event(event)
-
-            # volume and mute events
-            if event.facility in ('sink', 'source'):
-                await self.handle_device_event(event)
-
-            # primary changes
-            if event.facility == 'server':
-                await self.handle_server_event(event)

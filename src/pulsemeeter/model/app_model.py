@@ -1,11 +1,11 @@
 from typing import Literal
-from pydantic import validator
+from pydantic import validator, BaseModel
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.schemas.typing import Volume
 from pulsemeeter.model.signal_model import SignalModel
 
 
-class AppModel(SignalModel):
+class AppModel(BaseModel):
     '''
     Model for sink_inputs and source_outputs
         "index" is the app index in pulse
@@ -18,7 +18,7 @@ class AppModel(SignalModel):
     index: int
     label: str
     icon: str | None
-    volume: Volume
+    volume: int
     mute: bool
     device: str
 

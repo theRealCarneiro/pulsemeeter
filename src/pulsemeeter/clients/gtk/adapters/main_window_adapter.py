@@ -18,7 +18,7 @@ class MainWindowAdapter(GObject.GObject):
 
     __gsignals__ = {
         "device_new": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
-        "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT, str, str)),
         "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
     }
 
@@ -26,17 +26,19 @@ class MainWindowAdapter(GObject.GObject):
         super().__init__()
         self.set_title("Pulsemeeter")
         for device_type in ('hi', 'vi', 'a', 'b'):
-            self.device_box[device_type].connect('create_pressed', self.create_pressed)
-            # self.device_box[device_type].connect('remove_pressed', self.remove_pressed)
-            self.device_box[device_type].connect('add_device_pressed', self.add_device_pressed)
+            box = self.device_box[device_type]
+            box.connect('create_pressed', self.create_pressed)
+            # box.connect('remove_pressed', self.remove_pressed)
+            box.connect('add_device_pressed', self.add_device_pressed)
 
-        self.settings_widget.connect('settings_change', self.save_settings)
+        # self.settings_widget.connect('settings_change', self.save_settings)
 
     def save_settings(self, _, config_schema):
         self.emit('settings_change', config_schema)
 
     def add_device_pressed(self, _, device_type):
-        self.emit('add_device_pressed', device_type)
+        box = self.device_box[device_type]
+        self.emit('add_device_pressed', None, box.popover, device_type, None)
 
     # def remove_pressed(self, _, device_type, device_id):
         # self.emit('device_remove', device_type, device_id)

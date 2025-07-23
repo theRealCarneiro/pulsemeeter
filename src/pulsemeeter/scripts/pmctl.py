@@ -442,6 +442,33 @@ def is_pulse() -> bool:
     return shutil.which('pulseaudio') is not None
 
 
+def decode_event(event: pulsectl.PulseEventInfo) -> tuple[str, str, int]:
+    '''
+    Receives a PulseEventInfo and returns the str version of .t and .facility
+    Returns:
+        tuple[str, str, int]: facility, event type and object index respectively
+    '''
+    return str_facility(event.facility), str_event_type(event.t), event.index
+
+
+def str_facility(facility: pulsectl.PulseEventFacilityEnum) -> str:
+    '''
+    Receives a PulseEventFacilityEnum and returns the str version
+    Returns:
+        str: The str name of the facility e.g. sink
+    '''
+    return getattr(facility, '_value', None)
+
+
+def str_event_type(event_type: pulsectl.PulseEventFacilityEnum) -> str:
+    '''
+    Receives a PulseEventFacilityEnum and returns the str version
+    Returns:
+        str: The str name of the facility e.g. sink
+    '''
+    return getattr(event_type, '_value', None)
+
+
 def run_command(command: list[str], split: bool = False) -> tuple[int, str, str]:
     """
     Run a shell command and return (returncode, stdout, stderr).

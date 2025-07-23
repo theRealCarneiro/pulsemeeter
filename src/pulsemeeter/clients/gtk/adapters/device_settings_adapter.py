@@ -148,7 +148,6 @@ class DeviceSettingsAdapter(GObject.GObject):
             'device_type': device_type,
             'device_class': device_class
         }
-        print(data)
 
         return data
 

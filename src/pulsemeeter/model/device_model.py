@@ -13,13 +13,12 @@ from pulsemeeter.model.signal_model import SignalModel
 LOG = logging.getLogger("generic")
 
 
-class DeviceModel(SignalModel):
+class DeviceModel(BaseModel):
     '''
     Child class of DeviceModel, implements pmctl calls
     '''
     name: str
     nick: str
-    # id: str
     description: str
     device_type: PaDeviceType
     device_class: DeviceClass
@@ -30,7 +29,6 @@ class DeviceModel(SignalModel):
     primary: bool | None
     channels: int
     channel_list: list[str]
-    # connections: ConnectionManagerModel = {'a': {}, 'b': {}}
     connections: dict[str, dict[str, ConnectionModel]] = {'a': {}, 'b': {}}
     selected_channels: list[bool] | None
     # plugins: list[PluginSchema] = []
@@ -175,8 +173,8 @@ class DeviceModel(SignalModel):
 
         self.mute = state
         # pmctl.mute(self.device_type, self.name, state)
-        if emit is True:
-            self.propagate('mute', self.mute)
+        # if emit is True:
+        #     self.propagate('mute', self.mute)
 
     def set_volume(self, val: int, emit: bool = True):
         '''
@@ -199,8 +197,8 @@ class DeviceModel(SignalModel):
         self.volume = val
 
         # pmctl.set_volume(self.device_type, self.name, val[0])
-        if emit is True:
-            self.propagate('volume', self.volume[0])
+        # if emit is True:
+        #     self.propagate('volume', self.volume[0])
 
     def set_primary(self, state: bool = True, emit: bool = True):
         '''
@@ -209,15 +207,15 @@ class DeviceModel(SignalModel):
         self.primary = state
         device_type = self.get_type()
         # pmctl.set_primary(device_type, self.name)
-        if emit is True:
-            self.emit('primary', device_type, self.name)
+        # if emit is True:
+        #     self.emit('primary', device_type, self.name)
 
     def create_connection(self, device_type, device_id, connection_model):
         # the new device can only be a or b, and this device can only be hi or vi
         if self.get_type() in ('a', 'b') or device_type in ('hi', 'vi'):
             return
 
-        connection_model.connect('connection', self.set_connection, device_type, device_id)
+        # connection_model.connect('connection', self.set_connection, device_type, device_id)
         self.connections[device_type][device_id] = connection_model
 
     def set_connection(self, output_type: str, output_id: str, state: bool = None, emit: bool = True):
@@ -237,8 +235,8 @@ class DeviceModel(SignalModel):
         # pmctl is here on connection model (or should i put it here? hmm)
         connection_model.set_connect(state)
 
-        if emit is True:
-            self.emit('connection', output_type, output_id, state)
+        # if emit is True:
+        #     self.emit('connection', output_type, output_id, state)
 
         # pmctl.connect(self.input_name, self.output_name, state, port_map=self.str_port_map())
 

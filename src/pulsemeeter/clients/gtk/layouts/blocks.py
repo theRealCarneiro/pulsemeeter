@@ -20,20 +20,20 @@ class MainWindow(Gtk.Window, MainWindowAdapter):
 
     __gsignals__ = {
         "device_new": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
-        "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT, str, str)),
         "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
     }
 
-    def __init__(self, application, config_model):
+    def __init__(self, application):
         Gtk.Window.__init__(self, application=application)
         self.device_grid = Gtk.Grid()
 
-        self.settings_widget = SettingsMenuBox(config_model)
+        # self.settings_widget = SettingsMenuBox(config_model)
         self.settings_button = IconButton('open-menu-symbolic')
 
         self.settings_popover = Gtk.Popover(margin=10)
         self.settings_popover.set_modal(False)
-        self.settings_popover.add(self.settings_widget)
+        # self.settings_popover.add(self.settings_widget)
         self.settings_popover.set_relative_to(self.settings_button)
 
         self.device_box = {}
