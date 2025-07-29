@@ -37,7 +37,7 @@ class ConfigPersistence:
 
         LOG.debug("Writing config")
         with open(self.config_file, 'w', encoding='utf-8') as outfile:
-            json.dump(self.get_config().model_dump(), outfile, indent='\t', separators=(',', ': '))
+            json.dump(self.get_config().dict(), outfile, indent='\t', separators=(',', ': '))
 
     def get_config(self):
         return self._config
