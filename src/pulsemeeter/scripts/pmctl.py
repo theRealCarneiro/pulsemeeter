@@ -404,7 +404,7 @@ def app_by_id(index: int, app_type: str) -> PulseSinkInputInfo | PulseSourceOutp
     app_info = PULSE.sink_input_info if app_type == 'sink_input' else PULSE.source_output_info
     app = app_info(index)
     device_type = 'sink' if app_type == 'sink_input' else 'source'
-    device = get_device_by_name(device_type, app.sink)
+    device = get_device_by_index(device_type, app.sink)
     app.device_name = device.name
     return app
 
