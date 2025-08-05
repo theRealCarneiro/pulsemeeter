@@ -1,8 +1,10 @@
+import time
 import asyncio
 import logging
 import pulsectl
 import threading
 import traceback
+import concurrent
 from pydantic import PrivateAttr
 
 from pulsemeeter.scripts import pmctl_async
@@ -54,9 +56,12 @@ class EventController(SignalModel):
 
     def _handle_listen_error(self, fut):
         try:
-            fut.result()
+            fut.result(timeout=1)
 
         except asyncio.CancelledError:
+            LOG.debug("Listen task canceled")
+
+        except concurrent.futures._base.CancelledError:
             LOG.debug("Listen task canceled")
 
         except Exception as e:
@@ -75,7 +80,9 @@ class EventController(SignalModel):
         return future
 
     def stop_listen(self):
+        """Stop the listen task from a different thread"""
         self.listen_task.cancel()
+        time.sleep(0.001)
 
     async def event_listen(self):
         '''
@@ -94,7 +101,8 @@ class EventController(SignalModel):
         async for event in pmctl_async.pulse_listener():
             pm_facility = self._facility_map.get(event.facility)
             handler = _pa_event_map.get((pm_facility, event.type))
-            await handler(event)
+            if handler:
+                await handler(event)
 
     async def _handle_app_new_event(self, event: pulsectl.PulseEventInfo):
         '''
@@ -177,7 +185,7 @@ class EventController(SignalModel):
 
                 pm_primary.set_primary(False, emit=False)
 
-            search_list = self.device_repository.find_device_by_key('name', primary.name, pm_device_type)
+            search_list = self.device_repository.find_device_by_key('name', primary.name, [pm_device_type])
 
             # if the primary is not a pm device, emit None
             if not search_list:
