@@ -103,17 +103,17 @@ class GtkClient(Gtk.Application):
     def on_window_destroy(self, _):
         self.block_event_controller_events()
 
-    def create_indicator(self):
-        '''
-        Create and configure the system tray indicator.
-        Returns:
-            Tray: The created tray indicator instance.
-        '''
-        indicator = Tray(self)  # Pass the application instance
-        indicator.set_active(self.config_model.tray)
-        indicator.connect('quit', self.tray_exit)
-        indicator.connect('create_window', self.tray_show)
-        return indicator
+    # def create_indicator(self):
+    #     '''
+    #     Create and configure the system tray indicator.
+    #     Returns:
+    #         Tray: The created tray indicator instance.
+    #     '''
+    #     indicator = Tray(self)  # Pass the application instance
+    #     indicator.set_active(self.config_model.tray)
+    #     indicator.connect('quit', self.tray_exit)
+    #     indicator.connect('create_window', self.tray_show)
+    #     return indicator
 
     def tray_exit(self, _):
         '''
