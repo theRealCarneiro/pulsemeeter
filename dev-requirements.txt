@@ -3,4 +3,5 @@ setuptools
 pylint
 pylint-pydantic
 flake8
+autopep8
 python-lsp-server
