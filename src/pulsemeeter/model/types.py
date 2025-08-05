@@ -1,7 +1,21 @@
+import gettext
+
 from enum import Enum
 from dataclasses import dataclass
 
 from pydantic import Field
+
+_ = gettext.gettext
+
+
+DEVICE_TYPE_PRETTY = {
+    'hi': _('Hardware Inputs'),
+    'vi': _('Virtual Inputs'),
+    'a': _('Hardware Outputs'),
+    'b': _('Virtual Outputs'),
+    'sink_input': _('Application Outputs'),
+    'source_output': _('Application Inputs')
+}
 
 
 class PulseEventType(Enum):
