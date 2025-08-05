@@ -5,7 +5,7 @@ import gettext
 import os
 
 
-VERSION = '2.0.0-beta.5'
+VERSION = '2.0.0-beta.6'
 APP_NAME = "pulsemeeter"
 
 # config settings
