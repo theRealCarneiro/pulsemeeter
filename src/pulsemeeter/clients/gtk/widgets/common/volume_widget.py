@@ -1,41 +1,55 @@
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib  # noqa: E402
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
 class VolumeWidget(Gtk.Scale):
 
-    adjustment: Gtk.Adjustment
-    blocked: bool = False
-    is_pressed: bool = False
-    scroll_lock_timeout = None
+    __gsignals__ = {
+        'volume': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (int,)),
+    }
 
-    def __init__(self, value: int = 100):
+    def __init__(self, value: int = 100, *args, **kwargs):
+        self.blocked: bool = False
+        self.is_pressed: bool = False
+        self.scroll_lock_timeout = None
+        self._signal_handler_id = None
 
-        self.adjustment = Gtk.Adjustment(
-            value=value,
-            lower=0,
-            upper=153,
-            step_increment=1,
-            page_increment=10
-        )
+        super().__init__(*args, **kwargs)
 
-        super().__init__(
-            hexpand=True,
-            adjustment=self.adjustment,
-            round_digits=0,
-            digits=0,
-            width_request=100
-        )
-
+        self.set_range(0, 153)
+        self.set_increments(1, 10)
+        self.set_digits(0)
+        self.set_value(value)
         self.add_mark(100, Gtk.PositionType.TOP, '')
-        self.connect("scroll-event", self.on_scroll_event)
-        self.connect('button-press-event', self.set_blocked, True)
-        self.connect('button-release-event', self.set_blocked, False)
 
-    def on_scroll_event(self, widget, _):
+        # GTK 4: Use gesture controllers instead of event signals
+        self._setup_gesture_controllers()
+        self._signal_handler_id = self.connect('value-changed', self._on_value_changed)
+
+    def _setup_gesture_controllers(self):
+        '''Setup gesture controllers for GTK 4 event handling'''
+        # Scroll controller
+        scroll_controller = Gtk.EventControllerScroll()
+        scroll_controller.connect('scroll', self._on_scroll_event)
+        self.add_controller(scroll_controller)
+
+        # Click controller for press/release events
+        gesture = Gtk.GestureClick()
+
+        # Search for scale internal click controller
+        controllers = self.observe_controllers()
+        for controller in controllers:
+            if isinstance(controller, gi.repository.Gtk.GestureClick):
+                gesture = controller
+
+        gesture.set_button(0)
+        gesture.connect('pressed', self._on_button_press)
+        gesture.connect('released', self._on_button_release)
+
+    def _on_scroll_event(self, controller, dx, dy):
         if self.is_pressed is True:
             return True
 
@@ -45,18 +59,39 @@ class VolumeWidget(Gtk.Scale):
         if self.scroll_lock_timeout is not None:
             GLib.source_remove(self.scroll_lock_timeout)
 
-        self.scroll_lock_timeout = GLib.timeout_add(100, self.clear_scroll_lock)
+        self.scroll_lock_timeout = GLib.timeout_add(100, self._clear_scroll_lock)
 
         # process the other events regularly
         return False
 
-    def clear_scroll_lock(self):
+    def _on_button_press(self, *_):
+        # print('BUTTON LOCKED: ', True)
+        self.blocked = True
+        print("block")
+        self.is_pressed = True
+
+    def _on_button_release(self, *_):
+        # print('BUTTON LOCKED: ', False)
+        print("unblock")
+        self.blocked = False
+        self.is_pressed = False
+
+    def _clear_scroll_lock(self):
         # print('Scroll locked: ', False)
         self.blocked = False
         self.scroll_lock_timeout = None
         return False
 
-    def set_blocked(self, widget, _, state: bool):
-        # print('BUTTON LOCKED: ', state)
-        self.blocked = state
-        self.is_pressed = state
+    def _on_value_changed(self, widget):
+        self.emit('volume', widget.get_value())
+
+    def set_volume(self, value):
+        if self.blocked is True:
+            return
+
+        self.handler_block(self._signal_handler_id)
+        self.set_value(value)
+        self.handler_unblock(self._signal_handler_id)
+
+    def get_volume(self):
+        return self.get_value()

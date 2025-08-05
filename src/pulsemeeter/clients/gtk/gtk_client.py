@@ -7,7 +7,7 @@ import logging
 from pulsemeeter.settings import CONFIG_FILE
 from pulsemeeter.model.config_model import ConfigModel
 
-from pulsemeeter.clients.gtk.widgets.common.indicator import Tray
+# from pulsemeeter.clients.gtk.widgets.indicator import Tray
 # from pulsemeeter.settings import STYLE_FILE
 
 from pulsemeeter.utils.config_persistence import ConfigPersistence
@@ -19,9 +19,9 @@ from pulsemeeter.controller.event_controller import EventController
 
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-gi_require_version('AyatanaAppIndicator3', '0.1')
-from gi.repository import Gtk, AyatanaAppIndicator3  # noqa: E402
+gi_require_version('Gtk', '4.0')
+# gi_require_version('AyatanaAppIndicator3', '0.1')
+from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
@@ -78,10 +78,9 @@ class GtkClient(Gtk.Application):
             self.hold()
 
         self.window = self.gtk_controller.create_window(self)
-        self.indicator = self.create_indicator()
-        self.window.show_all()
+        # self.indicator = self.create_indicator()
         self.window.present()
-        self.window.connect('destroy', self.on_window_destroy)
+        # self.window.connect('close-request', self.on_window_destroy)
 
         self.connect_gtk_controller_events()
         self.connect_device_controller_events()
@@ -99,6 +98,7 @@ class GtkClient(Gtk.Application):
             self.device_controller.cleanup()
 
         self.config_persistence.save()
+        self.event_controller.stop_listen()
 
     def on_window_destroy(self, _):
         self.block_event_controller_events()
@@ -109,7 +109,7 @@ class GtkClient(Gtk.Application):
         Returns:
             Tray: The created tray indicator instance.
         '''
-        indicator = Tray()
+        indicator = Tray(self)  # Pass the application instance
         indicator.set_active(self.config_model.tray)
         indicator.connect('quit', self.tray_exit)
         indicator.connect('create_window', self.tray_show)
@@ -132,9 +132,8 @@ class GtkClient(Gtk.Application):
         '''
         self.window = self.gtk_controller.create_window(self)
         self.window.present()
-        self.window.show_all()
         self.unblock_event_controller_events()
-        self.window.connect('destroy', self.on_window_destroy)
+        self.window.connect('close-request', self.on_window_destroy)
 
     def connect_gtk_controller_events(self):
         signal_map = {

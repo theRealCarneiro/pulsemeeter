@@ -1,23 +1,24 @@
 import gettext
 
 # from pulsemeeter.model.device_model import DeviceModel
-from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
-from pulsemeeter.clients.gtk.widgets.device.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
+# from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
+# from pulsemeeter.clients.gtk.widgets.device.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
 
-from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
+# from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
 
-from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
+# from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
+from pulsemeeter.clients.gtk.widgets.utils.widget_box import WidgetBox
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
 
 
-class DeviceBoxWidget(Gtk.Frame):
+class DeviceBoxWidget(WidgetBox):
 
     device_type: str
     devices: dict[str, DeviceWidget] = {}
@@ -39,7 +40,7 @@ class DeviceBoxWidget(Gtk.Frame):
     }
 
     def __init__(self, device_type):
-        super().__init__(margin=5)
+        super().__init__()
 
         # set attributes
         self.device_type = device_type
@@ -47,7 +48,7 @@ class DeviceBoxWidget(Gtk.Frame):
 
         # Create label
         device_type_string = self.device_label[device_type]
-        title = Gtk.Label(device_type_string, margin=10)
+        # title = Gtk.Label(device_type_string, margin=10)
 
         add_button = IconButton('list-add-symbolic')
         add_button.set_tooltip_text(_("Create new %s device") % device_type_string)
@@ -78,16 +79,6 @@ class DeviceBoxWidget(Gtk.Frame):
 
         # self.load_devices(devices_schema)
 
-    def insert_widget(self, device_widget, device_id: str):
-        self.device_box.pack_start(device_widget, False, False, 0)
-        self.devices[device_id] = device_widget
-        # device_widget.connect('remove_pressed', self.remove_pressed, device_id)
-
-    def remove_widget(self, device_id: str):
-        device_widget = self.devices.pop(device_id)
-        device_widget.destroy()
-        return device_widget
-
     def open_popover(self, _):
         '''
             Opens create device popover when clicking on the new device button
@@ -98,10 +89,6 @@ class DeviceBoxWidget(Gtk.Frame):
         self.popover.show_all()
         self.popover.popup()
         self.popover.nick_widget.input.grab_focus()
-
-    # def remove_pressed(self, _, device_type, device_id):
-        # print(device_type, device_id)
-        # self.emit('remove_pressed', device_type, device_id)
 
     def create_pressed(self, _):
         schema = self.popover.to_schema()

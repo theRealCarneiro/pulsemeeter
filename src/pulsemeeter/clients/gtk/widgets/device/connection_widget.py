@@ -1,32 +1,40 @@
-import gettext
-from pulsemeeter.schemas.device_schema import ConnectionSchema
-from pulsemeeter.clients.gtk.widgets.device.edit_connection_widget import ConnectionSettingsPopup
+from pulsemeeter.clients.gtk.widgets.popovers.edit_connection_widget import ConnectionSettingsPopup
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk  # noqa: E402
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
-
-_ = gettext.gettext
 
 
 class ConnectionWidget(Gtk.ToggleButton):
 
-    def __init__(self, connection_schema: ConnectionSchema, output_type: str, output_id: str):
-        super().__init__(label=connection_schema.nick, active=connection_schema.state)
-        self.get_accessible().set_name(connection_schema.nick)
-        self.schema = connection_schema
-        self.output_type = output_type
-        self.output_id = output_id
+    __gsignals__ = {
+        'connection': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (bool,)),
+        'settings_pressed': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
+    }
+
+    def __init__(self, label: str, connection_schema, *args, **kwargs):
+        super().__init__(label=label, active=connection_schema.state, *args, **kwargs)
+        self._signal_handler_id = self.connect('toggled', self._on_toggled)
+        gesture = Gtk.GestureClick.new()
+        gesture.set_button(3)
+        gesture.connect("pressed", self._on_pressed)
         self.popover = ConnectionSettingsPopup(connection_schema)
-        self.popover.set_relative_to(self)
-        self.connect('button-press-event', self.edit_settings_popover)
+        self.popover.set_parent(self)
+        self.add_controller(gesture)
 
-    def edit_settings_popover(self, _, event):
-        if event.type != Gdk.EventType.BUTTON_PRESS or event.button != 3:
-            return
+    def _on_toggled(self, widget):
+        self.emit('connection', widget.get_active())
 
-        self.popover.show_all()
+    def _on_pressed(self, _, __, ___, ____):
         self.popover.popup()
+        self.emit('settings_pressed')
 
+    def set_connection(self, state):
+        self.handler_block(self._signal_handler_id)
+        self.set_active(state)
+        self.handler_unblock(self._signal_handler_id)
+
+    def get_connection(self):
+        return self.get_active()

@@ -1,13 +1,13 @@
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, Gio  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
 class IconWidget(Gtk.Image):
 
-    def __init__(self, icon_name: str):
+    def __init__(self, icon_name: str, *args, **kwargs):
         icon = Gio.ThemedIcon(name=icon_name)
-        super().__init__(margin_left=10, halign=Gtk.Align.START)
-        super().set_from_gicon(icon, Gtk.IconSize.MENU)
+        super().__init__(*args, **kwargs)
+        super().set_from_gicon(icon)

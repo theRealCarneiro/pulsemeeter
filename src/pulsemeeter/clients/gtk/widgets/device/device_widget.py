@@ -1,104 +1,174 @@
 import gettext
 
-# from pulsemeeter.clients.gtk.widgets.common
+from pulsemeeter.model import device_model
 from pulsemeeter.model.device_model import DeviceModel
+from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
+
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
 from pulsemeeter.clients.gtk.widgets.common.default_widget import DefaultWidget
 from pulsemeeter.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
-from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
+from pulsemeeter.clients.gtk.widgets.utils.widget_box import WidgetBox
+from pulsemeeter.clients.gtk.widgets.device.connection_widget import ConnectionWidget
+#from pulsemeeter.clients.gtk.widgets.containers.connection_box_widget import ConnectionBoxWidget
+# from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
+from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import DeviceSettingsPopover
 
-# from pulsemeeter.clients.gtk.widgets.device.connection_widget import ConnectionWidget
-from pulsemeeter.clients.gtk.widgets.device.connection_box_widget import ConnectionBoxWidget
-from pulsemeeter.clients.gtk.widgets.device.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
-# from pulsemeeter.clients.gtk.widgets.common.create_device_widget import CreateDevice
+# from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
+# from pulsemeeter.clients.gtk.adapters.connection_box_adapter import ConnectionBoxAdapter
 
-from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget
-
-from pulsemeeter.clients.gtk.adapters.device_adapter import DeviceAdapter
+#from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject  # noqa: E402
+gi.require_version('Gtk', '4.0')
+from gi.repository import GObject, Gtk, Pango  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
 
 
-class DeviceWidget(Gtk.Frame, DeviceAdapter):
+class DeviceWidget(Gtk.Frame):
 
     __gsignals__ = {
-        "mute": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
-        "primary": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
-        "volume": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        "device_remove": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
-        "device_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
-        "connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
-        "update_connection": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT)),
-        "settings_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
+        'mute': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
+        'primary': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
+        'volume': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
+        'device_remove': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
+        'device_change': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
+        'connection': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
+        'update_connection': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT)),
+        'settings_pressed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
+        'connection_settings_pressed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str))
     }
 
-    def __init__(self, model: DeviceModel):
-        Gtk.Frame.__init__(self)
-        self.get_style_context().add_class("device-frame")
-
+    def __init__(self, model: DeviceModel, layout_style='bars'):
+        super().__init__()
+        self.get_style_context().add_class('device-frame')
         self.handlers = {}
-        self.model = model
-        device_type = model.get_type()
+        self.device_model = model
+        self._create_widgets(model)
+        self._connect_callbacks()
 
-        # create containers
-        main_grid = Gtk.Grid(margin=5, hexpand=True)
-        info_grid = Gtk.Grid(margin_start=5, hexpand=True)
-        control_grid = Gtk.Grid(hexpand=True)
-        # self.connection_box = {}
-        if device_type in ('vi', 'hi'):
-            self.connections_widget = ConnectionBoxWidget(device_type, model.connections)
-
-        self.edit_button = IconButton('document-edit-symbolic')
-        self.edit_button.set_halign(Gtk.Align.END)
-
-        # self.edit_device_widget = CreateDevice(device_type, device_list)
-        self.name_widget = NameWidget(model.nick, model.description)
-        self.volume_widget = VolumeWidget(model.volume[0])
-        self.mute_widget = MuteWidget(state=model.mute)
+    def _create_widgets(self, model):
+        # self.name_widget = NameWidget(model.nick, model.description)
+        self.nick_label = Gtk.Label()
+        self.nick_label.set_markup(f'<b>{self.device_model.nick}</b>')
+        self.description_label = Gtk.Label(label=self.device_model.description)
+        self.description_label.set_visible(self.device_model.nick != self.device_model.description)
+        self.name_label = Gtk.Label(label=self.device_model.name)
+        self.volume_widget = VolumeWidget(value=model.volume[0], draw_value=True)
+        self.mute_widget = MuteWidget(active=model.mute)
         self.vumeter_widget = VumeterWidget()
+        # self.edit_button = IconButton('document-edit-symbolic')
+        self.edit_button = Gtk.MenuButton()
+        self.edit_button.set_label('Settings Menu')
+        self.edit_button.set_icon_name('open-menu-symbolic')
+        self.edit_button.set_tooltip_text('Click to open settings menu')
+        # popup_type = HardwareDevicePopup if model.device_class == 'hardware' else VirtualDevicePopup
+        self.popover = DeviceSettingsPopover(model.get_type(), edit=True)
+        self.edit_button.set_popover(self.popover)
+        # self.popover.set_relative_to(self.edit_button)
 
         # if model.primary is not None:
-        self.primary_widget = DefaultWidget(state=model.primary)
+        self.primary_widget = DefaultWidget(active=model.primary)
+        self.connections_widgets = {}
 
-        # atatch widgets to containers
-        info_grid.attach(self.name_widget, 0, 0, 1, 1)
-        info_grid.attach(Gtk.HBox(hexpand=True, halign=Gtk.Align.FILL), 2, 0, 1, 1)
-        info_grid.attach(self.edit_button, 2, 0, 1, 1)
-        control_grid.attach(self.volume_widget, 0, 0, 1, 1)
-        control_grid.attach(self.vumeter_widget, 0, 1, 1, 1)
-        control_grid.attach(self.mute_widget, 1, 0, 1, 1)
-        main_grid.attach(info_grid, 0, 0, 1, 1)
-        main_grid.attach(control_grid, 0, 1, 1, 1)
+        if model.get_type() in ('vi', 'hi'):
+            self.connections_widgets = {'a': WidgetBox(), 'b': WidgetBox()}
+            self._create_connection_widgets()
+            # for output_type in ('a', 'b'):
+            #     for output_id, connection_schema in self.device_model.connections[output_type].items():
+            #         button = ConnectionWidget(connection_schema.nick, connection_schema)
+            #         self.connections_widgets[output_type].add_widget(output_id, button)
+            #         button.connect('connect', self._on_connection_change, output_type, output_id)
+            #         button.connect('settings_pressed', self._on_connection_edit_pressed, output_type, output_id)
 
-        if device_type in ('vi', 'hi'):
-            main_grid.attach(self.connections_widget, 0, 2, 1, 1)
+        # accessible_name = f'{model.nick} {model.description}'
+        # self.get_accessible().set_name(accessible_name)
+        # self.nick_label.set_can_focus(True)
+        # self.volume_widget.get_accessible().set_name(_('Volume'))
+        # self.mute_widget.get_accessible().set_name(_('Mute'))
+        # self.edit_button.get_accessible().set_name(_('Edit'))
+        # self.primary_widget.get_accessible().set_name(_('Primary'))
 
-        # get what popup should be used
-        popup_type = HardwareDevicePopup if model.device_class == 'hardware' else VirtualDevicePopup
-        self.popover = popup_type(self.model.get_type(), device_model=model)
-        self.popover.set_relative_to(self.edit_button)
+    def fill_settings(self):
+        self.volume_widget.set_volume(self.device_model.volume[0])
+        self.mute_widget.set_mute(self.device_model.mute)
+        self.nick_label.set_label(self.device_model.nick)
+        self.description_label.set_label(self.device_model.description)
+        self.description_label.set_visible(self.device_model.nick != self.device_model.description)
 
-        self.add(main_grid)
+    def reload_connection_widgets(self):
+        self.connections_widgets['a'].clear()
+        self.connections_widgets['b'].clear()
+        self._create_connection_widgets()
 
-        if model.primary is not None:
-            control_grid.attach(self.primary_widget, 2, 0, 1, 1)
+    def _create_connection_widgets(self):
+        for output_type in ('a', 'b'):
+            for output_id, connection_schema in self.device_model.connections[output_type].items():
+                button = ConnectionWidget(connection_schema.nick, connection_schema)
+                self.connections_widgets[output_type].add_widget(output_id, button)
+                button.connect('connection', self._on_connection_change, output_type, output_id)
+                button.connect('settings_pressed', self._on_connection_edit_pressed, output_type, output_id)
+                button.popover.confirm_button.connect('clicked', self._on_connection_settings_save, output_type, output_id)
 
-        # self.set_can_focus(True)
-        self.name_widget.set_can_focus(True)
-        accessible_name = self.name_widget.get_full_name()
-        self.get_accessible().set_name(accessible_name)
+    def _connect_callbacks(self):
+        self.volume_widget.connect('volume', self._on_volume_change)
+        self.mute_widget.connect('mute', self._on_mute_change)
+        self.primary_widget.connect('primary', self._on_primary_change)
+        self.popover.confirm_button.connect('clicked', self._on_settings_save)
+        self.popover.remove_button.connect('clicked', self._on_device_remove)
 
-        self.volume_widget.get_accessible().set_name(_("Volume"))
-        self.mute_widget.get_accessible().set_name(_("Mute"))
-        self.edit_button.get_accessible().set_name(_("Edit"))
-        self.primary_widget.get_accessible().set_name(_("Primary"))
+        gesture = Gtk.GestureClick.new()
+        gesture.connect("pressed", self._on_edit_pressed)
+        self.edit_button.add_controller(gesture)
 
-        super().__init__(model=model)
-        self.show_all()
+    def _on_device_remove(self, _):
+        self.emit('device_remove')
+
+    def _on_volume_change(self, _, value):
+        self.emit('volume', value)
+
+    def _on_connection_change(self, _, state, output_type, output_id):
+        self.emit('connection', output_type, output_id, state)
+
+    def _on_mute_change(self, _, state):
+        self.emit('mute', state)
+
+    def _on_primary_change(self, _):
+        self.emit('primary')
+
+    def _on_connection_settings_save(self, _, output_type, output_id):
+        popover = self.connections_widgets[output_type].widgets[output_id].popover
+        schema = popover.get_connection_model()
+        self.emit('update_connection', output_type, output_id, schema)
+
+    def _on_settings_save(self, _):
+        schema = self.popover.to_schema()
+        if len(schema['nick'].strip()) != 0:
+            self.emit('device_change', schema)
+
+    def _on_edit_pressed(self, *_):
+        self.emit('settings_pressed', self.popover)
+
+    def _on_connection_edit_pressed(self, _, output_type, output_id):
+        self.emit('connection_settings_pressed', output_type, output_id)
+
+    def pa_device_change(self):
+        volume = self.device_model.volume[0]
+        mute = self.device_model.mute
+
+        if self.volume_widget.get_volume() != volume:
+            self.volume_widget.set_volume(volume)
+
+        if self.mute_widget.get_mute() != mute:
+            self.mute_widget.set_mute(mute)
+
+    # def edit_device_popover(self, _):
+    #     self.popover.show_all()
+    #     self.popover.fill_settings(self.device_model)
+    #     self.popover.popup()
+    #     device_type = self.device_model.get_type()
+    #     self.emit('settings_pressed', self.device_model, self.popover)
+    #     self.popover.nick_widget.input.grab_focus()

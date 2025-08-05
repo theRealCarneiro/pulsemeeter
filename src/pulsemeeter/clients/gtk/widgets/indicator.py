@@ -1,7 +1,7 @@
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-gi_require_version('AyatanaAppIndicator3', '0.1')
+gi_require_version('Gtk', '4.0')
+# gi_require_version('AyatanaAppIndicator3', '0.1')
 from gi.repository import Gtk, GObject, AyatanaAppIndicator3  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
@@ -49,7 +49,6 @@ class Tray(GObject.GObject):
         quit_item.connect('activate', self.quit_application)
         menu.append(quit_item)
 
-        menu.show_all()
         return menu
 
     def create_window(self, _):

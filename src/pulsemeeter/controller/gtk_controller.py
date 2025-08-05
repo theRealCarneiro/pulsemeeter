@@ -12,16 +12,17 @@ from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.app_model import AppModel
 
-from pulsemeeter.clients.gtk import layouts
+from pulsemeeter.clients.gtk.layouts import layout_manager
+# from pulsemeeter.clients.gtk import layouts
+from pulsemeeter.clients.gtk.widgets.content import Content
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget, AppCombobox
 # from pulsemeeter.settings import STYLE_FILE
 
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
-gi_require_version('Gtk', '3.0')
-gi_require_version('AyatanaAppIndicator3', '0.1')
-from gi.repository import Gtk, GLib, AyatanaAppIndicator3  # noqa: E402
+gi_require_version('Gtk', '4.0')
+from gi.repository import Gtk, Gio, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
@@ -79,18 +80,36 @@ class GtkController(SignalModel):
         self.vumeter_thread.start()
 
         self.window = None
+        self.content = None
         self.vumeter_tasks = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}, 'sink_input': {}, 'source_output': {}}
         self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
 
     def create_window(self, application):
-        layout = layouts.LAYOUTS[self.config_model.layout]
-        self.window = layout.MainWindow(application=application)
+        # layout = layouts.LAYOUTS[self.config_model.layout]
+        # self.window = layout.MainWindow(application=application)
+
+        self.create_content(self.config_model.layout)
+        self.window = Gtk.Window(title='Pulsemeeter', application=application)
+        self.window.set_child(self.content)
         self.connect_window_gtk_events()
 
         self.load_device_list()
         self.load_app_list()
         return self.window
+
+    def create_content(self, layout):
+        arrange_content = layout_manager.get_arrange_content(layout)
+        self.content = Content()
+        arrange_content(self.content)
+
+        # arrange_device_popover = layout_manager.get_arrange_device_settings(layout)
+        # for device_type in ('a', 'b', 'vi', 'hi'):
+        #     popover = self.content.create_device_button[device_type].get_popover()
+        #     arrange_device_popover(popover)
+
+        self.connect_content_gtk_events()
+        return self.content
 
     def create_device_widget(self, device_type, device_id, device_model, refresh=False):
         '''
@@ -98,8 +117,11 @@ class GtkController(SignalModel):
             "device_type" is [vi, hi, a, b]
             "device" is the device widget to insert in the box
         '''
+        arrange_device = layout_manager.get_arrange_device(self.config_model.layout)
         device_widget = DeviceWidget(device_model)
-        self.window.device_box[device_type].insert_widget(device_widget, device_id)
+        arrange_device(device_widget)
+        # arrange_device_settings(device_widget.popover)
+        self.content.device_box[device_type].add_widget(device_id, device_widget)
         self.connect_device_gtk_events(device_type, device_id, device_widget)
         self.append_app_combobox(device_model)
 
@@ -114,8 +136,9 @@ class GtkController(SignalModel):
             "device_type" is [vi, hi, a, b]
             "device" is the device widget to remove from the box
         '''
-        device_widget = self.window.device_box[device_type].remove_widget(device_id)
+        device_widget = self.content.device_box[device_type].remove_widget(device_id)
         self.pop_app_combobox(device_widget.device_model)
+        device_widget.run_dispose()
 
         if refresh:
             self.reload_connection_widgets()
@@ -123,8 +146,8 @@ class GtkController(SignalModel):
         return device_widget
 
     def change_device_widget(self, device_type, device_id, device_model):
-        device_widget = self.window.device_box[device_type].devices[device_id]
-        device_widget.device_update(device_model)
+        device_widget = self.content.device_box[device_type].widgets[device_id]
+        device_widget.fill_settings()
         self.reload_connection_widgets()
         self.append_app_combobox(device_model)
 
@@ -147,15 +170,17 @@ class GtkController(SignalModel):
         Reloads all connection widgets
         '''
         for device_type in ('hi', 'vi'):
-            for _, device in self.window.device_box[device_type].devices.items():
-                device.connections_widget.reload_connections()
+            for _, device in self.content.device_box[device_type].widgets.items():
+                device.reload_connection_widgets()
 
     def create_app_widget(self, app_type, app_index, app_model):
         '''
         Create a new app widget from a model, insert it and return it
         '''
+        arrange_app = layout_manager.get_arrange_app(self.config_model.layout)
         app_widget = AppWidget(app_model)
-        self.window.app_box[app_type].insert_widget(app_widget, app_index)
+        arrange_app(app_widget)
+        self.content.app_box[app_type].add_widget(app_index, app_widget)
         self.connect_app_gtk_events(app_type, app_index, app_widget)
         return app_widget
 
@@ -163,7 +188,9 @@ class GtkController(SignalModel):
         '''
         Remove app widget and return it
         '''
-        app_widget = self.window.app_box[app_type].remove_widget(app_index)
+        app_widget = self.content.app_box[app_type].remove_widget(app_index)
+        if app_widget:
+            app_widget.run_dispose()
         return app_widget
 
     def load_device_list(self):
@@ -236,12 +263,15 @@ class GtkController(SignalModel):
 
     def block_app_combobox_handlers(self, state):
         for app_type in ('sink_input', 'source_output'):
-            for app_index, app in self.window.app_box[app_type].apps.items():
+            for app_index, app in self.content.app_box[app_type].widgets.items():
                 handler = self.app_handlers[app_type][app_index]['app_device']
                 if state:
                     app.handler_block(handler)
                 else:
                     app.handler_unblock(handler)
+
+    def settings_menu_open(self, _):
+        self.content.settings_box.fill_settings(self.config_model)
 
     def settings_menu_apply(self, _, config_schema):
         self.config_model.vumeters = config_schema['vumeters']
@@ -255,10 +285,10 @@ class GtkController(SignalModel):
         '''
 
         signal_map = {
-            'add_device_pressed': self.add_device_hijack,
-            'device_new': self.device_new,
-            'settings_change': self.settings_menu_apply,
-            'destroy': self.on_window_destroy
+            # 'add_device_pressed': self.add_device_hijack,
+            # 'device_new': self.device_new,
+            # 'settings_change': self.settings_menu_apply,
+            'close-request': self.on_window_destroy
         }
 
         for signal_name, callback in signal_map.items():
@@ -279,6 +309,7 @@ class GtkController(SignalModel):
             'update_connection': self.update_connection,
             'destroy': self.on_device_widget_destroy,
             'settings_pressed': self.add_device_hijack,
+            'connection_settings_pressed': self.connection_settings_hijack,
         }
 
         device_handler = self.device_handlers[device_type][device_id] = {}
@@ -291,6 +322,20 @@ class GtkController(SignalModel):
             self.vumeter_tasks[device_type][device_id] = vumeter
 
         return device
+
+    def connect_content_gtk_events(self):
+        signal_map = {
+            'add_device_pressed': self.add_device_hijack,
+            'device_new': self.device_new,
+            'settings_pressed': self.settings_menu_open,
+            'settings_change': self.settings_menu_apply,
+        }
+
+        for signal_name, callback in signal_map.items():
+            self.content.connect(signal_name, callback)
+
+    # def connect_connection_gtk_events(self, input_type, input_id, output_type, output_id):
+    #     pass
 
     def connect_app_gtk_events(self, app_type: str, app_index: str, app: AppWidget):
         '''
@@ -312,26 +357,38 @@ class GtkController(SignalModel):
         # start vumeter
         stream_type = app_type.split('_')[0]
         if self.config_model.vumeters:
-            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter, app_index)
+            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter_widget, app_index)
             self.vumeter_tasks[app_type][app_index] = vumeter
 
         return app
 
-    def add_device_hijack(self, _, device_model, settings_widget, device_type, __):
+    def connection_settings_hijack(self, device_widget, output_type, output_id, input_type, input_id):
         '''
         Populates the device combobox every time the popup opens, so that the
         devices are always up to date
         '''
-        if device_type not in ('a', 'hi'):
-            return
+        input_model = self.device_repository.get_device(input_type, input_id)
+        output_model = self.device_repository.get_device(output_type, output_id)
+        # connection_model = input_model.connections[output_type][output_id]
+        button = device_widget.connections_widgets[output_type].get_widget(output_id)
+        button.popover.fill_settings()
+        button.popover.port_map_widget.clear_port_map()
+        button.popover.port_map_widget.create_routing_grid(input_model, output_model)
 
-        device_list = self.list_devices(device_type)
-        settings_widget.combobox_widget.empty()
-        settings_widget.device_list = device_list
-        settings_widget.combobox_widget.load_list(device_list, 'description')
+    def add_device_hijack(self, _, settings_widget, device_type, device_id):
+        '''
+        Populates the device combobox every time the popup opens, so that the
+        devices are always up to date
+        '''
 
-        if device_model is not None:
-            settings_widget.combobox_widget.set_active_name(device_model.description)
+        if device_type in ('a', 'hi'):
+            device_list = self.list_devices(device_type)
+            settings_widget.combobox_widget.empty()
+            settings_widget.combobox_widget.load_list(device_list, 'description')
+
+        if device_id:
+            device_model = self.device_repository.get_device(device_type, device_id)
+            settings_widget.fill_settings(device_model)
 
     def list_devices(self, device_type):
         '''
@@ -391,13 +448,13 @@ class GtkController(SignalModel):
         '''
         self.emit('mute', device_type, device_id, state)
 
-    def set_primary(self, _, state, device_type, device_id):
+    def set_primary(self, _, device_type, device_id):
         '''
         Set model primary
         '''
-        for target_id, target_device in self.window.device_box[device_type].devices.items():
+        for target_id, target_device in self.content.device_box[device_type].widgets.items():
             if target_id != device_id:
-                target_device.set_primary(False)
+                target_device.primary_widget.set_primary(False)
         self.emit('primary', device_type, device_id)
 
     def set_connection(self, _, output_type, output_id, state: bool, input_type, input_id):
@@ -458,7 +515,6 @@ class GtkController(SignalModel):
     def device_new_callback(self, device_type, device_id, device_model):
         def wrapper():
             device = self.create_device_widget(device_type, device_id, device_model, refresh=True)
-            device.show_all()
             return False
 
         GLib.idle_add(wrapper)
@@ -479,7 +535,7 @@ class GtkController(SignalModel):
 
     def pa_device_change_callback(self, device_type: str, device_id: str, device_model: DeviceModel):
         def wrapper():
-            device_widget = self.window.device_box[device_type].devices[device_id]
+            device_widget = self.content.device_box[device_type].widgets[device_id]
             device_widget.pa_device_change()
             return False
 
@@ -487,8 +543,8 @@ class GtkController(SignalModel):
 
     def pa_primary_change_callback(self, device_type: str, device_id: str):
         def wrapper():
-            for target_id, target_device in self.window.device_box[device_type].devices.items():
-                target_device.set_primary(target_id == device_id)
+            for target_id, target_device in self.content.device_box[device_type].widgets.items():
+                target_device.primary_widget.set_primary(target_id == device_id)
 
             return False
 
@@ -497,7 +553,6 @@ class GtkController(SignalModel):
     def app_new_callback(self, app_type: str, app_index: int, app_model: DeviceModel):
         def wrapper():
             app = self.create_app_widget(app_type, app_index, app_model)
-            app.show_all()
             return False
 
         GLib.idle_add(wrapper)
@@ -511,7 +566,7 @@ class GtkController(SignalModel):
 
     def app_change_callback(self, app_type: str, app_index: int, app: DeviceModel):
         def wrapper():
-            app_widget = self.window.app_box[app_type].apps.get(app_index)
+            app_widget = self.content.app_box[app_type].widgets.get(app_index)
             if app_widget:
                 app_widget.pa_app_change(app)
             return False
@@ -553,43 +608,43 @@ class GtkController(SignalModel):
         elif cmd == 'device_cycle':
             self.change_device_focus(arg)
         elif cmd == 'mute':
-            self.window.device_box[device_type].devices[device_id].mute_widget.clicked()
+            self.content.device_box[device_type].widgets[device_id].mute_widget.clicked()
         elif cmd == 'primary':
-            self.window.device_box[device_type].devices[device_id].primary_widget.clicked()
+            self.content.device_box[device_type].widgets[device_id].primary_widget.clicked()
         elif cmd == 'volume':
-            widget = self.window.device_box[device_type].devices[device_id].volume_widget
+            widget = self.content.device_box[device_type].widgets[device_id].volume_widget
             widget.set_value(widget.get_value() + arg)
         # elif cmd == 'connect':
 
     def get_current_kb_device_id(self):
         device_type = self.get_current_kb_device_type()
-        current_box = self.window.device_box[device_type]
-        device_len = len(current_box.devices)
+        current_box = self.content.device_box[device_type]
+        device_len = len(current_box.widgets)
 
         if device_len == 0:
             return None
 
-        current_device_key = list(current_box.devices)[self.current_device]
+        current_device_key = list(current_box.widgets)[self.current_device]
         return current_device_key
 
     def get_current_kb_device_type(self):
-        return list(self.window.device_box)[self.current_box]
+        return list(self.content.device_box)[self.current_box]
 
     def change_box_focus(self, factor):
         self.current_device = -1
         self.current_box = (self.current_box + factor - 4) % 4
-        self.window.device_box[self.get_current_kb_device_type()].focus_box()
+        self.content.device_box[self.get_current_kb_device_type()].focus_box()
 
     def change_device_focus(self, factor):
         device_type = self.get_current_kb_device_type()
-        current_box = self.window.device_box[device_type]
-        device_len = len(current_box.devices)
+        current_box = self.content.device_box[device_type]
+        device_len = len(current_box.widgets)
         self.current_device = (self.current_device + factor - device_len) % device_len
         self.focus_device(device_type)
 
     def focus_device(self, device_type):
-        current_box = self.window.device_box[device_type]
-        current_box.devices[self.get_current_kb_device_id()].edit_button.grab_focus()
+        current_box = self.content.device_box[device_type]
+        current_box.widgets[self.get_current_kb_device_id()].edit_button.grab_focus()
 
     #
     # # End BINDS

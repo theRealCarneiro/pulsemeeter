@@ -1,20 +1,30 @@
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio  # noqa: E402
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk, Gio, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
 class MuteWidget(Gtk.ToggleButton):
 
-    def __init__(self, state: bool):
+    __gsignals__ = {
+        'mute': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (bool,)),
+    }
+
+    def __init__(self, *args, **kwargs):
         icon = Gio.ThemedIcon(name='audio-volume-muted')
-        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
-        super().__init__(
-            active=state,
-            hexpand=False,
-            vexpand=False,
-            valign=Gtk.Align.CENTER,
-            halign=Gtk.Align.END,
-            image=image
-        )
+        image = Gtk.Image.new_from_gicon(icon)
+        super().__init__(*args, **kwargs)
+        self.set_child(image)
+        self._signal_handler_id = self.connect('toggled', self._on_toggled)
+
+    def _on_toggled(self, widget):
+        self.emit('mute', widget.get_active())
+
+    def set_mute(self, state):
+        self.handler_block(self._signal_handler_id)
+        self.set_active(state)
+        self.handler_unblock(self._signal_handler_id)
+
+    def get_mute(self):
+        return self.get_active()

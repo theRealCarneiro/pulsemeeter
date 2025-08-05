@@ -2,8 +2,8 @@ import gettext
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio  # noqa: E402
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk, Gio, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
@@ -11,25 +11,26 @@ _ = gettext.gettext
 
 class DefaultWidget(Gtk.ToggleButton):
 
-    def __init__(self, state: bool):
+    __gsignals__ = {
+        'primary': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
+    }
+
+    def __init__(self, *args, **kwargs):
         icon = Gio.ThemedIcon(name='emblem-default-symbolic')
-        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
-        super().__init__(
-            hexpand=False,
-            vexpand=False,
-            valign=Gtk.Align.CENTER,
-            image=image
-        )
+        image = Gtk.Image.new_from_gicon(icon)
+        super().__init__(*args, **kwargs)
 
-        if state is None:
-            state = False
-            self.set_visible(False)
-            # self.no_show_all(True)
+        self.set_child(image)
+        self._signal_handler_id = self.connect('toggled', self._on_toggled)
 
-        self.set_active(state)
-        # if state is True:
-        #     self.set_sensitive(False)
+    def _on_toggled(self, widget):
+        if widget.get_active():
+            self.emit('primary')
 
     def set_primary(self, state):
+        self.handler_block(self._signal_handler_id)
         self.set_active(state)
-        # self.set_sensitive(not state)
+        self.handler_unblock(self._signal_handler_id)
+
+    def get_primary(self):
+        self.get_active()
