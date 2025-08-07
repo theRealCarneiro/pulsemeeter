@@ -1,8 +1,12 @@
+import gettext
+
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 class VolumeWidget(Gtk.Scale):
@@ -25,7 +29,17 @@ class VolumeWidget(Gtk.Scale):
         self.set_value(value)
         self.add_mark(100, Gtk.PositionType.TOP, '')
 
-        # GTK 4: Use gesture controllers instead of event signals
+        Gtk.Accessible.update_property(
+            self,
+            [
+                Gtk.AccessibleProperty.LABEL
+            ],
+            [
+                _('Volume Slider')
+            ]
+        )
+        self.set_tooltip_text(_('Volume Slider'))
+
         self._setup_gesture_controllers()
         self._signal_handler_id = self.connect('value-changed', self._on_value_changed)
 

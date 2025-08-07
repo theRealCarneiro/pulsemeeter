@@ -2,7 +2,7 @@ import gettext
 import logging
 
 from pulsemeeter.model.app_model import AppModel
-from pulsemeeter.schemas.typing import AppType
+# from pulsemeeter.schemas.typing import AppType
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
@@ -34,8 +34,6 @@ class AppWidget(Gtk.Frame):
         self.app_model = app_model
         super().__init__()
 
-        # self.get_accessible().set_name(app_model.label)
-
         # self.from_model(app_model)
         self.app_type = app_model.app_type
         self.label = Gtk.Label()
@@ -48,12 +46,16 @@ class AppWidget(Gtk.Frame):
         self.handlers = {}
 
         self.combobox.set_active_device(app_model.device)
-        # GLib.idle_add(self.combobox.set_active_device, app_model.device)
 
-        # self.volume_widget.get_accessible().set_name(_("Volume"))
-        # self.mute_widget.get_accessible().set_name(_("Mute"))
-        # self.combobox.get_accessible().set_name(_("Select Device"))
-        self.combobox.set_tooltip_text(_('Select the app %s! device') % self.app_type.split("_")[1])
+        Gtk.Accessible.update_property(
+            self,
+            [
+                Gtk.AccessibleProperty.LABEL,
+            ],
+            [
+                app_model.label,
+            ]
+        )
 
         self.volume_widget.connect('volume', self._on_volume_change)
         self.mute_widget.connect('mute', self._on_mute_change)

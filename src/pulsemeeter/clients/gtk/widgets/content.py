@@ -1,5 +1,6 @@
 import gettext
 
+from pulsemeeter.model.types import DEVICE_TYPE_PRETTY
 from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
 from pulsemeeter.clients.gtk.widgets.utils.widget_box import WidgetBox
 from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import DeviceSettingsPopover
@@ -48,10 +49,37 @@ class Content(Gtk.Box):
             gesture = Gtk.GestureClick.new()
             gesture.connect("pressed", self._on_add_device_pressed, device_type)
             self.create_device_button[device_type].add_controller(gesture)
+            accessible_description = _('Create new %s') % DEVICE_TYPE_PRETTY[device_type][:-1]
+            self.create_device_button[device_type].set_tooltip_text(accessible_description)
+            Gtk.Accessible.update_property(
+                self.create_device_button[device_type],
+                [
+                    Gtk.AccessibleProperty.LABEL,
+                    Gtk.AccessibleProperty.DESCRIPTION,
+                    Gtk.AccessibleProperty.HAS_POPUP,
+                ],
+                [
+                    _('Create device'),
+                    accessible_description,
+                    True
+                ]
+            )
+        self.settings_button.set_tooltip_text(_('Open settings menu'))
+        Gtk.Accessible.update_property(
+            self.settings_button,
+            [
+                Gtk.AccessibleProperty.LABEL,
+                Gtk.AccessibleProperty.DESCRIPTION,
+                Gtk.AccessibleProperty.HAS_POPUP,
+            ],
+            [
+                _('Settings menu'),
+                _('Open settings menu'),
+                True
+            ]
+        )
 
         self.app_box = {'sink_input': WidgetBox(), 'source_output': WidgetBox()}
-        self.set_hexpand(True)
-        self.set_vexpand(True)
 
     def _on_device_create(self, _, popover):
         self.emit('device_new', popover.to_schema())

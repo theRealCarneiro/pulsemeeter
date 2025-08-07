@@ -1,3 +1,5 @@
+import gettext
+
 # from pulsemeeter.clients.gtk.adapters.app_combobox_adapter import AppComboboxAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -5,6 +7,8 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
+
+_ = gettext.gettext
 
 
 class AppCombobox(Gtk.ComboBox):
@@ -27,6 +31,18 @@ class AppCombobox(Gtk.ComboBox):
 
         self.pack_start(renderer, True)
         self.add_attribute(renderer, "text", 0)
+
+        accesible_description = _('Select the app %s! device') % app_type.split("_")[1] 
+        self.set_tooltip_text(accesible_description)
+        Gtk.Accessible.update_property(
+            self,
+            [
+                Gtk.AccessibleProperty.DESCRIPTION,
+            ],
+            [
+                accesible_description,
+            ]
+        )
 
     def set_active_device(self, device):
         device_list = self._device_list[self.app_type]

@@ -1,6 +1,7 @@
 import gettext
 
 from pulsemeeter.model import device_model
+from pulsemeeter.model.types import DEVICE_TYPE_PRETTY
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
 
@@ -10,14 +11,14 @@ from pulsemeeter.clients.gtk.widgets.common.default_widget import DefaultWidget
 from pulsemeeter.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
 from pulsemeeter.clients.gtk.widgets.utils.widget_box import WidgetBox
 from pulsemeeter.clients.gtk.widgets.device.connection_widget import ConnectionWidget
-#from pulsemeeter.clients.gtk.widgets.containers.connection_box_widget import ConnectionBoxWidget
+# from pulsemeeter.clients.gtk.widgets.containers.connection_box_widget import ConnectionBoxWidget
 # from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
 from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import DeviceSettingsPopover
 
 # from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
 # from pulsemeeter.clients.gtk.adapters.connection_box_adapter import ConnectionBoxAdapter
 
-#from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget
+# from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -77,20 +78,40 @@ class DeviceWidget(Gtk.Frame):
         if model.get_type() in ('vi', 'hi'):
             self.connections_widgets = {'a': WidgetBox(), 'b': WidgetBox()}
             self._create_connection_widgets()
-            # for output_type in ('a', 'b'):
-            #     for output_id, connection_schema in self.device_model.connections[output_type].items():
-            #         button = ConnectionWidget(connection_schema.nick, connection_schema)
-            #         self.connections_widgets[output_type].add_widget(output_id, button)
-            #         button.connect('connect', self._on_connection_change, output_type, output_id)
-            #         button.connect('settings_pressed', self._on_connection_edit_pressed, output_type, output_id)
 
-        # accessible_name = f'{model.nick} {model.description}'
-        # self.get_accessible().set_name(accessible_name)
-        # self.nick_label.set_can_focus(True)
-        # self.volume_widget.get_accessible().set_name(_('Volume'))
-        # self.mute_widget.get_accessible().set_name(_('Mute'))
-        # self.edit_button.get_accessible().set_name(_('Edit'))
-        # self.primary_widget.get_accessible().set_name(_('Primary'))
+        Gtk.Accessible.update_property(
+            self,
+            [
+                Gtk.AccessibleProperty.LABEL,
+            ],
+            [
+                self.get_accessible_name(),
+            ]
+        )
+
+        self.edit_button.set_tooltip_text(_('Open device settings'))
+        Gtk.Accessible.update_property(
+            self.edit_button,
+            [
+                Gtk.AccessibleProperty.LABEL,
+                Gtk.AccessibleProperty.DESCRIPTION,
+                Gtk.AccessibleProperty.HAS_POPUP,
+            ],
+            [
+                _('Device settings'),
+                _('Open device settings'),
+                True
+            ]
+        )
+
+        self.nick_label.set_can_focus(True)
+
+    def get_accessible_name(self):
+        accessible_name = self.device_model.nick
+        if self.device_model.nick != self.device_model.description:
+            accessible_name += f' {self.device_model.description}'
+
+        return accessible_name
 
     def fill_settings(self):
         self.volume_widget.set_volume(self.device_model.volume[0])
