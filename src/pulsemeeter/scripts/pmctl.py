@@ -422,9 +422,10 @@ def list_apps(app_type: str) -> list[PulseSinkInputInfo | PulseSourceOutputInfo]
 
     for app in full_app_list:
 
+        hasname = app.proplist.get('application.name', False)
         is_peak = '_peak' in app.proplist.get('application.name', '')
         is_pavucontrol = app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'
-        if is_peak or is_pavucontrol:
+        if is_peak or is_pavucontrol or not hasname:
             continue
 
         app.device_name = get_app_device(app_type, app).name
