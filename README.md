@@ -12,8 +12,8 @@ A frontend to ease the use of pulseaudio's routing capabilities, much like voice
 
 ### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\]
 
+![](https://github.com/user-attachments/assets/19e06982-6c91-4c13-97c0-8b3b8ab173c5)
 
-![](https://github.com/user-attachments/assets/34be577a-17ae-47ac-846a-b57928e9261c)
 <!--(This screenshot was taken while using ant dracula gtk theme, it will use your theme)-->
 
 # Features
