@@ -24,7 +24,7 @@ class VolumeWidget(Gtk.Scale):
         super().__init__(*args, **kwargs)
 
         self.set_range(0, 153)
-        self.set_increments(1, 10)
+        self.set_increments(1, 5)
         self.set_digits(0)
         self.set_value(value)
         self.add_mark(100, Gtk.PositionType.TOP, '')
