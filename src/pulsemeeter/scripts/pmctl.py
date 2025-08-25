@@ -114,7 +114,7 @@ def get_ports(port_type: str, device_name: str) -> list[str]:
         raise RuntimeError(f"Failed to get ports: {stderr}")
 
     ports = stdout.split()
-    if ports[0] == '':
+    if not ports or ports[0] == '':
         return []
 
     return ports
