@@ -1,0 +1,210 @@
+# Portuguese (Brazil) translations for pulsemeeter.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the pulsemeeter
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pulsemeeter 2.0.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-08-17 16:10-0300\n"
+"PO-Revision-Date: 2025-08-17 16:56-0300\n"
+"Last-Translator: \n"
+"Language-Team: pt_BR <LL@li.org>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.4.2\n"
+
+#: src/pulsemeeter/clients/cli/cli_client.py:41
+#, python-format
+msgid "Invalid device id: %s"
+msgstr "Identificação do dispositivo inválido %s"
+
+#: src/pulsemeeter/clients/gtk/layouts/content/tabbed.py:42
+msgid "Settings"
+msgstr "Configurações"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:52
+#, python-format
+msgid "Create new %s"
+msgstr "Criar novo %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:62
+msgid "Create device"
+msgstr "Criar dispositivo "
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:67
+#: src/pulsemeeter/clients/gtk/widgets/content.py:77
+msgid "Open settings menu"
+msgstr "Abrir menu de configurações"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:76
+msgid "Settings menu"
+msgstr "Menu de configurações"
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_box_widget.py:21
+#: src/pulsemeeter/model/types.py:16
+msgid "Application Outputs"
+msgstr "Saída de plicativo"
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_box_widget.py:22
+#: src/pulsemeeter/model/types.py:17
+msgid "Application Inputs"
+msgstr "Entrada de aplicativo"
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_combobox.py:35
+#, python-format
+msgid "Select the app %s! device"
+msgstr "Selecione o aplicativo %s! dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/combobox_widget.py:26
+#, python-format
+msgid "Select the %s"
+msgstr "Selecione o %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:25
+msgid "Primary"
+msgstr "Primário"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:34
+msgid "This device is primary"
+msgstr "Este dispositivo é o principal"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:36
+msgid "Set as primary device"
+msgstr "Definir como dispositivo principal"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/mute_widget.py:24
+msgid "Mute"
+msgstr "Silenciar"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/mute_widget.py:25
+msgid "Mute toggle"
+msgstr "Alternar a função silenciar"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/port_selector_widget.py:19
+msgid "Selected ports: "
+msgstr "Portas selecionadas:"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/port_selector_widget.py:37
+msgid "Toggle the port "
+msgstr "Alternar a porta"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/volume_widget.py:38
+#: src/pulsemeeter/clients/gtk/widgets/common/volume_widget.py:41
+msgid "Volume Slider"
+msgstr "Controle de volume"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:30
+#: src/pulsemeeter/model/types.py:12
+msgid "Hardware Inputs"
+msgstr "Entradas de hardware"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:31
+#: src/pulsemeeter/model/types.py:13
+msgid "Virtual Inputs"
+msgstr "Entradas virtuais"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:32
+#: src/pulsemeeter/model/types.py:14
+msgid "Hardware Outputs"
+msgstr "Saídas de hardware"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:33
+#: src/pulsemeeter/model/types.py:15
+msgid "Virtual Outputs"
+msgstr "Saídas virtuais"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:54
+#, python-format
+msgid "Create new %s device"
+msgstr "Criar novo %s dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:55
+#, python-format
+msgid "Create a %s device"
+msgstr "Criar o %s dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:32
+msgid "Enable VU Meters"
+msgstr "Habilitar medidores VU"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:33
+msgid "Enable Cleanup"
+msgstr "Habilitar limpeza"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:34
+msgid "Enable Tray"
+msgstr "Ativar bandeja "
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:35
+msgid "Layout"
+msgstr "Layout"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:45
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:30
+msgid "Apply"
+msgstr "Aplicar"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:46
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:47
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:48
+#, python-format
+msgid "Enable or disable %s"
+msgstr "Ativar ou desativar %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:47
+msgid "VU Meter (volume peak)"
+msgstr "Medidor VU (pico de volume)"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:49
+msgid "Select the GUI layout"
+msgstr "Selecione o layout da GUI (Interface gráfica do usuário)"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:34
+#, python-format
+msgid "Connect to %s, right click to open connection settings"
+msgstr "Conecte-se a %s, clique com o botão direito para abrir as configurações de conexão"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:92
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:102
+msgid "Open device settings"
+msgstr "Abra as configurações do dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:101
+msgid "Device settings"
+msgstr "Configurações do dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:31
+msgid "Nick: "
+msgstr "Apelido:"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
+msgid "Name: "
+msgstr "Nome:"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:33
+msgid "External"
+msgstr "Externo"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
+msgid "Device: "
+msgstr "Dispositivo:"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
+msgid "Channel Map: "
+msgstr "Mapa do canal:"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:28
+msgid "Auto ports"
+msgstr "Portas automáticas"
+
+#: src/pulsemeeter/clients/gtk/widgets/utils/input_widget.py:29
+#, python-format
+msgid "Enter the %s"
+msgstr "Insira o %s"
