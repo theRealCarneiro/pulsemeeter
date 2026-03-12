@@ -26,9 +26,9 @@ def get_arrange_device(layout_type: str):
         function: The arrangement function
     '''
     layout_functions = {
-        'blocks': arrange_device_blocks,
-        'bars': arrange_device_bars,
-        'tabbed': arrange_device_blocks,
+        'Blocks': arrange_device_blocks,
+        'Bars': arrange_device_bars,
+        'Tabbed': arrange_device_blocks,
     }
 
     if layout_type not in layout_functions:
@@ -48,9 +48,9 @@ def get_arrange_app(layout_type: str):
         function: The arrangement function
     '''
     layout_functions = {
-        'blocks': arrange_app_blocks,
-        'bars': arrange_app_bars,
-        'tabbed': arrange_app_blocks,
+        'Blocks': arrange_app_blocks,
+        'Bars': arrange_app_bars,
+        'Tabbed': arrange_app_blocks,
     }
 
     if layout_type not in layout_functions:
@@ -70,9 +70,9 @@ def get_arrange_content(layout_type: str):
         function: The arrangement function
     '''
     layout_functions = {
-        'blocks': arrange_content_blocks,
-        'bars': arrange_content_bars,
-        'tabbed': arrange_content_tabbed,
+        'Blocks': arrange_content_blocks,
+        'Bars': arrange_content_bars,
+        'Tabbed': arrange_content_tabbed,
     }
     if layout_type not in layout_functions:
         raise ValueError(f"Unsupported content layout type: {layout_type}")
@@ -80,7 +80,7 @@ def get_arrange_content(layout_type: str):
 
 
 def get_layout_list():
-    return ['blocks', 'bars', 'tabbed']
+    return ['Blocks', 'Bars', 'Tabbed']
 
 
 if __name__ == '__main__':
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     from pulsemeeter.clients.gtk.layouts.content import bars as layout
     from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 
-    content_layout = arrange_content('tabbed')
+    content_layout = arrange_content('Tabbed')
     content = Content()
     content_layout(content)
 

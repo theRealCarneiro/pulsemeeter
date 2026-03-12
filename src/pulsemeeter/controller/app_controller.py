@@ -31,6 +31,8 @@ class AppController(SignalModel):
         self.emit('app_mute', app_type, app_index, state)
 
     def change_device(self, app_type, app_index, device_name: str):
+        if not device_name:
+            device_name = pmctl.get_default_device_name(app_type)
         pmctl.move_app_device(app_type, app_index, device_name)
         self.emit('app_device_change', app_type, app_index, device_name)
 

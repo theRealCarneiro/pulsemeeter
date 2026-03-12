@@ -43,7 +43,7 @@ def arrange_widgets(content):
     Returns:
         Gtk.Grid: The grid container
     '''
-    grid = Gtk.Grid(margin_start=10, margin_end=10, margin_top=10, margin_bottom=10, hexpand=True, vexpand=True)
+    grid = Gtk.Grid(margin_start=10, margin_end=10, margin_top=10, margin_bottom=10, hexpand=True)
 
     for device_type in ('hi', 'vi', 'a', 'b'):
         content.device_box[device_type].set_properties(orientation=Gtk.Orientation.HORIZONTAL)
@@ -72,11 +72,16 @@ def arrange_widgets(content):
     content.settings_button.set_popover(settings_popover)
     content.settings_box.set_properties(margin_start=10, margin_end=10, margin_top=10, margin_bottom=10)
 
-    settings_box = Gtk.Box(halign=Gtk.Align.END, valign=Gtk.Align.START, vexpand=False)
+    settings_box = Gtk.Box(halign=Gtk.Align.END, valign=Gtk.Align.START, vexpand=False,
+                           margin_top=6, margin_end=6)
     settings_box.append(content.settings_button)
+
+    scrolled = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
+    scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+    scrolled.set_child(grid)
 
     mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     mainbox.append(settings_box)
-    mainbox.append(grid)
+    mainbox.append(scrolled)
 
     content.append(mainbox)

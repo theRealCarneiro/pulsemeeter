@@ -7,7 +7,7 @@ from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
 from pulsemeeter.clients.gtk.widgets.utils.icon_widget import IconWidget
-from pulsemeeter.clients.gtk.widgets.app.app_combobox import AppCombobox
+from pulsemeeter.clients.gtk.widgets.app.app_dropdown import AppDropDown
 # from pulsemeeter.clients.gtk.adapters.app_adapter import AppAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -40,7 +40,7 @@ class AppWidget(Gtk.Frame):
         self.label.set_markup(f'<b>{self.app_model.label}</b>')
         self.icon = IconWidget(app_model.icon)
         self.volume_widget = VolumeWidget(value=app_model.volume, draw_value=True)
-        self.combobox = AppCombobox(app_model.app_type)
+        self.combobox = AppDropDown(app_model.app_type)
         self.mute_widget = MuteWidget(active=app_model.mute)
         self.vumeter_widget = VumeterWidget()
         self.handlers = {}
@@ -59,7 +59,7 @@ class AppWidget(Gtk.Frame):
 
         self.volume_widget.connect('volume', self._on_volume_change)
         self.mute_widget.connect('mute', self._on_mute_change)
-        self.combobox.connect('changed', self._on_device_change)
+        self._combobox_handler_id = self.combobox.connect('changed', self._on_device_change)
 
     def _on_volume_change(self, _, value):
         self.emit('app_volume', value)
@@ -79,6 +79,6 @@ class AppWidget(Gtk.Frame):
         if self.combobox.get_active_text() == device_name:
             return
 
-        self.combobox.handler_block(self.handlers['app_device'])
+        self.combobox.handler_block(self._combobox_handler_id)
         self.combobox.set_active_device(device_name)
-        self.combobox.handler_unblock(self.handlers['app_device'])
+        self.combobox.handler_unblock(self._combobox_handler_id)

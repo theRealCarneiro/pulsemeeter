@@ -27,7 +27,7 @@ class Content(Gtk.Box):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.settings_button = Gtk.MenuButton(icon_name='open-menu-symbolic')
+        self.settings_button = Gtk.MenuButton(icon_name='emblem-system-symbolic')
         self.settings_box = SettingsMenuBox()
         # settings_popover = Gtk.Popover()
         # settings_popover.set_child(self.settings_box)

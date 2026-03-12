@@ -48,8 +48,12 @@ def arrange_widgets(content):
     tab_bar.set_size_request(-1, 50)
     # notebook.set_scrollable(True)
 
+    scrolled = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
+    scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scrolled.set_child(stack)
+
     main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
     main_box.append(tab_bar)  # or just switcher if you don’t need scrolling
-    main_box.append(stack)
+    main_box.append(scrolled)
 
     content.append(main_box)

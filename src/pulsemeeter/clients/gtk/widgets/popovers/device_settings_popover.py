@@ -5,7 +5,7 @@ from pulsemeeter.schemas import pulse_mappings
 # from pulsemeeter.schemas.device_schema import CHANNEL_MAPS, INVERSE_CHANNEL_MAPS
 from pulsemeeter.clients.gtk.widgets.utils.input_widget import InputWidget
 from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
-from pulsemeeter.clients.gtk.widgets.common.combobox_widget import LabeledCombobox
+from pulsemeeter.clients.gtk.widgets.common.dropdown_widget import LabeledDropDown
 from pulsemeeter.clients.gtk.widgets.common.port_selector_widget import PortSelector
 
 # from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
@@ -32,7 +32,8 @@ class DeviceSettingsPopover(Gtk.Popover):
         self.name_widget = InputWidget(_('Name: '))
         self.external_widget = Gtk.CheckButton(label=_('External'))
         self.port_selector = PortSelector()
-        self.combobox_widget = LabeledCombobox(_('Device: ') if device_type in ('a', 'hi') else _('Channel Map: '))
+        self.combobox_widget = LabeledDropDown(_('Device: ') if device_type in ('a', 'hi') else _('Channel Map: '))
+        self.combobox_widget.disable_dropdown_autohide()
         self.confirm_button = Gtk.Button(label='Apply')
         self.remove_button = IconButton('user-trash-symbolic')
         # self.confirm_button = IconButton('emblem-ok-symbolic')
@@ -41,7 +42,7 @@ class DeviceSettingsPopover(Gtk.Popover):
         if device_type in ('vi', 'b'):
             self.combobox_widget.load_list(list(pulse_mappings.CHANNEL_MAPS))
         else:
-            self.combobox_widget.combobox.connect('changed', self.device_combo_changed)
+            self.combobox_widget.connect('changed', self.device_combo_changed)
 
         self._arrange_widgets()
 
@@ -83,7 +84,7 @@ class DeviceSettingsPopover(Gtk.Popover):
             self.external_widget.set_active(device_model.external)
             self.combobox_widget.set_active_name(pulse_mappings.get_channel_map_name(device_model.channel_list))
 
-    def device_combo_changed(self, _):
+    def device_combo_changed(self, widget, active_text):
         device = self.combobox_widget.get_active_entry()
 
         self.port_selector.set_ports(device.channel_list)

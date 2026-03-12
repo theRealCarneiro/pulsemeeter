@@ -332,6 +332,20 @@ def app_volume(app_type: str, index: int, val: int) -> bool:
     return True
 
 
+def get_default_device_name(app_type: str) -> str:
+    '''
+    Get the default sink or source device name.
+    Args:
+        app_type (str): 'sink_input' or 'source_output'.
+    Returns:
+        str: The default device name.
+    '''
+    info = PULSE.server_info()
+    if app_type == 'sink_input':
+        return info.default_sink_name
+    return info.default_source_name
+
+
 def move_app_device(app_type: str, index: int, device_name: str) -> bool:
     '''
     Move an application stream to a different device.

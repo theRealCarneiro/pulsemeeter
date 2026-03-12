@@ -1,7 +1,7 @@
 import gettext
 
 # from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
-from pulsemeeter.clients.gtk.widgets.common.combobox_widget import LabeledCombobox
+from pulsemeeter.clients.gtk.widgets.common.dropdown_widget import LabeledDropDown
 # from pulsemeeter.clients.gtk import layouts
 from pulsemeeter.clients.gtk.layouts import layout_manager
 
@@ -19,7 +19,7 @@ class SettingsMenuBox(Gtk.Box):
     vumeters: Gtk.CheckButton
     cleanup: bool = False
     tray: bool = False
-    layout: str = 'blocks'
+    layout: str = 'Blocks'
 
     __gsignals__ = {
         "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
@@ -32,7 +32,7 @@ class SettingsMenuBox(Gtk.Box):
         self.vumeters = Gtk.CheckButton(label=_('Enable VU Meters'))
         self.cleanup = Gtk.CheckButton(label=_('Enable Cleanup'))
         self.tray = Gtk.CheckButton(label=_('Enable Tray'))
-        self.layout = LabeledCombobox(_('Layout'))
+        self.layout = LabeledDropDown(_('Layout '))
         # self.vumeters = Gtk.CheckButton(active=config_model.vumeters, label=_('Enable VU Meters'))
         # self.cleanup = Gtk.CheckButton(active=config_model.cleanup, label=_('Enable Cleanup'))
         # self.tray = Gtk.CheckButton(active=config_model.tray, label=_('Enable Tray'))
