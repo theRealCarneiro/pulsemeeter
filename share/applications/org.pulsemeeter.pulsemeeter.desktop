@@ -4,4 +4,5 @@ Name=Pulsemeeter
 GenericName=Audio Mixer
 Icon=Pulsemeeter
 Exec=pulsemeeter
+StartupWMClass=org.pulsemeeter.pulsemeeter
 Categories=Audio;AudioVideo;Midi;X-Alsa;X-Jack;X-AudioEditing;
