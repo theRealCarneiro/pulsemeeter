@@ -18,6 +18,8 @@ class ConnectionModel(BaseModel):
     input_sel_channels: list[bool]
     output_sel_channels: list[bool]
     port_map: list[list[int]] = Field(default_factory=list)
+    route_volume: int = 100  # 0-153, per-route volume (only used when use_loopback=True)
+    use_loopback: bool = False  # opt-in for per-route volume via pw-loopback
 
     def str_port_map(self, input_sel_channels, output_sel_channels):
         '''

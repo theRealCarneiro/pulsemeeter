@@ -288,6 +288,7 @@ async def filter_results(app):
     assert 'application.name' in app.proplist
     assert '_peak' not in app.proplist['application.name']
     assert app.proplist.get('application.id') != 'org.PulseAudio.pavucontrol'
+    assert 'pm_route_' not in app.proplist.get('node.name', '')
 
     # if ('application.name' not in app.proplist
     #         or '_peak' in app.proplist['application.name']
@@ -369,7 +370,8 @@ async def get_app_by_id(app_type, app_index: int):
         if ('application.name' not in app.proplist or
                 '_peak' in app.proplist['application.name'] or
                 app.name == 'audio-volume-change' or
-                app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'):
+                app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol' or
+                'pm_route_' in app.proplist.get('node.name', '')):
             return None
 
         # try:

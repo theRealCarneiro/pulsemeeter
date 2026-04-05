@@ -154,7 +154,10 @@ class EventController(SignalModel):
         Args:
             event: The event object.
         '''
-        pa_device = await pmctl_async.get_device_by_id(event.facility, event.index)
+        try:
+            pa_device = await pmctl_async.get_device_by_id(event.facility, event.index)
+        except pulsectl.pulsectl.PulseIndexError:
+            return
         pm_device_types = ('hi', 'b') if event.facility == 'source' else ('vi', 'a')
         device_search = self.device_repository.find_device_by_key
         search_res = device_search('name', pa_device.name, pm_device_types)

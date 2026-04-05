@@ -362,6 +362,8 @@ class GtkController(SignalModel):
             'volume': self.set_volume,
             'mute': self.set_mute,
             'connection': self.set_connection,
+            'route_volume': self.set_route_volume,
+            'use_loopback': self.set_use_loopback,
             'primary': self.set_primary,
             'device_change': self.update_device_model,
             'device_remove': self.device_remove,
@@ -521,6 +523,18 @@ class GtkController(SignalModel):
         Call to device model to set model connection
         '''
         self.emit('connect', input_type, input_id, output_type, output_id, state)
+
+    def set_route_volume(self, _, output_type, output_id, volume: int, input_type, input_id):
+        '''
+        Relay per-route volume change to device controller
+        '''
+        self.emit('route_volume', input_type, input_id, output_type, output_id, volume)
+
+    def set_use_loopback(self, _, output_type, output_id, state: bool, input_type, input_id):
+        '''
+        Relay use_loopback toggle to device controller
+        '''
+        self.emit('use_loopback', input_type, input_id, output_type, output_id, state)
 
     def update_connection(self, _, output_type, output_id, connection_model, input_type, input_id):
         '''

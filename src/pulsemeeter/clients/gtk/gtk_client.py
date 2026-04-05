@@ -141,6 +141,8 @@ class GtkClient(Gtk.Application):
             'mute': self.device_controller.set_mute,
             'primary': self.device_controller.set_primary,
             'connect': self.device_controller.set_connection,
+            'route_volume': self.device_controller.set_route_volume,
+            'use_loopback': self.device_controller.set_use_loopback,
             'connection_change': self.device_controller.update_connection,
             'device_new': self.device_controller.create_device,
             'device_remove': self.device_controller.remove_device,

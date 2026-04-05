@@ -1,3 +1,5 @@
+import re
+import time
 import shutil
 import logging
 import pulsectl
@@ -100,6 +102,195 @@ def link_channels(input_name: str, output_name: str, channel_map: str, state: bo
         link(input_port, output_port, state=state)
 
     return True
+
+
+def make_loopback_name(input_name: str, output_name: str) -> str:
+    '''
+    Generate a deterministic loopback name for a connection.
+    Sanitizes to alphanumeric, underscores, hyphens, and dots only.
+    Args:
+        input_name (str): Name of the input device.
+        output_name (str): Name of the output device.
+    Returns:
+        str: Sanitized loopback name.
+    '''
+    raw = f'pm_route_{input_name}_to_{output_name}'
+    return re.sub(r'[^a-zA-Z0-9._-]', '_', raw)
+
+
+def make_intermediate_sink_name(loopback_name: str) -> str:
+    '''
+    Generate a deterministic intermediate sink name for a b-type loopback connection.
+    Args:
+        loopback_name (str): The loopback name from make_loopback_name().
+    Returns:
+        str: The intermediate sink name ({loopback_name}_bridge).
+    '''
+    return f'{loopback_name}_bridge'
+
+
+def create_intermediate_sink(loopback_name: str, channels: int, position: list[str]) -> str:
+    '''
+    Create a temporary intermediate sink for b-type loopback routing.
+    Args:
+        loopback_name (str): The loopback name from make_loopback_name().
+        channels (int): Number of audio channels.
+        position (list[str]): Channel map positions.
+    Returns:
+        str: The intermediate sink name.
+    '''
+    sink_name = make_intermediate_sink_name(loopback_name)
+    create_device('sink', sink_name, channels, position)
+    return sink_name
+
+
+def remove_intermediate_sink(loopback_name: str):
+    '''
+    Remove a temporary intermediate sink for b-type loopback routing.
+    Args:
+        loopback_name (str): The loopback name from make_loopback_name().
+    '''
+    sink_name = make_intermediate_sink_name(loopback_name)
+    try:
+        remove_device(sink_name)
+    except RuntimeError:
+        LOG.warning('Failed to remove intermediate sink %s', sink_name)
+
+
+def wait_for_device(device_type: str, device_name: str, timeout: float = 2.0, interval: float = 0.05) -> bool:
+    '''
+    Poll until a device appears in PulseAudio.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_name (str): Name of the device.
+        timeout (float): Maximum time to wait in seconds.
+        interval (float): Polling interval in seconds.
+    Returns:
+        bool: True if found, False if timed out.
+    '''
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if get_device_by_name(device_type, device_name) is not None:
+            return True
+        time.sleep(interval)
+    return False
+
+
+def get_device_serial(device_type: str, device_name: str) -> str:
+    '''
+    Get the PipeWire object.serial for a device.
+    Args:
+        device_type (str): 'sink' or 'source'.
+        device_name (str): Name of the device.
+    Returns:
+        str: The object.serial, or empty string if not found.
+    '''
+    device = get_device_by_name(device_type, device_name)
+    if device:
+        return device.proplist.get('object.serial', '')
+    return ''
+
+
+def create_loopback(name: str, capture_serial: str, playback_serial: str, channels: int) -> subprocess.Popen:
+    '''
+    Spawn a pw-loopback subprocess for per-route volume control.
+    Targets devices by PipeWire object.serial for unambiguous routing.
+    Args:
+        name (str): Unique loopback name.
+        capture_serial (str): PipeWire object.serial of the capture device.
+        playback_serial (str): PipeWire object.serial of the playback device.
+        channels (int): Number of audio channels.
+    Returns:
+        subprocess.Popen: The loopback subprocess handle.
+    '''
+    command = [
+        'pw-loopback',
+        '--name', name,
+        '--channels', str(channels),
+        '--capture-props', f'target.object={capture_serial}',
+        '--playback-props', f'target.object={playback_serial}',
+    ]
+
+    LOG.debug('Creating loopback: %s', command)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return proc
+
+
+def destroy_loopback(proc: subprocess.Popen):
+    '''
+    Terminate a pw-loopback subprocess.
+    Args:
+        proc (subprocess.Popen): The loopback process to terminate.
+    '''
+    if proc and proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+    LOG.debug('Loopback destroyed (pid=%s)', proc.pid if proc else None)
+
+
+def set_route_volume(loopback_name: str, volume: int) -> bool:
+    '''
+    Set the volume of a pw-loopback sink-input by its loopback name.
+    Args:
+        loopback_name (str): The loopback name used when creating.
+        volume (int): Volume value (0-153).
+    Returns:
+        bool: True on success, False if sink-input not found.
+    '''
+    volume = min(max(0, volume), 153)
+    try:
+        for si in PULSE.sink_input_list():
+            if loopback_name in si.name:
+                channels = len(si.volume.values)
+                vol = pulsectl.PulseVolumeInfo(volume / 100, channels)
+                PULSE.volume_set(si, vol)
+                return True
+    except pulsectl.PulseError:
+        LOG.error('Failed to set route volume for %s', loopback_name)
+    return False
+
+
+def wait_for_loopback(loopback_name: str, timeout: float = 2.0, interval: float = 0.05) -> bool:
+    '''
+    Poll until the pw-loopback sink-input appears in PulseAudio.
+    Args:
+        loopback_name (str): The loopback name to wait for.
+        timeout (float): Maximum time to wait in seconds.
+        interval (float): Polling interval in seconds.
+    Returns:
+        bool: True if found, False if timed out.
+    '''
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            for si in PULSE.sink_input_list():
+                if loopback_name in si.name:
+                    return True
+        except pulsectl.PulseError:
+            pass
+        time.sleep(interval)
+    return False
+
+
+def loopback_exists(loopback_name: str) -> bool:
+    '''
+    Check if a pw-loopback sink-input with the given name already exists.
+    Args:
+        loopback_name (str): The loopback name to check for.
+    Returns:
+        bool: True if found.
+    '''
+    try:
+        for si in PULSE.sink_input_list():
+            if loopback_name in si.name:
+                return True
+    except pulsectl.PulseError:
+        pass
+    return False
 
 
 def get_ports(port_type: str, device_name: str) -> list[str]:
@@ -442,7 +633,8 @@ def list_apps(app_type: str) -> list[PulseSinkInputInfo | PulseSourceOutputInfo]
         hasname = app.proplist.get('application.name', False)
         is_peak = '_peak' in app.proplist.get('application.name', '')
         is_pavucontrol = app.proplist.get('application.id') == 'org.PulseAudio.pavucontrol'
-        if is_peak or is_pavucontrol or not hasname:
+        is_pm_loopback = 'pm_route_' in app.proplist.get('node.name', '')
+        if is_peak or is_pavucontrol or is_pm_loopback or not hasname:
             continue
 
         app.device_name = get_app_device(app_type, app).name

@@ -38,6 +38,8 @@ class DeviceWidget(Gtk.Frame):
         'device_remove': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
         'device_change': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         'connection': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
+        'route_volume': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, int)),
+        'use_loopback': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, bool)),
         'update_connection': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str, GObject.TYPE_PYOBJECT)),
         'settings_pressed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         'connection_settings_pressed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str, str))
@@ -131,6 +133,8 @@ class DeviceWidget(Gtk.Frame):
                 button = ConnectionWidget(connection_schema.nick, connection_schema)
                 self.connections_widgets[output_type].add_widget(output_id, button)
                 button.connect('connection', self._on_connection_change, output_type, output_id)
+                button.connect('route_volume', self._on_route_volume, output_type, output_id)
+                button.connect('use_loopback', self._on_use_loopback, output_type, output_id)
                 button.connect('settings_pressed', self._on_connection_edit_pressed, output_type, output_id)
                 button.popover.confirm_button.connect('clicked', self._on_connection_settings_save, output_type, output_id)
 
@@ -153,6 +157,12 @@ class DeviceWidget(Gtk.Frame):
 
     def _on_connection_change(self, _, state, output_type, output_id):
         self.emit('connection', output_type, output_id, state)
+
+    def _on_route_volume(self, _, volume, output_type, output_id):
+        self.emit('route_volume', output_type, output_id, volume)
+
+    def _on_use_loopback(self, _, state, output_type, output_id):
+        self.emit('use_loopback', output_type, output_id, state)
 
     def _on_mute_change(self, _, state):
         self.emit('mute', state)

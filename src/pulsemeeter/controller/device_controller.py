@@ -1,5 +1,6 @@
 import sys
 import logging
+import threading
 
 from pydantic import PrivateAttr
 from pulsemeeter.scripts import pmctl
@@ -38,6 +39,8 @@ class DeviceController(SignalModel):
         '''
         super().__init__()
 
+        self._loopback_procs = {}
+        self._intermediate_sinks = {}
         self.device_repository = device_repository
         if not pmctl.is_pipewire():
             LOG.error('ERROR: pipewire-pulse not detected, pipewire-pulse is required')
@@ -151,8 +154,21 @@ class DeviceController(SignalModel):
 
     def cleanup(self):
         '''
-        Removes all pulse devices from pulse.
+        Removes all pulse devices from pulse and terminates loopback processes.
         '''
+        # Terminate all loopback processes
+        for proc in self._loopback_procs.values():
+            pmctl.destroy_loopback(proc)
+        self._loopback_procs.clear()
+
+        # Remove all intermediate sinks
+        for sink_name in self._intermediate_sinks.values():
+            try:
+                pmctl.remove_device(sink_name)
+            except RuntimeError:
+                LOG.warning('Failed to remove intermediate sink %s during cleanup', sink_name)
+        self._intermediate_sinks.clear()
+
         device_dict = self.device_repository.get_all_devices()
         for _, device_list in device_dict.items():
             for _, device in device_list.items():
@@ -214,6 +230,7 @@ class DeviceController(SignalModel):
     def set_connection(self, input_type, input_id, output_type, output_id, state: bool = None, soft=False):
         '''
         Set the connection state between two devices.
+        Uses pw-loopback when use_loopback is enabled, otherwise uses direct pw-link.
         Args:
             input_type (str): Input device type.
             input_id (str): Input device identifier.
@@ -234,14 +251,153 @@ class DeviceController(SignalModel):
             input_device.set_connection(output_type, output_id, state, emit=False)
             self.emit('connect', input_type, input_id, output_type, output_id, state)
 
+        loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
+
+        # Skip PA operations if either device is disconnected
+        if state and not self._device_available(input_device):
+            LOG.warning('Input device unavailable, skipping connection: %s', input_device.name)
+            return
+        if state and not self._device_available(output_device):
+            LOG.warning('Output device unavailable, skipping connection: %s', output_device.name)
+            return
+
+        if connection_model.use_loopback:
+            self._set_loopback_connection(
+                loopback_name, input_device, output_device, connection_model, state
+            )
+        else:
+            self._set_link_connection(input_device, output_device, connection_model, state)
+            self._teardown_loopback(loopback_name, output_device)
+
+    def _device_available(self, device):
+        '''Check device presence via pw-link subprocess.'''
+        port_type = 'output' if device.device_type == 'source' else 'input'
+        try:
+            return len(pmctl.get_ports(port_type, device.name)) > 0
+        except RuntimeError:
+            return False
+
+    def _set_link_connection(self, input_device, output_device, connection_model, state):
+        '''Direct pw-link connection.'''
         input_sel_channels = input_device.get_selected_channel_list()
         output_sel_channels = output_device.get_selected_channel_list()
         port_map = connection_model.str_port_map(input_sel_channels, output_sel_channels)
-
         try:
             pmctl.link_channels(input_device.name, output_device.name, port_map, state)
         except RuntimeError:
             LOG.error("Device ports not found, device probably disconnected")
+
+    def _set_loopback_connection(self, loopback_name, input_device, output_device, connection_model, state):
+        '''pw-loopback connection for per-route volume control.'''
+        is_b_type = output_device.device_type == 'source'
+
+        if state:
+            # If a loopback with this name already exists (e.g. app restarted without cleanup), adopt it
+            if pmctl.loopback_exists(loopback_name):
+                LOG.debug('Loopback %s already exists, adopting', loopback_name)
+                pmctl.set_route_volume(loopback_name, connection_model.route_volume)
+                return
+
+            self._teardown_loopback(loopback_name, output_device)
+
+            try:
+                capture_serial = pmctl.get_device_serial(input_device.device_type, input_device.name)
+                channels = min(input_device.channels, output_device.channels)
+
+                if is_b_type:
+                    # B-type: loopback → intermediate sink → pw-link monitor → virtual output
+                    temp_sink_name = pmctl.create_intermediate_sink(
+                        loopback_name, channels, output_device.channel_list
+                    )
+                    self._intermediate_sinks[loopback_name] = temp_sink_name
+                    if not pmctl.wait_for_device('sink', temp_sink_name):
+                        LOG.warning('Intermediate sink %s did not appear in time', temp_sink_name)
+                    playback_serial = pmctl.get_device_serial('sink', temp_sink_name)
+                else:
+                    # A-type: direct loopback to output sink
+                    playback_serial = pmctl.get_device_serial(output_device.device_type, output_device.name)
+
+                proc = pmctl.create_loopback(
+                    name=loopback_name,
+                    capture_serial=capture_serial,
+                    playback_serial=playback_serial,
+                    channels=channels,
+                )
+                self._loopback_procs[loopback_name] = proc
+
+                # Wait for loopback in background thread to avoid blocking GTK main thread
+                volume = connection_model.route_volume
+                output_name = output_device.name
+                def _wait_and_set_volume():
+                    if pmctl.wait_for_loopback(loopback_name):
+                        if is_b_type:
+                            # Link the bridge sink's monitor outputs to the virtual output's inputs
+                            LOG.debug('Linking bridge %s → virtual output %s', temp_sink_name, output_name)
+                            pmctl.link(temp_sink_name, output_name)
+                        pmctl.set_route_volume(loopback_name, volume)
+                    else:
+                        LOG.warning('Loopback %s did not appear in time', loopback_name)
+                threading.Thread(target=_wait_and_set_volume, daemon=True).start()
+            except Exception:
+                LOG.error('Failed to create loopback %s, device probably disconnected', loopback_name)
+        else:
+            self._teardown_loopback(loopback_name, output_device)
+
+    def _teardown_loopback(self, loopback_name, output_device):
+        '''Destroy loopback process and clean up intermediate sink if they exist.'''
+        if loopback_name in self._loopback_procs:
+            pmctl.destroy_loopback(self._loopback_procs.pop(loopback_name))
+        temp_sink_name = self._intermediate_sinks.pop(loopback_name, None)
+        if temp_sink_name:
+            pmctl.link(temp_sink_name, output_device.name, state=False)
+            pmctl.remove_intermediate_sink(loopback_name)
+
+    def set_route_volume(self, input_type, input_id, output_type, output_id, volume):
+        '''Set per-route volume for a loopback connection.'''
+        input_device = self.device_repository.get_device(input_type, input_id)
+        output_device = self.device_repository.get_device(output_type, output_id)
+        connection_model = input_device.connections[output_type][output_id]
+        connection_model.route_volume = volume
+
+        loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
+        if connection_model.state and connection_model.use_loopback:
+            pmctl.set_route_volume(loopback_name, volume)
+
+        self.emit('route_volume', input_type, input_id, output_type, output_id, volume)
+
+    def set_use_loopback(self, input_type, input_id, output_type, output_id, state):
+        '''Toggle use_loopback for a connection. If active, reconnects with the new method.'''
+        input_device = self.device_repository.get_device(input_type, input_id)
+        output_device = self.device_repository.get_device(output_type, output_id)
+        connection_model = input_device.connections[output_type][output_id]
+
+        was_connected = connection_model.state
+        old_use_loopback = connection_model.use_loopback
+
+        if state == old_use_loopback:
+            return
+
+        loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
+
+        # Skip PA operations if either device is disconnected
+        devices_available = self._device_available(input_device) and self._device_available(output_device)
+
+        # If connection is active, disconnect with old method, flip, reconnect with new
+        if was_connected and devices_available:
+            if old_use_loopback:
+                self._set_loopback_connection(loopback_name, input_device, output_device, connection_model, False)
+            else:
+                self._set_link_connection(input_device, output_device, connection_model, False)
+
+        connection_model.use_loopback = state
+
+        if was_connected and devices_available:
+            if state:
+                self._set_loopback_connection(loopback_name, input_device, output_device, connection_model, True)
+            else:
+                self._set_link_connection(input_device, output_device, connection_model, True)
+
+        self.emit('use_loopback', input_type, input_id, output_type, output_id, state)
 
     def update_connection(self, input_type, input_id, output_type, output_id, connection_model):
         '''

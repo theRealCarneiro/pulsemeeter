@@ -17,9 +17,9 @@ class ConfigModel(BaseModel):
     tray: bool = False
     layout: str = 'Blocks'
     window_width: int = 800
+    window_height: int = 600
 
     @field_validator('layout')
     @classmethod
     def capitalize_layout(cls, v):
         return v.capitalize()
-    window_height: int = 600
