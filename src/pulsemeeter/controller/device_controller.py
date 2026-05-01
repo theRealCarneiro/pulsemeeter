@@ -45,6 +45,11 @@ class DeviceController(SignalModel):
 
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):
+            empty = [did for did, d in self.device_repository.get_devices_by_type(device_type).items()
+                     if not d.name.strip()]
+            for device_id in empty:
+                LOG.warning('Removing %s device %s with empty name', device_type, device_id)
+                self.device_repository.remove_device(device_type, device_id)
             for device_id in self.device_repository.get_devices_by_type(device_type):
                 self.init_device(device_type, device_id, cache=False)
 

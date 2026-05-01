@@ -167,8 +167,13 @@ class DeviceWidget(Gtk.Frame):
 
     def _on_settings_save(self, _):
         schema = self.popover.to_schema()
-        if len(schema['nick'].strip()) != 0:
-            self.emit('device_change', schema)
+        if len(schema['nick'].strip()) == 0:
+            return
+        if self.popover.device_type in ('vi', 'b') and len(schema['name'].strip()) == 0:
+            return
+        if self.popover.device_type in ('a', 'hi') and schema['channels'] == 0:
+            return
+        self.emit('device_change', schema)
 
     def _on_edit_pressed(self, *_):
         self.emit('settings_pressed', self.popover)

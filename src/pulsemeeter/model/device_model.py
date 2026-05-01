@@ -356,15 +356,18 @@ class DeviceModel(BaseModel):
         '''
 
         vol = []
-        for index, channel in enumerate(self.selected_channels):
-            if channel is True:
-                vol.append(round(pa_device.volume.values[index] * 100))
+        pa_values = pa_device.volume.values
+        for index, channel in enumerate(self.selected_channels or []):
+            if channel is True and index < len(pa_values):
+                vol.append(round(pa_values[index] * 100))
 
-        if vol == self.volume and bool(pa_device.mute) == self.mute:
+        mute = bool(pa_device.mute)
+        if vol == self.volume and mute == self.mute:
             return False
 
-        self.set_mute(bool(pa_device.mute), emit=True)
-        self.set_volume(vol[0], emit=True)
+        self.set_mute(mute, emit=True)
+        if vol:
+            self.set_volume(vol[0], emit=True)
         return True
 
     @classmethod

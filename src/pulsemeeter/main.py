@@ -20,7 +20,9 @@ def start_gui():
 
 
 def init_devices():
-    ConfigModel.load_config()
+    config_persistence = ConfigPersistence(ConfigModel, CONFIG_FILE)
+    device_repository = DeviceRepository(config_persistence)
+    DeviceController(device_repository=device_repository)
 
 
 def cleanup_devices():

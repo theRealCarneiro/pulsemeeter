@@ -59,7 +59,7 @@ class AppWidget(Gtk.Frame):
 
         self.volume_widget.connect('volume', self._on_volume_change)
         self.mute_widget.connect('mute', self._on_mute_change)
-        self._combobox_handler_id = self.combobox.connect('changed', self._on_device_change)
+        self.handlers['app_device'] = self.combobox.connect('changed', self._on_device_change)
 
     def _on_volume_change(self, _, value):
         self.emit('app_volume', value)
@@ -79,6 +79,6 @@ class AppWidget(Gtk.Frame):
         if self.combobox.get_active_text() == device_name:
             return
 
-        self.combobox.handler_block(self._combobox_handler_id)
+        self.combobox.handler_block(self.handlers['app_device'])
         self.combobox.set_active_device(device_name)
-        self.combobox.handler_unblock(self._combobox_handler_id)
+        self.combobox.handler_unblock(self.handlers['app_device'])

@@ -82,7 +82,14 @@ class Content(Gtk.Box):
         self.app_box = {'sink_input': WidgetBox(), 'source_output': WidgetBox()}
 
     def _on_device_create(self, _, popover):
-        self.emit('device_new', popover.to_schema())
+        schema = popover.to_schema()
+        if len(schema['nick'].strip()) == 0:
+            return
+        if popover.device_type in ('vi', 'b') and len(schema['name'].strip()) == 0:
+            return
+        if popover.device_type in ('a', 'hi') and schema['channels'] == 0:
+            return
+        self.emit('device_new', schema)
 
     def _on_settings_pressed(self, *_):
         self.emit('settings_pressed')
