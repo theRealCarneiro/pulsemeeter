@@ -21,7 +21,7 @@ jobs:
           sed -i "s/pkgver=.*/pkgver=$version/g" PKGBUILD
           
       - name: Publish AUR package
-        uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
         with:
           pkgname: pulsemeeter-git
           pkgbuild: ./PKGBUILD
