@@ -17,7 +17,8 @@ jobs:
       - name: Create PKGBUILD
         run:  |
           curl "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pulsemeeter-git" --silent > PKGBUILD
-          version=$(printf "%s" "$(git describe --long | sed 's/\([^-]*-\)g/r\1/;s/-/./g; s/.//')")
+          sed -i 's#git describe --long | sed#git describe --long --tags | sed#g' PKGBUILD
+          version=$(printf "%s" "$(git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g; s/.//')")
           sed -i "s/pkgver=.*/pkgver=$version/g" PKGBUILD
           
       - name: Publish AUR package
