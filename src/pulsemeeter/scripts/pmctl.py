@@ -84,6 +84,9 @@ def link_channels(input_name: str, output_name: str, channel_map: str, state: bo
     Returns:
         bool: True on success, raises on failure.
     '''
+    if not channel_map:
+        return True
+
     input_ports = get_ports('output', input_name)
     output_ports = get_ports('input', output_name)
 
