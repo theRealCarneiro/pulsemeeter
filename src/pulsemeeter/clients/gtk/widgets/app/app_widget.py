@@ -59,7 +59,7 @@ class AppWidget(Gtk.Frame):
 
         self.volume_widget.connect('volume', self._on_volume_change)
         self.mute_widget.connect('mute', self._on_mute_change)
-        self.combobox.connect('changed', self._on_device_change)
+        self.handlers['app_device'] = self.combobox.connect('changed', self._on_device_change)
 
     def _on_volume_change(self, _, value):
         self.emit('app_volume', value)
