@@ -76,7 +76,7 @@ class DeviceSettingsPopover(Gtk.Popover):
 
         self.nick_widget.set_option(device_model.nick)
         if self.device_type in ('hi', 'a'):
-            self.port_selector.set_ports(device_model.selected_channels)
+            self.port_selector.set_ports(device_model.channel_list, device_model.selected_channels)
             self.combobox_widget.set_active_name(device_model.description)
         else:
             self.name_widget.set_option(device_model.name)
