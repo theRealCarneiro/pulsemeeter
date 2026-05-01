@@ -87,6 +87,8 @@ class Content(Gtk.Box):
             return
         if popover.device_type in ('vi', 'b') and len(schema['name'].strip()) == 0:
             return
+        if popover.device_type in ('a', 'hi') and schema['channels'] == 0:
+            return
         self.emit('device_new', schema)
 
     def _on_settings_pressed(self, *_):

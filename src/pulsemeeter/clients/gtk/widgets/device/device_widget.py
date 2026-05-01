@@ -171,6 +171,8 @@ class DeviceWidget(Gtk.Frame):
             return
         if self.popover.device_type in ('vi', 'b') and len(schema['name'].strip()) == 0:
             return
+        if self.popover.device_type in ('a', 'hi') and schema['channels'] == 0:
+            return
         self.emit('device_change', schema)
 
     def _on_edit_pressed(self, *_):
