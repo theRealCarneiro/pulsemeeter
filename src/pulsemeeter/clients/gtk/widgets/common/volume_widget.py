@@ -81,12 +81,10 @@ class VolumeWidget(Gtk.Scale):
     def _on_button_press(self, *_):
         # print('BUTTON LOCKED: ', True)
         self.blocked = True
-        print("block")
         self.is_pressed = True
 
     def _on_button_release(self, *_):
         # print('BUTTON LOCKED: ', False)
-        print("unblock")
         self.blocked = False
         self.is_pressed = False
 
