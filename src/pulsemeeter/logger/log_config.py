@@ -1,3 +1,4 @@
+import os
 import logging
 import logging.config
 from dataclasses import dataclass
@@ -35,6 +36,11 @@ CONFIG = {
             "()": "pulsemeeter.logger.log_config.FormatLog",
             "format": "[%(asctime)s] [%(levelname)s] in [%(module)s@%(funcName)s]: %(message)s",
             "datefmt": "%y/%m/%Y %H:%M:%S"
+        },
+
+        "plain": {
+            "format": "%(asctime)s [%(levelname)s] [%(name)s] %(module)s@%(funcName)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
         }
     },
 
@@ -77,9 +83,27 @@ CONFIG = {
 
 
 def init_logger():
-    level = "DEBUG" if settings.DEBUG else "INFO"
-    CONFIG["loggers"]["root"]["level"] = level
-    CONFIG["loggers"]["generic"]["level"] = level
+    console_level = "DEBUG" if settings.DEBUG else "INFO"
+    CONFIG["loggers"]["root"]["level"] = "DEBUG"
+    CONFIG["loggers"]["generic"]["level"] = "DEBUG"
+    CONFIG["handlers"]["stdout"]["level"] = console_level
+
+    try:
+        os.makedirs(settings.LOG_DIR, exist_ok=True)
+        CONFIG["handlers"]["file"] = {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "plain",
+            "filename": settings.LOG_FILE,
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 3,
+            "encoding": "utf-8"
+        }
+        if "file" not in CONFIG["loggers"]["root"]["handlers"]:
+            CONFIG["loggers"]["root"]["handlers"].append("file")
+    except OSError:
+        pass
+
     logging.config.dictConfig(CONFIG)
 
 
