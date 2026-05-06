@@ -21,6 +21,10 @@ class ConnectionModel(BaseModel):
     route_volume: int = 100  # 0-153, per-route volume (only used when use_loopback=True)
     use_loopback: bool = False  # opt-in for per-route volume via pw-loopback
 
+    # Transient runtime status, prevent saving to config
+    connect_failed: bool = Field(default=False, exclude=True)
+    connect_error: str = Field(default='', exclude=True)
+
     def str_port_map(self, input_sel_channels, output_sel_channels):
         '''
         Returns a string formated portmap for pmctl

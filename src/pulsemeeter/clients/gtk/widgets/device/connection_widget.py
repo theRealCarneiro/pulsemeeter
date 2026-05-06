@@ -25,8 +25,15 @@ class ConnectionWidget(Gtk.Box):
         self.set_hexpand(True)
         self.connection_model = connection_model
 
-        # Toggle button (existing connection toggle)
-        self.toggle_button = Gtk.ToggleButton(label=label, active=connection_model.state)
+        # Warning icon shown when route fails to set up
+        self.warning_icon = Gtk.Image.new_from_icon_name('dialog-warning')
+
+        # Toggle button with [warning_icon | label] as its content
+        toggle_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4, halign=Gtk.Align.CENTER)
+        toggle_content.append(self.warning_icon)
+        toggle_content.append(Gtk.Label(label=label))
+        self.toggle_button = Gtk.ToggleButton(active=connection_model.state)
+        self.toggle_button.set_child(toggle_content)
         self.toggle_button.set_size_request(120, -1)
         self._toggle_handler_id = self.toggle_button.connect('toggled', self._on_toggled)
 
@@ -60,9 +67,12 @@ class ConnectionWidget(Gtk.Box):
         self.append(self.loopback_check)
         self.append(self.volume_scale)
 
-        # Initial visibility
+        # Initial visibility. set_accessible() must run before update_warning()
+        # because it sets a default tooltip on the toggle button - update_warning
+        # then overrides that tooltip with the error message when failed.
         self._update_visibility()
         self.set_accessible()
+        self.update_warning()
 
     def set_accessible(self):
         description_label = _('Connect to %s, right click to open connection settings') % self.connection_model.nick
@@ -77,13 +87,27 @@ class ConnectionWidget(Gtk.Box):
         self.loopback_check.set_visible(is_connected)
         self.volume_scale.set_visible(is_connected and use_loopback)
 
+    def update_warning(self):
+        """
+        Show warning when this route has a real failure.
+        """
+        failed = bool(getattr(self.connection_model, 'connect_failed', False))
+        self.warning_icon.set_visible(failed)
+        if failed:
+            error = getattr(self.connection_model, 'connect_error', '') or _('Failed to create route')
+            self.toggle_button.set_tooltip_text(error)
+        else:
+            self.set_accessible() # Restores normal tooltip
+
     def _on_toggled(self, widget):
         self._update_visibility()
         self.emit('connection', widget.get_active())
+        self.update_warning()
 
     def _on_loopback_toggled(self, widget):
         self._update_visibility()
         self.emit('use_loopback', widget.get_active())
+        self.update_warning()
 
     def _on_volume_changed(self, widget):
         self.emit('route_volume', int(widget.get_value()))

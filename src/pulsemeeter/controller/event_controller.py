@@ -2,6 +2,7 @@ import time
 import asyncio
 import logging
 import pulsectl
+import pulsectl_asyncio
 import threading
 import traceback
 import concurrent
@@ -28,6 +29,12 @@ class EventController(SignalModel):
             Emitted when an application stream changes.
         pa_device_change(device_type: str, device_id: str, device_model: DeviceModel):
             Emitted when a device changes.
+        pa_device_new(device_type: str, device_id: str):
+            Emitted when a previously configured device appears in PulseAudio
+            (e.g. hardware hot-plug).
+        pa_device_remove(device_type: str, device_id: str):
+            Emitted when a previously configured device disappears from
+            PulseAudio (e.g. hardware unplug, externally-removed virtual).
         pa_primary_change(device_type: str, device_id: str | None):
             Emitted when the primary device changes.
 
@@ -53,6 +60,10 @@ class EventController(SignalModel):
         self._async_loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._async_loop.run_forever, daemon=True)
         self._thread.start()
+        # Cache of (facility, pa_index) -> pa_device_name. Populated on every
+        # device 'new'/'change' event so we can resolve removed devices by
+        # index after PA has already discarded them.
+        self._pa_index_cache: dict[tuple[str, int], str] = {}
 
     def _handle_listen_error(self, fut):
         try:
@@ -95,7 +106,11 @@ class EventController(SignalModel):
             ('app', 'change'): self._handle_app_change_event,
             ('server', 'change'): self._handle_server_change_event,
             ('device', 'change'): self._handle_device_change_event,
+            ('device', 'new'): self._handle_device_new_event,
+            ('device', 'remove'): self._handle_device_remove_event,
         }
+
+        await self._seed_pa_index_cache()
 
         # async for event in pmctl_async.pulse_listener():
         async for event in pmctl_async.pulse_listener():
@@ -103,6 +118,21 @@ class EventController(SignalModel):
             handler = _pa_event_map.get((pm_facility, event.type))
             if handler:
                 await handler(event)
+
+    async def _seed_pa_index_cache(self):
+        '''
+        Snapshot the current sink/source indices so we can resolve names on
+        remove events for devices that were already present at startup
+        (otherwise we'd only know about devices that fired new/change while
+        we were listening).
+        '''
+        try:
+            async with pulsectl_asyncio.PulseAsync() as pulse:
+                for facility, list_call in (('sink', pulse.sink_list), ('source', pulse.source_list)):
+                    for dev in await list_call():
+                        self._pa_index_cache[(facility, dev.index)] = dev.name
+        except Exception as e:
+            LOG.warning('Failed to seed PA index cache: %s', e)
 
     async def _handle_app_new_event(self, event: pulsectl.PulseEventInfo):
         '''
@@ -148,6 +178,39 @@ class EventController(SignalModel):
         app_model = AppModel.pa_to_app_model(app, app_type)
         self.emit('pa_app_change', app_type, app_index, app_model)
 
+    async def _handle_device_new_event(self, event):
+        '''
+        Handle a device new event (e.g. hardware hot-plug).
+        Looks up any configured pm devices matching the PA device name
+        and emits pa_device_new so routes can be reconnected.
+        '''
+        try:
+            pa_device = await pmctl_async.get_device_by_id(event.facility, event.index)
+        except pulsectl.pulsectl.PulseIndexError:
+            return
+
+        self._pa_index_cache[(event.facility, event.index)] = pa_device.name
+
+        pm_device_types = ('hi', 'b') if event.facility == 'source' else ('vi', 'a')
+        search_res = self.device_repository.find_device_by_key('name', pa_device.name, pm_device_types)
+        for device_type, device_id, _ in search_res:
+            self.emit('pa_device_new', device_type, device_id)
+
+    async def _handle_device_remove_event(self, event):
+        '''
+        Handle a device remove event (e.g. hardware unplug, externally-removed
+        virtual). PA has already discarded the device, so we resolve its name
+        from the index cache populated by previous new/change events.
+        '''
+        pa_name = self._pa_index_cache.pop((event.facility, event.index), None)
+        if pa_name is None:
+            return
+
+        pm_device_types = ('hi', 'b') if event.facility == 'source' else ('vi', 'a')
+        search_res = self.device_repository.find_device_by_key('name', pa_name, pm_device_types)
+        for device_type, device_id, _ in search_res:
+            self.emit('pa_device_remove', device_type, device_id)
+
     async def _handle_device_change_event(self, event):
         '''
         Handle a device change event.
@@ -158,6 +221,9 @@ class EventController(SignalModel):
             pa_device = await pmctl_async.get_device_by_id(event.facility, event.index)
         except pulsectl.pulsectl.PulseIndexError:
             return
+
+        self._pa_index_cache[(event.facility, event.index)] = pa_device.name
+
         pm_device_types = ('hi', 'b') if event.facility == 'source' else ('vi', 'a')
         device_search = self.device_repository.find_device_by_key
         search_res = device_search('name', pa_device.name, pm_device_types)

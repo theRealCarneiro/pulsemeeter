@@ -38,6 +38,7 @@ def arrange_widgets(device_widget: DeviceWidget):
     control_grid = Gtk.Grid(hexpand=True)
 
     name_container = Gtk.Box(margin_start=0, margin_end=0, hexpand=True, orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    name_container.append(device_widget.warning_icon)
     name_container.append(device_widget.nick_label)
     name_container.append(device_widget.description_label)
     # name_container.append(Gtk.Box(hexpand=True))

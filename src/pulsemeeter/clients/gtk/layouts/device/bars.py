@@ -56,6 +56,7 @@ def arrange_widgets(device_widget: DeviceWidget):
     _set_properties(device_widget)
 
     name_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5, halign=Gtk.Align.CENTER)
+    name_container.append(device_widget.warning_icon)
     name_container.append(device_widget.nick_label)
     name_container.append(device_widget.edit_button)
 

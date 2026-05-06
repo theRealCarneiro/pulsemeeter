@@ -147,6 +147,8 @@ class GtkClient(Gtk.Application):
             'device_new': self.device_controller.create_device,
             'device_remove': self.device_controller.remove_device,
             'device_change': self.device_controller.update_device,
+            'pa_hotplug': self.device_controller.handle_hotplug,
+            'pa_unplug': self.device_controller.handle_unplug,
             'app_volume': self.app_controller.set_volume,
             'app_mute': self.app_controller.set_mute,
             'app_device': self.app_controller.change_device,
@@ -168,6 +170,8 @@ class GtkClient(Gtk.Application):
     def connect_event_controller_events(self):
         signal_map = {
             'pa_device_change': self.gtk_controller.pa_device_change_callback,
+            'pa_device_new': self.gtk_controller.pa_device_new_callback,
+            'pa_device_remove': self.gtk_controller.pa_device_remove_callback,
             'pa_primary_change': self.gtk_controller.pa_primary_change_callback,
             'pa_app_change': self.gtk_controller.app_change_callback,
             'pa_app_new': self.gtk_controller.app_new_callback,
