@@ -2,7 +2,7 @@ import re
 import logging
 from typing import Literal
 from pulsemeeter.schemas.typing import Volume, PaDeviceType, DeviceClass
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator
 # from pulsemeeter.schemas.device_schema import ConnectionModel
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.schemas import pulse_mappings
@@ -32,6 +32,14 @@ class DeviceModel(BaseModel):
     connections: dict[str, dict[str, ConnectionModel]] = {'a': {}, 'b': {}}
     selected_channels: list[bool] | None
     # plugins: list[PluginSchema] = []
+
+    # Transient runtime status (not persisted).
+    # init_failed/init_error: hard error (e.g. pw-cli failed to create) - UI shows warning.
+    # present: whether the underlying PA device currently exists. If False
+    # without an init_failed, the UI just dims the device name as "disconnected".
+    init_failed: bool = Field(default=False, exclude=True)
+    init_error: str = Field(default='', exclude=True)
+    present: bool = Field(default=True, exclude=True)
 
     @root_validator(pre=True)
     def set_nick_description(cls, values):

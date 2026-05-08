@@ -49,18 +49,40 @@ class DeviceController(SignalModel):
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):
             for device_id in self.device_repository.get_devices_by_type(device_type):
-                try:
-                    self.init_device(device_type, device_id, cache=False)
-                except Exception as e:
-                    LOG.error("Skipping init for %s/%s: %s", device_type, device_id, e)
+                self._try_init_device(device_type, device_id, "Skipping init for %s/%s", cache=False)
+
+        # Mark any devices PA doesn't currently know about as not present
+        for device_type in ('vi', 'b', 'hi', 'a'):
+            for device_id, device in self.device_repository.get_devices_by_type(device_type).items():
+                if device.init_failed:
+                    continue
+                device.present = pmctl.device_exists(device.name)
 
         # now we connect the input devices
         for device_type in ('vi', 'hi'):
             for device_id in self.device_repository.get_devices_by_type(device_type):
                 try:
                     self.reconnect(device_type, device_id)
-                except Exception as e:
-                    LOG.error("Skipping reconnect for %s/%s: %s", device_type, device_id, e)
+                except Exception:
+                    LOG.exception("Skipping reconnect for %s/%s", device_type, device_id)
+
+    def _try_init_device(self, device_type, device_id, log_msg, cache=True):
+        """
+        init_device with status-flag bookkeeping. Returns True on success.
+        Centralizes the init_failed / init_error update so the four call
+        sites (startup, hot-plug, update, create) stay consistent.
+        """
+        device = self.device_repository.get_device(device_type, device_id)
+        try:
+            self.init_device(device_type, device_id, cache=cache)
+            device.init_failed = False
+            device.init_error = ''
+            return True
+        except Exception as e:
+            LOG.exception(log_msg, device_type, device_id)
+            device.init_failed = True
+            device.init_error = str(e)
+            return False
 
     def init_device(self, device_type, device_id, cache=True):
         '''
@@ -95,6 +117,36 @@ class DeviceController(SignalModel):
         for input_type in ('hi', 'vi'):
             for input_id in self.device_repository.get_devices_by_type(input_type):
                 self.set_connection(input_type, input_id, device_type, device_id, state, soft=True)
+
+    def handle_hotplug(self, device_type: str, device_id: str):
+        """
+        Re-establish a configured device after it (re)appears in PulseAudio.
+
+        Retries init for previously-failed virtual devices, clears the
+        init-failure flag for hardware, marks the device present, then
+        reconnects all routes touching it. Connection-level failure flags
+        are refreshed as a side effect of set_connection.
+        """
+        device = self.device_repository.get_device(device_type, device_id)
+
+        if device_type in ('vi', 'b') and device.init_failed:
+            self._try_init_device(device_type, device_id, "Hot-plug init retry failed for %s/%s")
+        elif device_type in ('hi', 'a'):
+            device.init_failed = False
+            device.init_error = ''
+
+        device.present = True
+        self.reconnect(device_type, device_id)
+
+    def handle_unplug(self, device_type: str, device_id: str):
+        """
+        Mark a configured device as no longer present after it disappears
+        from PulseAudio. This is treated as a soft "disconnected" state -
+        not a hard error - so route-level connect_failed flags are left
+        alone (the dimmed device name communicates the issue).
+        """
+        device = self.device_repository.get_device(device_type, device_id)
+        device.present = False
 
     def reconnect(self, device_type: str, device_id: str):
         '''
@@ -145,8 +197,7 @@ class DeviceController(SignalModel):
             self.handle_output_change(device_type, device_id)
 
         if device_type in ('vi', 'b'):
-            self.init_device(device_type, device_id)
-            if device.primary:
+            if self._try_init_device(device_type, device_id, "Failed to init %s/%s on update") and device.primary:
                 pmctl.set_primary(device.device_type, device.name)
 
         self.reconnect(device_type, device_id)
@@ -254,7 +305,16 @@ class DeviceController(SignalModel):
 
         loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
 
-        # Skip PA operations if either device is disconnected
+        # Disconnects always clear the failure flag
+        if not state:
+            connection_model.connect_failed = False
+            connection_model.connect_error = ''
+
+        # Skip PA operations if either device is disconnected. We do NOT flag
+        # the route as failed here - a device-level problem is already
+        # communicated by the device widget itself (warning triangle for a
+        # real error, dimmed name for a soft "not present"). Route warnings
+        # are reserved for failures that originate at the route level.
         if state and not self._device_available(input_device):
             LOG.warning('Input device unavailable, skipping connection: %s', input_device.name)
             return
@@ -285,8 +345,18 @@ class DeviceController(SignalModel):
         port_map = connection_model.str_port_map(input_sel_channels, output_sel_channels)
         try:
             pmctl.link_channels(input_device.name, output_device.name, port_map, state)
-        except RuntimeError:
-            LOG.error("Device ports not found, device probably disconnected")
+            if state:
+                connection_model.connect_failed = False
+                connection_model.connect_error = ''
+        except Exception as e:
+            # Broad catch: pmctl.link_channels can raise RuntimeError (missing
+            # ports) or IndexError/ValueError (malformed port_map). Crashing
+            # here would abort reconnect for sibling routes, so we flag and
+            # continue.
+            LOG.exception("Failed to link %s -> %s", input_device.name, output_device.name)
+            if state:
+                connection_model.connect_failed = True
+                connection_model.connect_error = f'Link failed: {e}'
 
     def _set_loopback_connection(self, loopback_name, input_device, output_device, connection_model, state):
         '''pw-loopback connection for per-route volume control.'''
@@ -297,6 +367,8 @@ class DeviceController(SignalModel):
             if pmctl.loopback_exists(loopback_name):
                 LOG.debug('Loopback %s already exists, adopting', loopback_name)
                 pmctl.set_route_volume(loopback_name, connection_model.route_volume)
+                connection_model.connect_failed = False
+                connection_model.connect_error = ''
                 return
 
             self._teardown_loopback(loopback_name, output_device)
@@ -339,8 +411,12 @@ class DeviceController(SignalModel):
                     else:
                         LOG.warning('Loopback %s did not appear in time', loopback_name)
                 threading.Thread(target=_wait_and_set_volume, daemon=True).start()
-            except Exception:
-                LOG.error('Failed to create loopback %s, device probably disconnected', loopback_name)
+                connection_model.connect_failed = False
+                connection_model.connect_error = ''
+            except Exception as e:
+                LOG.exception('Failed to create loopback %s', loopback_name)
+                connection_model.connect_failed = True
+                connection_model.connect_error = f'Failed to create loopback: {e}'
         else:
             self._teardown_loopback(loopback_name, output_device)
 
@@ -517,7 +593,8 @@ class DeviceController(SignalModel):
         else:
             self.handle_new_output(device_type, device_id, device)
 
-        self.init_device(device_type, device_id)
+        self._try_init_device(device_type, device_id, "Failed to init new %s/%s")
+
         self.emit('device_new', device_type, device_id, device)
         return device_type, device_id, device
 

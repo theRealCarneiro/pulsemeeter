@@ -37,8 +37,9 @@ def create_device(device_type: str, name: str, channels: int, position: list[str
     }}'''
     command = ['pw-cli', 'create-node', 'adapter', data]
     ret, stdout, stderr = run_command(command, split=False)
-    if ret != 0:
-        raise RuntimeError(f"Failed to create device: {stderr}")
+    # pw-cli exits 0 even on protocol/syntax failures; detect those via stderr
+    if ret != 0 or 'error' in (stderr or '').lower():
+        raise RuntimeError(f"Failed to create device: {(stderr or stdout).strip() or 'pw-cli reported failure'}")
     return True
 
 
@@ -93,6 +94,8 @@ def link_channels(input_name: str, output_name: str, channel_map: str, state: bo
     output_ports = get_ports('input', output_name)
 
     if not input_ports or not output_ports:
+        if not state:
+            return True
         raise RuntimeError(f'Ports not found for devices {input_name} {output_name}')
 
     for pair in channel_map.split(' '):

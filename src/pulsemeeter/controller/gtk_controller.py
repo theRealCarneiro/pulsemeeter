@@ -56,6 +56,12 @@ class GtkController(SignalModel):
             Emitted when an application's mute state is changed.
         app_device(app_type: str, app_index: str, device_nick: str):
             Emitted when an application's device is changed.
+        pa_hotplug(device_type: str, device_id: str):
+            Emitted on the GTK main thread when a configured device reappears
+            in PulseAudio and needs the device controller to re-init/reconnect.
+        pa_unplug(device_type: str, device_id: str):
+            Emitted on the GTK main thread when a configured device disappears
+            from PulseAudio and the device controller should mark it absent.
     '''
 
     window: Gtk.Window
@@ -613,6 +619,39 @@ class GtkController(SignalModel):
             return False
 
         GLib.idle_add(wrapper)
+
+    def refresh_all_warnings(self):
+        """
+        Walk every device widget and re-sync its warning state (device + routes)
+        from the current model. Called after a hot-plug because a single
+        device appearing can resolve route failures across many input devices.
+        """
+        for device_type in self.content.device_box:
+            for device_widget in self.content.device_box[device_type].widgets.values():
+                device_widget.refresh_warnings()
+
+    def pa_device_new_callback(self, device_type: str, device_id: str):
+        self._dispatch_pa_device_event(device_type, device_id, 'pa_hotplug', "Hot-plug")
+
+    def pa_device_remove_callback(self, device_type: str, device_id: str):
+        self._dispatch_pa_device_event(device_type, device_id, 'pa_unplug', "Unplug")
+
+    def _dispatch_pa_device_event(self, device_type: str, device_id: str, signal_name: str, kind: str):
+        """
+        Send a hot-plug/unplug event from the EventController's asyncio
+        thread to the GTK main thread, run the device-controller logic via
+        signal, then refresh warning indicators. Refresh runs even if the
+        handler raises so the UI never gets stuck on a stale state.
+        """
+        def run_on_main():
+            try:
+                self.emit(signal_name, device_type, device_id)
+            except Exception:
+                LOG.exception("%s handling failed for %s/%s", kind, device_type, device_id)
+            self.refresh_all_warnings()
+            return False
+
+        GLib.idle_add(run_on_main)
 
     def pa_primary_change_callback(self, device_type: str, device_id: str):
         def wrapper():

@@ -52,6 +52,7 @@ class DeviceWidget(Gtk.Frame):
         self.device_model = model
         self._create_widgets(model)
         self._connect_callbacks()
+        self._update_warning()
 
     def _create_widgets(self, model):
         # self.name_widget = NameWidget(model.nick, model.description)
@@ -60,6 +61,8 @@ class DeviceWidget(Gtk.Frame):
         self.description_label = Gtk.Label(label=self.device_model.description)
         self.description_label.set_visible(self.device_model.nick != self.device_model.description)
         self.name_label = Gtk.Label(label=self.device_model.name)
+        # Warning icon shown when device fails to initialize
+        self.warning_icon = Gtk.Image.new_from_icon_name('dialog-warning')
         self.volume_widget = VolumeWidget(value=model.volume[0], draw_value=True)
         self.mute_widget = MuteWidget(active=model.mute)
         self.vumeter_widget = VumeterWidget()
@@ -121,6 +124,42 @@ class DeviceWidget(Gtk.Frame):
         self.nick_label.set_label(self.device_model.nick)
         self.description_label.set_label(self.device_model.description)
         self.description_label.set_visible(self.device_model.nick != self.device_model.description)
+        self._update_warning()
+
+    def _update_warning(self):
+        '''
+        Two-state visual:
+          - init_failed: warning triangle next to the name + tooltip with the error
+          - not present (without init_failed): grey out the name labels +
+            tooltip explaining the device is disconnected
+          - otherwise: normal state
+        '''
+        failed = bool(getattr(self.device_model, 'init_failed', False))
+        present = bool(getattr(self.device_model, 'present', True))
+        self.warning_icon.set_visible(failed)
+
+        if failed:
+            error = getattr(self.device_model, 'init_error', '') or _('Failed to create device')
+            self.warning_icon.set_tooltip_text(error)
+            for label in (self.nick_label, self.description_label):
+                label.set_sensitive(True)
+                label.set_tooltip_text(error)
+        elif not present:
+            disconnected = _('Device disconnected: %s') % self.device_model.name
+            for label in (self.nick_label, self.description_label):
+                label.set_sensitive(False)
+                label.set_tooltip_text(disconnected)
+        else:
+            for label in (self.nick_label, self.description_label):
+                label.set_sensitive(True)
+                label.set_tooltip_text(None)
+
+    def refresh_warnings(self):
+        '''Refresh own and child route warning indicators from current model state.'''
+        self._update_warning()
+        for output_type, widget_box in self.connections_widgets.items():
+            for connection_widget in widget_box.widgets.values():
+                connection_widget.update_warning()
 
     def reload_connection_widgets(self):
         self.connections_widgets['a'].clear()
