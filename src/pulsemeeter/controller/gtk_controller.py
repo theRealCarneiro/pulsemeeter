@@ -161,13 +161,11 @@ class GtkController(SignalModel):
         self.append_app_combobox(device_model)
 
     def on_device_widget_destroy(self, _, device_type, device_id):
-        if device_id in self.vumeter_tasks.get(device_type, {}):
-            self.stop_vumeter(device_type, device_id)
+        self.stop_vumeter(device_type, device_id)
         self.device_handlers[device_type].pop(device_id, None)
 
     def on_app_widget_destroy(self, _, app_type, app_id):
-        if app_id in self.vumeter_tasks.get(app_type, {}):
-            self.stop_vumeter(app_type, app_id)
+        self.stop_vumeter(app_type, app_id)
         self.app_handlers[app_type].pop(app_id, None)
 
     def on_window_destroy(self, _):
@@ -303,29 +301,19 @@ class GtkController(SignalModel):
 
     def stop_all_vumeters(self):
         for device_type in ('a', 'b', 'vi', 'hi'):
-            for task in self.vumeter_tasks[device_type].values():
-                task.cancel()
-            self.vumeter_tasks[device_type].clear()
-            for device_widget in self.content.device_box[device_type].widgets.values():
-                device_widget.vumeter_widget.set_fraction(0)
+            for device_id in list(self.vumeter_tasks[device_type]):
+                self.stop_vumeter(device_type, device_id)
         for app_type in ('sink_input', 'source_output'):
-            for task in self.vumeter_tasks[app_type].values():
-                task.cancel()
-            self.vumeter_tasks[app_type].clear()
-            for app_widget in self.content.app_box[app_type].widgets.values():
-                app_widget.vumeter_widget.set_fraction(0)
+            for app_index in list(self.vumeter_tasks[app_type]):
+                self.stop_vumeter(app_type, app_index)
 
     def start_all_vumeters(self):
         for device_type in ('a', 'b', 'vi', 'hi'):
-            for device_id, device_widget in self.content.device_box[device_type].widgets.items():
-                pa_device_type = device_widget.device_model.device_type
-                vumeter = self.start_vumeter(pa_device_type, device_widget.device_model.name, device_widget.vumeter_widget)
-                self.vumeter_tasks[device_type][device_id] = vumeter
+            for device_id in list(self.content.device_box[device_type].widgets):
+                self._start_device_vumeter(device_type, device_id)
         for app_type in ('sink_input', 'source_output'):
-            for app_index, app_widget in self.content.app_box[app_type].widgets.items():
-                stream_type = app_type.split('_')[0]
-                vumeter = self.start_vumeter(stream_type, app_widget.app_model.label + str(app_widget.app_model.index), app_widget.vumeter_widget, app_index)
-                self.vumeter_tasks[app_type][app_index] = vumeter
+            for app_index in list(self.content.app_box[app_type].widgets):
+                self._start_app_vumeter(app_type, app_index)
 
     def rebuild_content(self):
         self.stop_all_vumeters()
@@ -383,10 +371,7 @@ class GtkController(SignalModel):
         for signal_name, callback in signal_map.items():
             device_handler[signal_name] = device.connect(signal_name, callback, device_type, device_id)
 
-        pa_device_type = device.device_model.device_type
-        if self.config_model.vumeters:
-            vumeter = self.start_vumeter(pa_device_type, device.device_model.name, device.vumeter_widget)
-            self.vumeter_tasks[device_type][device_id] = vumeter
+        self._start_device_vumeter(device_type, device_id)
 
         return device
 
@@ -421,11 +406,7 @@ class GtkController(SignalModel):
         for signal_name, callback in signal_map.items():
             app_handler[signal_name] = app.connect(signal_name, callback, app_type, app_index)
 
-        # start vumeter
-        stream_type = app_type.split('_')[0]
-        if self.config_model.vumeters:
-            vumeter = self.start_vumeter(stream_type, app.app_model.label + str(app.app_model.index), app.vumeter_widget, app_index)
-            self.vumeter_tasks[app_type][app_index] = vumeter
+        self._start_app_vumeter(app_type, app_index)
 
         return app
 
@@ -493,12 +474,51 @@ class GtkController(SignalModel):
         future.add_done_callback(self.handle_vumeter_error)
         return future
 
-    def stop_vumeter(self, device_type, device_id):
+    def stop_vumeter(self, type_: str, id_: str):
+        """
+        Cancel a vumeter task and idle its bar. Safe to call when no
+        task is running or when the widget has already been removed.
+        """
+        task = self.vumeter_tasks[type_].pop(id_, None)
+        if task is not None:
+            task.cancel()
+        if type_ in ('a', 'b', 'vi', 'hi'):
+            widget = self.content.device_box[type_].widgets.get(id_)
+        else:
+            widget = self.content.app_box[type_].widgets.get(id_)
+        if widget is not None:
+            widget.vumeter_widget.set_fraction(0)
+            widget.vumeter_widget.set_sensitive(False)
+
+    def _start_device_vumeter(self, device_type: str, device_id: str):
+        """Subscribe a peak stream for a device widget. No-op if vumeters are off or the widget is gone."""
         if not self.config_model.vumeters:
             return
+        device_widget = self.content.device_box[device_type].widgets.get(device_id)
+        if device_widget is None:
+            return
+        pa_device_type = device_widget.device_model.device_type
+        self.vumeter_tasks[device_type][device_id] = self.start_vumeter(
+            pa_device_type, device_widget.device_model.name, device_widget.vumeter_widget
+        )
 
-        self.vumeter_tasks[device_type][device_id].cancel()
-        del self.vumeter_tasks[device_type][device_id]
+    def _start_app_vumeter(self, app_type: str, app_index):
+        """Subscribe a peak stream for an app widget. No-op if vumeters are off or the widget is gone."""
+        if not self.config_model.vumeters:
+            return
+        app_widget = self.content.app_box[app_type].widgets.get(app_index)
+        if app_widget is None:
+            return
+        stream_type = app_type.split('_')[0]
+        name = app_widget.app_model.label + str(app_widget.app_model.index)
+        self.vumeter_tasks[app_type][app_index] = self.start_vumeter(
+            stream_type, name, app_widget.vumeter_widget, app_index
+        )
+
+    def _restart_device_vumeter(self, device_type: str, device_id: str):
+        """(Re)subscribe a peak stream for a device that just appeared in PA."""
+        self.stop_vumeter(device_type, device_id)
+        self._start_device_vumeter(device_type, device_id)
 
     #
     # # Update model functions
@@ -643,11 +663,17 @@ class GtkController(SignalModel):
         signal, then refresh warning indicators. Refresh runs even if the
         handler raises so the UI never gets stuck on a stale state.
         """
+        is_unplug = signal_name == 'pa_unplug'
+
         def run_on_main():
+            if is_unplug:
+                self.stop_vumeter(device_type, device_id)
             try:
                 self.emit(signal_name, device_type, device_id)
             except Exception:
                 LOG.exception("%s handling failed for %s/%s", kind, device_type, device_id)
+            if not is_unplug:
+                self._restart_device_vumeter(device_type, device_id)
             self.refresh_all_warnings()
             return False
 
