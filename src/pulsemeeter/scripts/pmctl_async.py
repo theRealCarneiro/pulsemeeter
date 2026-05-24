@@ -403,12 +403,21 @@ def decode_event(event: pulsectl.PulseEventInfo) -> tuple[str, str, int]:
 
 
 async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30):
+    is_device_meter = stream_index is None
     if device_type == 'sink':
         name += '.monitor'
     else:
         stream_index = None
 
     async with pulsectl_asyncio.PulseAsync(f'{name}_{device_type}_peak') as pulse:
+        if is_device_meter:
+            try:
+                await pulse.get_source_by_name(name)
+            except pulsectl.PulseError:
+                LOG.debug('Peak source %s not present, idling vumeter', name)
+                await callback(0.0)
+                return
+
         async for peak in pulse.subscribe_peak_sample(name, rate, stream_idx=stream_index):
             await callback(peak)
 

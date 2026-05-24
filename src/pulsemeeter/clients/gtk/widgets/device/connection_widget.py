@@ -57,7 +57,7 @@ class ConnectionWidget(Gtk.Box):
         self.volume_scale.set_digits(0)
         self.volume_scale.set_value(connection_model.route_volume)
         self.volume_scale.set_hexpand(True)
-        self.volume_scale.set_size_request(150, 0)
+        self.volume_scale.set_size_request(150, -1)
         self.volume_scale.add_mark(100, Gtk.PositionType.TOP, '')
         self.volume_scale.set_tooltip_text(_('Route volume'))
         self._volume_handler_id = self.volume_scale.connect('value-changed', self._on_volume_changed)
