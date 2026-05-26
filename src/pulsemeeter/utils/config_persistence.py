@@ -61,7 +61,7 @@ class ConfigPersistence:
             try:
                 with os.fdopen(fd, 'w', encoding='utf-8') as outfile:
                     json.dump(
-                        self._config.model_dump(),
+                        self._config.dict(),
                         outfile,
                         indent='\t',
                         separators=(',', ': ')
