@@ -1,6 +1,6 @@
 import logging
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, root_validator, validator
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.connection_model import ConnectionModel
 
@@ -14,7 +14,7 @@ VIRTUAL_TYPES = ('vi', 'b')
 
 class ConfigModel(BaseModel):
     '''
-    Model for the config file. A model_validator runs after construction to
+    Model for the config file. A root_validator runs after construction to
     repair self-inconsistent state (orphan connections, missing entries,
     out-of-range port_maps, duplicate primaries, empty-name devices) so the
     rest of the app never has to defend against invalid config shapes.
@@ -28,34 +28,37 @@ class ConfigModel(BaseModel):
     window_width: int = 800
     window_height: int = 600
 
-    @field_validator('layout')
-    @classmethod
+    @validator('layout')
     def capitalize_layout(cls, v):
         return v.capitalize()
 
-    @model_validator(mode='after')
-    def heal_invariants(self):
-        self._ensure_device_buckets()
-        self._drop_invalid_devices()
-        self._dedupe_primary()
-        self._repair_connections()
-        return self
+    @root_validator(skip_on_failure=True)
+    def heal_invariants(cls, values):
+        devices = values['devices']
+        cls._ensure_device_buckets(devices)
+        cls._drop_invalid_devices(devices)
+        cls._dedupe_primary(devices)
+        cls._repair_connections(devices)
+        return values
 
-    def _ensure_device_buckets(self):
+    @classmethod
+    def _ensure_device_buckets(cls, devices):
         for device_type in DEVICE_TYPES:
-            self.devices.setdefault(device_type, {})
+            devices.setdefault(device_type, {})
 
-    def _drop_invalid_devices(self):
-        for device_type, bucket in self.devices.items():
+    @classmethod
+    def _drop_invalid_devices(cls, devices):
+        for device_type, bucket in devices.items():
             invalid_ids = [did for did, dev in bucket.items() if not dev.name.strip()]
             for device_id in invalid_ids:
                 LOG.warning("ConfigModel: dropping %s/%s with empty name", device_type, device_id)
                 bucket.pop(device_id)
 
-    def _dedupe_primary(self):
+    @classmethod
+    def _dedupe_primary(cls, devices):
         for device_type in VIRTUAL_TYPES:
             seen_primary = False
-            for device_id, device in self.devices[device_type].items():
+            for device_id, device in devices[device_type].items():
                 if device.primary is not True:
                     continue
                 if seen_primary:
@@ -64,21 +67,24 @@ class ConfigModel(BaseModel):
                 else:
                     seen_primary = True
 
-    def _repair_connections(self):
+    @classmethod
+    def _repair_connections(cls, devices):
         for input_type in INPUT_TYPES:
-            for input_id, input_device in self.devices[input_type].items():
-                self._ensure_connection_buckets(input_device)
-                self._drop_orphan_connections(input_type, input_id, input_device)
-                self._fill_missing_connections(input_type, input_id, input_device)
-                self._repair_port_maps(input_type, input_id, input_device)
+            for input_id, input_device in devices[input_type].items():
+                cls._ensure_connection_buckets(input_device)
+                cls._drop_orphan_connections(devices, input_type, input_id, input_device)
+                cls._fill_missing_connections(devices, input_type, input_id, input_device)
+                cls._repair_port_maps(devices, input_type, input_id, input_device)
 
-    def _ensure_connection_buckets(self, input_device):
+    @classmethod
+    def _ensure_connection_buckets(cls, input_device):
         for output_type in OUTPUT_TYPES:
             input_device.connections.setdefault(output_type, {})
 
-    def _drop_orphan_connections(self, input_type, input_id, input_device):
+    @classmethod
+    def _drop_orphan_connections(cls, devices, input_type, input_id, input_device):
         for output_type in OUTPUT_TYPES:
-            output_bucket = self.devices[output_type]
+            output_bucket = devices[output_type]
             orphan_ids = [oid for oid in input_device.connections[output_type] if oid not in output_bucket]
             for output_id in orphan_ids:
                 LOG.warning(
@@ -87,9 +93,10 @@ class ConfigModel(BaseModel):
                 )
                 input_device.connections[output_type].pop(output_id)
 
-    def _fill_missing_connections(self, input_type, input_id, input_device):
+    @classmethod
+    def _fill_missing_connections(cls, devices, input_type, input_id, input_device):
         for output_type in OUTPUT_TYPES:
-            for output_id, output_device in self.devices[output_type].items():
+            for output_id, output_device in devices[output_type].items():
                 if output_id in input_device.connections[output_type]:
                     continue
                 LOG.warning(
@@ -102,10 +109,11 @@ class ConfigModel(BaseModel):
                     output_sel_channels=_default_sel_channels(output_device),
                 )
 
-    def _repair_port_maps(self, input_type, input_id, input_device):
+    @classmethod
+    def _repair_port_maps(cls, devices, input_type, input_id, input_device):
         for output_type in OUTPUT_TYPES:
             for output_id, connection in input_device.connections[output_type].items():
-                output_device = self.devices[output_type][output_id]
+                output_device = devices[output_type][output_id]
                 if _port_map_in_range(connection.port_map, input_device.channels, output_device.channels):
                     continue
                 LOG.warning(
