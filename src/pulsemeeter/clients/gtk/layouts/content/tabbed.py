@@ -13,6 +13,16 @@ from gi.repository import Gtk  # noqa: E402
 _ = gettext.gettext
 
 
+def _wrap_switcher_labels(switcher):
+    child = switcher.get_first_child()
+    while child is not None:
+        label = child.get_first_child()
+        if isinstance(label, Gtk.Label):
+            label.set_wrap(True)
+            label.set_justify(Gtk.Justification.CENTER)
+        child = child.get_next_sibling()
+
+
 def arrange_widgets(content):
     '''
     Arrange device boxes in a grid layout.
@@ -42,6 +52,7 @@ def arrange_widgets(content):
     stack.add_titled(content.settings_box, 'settings', _('Settings'))
     switcher = Gtk.StackSwitcher()
     switcher.set_stack(stack)
+    _wrap_switcher_labels(switcher)
     tab_bar = Gtk.ScrolledWindow()
     tab_bar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
     tab_bar.set_child(switcher)
