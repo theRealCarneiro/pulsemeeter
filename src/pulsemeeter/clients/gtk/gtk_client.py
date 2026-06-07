@@ -82,6 +82,10 @@ class GtkClient(Gtk.Application):
         self.window.present()
         # self.window.connect('close-request', self.on_window_destroy)
 
+        # Greet new users on the very first launch (no config file present).
+        if self.config_persistence.first_run:
+            self.gtk_controller.open_welcome_window()
+
         self.connect_gtk_controller_events()
         self.connect_device_controller_events()
         self.connect_event_controller_events()

@@ -18,6 +18,7 @@ from pulsemeeter.clients.gtk.widgets.content import Content
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget
 from pulsemeeter.clients.gtk.widgets.app.app_dropdown import AppDropDown
+from pulsemeeter.clients.gtk.widgets.welcome_window import WelcomeWindow
 # from pulsemeeter.settings import STYLE_FILE
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -88,6 +89,7 @@ class GtkController(SignalModel):
 
         self.window = None
         self.content = None
+        self.welcome_window = None
         self.vumeter_tasks = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}, 'sink_input': {}, 'source_output': {}}
         self.device_handlers = {'a': {}, 'b': {}, 'vi': {}, 'hi': {}}
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
@@ -381,10 +383,18 @@ class GtkController(SignalModel):
             'device_new': self.device_new,
             'settings_pressed': self.settings_menu_open,
             'settings_change': self.settings_menu_apply,
+            'help_pressed': self.open_welcome_window,
         }
 
         for signal_name, callback in signal_map.items():
             self.content.connect(signal_name, callback)
+
+    def open_welcome_window(self, *_):
+        '''
+        Create and present the welcome window.
+        '''
+        self.welcome_window = WelcomeWindow(transient_for=self.window)
+        self.welcome_window.present()
 
     # def connect_connection_gtk_events(self, input_type, input_id, output_type, output_id):
     #     pass
