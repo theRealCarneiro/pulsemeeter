@@ -18,6 +18,14 @@ DEVICE_TYPE_PRETTY = {
 }
 
 
+DEVICE_TYPE_DESCRIPTION = {
+    'hi': _('Physical sources such as microphones and line-in.'),
+    'vi': _('Virtual sinks that applications can play into.'),
+    'a': _('Physical sinks such as speakers and headphones.'),
+    'b': _('Virtual sources that applications can capture from.'),
+}
+
+
 class PulseEventType(Enum):
     CHANGE = 'change'
     NEW = 'new'
