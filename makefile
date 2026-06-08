@@ -37,6 +37,7 @@ uninstall:
 		${DESTDIR}${PREFIX}/share/licenses/pulsemeeter \
 		${DESTDIR}${PREFIX}/share/doc/pulsemeeter \
 		${DESTDIR}${PREFIX}/share/applications/pulsemeeter.desktop \
+		${DESTDIR}${PREFIX}/share/applications/org.pulsemeeter.pulsemeeter.desktop \
 		${DESTDIR}${PREFIX}/share/locale/*/LC_MESSAGES/pulsemeeter.mo \
 		${DESTDIR}${PREFIX}/share/icons/hicolor/*/apps/Pulsemeeter.png \
 
