@@ -22,7 +22,8 @@ class Content(Gtk.Box):
         "device_new": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
         "add_device_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT, str, str)),
         "settings_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
-        "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
+        "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
+        "help_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ())
     }
 
     def __init__(self, *args, **kwargs):
@@ -37,6 +38,7 @@ class Content(Gtk.Box):
         gesture.connect("pressed", self._on_settings_pressed)
         self.settings_button.add_controller(gesture)
         self.settings_box.connect('settings_change', self._on_settings_changed)
+        self.settings_box.connect('help_pressed', self._on_help_pressed)
 
         self.create_device_button = {}
         self.device_box = {}
@@ -93,6 +95,9 @@ class Content(Gtk.Box):
 
     def _on_settings_pressed(self, *_):
         self.emit('settings_pressed')
+
+    def _on_help_pressed(self, _):
+        self.emit('help_pressed')
 
     def _on_settings_changed(self, _, schema):
         self.emit('settings_change', schema)

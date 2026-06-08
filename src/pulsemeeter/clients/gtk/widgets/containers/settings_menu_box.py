@@ -22,7 +22,8 @@ class SettingsMenuBox(Gtk.Box):
     layout: str = 'Blocks'
 
     __gsignals__ = {
-        "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
+        "settings_change": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
+        "help_pressed": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ())
     }
 
     def __init__(self):
@@ -43,12 +44,20 @@ class SettingsMenuBox(Gtk.Box):
         # self.cleanup.get_accessible().set_name(_('Cleanup'))
         # self.layout.get_accessible().set_name(_('Layout'))
         self.apply_button = Gtk.Button(label=_('Apply'))
+        self.help_button = Gtk.Button(icon_name='help-about-symbolic')
+        self.help_button.set_tooltip_text(_('Open the welcome guide'))
+        Gtk.Accessible.update_property(
+            self.help_button,
+            [Gtk.AccessibleProperty.LABEL],
+            [_('Open the welcome guide')]
+        )
         self.tray.set_tooltip_text(_('Enable or disable %s') % ('closing to the tray'))
         self.vumeters.set_tooltip_text(_('Enable or disable %s') % _('VU Meter (volume peak)'))
         self.cleanup.set_tooltip_text(_('Enable or disable %s') % ('cleaning up devices and connections upon closing'))
         self.layout.set_tooltip_text(_('Select the GUI layout'))
 
-        button_box = Gtk.Box(vexpand=False, halign=Gtk.Align.END, valign=Gtk.Align.END)
+        button_box = Gtk.Box(vexpand=False, halign=Gtk.Align.END, valign=Gtk.Align.END, spacing=6)
+        button_box.append(self.help_button)
         button_box.append(self.apply_button)
 
         mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -59,6 +68,7 @@ class SettingsMenuBox(Gtk.Box):
         mainbox.append(button_box)
 
         self.apply_button.connect('clicked', self.apply_settings)
+        self.help_button.connect('clicked', lambda _: self.emit('help_pressed'))
 
         self.append(mainbox)
 

@@ -1,6 +1,7 @@
 import gettext
 
 from pulsemeeter.model.types import DEVICE_TYPE_PRETTY as PRETTY
+from pulsemeeter.model.types import DEVICE_TYPE_DESCRIPTION as DESCRIPTION
 from pulsemeeter.clients.gtk.widgets.utils.framed_widget import FramedWidget
 # from pulsemeeter.clients.gtk.widgets.content import Content
 
@@ -15,15 +16,18 @@ _ = gettext.gettext
 
 class DeviceBox(Gtk.Frame):
 
-    def __init__(self, widget, label, button=None):
+    def __init__(self, widget, label, button=None, tooltip=None):
         '''
         Returns a framed widget with the requested label
             "widget" is the widget that is going to be framed
             "label" is the label of the frame
+            "tooltip" is hint text shown when hovering the label
         '''
         super().__init__(margin_bottom=10, margin_top=10, margin_start=10, margin_end=10)
         title = Gtk.Label(label=label, halign=Gtk.Align.CENTER,
                           margin_bottom=10, margin_top=10, margin_start=10, margin_end=10)
+        if tooltip is not None:
+            title.set_tooltip_text(tooltip)
         main_box = Gtk.Box(hexpand=True, spacing=10)
         main_box.append(title)
         if button is not None:
@@ -58,7 +62,8 @@ def arrange_widgets(content):
         device_frame[device_type] = DeviceBox(
             content.device_box[device_type],
             PRETTY[device_type],
-            content.create_device_button[device_type]
+            content.create_device_button[device_type],
+            DESCRIPTION.get(device_type)
         )
 
     # id rather use framed

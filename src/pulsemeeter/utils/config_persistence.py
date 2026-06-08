@@ -14,6 +14,7 @@ class ConfigPersistence:
     def __init__(self, config_model_cls, config_file):
         self.config_file = config_file
         self.config_model_cls = config_model_cls
+        self.first_run = not os.path.exists(config_file)
         self._config = self.load()
 
     def load(self):
