@@ -245,12 +245,17 @@ class GtkController(SignalModel):
         sink_input_device_list = [('', '')]
         source_output_device_list = [('', '')]
 
-        for device in self.device_repository.get_devices_by_type('vi').values():
-            sink_input_device_list.append((device.nick, device.name))
-            source_output_device_list.append((device.nick + '.monitor', device.name))
+        # apps play into a sink (vi/a)
+        for device_type in ('vi', 'a'):
+            for device in self.device_repository.get_devices_by_type(device_type).values():
+                sink_input_device_list.append((device.nick, device.name))
 
-        for device in self.device_repository.get_devices_by_type('b').values():
-            source_output_device_list.append((device.nick, device.name))
+        # apps record from a source: a vi's monitor, or a hi/b directly
+        for device in self.device_repository.get_devices_by_type('vi').values():
+            source_output_device_list.append((device.nick, device.name + '.monitor'))
+        for device_type in ('hi', 'b'):
+            for device in self.device_repository.get_devices_by_type(device_type).values():
+                source_output_device_list.append((device.nick, device.name))
 
         AppDropDown.set_device_list('sink_input', sink_input_device_list)
         AppDropDown.set_device_list('source_output', source_output_device_list)
@@ -260,7 +265,9 @@ class GtkController(SignalModel):
         self.block_app_combobox_handlers(True)
         if device.device_type == 'sink':
             AppDropDown.append_device_list('sink_input', (device.nick, device.name))
-            AppDropDown.append_device_list('source_output', (device.nick + '.monitor', device.name))
+            # only vi exposes a monitor to record from
+            if device.device_class == 'virtual':
+                AppDropDown.append_device_list('source_output', (device.nick, device.name + '.monitor'))
         else:
             AppDropDown.append_device_list('source_output', (device.nick, device.name))
         self.block_app_combobox_handlers(False)
@@ -269,7 +276,8 @@ class GtkController(SignalModel):
         self.block_app_combobox_handlers(True)
         if device.device_type == 'sink':
             AppDropDown.remove_device_list('sink_input', (device.nick, device.name))
-            AppDropDown.remove_device_list('source_output', (device.nick + '.monitor', device.name))
+            if device.device_class == 'virtual':
+                AppDropDown.remove_device_list('source_output', (device.nick, device.name + '.monitor'))
         else:
             AppDropDown.remove_device_list('source_output', (device.nick, device.name))
         self.block_app_combobox_handlers(False)

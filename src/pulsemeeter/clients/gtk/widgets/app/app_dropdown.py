@@ -51,8 +51,9 @@ class AppDropDown(Gtk.DropDown):
     def set_active_device(self, device):
         device_data = self._device_data[self.app_type]
 
+        # match on pa_name (entry[1]), not the label
         for i, entry in enumerate(device_data):
-            if entry[0] == device:
+            if entry[1] == device:
                 self.set_selected(i)
                 return
 
@@ -60,10 +61,11 @@ class AppDropDown(Gtk.DropDown):
 
     @classmethod
     def set_device_list(cls, app_type, device_list):
+        # entry = (label shown to user, pa_name to route/match on)
         cls._device_data[app_type] = list(device_list)
-        nicks = [entry[0] for entry in device_list]
+        labels = [entry[0] for entry in device_list]
         string_list = cls._string_list[app_type]
-        string_list.splice(0, string_list.get_n_items(), nicks)
+        string_list.splice(0, string_list.get_n_items(), labels)
 
     @classmethod
     def append_device_list(cls, app_type, device):
@@ -74,7 +76,7 @@ class AppDropDown(Gtk.DropDown):
     def remove_device_list(cls, app_type, device):
         data = cls._device_data[app_type]
         for i, entry in enumerate(data):
-            if device[0] == entry[0]:
+            if device[1] == entry[1]:
                 data.pop(i)
                 cls._string_list[app_type].remove(i)
                 return
