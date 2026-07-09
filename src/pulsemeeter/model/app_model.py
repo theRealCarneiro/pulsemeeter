@@ -21,6 +21,18 @@ class AppModel(BaseModel):
     volume: int
     mute: bool
     device: str
+    # PipeWire object id, for pin lookup
+    object_id: int | None = None
+    # pinned to a device, or following the default
+    pinned: bool = False
+
+    @property
+    def display_device(self) -> str:
+        '''
+        Device shown in the selector: the pinned device, or '' when following
+        the default. `device` stays the resolved device (used by the vumeter).
+        '''
+        return self.device if self.pinned else ''
 
     @validator('icon')
     def set_icon(cls, icon):
@@ -50,6 +62,7 @@ class AppModel(BaseModel):
             "app_type" is either 'sink_input' or 'source_output'
         '''
 
+        object_id = app.proplist.get('object.id')
         app = cls(
             app_type=app_type,
             index=app.index,
@@ -57,7 +70,8 @@ class AppModel(BaseModel):
             icon=app.proplist.get('application.icon_name'),
             volume=int(app.volume.values[0] * 100),
             mute=bool(app.mute),
-            device=app.device_name
+            device=app.device_name,
+            object_id=int(object_id) if object_id is not None else None
         )
 
         return app

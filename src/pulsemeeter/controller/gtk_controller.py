@@ -233,12 +233,25 @@ class GtkController(SignalModel):
         '''
         pa_app_list = pmctl.list_apps(app_type)
 
+        pinned_ids = pmctl.get_pinned_app_ids()
         app_dict = {}
         for app in pa_app_list:
             app = AppModel.pa_to_app_model(app, app_type)
+            self._mark_app_pinned(app, pinned_ids)
             app_dict[app.index] = app
 
         return app_dict
+
+    @staticmethod
+    def _mark_app_pinned(app_model, pinned_ids=None):
+        '''
+        Set app_model.pinned. pinned_ids None means pw-dump is unavailable, so
+        treat the app as pinned and let the selector show its resolved device.
+        '''
+        if pinned_ids is None:
+            pinned_ids = pmctl.get_pinned_app_ids()
+        app_model.pinned = pinned_ids is None or app_model.object_id in pinned_ids
+        return app_model
 
     def load_app_combobox(self):
         self.block_app_combobox_handlers(True)
@@ -717,6 +730,7 @@ class GtkController(SignalModel):
 
     def app_new_callback(self, app_type: str, app_index: int, app_model: DeviceModel):
         def wrapper():
+            self._mark_app_pinned(app_model)
             app = self.create_app_widget(app_type, app_index, app_model)
             return False
 
@@ -733,6 +747,7 @@ class GtkController(SignalModel):
         def wrapper():
             app_widget = self.content.app_box[app_type].widgets.get(app_index)
             if app_widget:
+                self._mark_app_pinned(app)
                 device_changed = app_widget.app_model.device != app.device
                 app_widget.pa_app_change(app)
                 if device_changed:

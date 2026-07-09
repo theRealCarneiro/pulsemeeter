@@ -1,4 +1,5 @@
 import re
+import json
 import time
 import shutil
 import logging
@@ -192,6 +193,49 @@ def get_device_serial(device_type: str, device_name: str) -> str:
     if device:
         return device.proplist.get('object.serial', '')
     return ''
+
+
+_NO_TARGET = ('', -1, '-1', None)
+
+
+def get_pinned_app_ids() -> set | None:
+    '''
+    Return PipeWire object ids of app streams pinned to a device: target.object
+    or target.node set, either on the node or in the "default" metadata store.
+    Returns None if pw-dump is unavailable.
+    '''
+    try:
+        graph = json.loads(subprocess.check_output(['pw-dump'], stderr=subprocess.DEVNULL))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+    pinned = set()
+    for obj in graph:
+        obj_type = obj.get('type')
+        if obj_type == 'PipeWire:Interface:Node':
+            props = obj.get('info', {}).get('props', {})
+            if any(props.get(k) not in _NO_TARGET for k in ('target.object', 'target.node', 'node.target')):
+                pinned.add(obj.get('id'))
+        elif obj_type == 'PipeWire:Interface:Metadata' and obj.get('props', {}).get('metadata.name') == 'default':
+            for entry in obj.get('metadata', []):
+                if entry.get('key') in ('target.object', 'target.node') and entry.get('value') not in _NO_TARGET:
+                    pinned.add(entry.get('subject'))
+    return pinned
+
+
+def unpin_app(object_id: int) -> bool:
+    '''
+    Clear a stream's routing target (by PipeWire object id) so it follows the
+    default again. Clears both target.object and target.node - a pulse move
+    sets both, and either one left behind still reads as pinned.
+    '''
+    try:
+        for key in ('target.object', 'target.node'):
+            subprocess.run(['pw-metadata', str(object_id), key, ''],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        return True
+    except OSError:
+        return False
 
 
 def create_loopback(name: str, capture_serial: str, playback_serial: str, channels: int) -> subprocess.Popen:
@@ -618,6 +662,16 @@ def app_by_id(index: int, app_type: str) -> PulseSinkInputInfo | PulseSourceOutp
     device = get_device_by_index(device_type, app.sink)
     app.device_name = device.name
     return app
+
+
+def get_app_object_id(index: int, app_type: str) -> int | None:
+    '''Return the app stream's PipeWire object id, or None if not resolvable.'''
+    try:
+        app = app_by_id(index, app_type)
+    except pulsectl.PulseError:
+        return None
+    object_id = app.proplist.get('object.id')
+    return int(object_id) if object_id is not None else None
 
 
 def list_apps(app_type: str) -> list[PulseSinkInputInfo | PulseSourceOutputInfo]:

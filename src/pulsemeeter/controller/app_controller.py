@@ -32,7 +32,12 @@ class AppController(SignalModel):
 
     def change_device(self, app_type, app_index, device_name: str):
         if not device_name:
-            device_name = pmctl.get_default_device_name(app_type)
+            # blank = unpin so it follows the default
+            object_id = pmctl.get_app_object_id(app_index, app_type)
+            if object_id is not None:
+                pmctl.unpin_app(object_id)
+            self.emit('app_device_change', app_type, app_index, '')
+            return
         pmctl.move_app_device(app_type, app_index, device_name)
         self.emit('app_device_change', app_type, app_index, device_name)
 
