@@ -74,6 +74,9 @@ class AppWidget(Gtk.Frame):
         self.volume_widget.set_volume(app.volume)
         self.mute_widget.set_mute(bool(app.mute))
         self.change_device(app.device)
+        self.app_model.volume = app.volume
+        self.app_model.mute = app.mute
+        self.app_model.device = app.device
 
     def change_device(self, device_name: str):
         if self.combobox.get_active_text() == device_name:

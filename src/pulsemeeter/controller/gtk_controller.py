@@ -528,10 +528,19 @@ class GtkController(SignalModel):
         if app_widget is None:
             return
         stream_type = app_type.split('_')[0]
-        name = app_widget.app_model.label + str(app_widget.app_model.index)
+        # meter the app's actual device so the meter follows it on a move;
+        # a fake name would fall back to metering the default source
+        name = app_widget.app_model.device
+        if not name:
+            return
         self.vumeter_tasks[app_type][app_index] = self.start_vumeter(
             stream_type, name, app_widget.vumeter_widget, app_index
         )
+
+    def _restart_app_vumeter(self, app_type: str, app_index):
+        """Re-subscribe an app's peak stream after it moves to a new device."""
+        self.stop_vumeter(app_type, app_index)
+        self._start_app_vumeter(app_type, app_index)
 
     def _restart_device_vumeter(self, device_type: str, device_id: str):
         """(Re)subscribe a peak stream for a device that just appeared in PA."""
@@ -724,7 +733,10 @@ class GtkController(SignalModel):
         def wrapper():
             app_widget = self.content.app_box[app_type].widgets.get(app_index)
             if app_widget:
+                device_changed = app_widget.app_model.device != app.device
                 app_widget.pa_app_change(app)
+                if device_changed:
+                    self._restart_app_vumeter(app_type, app_index)
             return False
 
         GLib.idle_add(wrapper)
