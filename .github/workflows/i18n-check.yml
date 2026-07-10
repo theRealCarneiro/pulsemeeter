@@ -1,0 +1,35 @@
+name: i18n Catalog Check
+
+on: [push, pull_request]
+
+jobs:
+  check-catalogs:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Babel
+      run: |
+        python -m pip install --upgrade pip
+        pip install babel setuptools
+
+    - name: Regenerate .pot and update catalogs
+      run: |
+        python setup.py extract_messages
+        python setup.py update_catalog
+
+    - name: Fail if catalogs are out of sync
+      run: |
+        # The .pot template is gitignored; only the tracked .po catalogs are checked.
+        # -I ignores the auto-stamped date header so only real string changes fail.
+        if ! git diff --exit-code -I 'POT-Creation-Date' -- 'locale/*.po'; then
+          echo "::error::Translation catalogs are out of sync with the source code."
+          echo "Run 'python setup.py extract_messages && python setup.py update_catalog',"
+          echo "then commit the updated .po files (translating new entries if you can)."
+          exit 1
+        fi
