@@ -11,7 +11,7 @@ LOG = logging.getLogger('generic')
 PULSE = pulsectl.Pulse('pmctl')
 
 
-def create_device(device_type: str, name: str, channels: int, position: list[str]) -> bool:
+def create_device(device_type: str, name: str, channels: int, position: list[str], hidden: bool = False) -> bool:
     '''
     Create a PipeWire device.
     Args:
@@ -19,17 +19,22 @@ def create_device(device_type: str, name: str, channels: int, position: list[str
         name (str): Name of the device.
         channels (int): Number of audio channels.
         position (list[str]): Channel map positions.
+        hidden (bool): Use a media.class that pipewire-pulse does not expose,
+            hiding the device from PulseAudio clients (volume applets, pactl).
     Returns:
         bool: True on success, raises on failure.
     '''
 
     class_map = {'sink': 'Sink', 'source': 'Source/Virtual'}
+    media_class = f'Audio/{class_map[device_type]}'
+    if hidden:
+        media_class += '/Internal'
 
     data = f'''{{
         factory.name=support.null-audio-sink
         node.name="{name}"
         node.description="{name}"
-        media.class=Audio/{class_map[device_type]}
+        media.class={media_class}
         audio.channels={channels}
         audio.position="{' '.join(position)}"
         monitor.channel-volumes=true
@@ -143,7 +148,7 @@ def create_intermediate_sink(loopback_name: str, channels: int, position: list[s
         str: The intermediate sink name.
     '''
     sink_name = make_intermediate_sink_name(loopback_name)
-    create_device('sink', sink_name, channels, position)
+    create_device('sink', sink_name, channels, position, hidden=True)
     return sink_name
 
 
@@ -179,6 +184,41 @@ def wait_for_device(device_type: str, device_name: str, timeout: float = 2.0, in
     return False
 
 
+def get_node_serial(node_name: str) -> str:
+    '''
+    Get the PipeWire object.serial for a node via pw-cli, bypassing PulseAudio.
+    Works for nodes hidden from the pulse API (e.g. intermediate sinks).
+    Args:
+        node_name (str): The PipeWire node.name.
+    Returns:
+        str: The object.serial, or empty string if not found.
+    '''
+    ret, stdout, _ = run_command(['pw-cli', 'info', node_name], split=False)
+    if ret != 0 or not stdout:
+        return ''
+    match = re.search(r'object\.serial\s*=\s*"(\d+)"', stdout)
+    return match.group(1) if match else ''
+
+
+def wait_for_node(node_name: str, timeout: float = 2.0, interval: float = 0.05) -> str:
+    '''
+    Poll until a PipeWire node appears, bypassing PulseAudio.
+    Args:
+        node_name (str): The PipeWire node.name.
+        timeout (float): Maximum time to wait in seconds.
+        interval (float): Polling interval in seconds.
+    Returns:
+        str: The node's object.serial, or empty string if timed out.
+    '''
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        serial = get_node_serial(node_name)
+        if serial:
+            return serial
+        time.sleep(interval)
+    return ''
+
+
 def get_device_serial(device_type: str, device_name: str) -> str:
     '''
     Get the PipeWire object.serial for a device.
@@ -210,8 +250,10 @@ def create_loopback(name: str, capture_serial: str, playback_serial: str, channe
         'pw-loopback',
         '--name', name,
         '--channels', str(channels),
-        '--capture-props', f'target.object={capture_serial}',
-        '--playback-props', f'target.object={playback_serial}',
+        # node.virtual=true makes pipewire-pulse report no client for the streams,
+        # which hides them from volume applets like plasma-pa
+        '--capture-props', f'target.object={capture_serial} node.virtual=true',
+        '--playback-props', f'target.object={playback_serial} node.virtual=true',
     ]
 
     LOG.debug('Creating loopback: %s', command)
