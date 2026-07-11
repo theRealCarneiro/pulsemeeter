@@ -233,24 +233,42 @@ class GtkController(SignalModel):
         '''
         pa_app_list = pmctl.list_apps(app_type)
 
+        pinned_ids = pmctl.get_pinned_app_ids()
         app_dict = {}
         for app in pa_app_list:
             app = AppModel.pa_to_app_model(app, app_type)
+            self._mark_app_pinned(app, pinned_ids)
             app_dict[app.index] = app
 
         return app_dict
+
+    @staticmethod
+    def _mark_app_pinned(app_model, pinned_ids=None):
+        '''
+        Set app_model.pinned. pinned_ids None means pw-dump is unavailable, so
+        treat the app as pinned and let the selector show its resolved device.
+        '''
+        if pinned_ids is None:
+            pinned_ids = pmctl.get_pinned_app_ids()
+        app_model.pinned = pinned_ids is None or app_model.object_id in pinned_ids
+        return app_model
 
     def load_app_combobox(self):
         self.block_app_combobox_handlers(True)
         sink_input_device_list = [('', '')]
         source_output_device_list = [('', '')]
 
-        for device in self.device_repository.get_devices_by_type('vi').values():
-            sink_input_device_list.append((device.nick, device.name))
-            source_output_device_list.append((device.nick + '.monitor', device.name))
+        # apps play into a sink (vi/a)
+        for device_type in ('vi', 'a'):
+            for device in self.device_repository.get_devices_by_type(device_type).values():
+                sink_input_device_list.append((device.nick, device.name))
 
-        for device in self.device_repository.get_devices_by_type('b').values():
-            source_output_device_list.append((device.nick, device.name))
+        # apps record from a source: a vi's monitor, or a hi/b directly
+        for device in self.device_repository.get_devices_by_type('vi').values():
+            source_output_device_list.append((device.nick, device.name + '.monitor'))
+        for device_type in ('hi', 'b'):
+            for device in self.device_repository.get_devices_by_type(device_type).values():
+                source_output_device_list.append((device.nick, device.name))
 
         AppDropDown.set_device_list('sink_input', sink_input_device_list)
         AppDropDown.set_device_list('source_output', source_output_device_list)
@@ -260,7 +278,9 @@ class GtkController(SignalModel):
         self.block_app_combobox_handlers(True)
         if device.device_type == 'sink':
             AppDropDown.append_device_list('sink_input', (device.nick, device.name))
-            AppDropDown.append_device_list('source_output', (device.nick + '.monitor', device.name))
+            # only vi exposes a monitor to record from
+            if device.device_class == 'virtual':
+                AppDropDown.append_device_list('source_output', (device.nick, device.name + '.monitor'))
         else:
             AppDropDown.append_device_list('source_output', (device.nick, device.name))
         self.block_app_combobox_handlers(False)
@@ -269,7 +289,8 @@ class GtkController(SignalModel):
         self.block_app_combobox_handlers(True)
         if device.device_type == 'sink':
             AppDropDown.remove_device_list('sink_input', (device.nick, device.name))
-            AppDropDown.remove_device_list('source_output', (device.nick + '.monitor', device.name))
+            if device.device_class == 'virtual':
+                AppDropDown.remove_device_list('source_output', (device.nick, device.name + '.monitor'))
         else:
             AppDropDown.remove_device_list('source_output', (device.nick, device.name))
         self.block_app_combobox_handlers(False)
@@ -520,10 +541,19 @@ class GtkController(SignalModel):
         if app_widget is None:
             return
         stream_type = app_type.split('_')[0]
-        name = app_widget.app_model.label + str(app_widget.app_model.index)
+        # meter the app's actual device so the meter follows it on a move;
+        # a fake name would fall back to metering the default source
+        name = app_widget.app_model.device
+        if not name:
+            return
         self.vumeter_tasks[app_type][app_index] = self.start_vumeter(
             stream_type, name, app_widget.vumeter_widget, app_index
         )
+
+    def _restart_app_vumeter(self, app_type: str, app_index):
+        """Re-subscribe an app's peak stream after it moves to a new device."""
+        self.stop_vumeter(app_type, app_index)
+        self._start_app_vumeter(app_type, app_index)
 
     def _restart_device_vumeter(self, device_type: str, device_id: str):
         """(Re)subscribe a peak stream for a device that just appeared in PA."""
@@ -700,6 +730,7 @@ class GtkController(SignalModel):
 
     def app_new_callback(self, app_type: str, app_index: int, app_model: DeviceModel):
         def wrapper():
+            self._mark_app_pinned(app_model)
             app = self.create_app_widget(app_type, app_index, app_model)
             return False
 
@@ -716,7 +747,11 @@ class GtkController(SignalModel):
         def wrapper():
             app_widget = self.content.app_box[app_type].widgets.get(app_index)
             if app_widget:
+                self._mark_app_pinned(app)
+                device_changed = app_widget.app_model.device != app.device
                 app_widget.pa_app_change(app)
+                if device_changed:
+                    self._restart_app_vumeter(app_type, app_index)
             return False
 
         GLib.idle_add(wrapper)

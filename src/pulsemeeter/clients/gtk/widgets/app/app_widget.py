@@ -45,7 +45,7 @@ class AppWidget(Gtk.Frame):
         self.vumeter_widget = VumeterWidget()
         self.handlers = {}
 
-        self.combobox.set_active_device(app_model.device)
+        self.combobox.set_active_device(app_model.display_device)
 
         Gtk.Accessible.update_property(
             self,
@@ -73,7 +73,12 @@ class AppWidget(Gtk.Frame):
     def pa_app_change(self, app):
         self.volume_widget.set_volume(app.volume)
         self.mute_widget.set_mute(bool(app.mute))
-        self.change_device(app.device)
+        self.change_device(app.display_device)
+        self.app_model.volume = app.volume
+        self.app_model.mute = app.mute
+        self.app_model.device = app.device
+        self.app_model.pinned = app.pinned
+        self.app_model.object_id = app.object_id
 
     def change_device(self, device_name: str):
         if self.combobox.get_active_text() == device_name:
