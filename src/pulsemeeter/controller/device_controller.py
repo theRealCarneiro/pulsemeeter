@@ -383,9 +383,10 @@ class DeviceController(SignalModel):
                         loopback_name, channels, output_device.channel_list
                     )
                     self._intermediate_sinks[loopback_name] = temp_sink_name
-                    if not pmctl.wait_for_device('sink', temp_sink_name):
+                    # The bridge sink is hidden from PulseAudio, so look it up via PipeWire
+                    playback_serial = pmctl.wait_for_node(temp_sink_name)
+                    if not playback_serial:
                         LOG.warning('Intermediate sink %s did not appear in time', temp_sink_name)
-                    playback_serial = pmctl.get_device_serial('sink', temp_sink_name)
                 else:
                     # A-type: direct loopback to output sink
                     playback_serial = pmctl.get_device_serial(output_device.device_type, output_device.name)
