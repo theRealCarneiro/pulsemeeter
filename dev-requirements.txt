@@ -5,3 +5,5 @@ pylint-pydantic
 flake8
 autopep8
 python-lsp-server
+pytest
+pytest-cov
