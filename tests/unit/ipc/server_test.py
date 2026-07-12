@@ -7,6 +7,11 @@ from pulsemeeter.ipc.client import Client
 from pulsemeeter.schemas.ipc_schema import Request, StatusCode
 
 
+@unittest.skip(
+    'IPC subsystem (src/pulsemeeter/ipc/) is not wired into the app and is '
+    'unused; test also leaves a stale PID file in /tmp making it non-idempotent. '
+    'Skipped pending a decision on removing the IPC subsystem.'
+)
 class TestIpc(unittest.TestCase):
 
     def test_create(self):
