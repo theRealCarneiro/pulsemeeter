@@ -36,6 +36,35 @@ class TestGetNodeSerial(unittest.TestCase):
         assert pmctl.get_node_serial('x') == ''
 
 
+PW_LINK_OUTPUT = (
+    'my_device:playback_FL\n'
+    'my_device:playback_FR\n'
+    'other_device:playback_FL\n'
+)
+
+
+class TestGetPorts(unittest.TestCase):
+
+    @patch('pulsemeeter.scripts.pmctl.run_command', return_value=(0, PW_LINK_OUTPUT, ''))
+    def test_ports_filtered_by_device(self, mock_run):
+        assert pmctl.get_ports('output', 'my_device') == ['playback_FL', 'playback_FR']
+        mock_run.assert_called_once_with(['pw-link', '--output'])
+
+    @patch('pulsemeeter.scripts.pmctl.run_command', return_value=(0, PW_LINK_OUTPUT, ''))
+    def test_input_port_type(self, mock_run):
+        pmctl.get_ports('input', 'my_device')
+        mock_run.assert_called_once_with(['pw-link', '--input'])
+
+    @patch('pulsemeeter.scripts.pmctl.run_command', return_value=(0, '', ''))
+    def test_no_ports(self, _mock_run):
+        assert pmctl.get_ports('output', 'my_device') == []
+
+    @patch('pulsemeeter.scripts.pmctl.run_command', return_value=(1, '', 'boom'))
+    def test_command_failure_raises(self, _mock_run):
+        with self.assertRaises(RuntimeError):
+            pmctl.get_ports('output', 'my_device')
+
+
 class TestCreateDeviceMediaClass(unittest.TestCase):
 
     def _create(self, device_type, hidden):

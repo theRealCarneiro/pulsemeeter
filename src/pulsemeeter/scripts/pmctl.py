@@ -391,14 +391,17 @@ def get_ports(port_type: str, device_name: str) -> list[str]:
     Returns:
         list[str]: list of port names.
     '''
-    command = ['pmctl', 'get_ports', port_type, device_name]
+    command = ['pw-link', f'--{port_type}']
     ret, stdout, stderr = run_command(command)
     if ret != 0:
         raise RuntimeError(f"Failed to get ports: {stderr}")
 
-    ports = stdout.split()
-    if not ports or ports[0] == '':
-        return []
+    # pw-link lists ports as 'node_name:port_name', one per line
+    ports = []
+    for line in stdout.splitlines():
+        node, _, port = line.partition(':')
+        if node == device_name and port:
+            ports.append(port)
 
     return ports
 

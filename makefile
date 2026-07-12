@@ -32,6 +32,7 @@ install: zip
 	cp -r ${PKG_DIR}/share ${DESTDIR}${PREFIX}/
 
 uninstall:
+	# pmctl is legacy; keeping for cleanup
 	rm -rf $(DESTDIR)$(PREFIX)/bin/pulsemeeter \
 		$(DESTDIR)$(PREFIX)/bin/pmctl \
 		${DESTDIR}${PREFIX}/share/licenses/pulsemeeter \
