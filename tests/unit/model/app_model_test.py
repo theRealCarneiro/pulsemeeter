@@ -1,20 +1,84 @@
 import unittest
+
 from pulsemeeter.model.app_model import AppModel
+
+
+class _FakeVolume:
+    def __init__(self, values):
+        self.values = values
+
+
+class _FakePaApp:
+    '''Minimal stand-in for a pulsectl PulseSinkInputInfo/PulseSourceOutputInfo.'''
+    def __init__(self, index, name, values, mute=False, icon=None, device_name='Main'):
+        self.index = index
+        self.volume = _FakeVolume(values)
+        self.mute = mute
+        self.device_name = device_name
+        self.proplist = {'application.name': name}
+        if icon is not None:
+            self.proplist['application.icon_name'] = icon
+
+
+def _app(**overrides):
+    kwargs = {
+        'app_type': 'sink_input',
+        'index': 1,
+        'label': 'test_app',
+        'icon': 'audio-card',
+        'volume': 100,
+        'mute': False,
+        'device': 'Main',
+    }
+    kwargs.update(overrides)
+    return AppModel(**kwargs)
+
+
+class TestAppModel(unittest.TestCase):
+
+    def test_icon_defaults_when_missing(self):
+        app = _app(icon=None)
+        self.assertEqual(app.icon, 'audio-card')
+
+    def test_set_volume(self):
+        app = _app()
+        app.set_volume(42)
+        self.assertEqual(app.volume, 42)
+
+    def test_set_mute(self):
+        app = _app()
+        app.set_mute(True)
+        self.assertTrue(app.mute)
+
+    def test_change_device(self):
+        app = _app()
+        app.change_device('Headphones')
+        self.assertEqual(app.device, 'Headphones')
 
 
 class TestClassFunctions(unittest.TestCase):
 
-    def test_list_apps(self):
-        app_list = AppModel.list_apps('sink_input')
-        assert isinstance(app_list, list)
-        if len(app_list) > 0:
-            assert isinstance(app_list[0], AppModel)
+    def test_pa_to_app_model(self):
+        pa_app = _FakePaApp(index=5, name='Firefox', values=[0.75], device_name='Main')
+        app = AppModel.pa_to_app_model(pa_app, 'sink_input')
+        self.assertIsInstance(app, AppModel)
+        self.assertEqual(app.index, 5)
+        self.assertEqual(app.label, 'Firefox')
+        self.assertEqual(app.volume, 75)
+        self.assertEqual(app.device, 'Main')
 
-    def test_device_by_id(self):
-        app_list = AppModel.list_apps('sink_input')
-        if len(app_list) > 0:
-            app = AppModel.get_app_by_id(app_list[0].index, 'sink_input')
-            assert isinstance(app, AppModel)
+    def test_list_apps(self):
+        pa_app_list = [
+            _FakePaApp(index=1, name='Firefox', values=[1.0]),
+            _FakePaApp(index=2, name='mpv', values=[0.5]),
+        ]
+        app_list = AppModel.list_apps('sink_input', pa_app_list)
+        self.assertIsInstance(app_list, list)
+        self.assertEqual(len(app_list), 2)
+        self.assertTrue(all(isinstance(app, AppModel) for app in app_list))
+
+    def test_list_apps_empty(self):
+        self.assertEqual(AppModel.list_apps('sink_input', []), [])
 
 
 class TestDisplayDevice(unittest.TestCase):
