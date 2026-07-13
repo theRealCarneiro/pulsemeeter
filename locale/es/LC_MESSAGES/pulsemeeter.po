@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pulsemeeter 2.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 14:54-0600\n"
+"POT-Creation-Date: 2026-07-12 20:38-0600\n"
 "PO-Revision-Date: 2026-07-12 17:47-0600\n"
-"Last-Translator: GabrielMuSa"
+"Last-Translator: GabrielMuSa\n"
 "Language: es\n"
 "Language-Team: es <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -44,7 +44,7 @@ msgstr "Abrir el menú de configuración"
 
 #: src/pulsemeeter/clients/gtk/widgets/content.py:78
 msgid "Settings menu"
-msgstr "Menú de configuración "
+msgstr "Menú de configuración"
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:18
 msgid "What is Pulsemeeter?"
@@ -56,9 +56,10 @@ msgid ""
 " It lets you create virtual devices and freely route audio between your "
 "inputs and outputs, controlling volume and muting along the way."
 msgstr ""
-"Pulsemeeter es un mezclador y enrutador de audio virtual basado en PipeWire."
-" Permite crear dispositivos virtuales y conectar libremente el audio "
-"entre las entradas y salidas, controlando el volumen y silenciandolo a voluntad."
+"Pulsemeeter es un mezclador y enrutador de audio virtual basado en "
+"PipeWire. Permite crear dispositivos virtuales y conectar libremente el "
+"audio entre las entradas y salidas, controlando el volumen y "
+"silenciandolo a voluntad."
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:24
 msgid "The four device types"
@@ -74,10 +75,14 @@ msgid ""
 "<b>Virtual Outputs</b> are virtual sources that applications can capture "
 "from."
 msgstr ""
-"<b>Entradas de Hardware</b> son fuentes físicas como micrófonos y entradas de línea.\n"
-"<b>Entradas Virtuales</b> son receptores de audio en las que las aplicaciones pueden reproducirse.\n"
-"<b>Salidas de Hardware</b> son salidas físicas como altavoces y audifonos.\n"
-"<b>Salidas Virtuales</b> son salidas virtuales en las que las aplicaciones pueden capturar audio."
+"<b>Entradas de Hardware</b> son fuentes físicas como micrófonos y "
+"entradas de línea.\n"
+"<b>Entradas Virtuales</b> son receptores de audio en las que las "
+"aplicaciones pueden reproducirse.\n"
+"<b>Salidas de Hardware</b> son salidas físicas como altavoces y "
+"audifonos.\n"
+"<b>Salidas Virtuales</b> son salidas virtuales en las que las "
+"aplicaciones pueden capturar audio."
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:31
 msgid "Routing"
@@ -90,8 +95,9 @@ msgid ""
 "toggles on each input device to send its audio to the outputs you want."
 msgstr ""
 "El audio siempre fluye de una entrada a una salida: Hardware y Virtual, "
-"las entradas se conectan a salidas de hardware y virtuales. Utilice los interruptores "
-"de conexión en cada dispositivo de entrada para enviar el audio a las salidas que prefieras."
+"las entradas se conectan a salidas de hardware y virtuales. Utilice los "
+"interruptores de conexión en cada dispositivo de entrada para enviar el "
+"audio a las salidas que prefieras."
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:37
 msgid "Cleanup"
@@ -103,9 +109,9 @@ msgid ""
 "routes it creates with the cleanup setting. If Pulsemeeter is closed, it "
 "won't be able to monitor for hotplugging"
 msgstr ""
-"Pulsemeeter tiene la capacidad de abandonar o limpiar el dispositivo virtual "
-"y las rutas que crea con la configuración de limpieza. Si Pulsemeeter esta "
-"cerrado, no podra monitorear las conexiones."
+"Pulsemeeter tiene la capacidad de abandonar o limpiar el dispositivo "
+"virtual y las rutas que crea con la configuración de limpieza. Si "
+"Pulsemeeter esta cerrado, no podra monitorear las conexiones"
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:43
 msgid "Primary device"
@@ -116,9 +122,9 @@ msgid ""
 "Marking a device as primary makes it the default that new applications "
 "attach to automatically. This sets the primary in PipeWire itself."
 msgstr ""
-"Marcar un dispositivo como principal lo convierte en el dispositivo predeterminado "
-"al que se conectan automáticamente las nuevas aplicaciones. Esto "
-"establece el dispositivo principal en PipeWire."
+"Marcar un dispositivo como principal lo convierte en el dispositivo "
+"predeterminado al que se conectan automáticamente las nuevas "
+"aplicaciones. Esto establece el dispositivo principal en PipeWire."
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:48
 msgid "VU meters & settings"
@@ -131,23 +137,24 @@ msgid ""
 "available layouts. Enabling VU Meters will show the inputs \"in use\" by "
 "Pulsemeeter."
 msgstr ""
-"Los medidores VU muestran el nivel de volumen en tiempo real de cada dispositivo. "
-"Abra el menú de configuración para activar o desactivar los medidores VU, "
-"habilitar la limpieza al salir y cambiar entre los diseños disponibles. Al "
-"activar los medidores VU, se mostrarán las entradas \"en uso\" por Pulsemeeter."
+"Los medidores VU muestran el nivel de volumen en tiempo real de cada "
+"dispositivo. Abra el menú de configuración para activar o desactivar los "
+"medidores VU, habilitar la limpieza al salir y cambiar entre los diseños "
+"disponibles. Al activar los medidores VU, se mostrarán las entradas \"en "
+"uso\" por Pulsemeeter."
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:55
 msgid ""
 "You can reopen this guide any time from the information button in the "
 "settings menu."
 msgstr ""
-"Puedes abrir esta guia en cualquier momento desde el botón de información "
-"en el menú de configuración."
+"Puedes abrir esta guia en cualquier momento desde el botón de información"
+" en el menú de configuración."
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:64
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:111
 msgid "Welcome to Pulsemeeter!"
-msgstr "¡Bienvenido a Pulsemeeter! "
+msgstr "¡Bienvenido a Pulsemeeter!"
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:90
 msgid "Get started"
@@ -301,7 +308,9 @@ msgstr "Volumen de la ruta"
 #: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:78
 #, python-format
 msgid "Connect to %s, right click to open connection settings"
-msgstr "Conectarse a %s, click al boton derecho para abrir la configuración de conexión"
+msgstr ""
+"Conectarse a %s, click al boton derecho para abrir la configuración de "
+"conexión"
 
 #: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:97
 msgid "Failed to create route"
@@ -343,7 +352,7 @@ msgstr "Dispositivo: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
 msgid "Channel Map: "
-msgstr "Mapeo del canal"
+msgstr "Mapeo del canal: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:28
 msgid "Auto ports"
