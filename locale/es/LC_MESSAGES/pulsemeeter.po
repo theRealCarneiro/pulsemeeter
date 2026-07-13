@@ -1,0 +1,381 @@
+# Spanish translations for pulsemeeter.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the pulsemeeter
+# project.
+# GabrielMuSa, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pulsemeeter 2.1.1\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-12 20:38-0600\n"
+"PO-Revision-Date: 2026-07-12 17:47-0600\n"
+"Last-Translator: GabrielMuSa\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: src/pulsemeeter/clients/cli/cli_client.py:41
+#, python-format
+msgid "Invalid device id: %s"
+msgstr "Id de dispositivo no valido: %s"
+
+#: src/pulsemeeter/clients/gtk/layouts/content/tabbed.py:52
+msgid "Settings"
+msgstr "Configuración"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:54
+#, python-format
+msgid "Create new %s"
+msgstr "Crear nuevo %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:64
+msgid "Create device"
+msgstr "Crear dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:69
+#: src/pulsemeeter/clients/gtk/widgets/content.py:79
+msgid "Open settings menu"
+msgstr "Abrir el menú de configuración"
+
+#: src/pulsemeeter/clients/gtk/widgets/content.py:78
+msgid "Settings menu"
+msgstr "Menú de configuración"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:18
+msgid "What is Pulsemeeter?"
+msgstr "¿Que es Pulsemeeter?"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:19
+msgid ""
+"Pulsemeeter is a virtual audio mixer and router built on top of PipeWire."
+" It lets you create virtual devices and freely route audio between your "
+"inputs and outputs, controlling volume and muting along the way."
+msgstr ""
+"Pulsemeeter es un mezclador y enrutador de audio virtual basado en "
+"PipeWire. Permite crear dispositivos virtuales y conectar libremente el "
+"audio entre las entradas y salidas, controlando el volumen y "
+"silenciandolo a voluntad."
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:24
+msgid "The four device types"
+msgstr "Los cuatro tipos de dispositivos"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:25
+msgid ""
+"<b>Hardware Inputs</b> are physical sources such as microphones and line-"
+"in.\n"
+"<b>Virtual Inputs</b> are virtual sinks that applications can play into.\n"
+"<b>Hardware Outputs</b> are physical sinks such as speakers and "
+"headphones.\n"
+"<b>Virtual Outputs</b> are virtual sources that applications can capture "
+"from."
+msgstr ""
+"<b>Entradas de Hardware</b> son fuentes físicas como micrófonos y "
+"entradas de línea.\n"
+"<b>Entradas Virtuales</b> son receptores de audio en las que las "
+"aplicaciones pueden reproducirse.\n"
+"<b>Salidas de Hardware</b> son salidas físicas como altavoces y "
+"audifonos.\n"
+"<b>Salidas Virtuales</b> son salidas virtuales en las que las "
+"aplicaciones pueden capturar audio."
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:31
+msgid "Routing"
+msgstr "Enrutamiento"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:32
+msgid ""
+"Audio always flows from an input to an output: Hardware and Virtual "
+"Inputs connect to Hardware and Virtual Outputs. Use the connection "
+"toggles on each input device to send its audio to the outputs you want."
+msgstr ""
+"El audio siempre fluye de una entrada a una salida: Hardware y Virtual, "
+"las entradas se conectan a salidas de hardware y virtuales. Utilice los "
+"interruptores de conexión en cada dispositivo de entrada para enviar el "
+"audio a las salidas que prefieras."
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:37
+msgid "Cleanup"
+msgstr "Limpieza"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:38
+msgid ""
+"Pulsemeeter has the ability to leave or cleanup the virtual device and "
+"routes it creates with the cleanup setting. If Pulsemeeter is closed, it "
+"won't be able to monitor for hotplugging"
+msgstr ""
+"Pulsemeeter tiene la capacidad de abandonar o limpiar el dispositivo "
+"virtual y las rutas que crea con la configuración de limpieza. Si "
+"Pulsemeeter esta cerrado, no podra monitorear las conexiones"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:43
+msgid "Primary device"
+msgstr "Dispositivo principal"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:44
+msgid ""
+"Marking a device as primary makes it the default that new applications "
+"attach to automatically. This sets the primary in PipeWire itself."
+msgstr ""
+"Marcar un dispositivo como principal lo convierte en el dispositivo "
+"predeterminado al que se conectan automáticamente las nuevas "
+"aplicaciones. Esto establece el dispositivo principal en PipeWire."
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:48
+msgid "VU meters & settings"
+msgstr "Medidores VU y Configuración"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:49
+msgid ""
+"VU meters show the live volume peak of each device. Open the settings "
+"menu to toggle VU meters, enable cleanup on exit, and switch between the "
+"available layouts. Enabling VU Meters will show the inputs \"in use\" by "
+"Pulsemeeter."
+msgstr ""
+"Los medidores VU muestran el nivel de volumen en tiempo real de cada "
+"dispositivo. Abra el menú de configuración para activar o desactivar los "
+"medidores VU, habilitar la limpieza al salir y cambiar entre los diseños "
+"disponibles. Al activar los medidores VU, se mostrarán las entradas \"en "
+"uso\" por Pulsemeeter."
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:55
+msgid ""
+"You can reopen this guide any time from the information button in the "
+"settings menu."
+msgstr ""
+"Puedes abrir esta guia en cualquier momento desde el botón de información"
+" en el menú de configuración."
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:64
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:111
+msgid "Welcome to Pulsemeeter!"
+msgstr "¡Bienvenido a Pulsemeeter!"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:90
+msgid "Get started"
+msgstr "Empezar"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:116
+#, python-format
+msgid "Version %s"
+msgstr "Versión %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:124
+msgid "View Source"
+msgstr "Ver código fuente"
+
+#: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:132
+msgid "Discord"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_box_widget.py:21
+#: src/pulsemeeter/model/types.py:16
+msgid "Application Outputs"
+msgstr "Audio de salida de aplicación"
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_box_widget.py:22
+#: src/pulsemeeter/model/types.py:17
+msgid "Application Inputs"
+msgstr "Audio de entrada de aplicación"
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:34
+#, python-format
+msgid "Select the app %s! device"
+msgstr "Seleccione el dispositivo de %s de la aplicación"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:25
+msgid "Primary"
+msgstr "Principal"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:34
+msgid "This device is primary"
+msgstr "Este es el dispositivo principal"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:36
+msgid "Set as primary device"
+msgstr "Establecer como dispositivo principal"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/dropdown_widget.py:26
+#, python-format
+msgid "Select the %s"
+msgstr "Seleccione el %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/mute_widget.py:24
+msgid "Mute"
+msgstr "Silenciar"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/mute_widget.py:25
+msgid "Mute toggle"
+msgstr "Activar o desactivar silencio"
+
+#: src/pulsemeeter/clients/gtk/widgets/common/port_selector_widget.py:19
+msgid "Selected ports: "
+msgstr "Puertos seleccionados: "
+
+#: src/pulsemeeter/clients/gtk/widgets/common/port_selector_widget.py:37
+msgid "Toggle the port "
+msgstr "Activar o desactivar el puerto "
+
+#: src/pulsemeeter/clients/gtk/widgets/common/volume_widget.py:38
+#: src/pulsemeeter/clients/gtk/widgets/common/volume_widget.py:41
+msgid "Volume Slider"
+msgstr "Barra de volumen"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:30
+#: src/pulsemeeter/model/types.py:12
+msgid "Hardware Inputs"
+msgstr "Entradas de Hardware"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:31
+#: src/pulsemeeter/model/types.py:13
+msgid "Virtual Inputs"
+msgstr "Entradas Virtuales"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:32
+#: src/pulsemeeter/model/types.py:14
+msgid "Hardware Outputs"
+msgstr "Salidas de Hardware"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:33
+#: src/pulsemeeter/model/types.py:15
+msgid "Virtual Outputs"
+msgstr "Salidas Virtuales"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:54
+#, python-format
+msgid "Create new %s device"
+msgstr "Crear nuevo dispositivo de %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:55
+#, python-format
+msgid "Create a %s device"
+msgstr "Crear un dispositivo de %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:33
+msgid "Enable VU Meters"
+msgstr "Habilitar Medidores VU"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:34
+msgid "Enable Cleanup"
+msgstr "Habilitar Limpieza"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:35
+msgid "Enable Tray"
+msgstr "Habilitar Bandeja"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:36
+msgid "Layout "
+msgstr "Diseño "
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:46
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:30
+msgid "Apply"
+msgstr "Aplicar"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:48
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:52
+msgid "Open the welcome guide"
+msgstr "Abrir la guía de bienvenida"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:54
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:55
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:56
+#, python-format
+msgid "Enable or disable %s"
+msgstr "Habilitar o deshabilitar %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:55
+msgid "VU Meter (volume peak)"
+msgstr "Medidor VU (Nivel de volumen)"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:57
+msgid "Select the GUI layout"
+msgstr "Seleccione el diseño de la interfaz"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:50
+msgid "Enable per-route volume (uses pw-loopback)"
+msgstr "Habilitar el volumen por ruta (utiliza pw-loopback)"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:62
+msgid "Route volume"
+msgstr "Volumen de la ruta"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:78
+#, python-format
+msgid "Connect to %s, right click to open connection settings"
+msgstr ""
+"Conectarse a %s, click al boton derecho para abrir la configuración de "
+"conexión"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:97
+msgid "Failed to create route"
+msgstr "No se pudo crear la ruta"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:97
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:107
+msgid "Open device settings"
+msgstr "Abrir configuración del dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:106
+msgid "Device settings"
+msgstr "Configuración del dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:142
+msgid "Failed to create device"
+msgstr "No se pudo crear el dispositivo"
+
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:148
+#, python-format
+msgid "Device disconnected: %s"
+msgstr "Dispositivo desconectado: %s"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:31
+msgid "Nick: "
+msgstr "Alias: "
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
+msgid "Name: "
+msgstr "Nombre: "
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:33
+msgid "External"
+msgstr "Externo"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
+msgid "Device: "
+msgstr "Dispositivo: "
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
+msgid "Channel Map: "
+msgstr "Mapeo del canal: "
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:28
+msgid "Auto ports"
+msgstr "Puertos automaticos"
+
+#: src/pulsemeeter/clients/gtk/widgets/utils/input_widget.py:29
+#, python-format
+msgid "Enter the %s"
+msgstr "Ingrese el %s"
+
+#: src/pulsemeeter/model/types.py:22
+msgid "Physical sources such as microphones and line-in."
+msgstr "Fuentes fisicas como micrófonos y entradas de línea."
+
+#: src/pulsemeeter/model/types.py:23
+msgid "Virtual sinks that applications can play into."
+msgstr "Receptor de audio virtual en los que pueden reproducirse las aplicaciones."
+
+#: src/pulsemeeter/model/types.py:24
+msgid "Physical sinks such as speakers and headphones."
+msgstr "Receptor de audio fisico como altavoces y audifonos."
+
+#: src/pulsemeeter/model/types.py:25
+msgid "Virtual sources that applications can capture from."
+msgstr "Fuentes virtuales de las que las aplicaciones pueden capturar audio."
+
