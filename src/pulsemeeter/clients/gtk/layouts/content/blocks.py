@@ -86,8 +86,8 @@ def arrange_widgets(content):
     scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
     scrolled.set_child(grid)
 
-    mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    mainbox.append(settings_box)
-    mainbox.append(scrolled)
+    overlay = Gtk.Overlay()
+    overlay.set_child(scrolled)
+    overlay.add_overlay(settings_box)
 
-    content.append(mainbox)
+    content.append(overlay)
