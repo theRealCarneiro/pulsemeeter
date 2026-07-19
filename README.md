@@ -2,15 +2,15 @@
 
 A frontend to ease the use of pulseaudio's routing capabilities, much like voicemeeter's workflow
 
-[![pypi](https://img.shields.io/badge/pypi-v1.2.13-blue)](https://pypi.org/project/pulsemeeter/)
-[![AUR](https://img.shields.io/badge/AUR-V1.2.12-cyan)](https://aur.archlinux.org/packages/pulsemeeter/)
-[![AUR](https://img.shields.io/badge/AUR-pulsemeeter--git-red)](https://aur.archlinux.org/packages/pulsemeeter-git/)
+[![pypi](https://img.shields.io/pypi/v/pulsemeeter)](https://pypi.org/project/pulsemeeter/)
+[![AUR](https://img.shields.io/aur/version/pulsemeeter?label=AUR-stable&color=cyan)](https://aur.archlinux.org/packages/pulsemeeter/)
+[![AUR](https://img.shields.io/aur/version/pulsemeeter-git?label=AUR-git&color=red)](https://aur.archlinux.org/packages/pulsemeeter-git/)
 [![Discord](https://img.shields.io/badge/chat-Discord-lightgrey)](https://discord.gg/ekWt9NuEWv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Donate](https://img.shields.io/badge/donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=6DSVJ3V3RCVT8)
 [![Donate](https://img.shields.io/badge/donate-Patreon-yellow.svg)](https://www.patreon.com/theRealCarneiro)
 
-### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\]
+### Wiki: \[[Installation](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation)\] \[[How to use](https://github.com/theRealCarneiro/pulsemeeter/wiki/How-to-use)\]
 
 ![](https://github.com/user-attachments/assets/19e06982-6c91-4c13-97c0-8b3b8ab173c5)
 
