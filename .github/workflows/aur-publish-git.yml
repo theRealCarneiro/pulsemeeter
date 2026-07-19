@@ -6,26 +6,19 @@ on:
   workflow_dispatch:
 
 jobs:
-        
+
   aur-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      
-      - name: Create PKGBUILD
-        run:  |
-          curl "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pulsemeeter-git" --silent > PKGBUILD
-          sed -i 's#git describe --long | sed#git describe --long --tags | sed#g' PKGBUILD
-          version=$(printf "%s" "$(git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g; s/.//')")
-          sed -i "s/pkgver=.*/pkgver=$version/g" PKGBUILD
-          
+      - uses: actions/checkout@v4
+
       - name: Publish AUR package
         uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
         with:
           pkgname: pulsemeeter-git
-          pkgbuild: ./PKGBUILD
+          pkgbuild: ./packaging/aur/git/PKGBUILD
+          test: true
+          test_flags: --clean --cleanbuild --syncdeps --noconfirm
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
