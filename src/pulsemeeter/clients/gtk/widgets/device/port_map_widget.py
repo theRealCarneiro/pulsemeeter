@@ -1,10 +1,6 @@
 import gettext
 
-from pulsemeeter.model.connection_model import ConnectionModel
 from pulsemeeter.model.connection_model import pair_match
-# from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
-
-# from pulsemeeter.clients.gtk.adapters.connection_edit_adapter import ConnectionSettingsAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi

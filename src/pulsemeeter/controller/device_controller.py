@@ -2,9 +2,7 @@ import sys
 import logging
 import threading
 
-from pydantic import PrivateAttr
 from pulsemeeter.scripts import pmctl
-from pulsemeeter.schemas.typing import PaDeviceType
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.model.connection_model import ConnectionModel
@@ -95,9 +93,6 @@ class DeviceController(SignalModel):
         device = self.device_repository.get_device(device_type, device_id)
         if device_type in ('vi', 'b') and not device.external and not pmctl.device_exists(device.name):
             pmctl.create_device(device.device_type, device.name, device.channels, device.channel_list)
-
-        # if cache:
-        #     self.append_device_cache(device_type, device_id, device)
 
     def bulk_connect(self, device_type, device_id, state):
         '''
@@ -498,20 +493,6 @@ class DeviceController(SignalModel):
 
         self.set_connection(input_type, input_id, output_type, output_id, state)
 
-    # def get_primary(self, device_type: str):
-    #     '''
-    #     Get the primary device from device_type.
-    #     Args:
-    #         device_type (str): Type of device ('sink' or 'source').
-    #     Returns:
-    #         DeviceModel or None.
-    #     '''
-    #     for _, device in self.vi.items() if device_type == 'sink' else self.b.items():
-    #         if device.primary is True:
-    #             return device
-    #
-    #     return None
-
     def create_connection(self, input_device, output_device):
         '''
         Create a connection model between two devices.
@@ -620,10 +601,6 @@ class DeviceController(SignalModel):
                 for input_device in self.device_repository.get_devices_by_type(input_type).values():
                     input_device.connections[device_type].pop(device_id)
 
-        # remove device from cache
-        # if cache:
-        #     self.pop_device_cache(device_type, device_id, device)
-
         if device.device_class == 'virtual':
             pmctl.remove_device(device.name)
 
@@ -646,45 +623,3 @@ class DeviceController(SignalModel):
             device_model = DeviceModel.pa_to_device_model(device, dvtp)
             device_list.append(device_model)
         return device_list
-
-    def list_device_names(self, pa_device_type: PaDeviceType, monitor=False):
-        '''
-        List device names for a given PulseAudio device type.
-        Args:
-            pa_device_type (PaDeviceType): 'sink' or 'source'.
-            monitor (bool): Whether to append '.monitor' to names.
-        Returns:
-            list: List of device names.
-        '''
-        dvl = []
-        device_type = 'vi' if pa_device_type == 'sink' else 'b'
-        for _, device in self.device_repository.get_devices_by_type(device_type).items():
-
-            name = device.name
-            if monitor is True:
-                name += '.monitor'
-
-            dvl.append(device.name)
-
-        return dvl
-
-    def list_device_nicks(self, pa_device_type: PaDeviceType, monitor=False):
-        '''
-        List device nicknames for a given PulseAudio device type.
-        Args:
-            pa_device_type (PaDeviceType): 'sink' or 'source'.
-            monitor (bool): Whether to append '.monitor' to nicks.
-        Returns:
-            list: List of (nick, name) tuples.
-        '''
-        dvl = []
-        device_type = 'vi' if pa_device_type == 'sink' else 'b'
-        for _, device in self.device_repository.get_devices_by_type(device_type).items():
-
-            nick = device.nick
-            if monitor is True:
-                nick += '.monitor'
-
-            dvl.append((nick, device.name))
-
-        return dvl

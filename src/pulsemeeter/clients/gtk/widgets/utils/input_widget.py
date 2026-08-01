@@ -3,7 +3,7 @@ import gettext
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio  # noqa: E402
+from gi.repository import Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
@@ -25,7 +25,6 @@ class InputWidget(Gtk.Grid):
         self.input.set_accessible_role(Gtk.AccessibleRole.TEXT_BOX)
         self.label.set_mnemonic_widget(self.input)
         self.label.set_accessible_role(Gtk.AccessibleRole.LABEL)
-        # self.input.set_accessible_label(option_name.strip(": "))
         self.input.set_tooltip_text(_("Enter the %s") % option_name.strip(': '))
 
         self.attach(self.label, 0, 0, 1, 1)

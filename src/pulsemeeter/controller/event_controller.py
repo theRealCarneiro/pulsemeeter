@@ -6,7 +6,6 @@ import pulsectl_asyncio
 import threading
 import traceback
 import concurrent
-from pydantic import PrivateAttr
 
 from pulsemeeter.scripts import pmctl_async
 from pulsemeeter.model.signal_model import SignalModel
@@ -112,7 +111,6 @@ class EventController(SignalModel):
 
         await self._seed_pa_index_cache()
 
-        # async for event in pmctl_async.pulse_listener():
         async for event in pmctl_async.pulse_listener():
             pm_facility = self._facility_map.get(event.facility)
             handler = _pa_event_map.get((pm_facility, event.type))

@@ -1,8 +1,6 @@
 import gettext
 
-# from pulsemeeter.clients.gtk.widgets.common.icon_button_widget import IconButton
 from pulsemeeter.clients.gtk.widgets.common.dropdown_widget import LabeledDropDown
-# from pulsemeeter.clients.gtk import layouts
 from pulsemeeter.clients.gtk.layouts import layout_manager
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -18,7 +16,6 @@ class SettingsMenuBox(Gtk.Box):
 
     vumeters: Gtk.CheckButton
     cleanup: bool = False
-    tray: bool = False
     layout: str = 'Blocks'
 
     __gsignals__ = {
@@ -28,21 +25,11 @@ class SettingsMenuBox(Gtk.Box):
 
     def __init__(self):
         super().__init__()
-        # self.get_accessible().set_name(_('Settings'))
-        # self.config_model = config_model
         self.vumeters = Gtk.CheckButton(label=_('Enable VU Meters'))
         self.cleanup = Gtk.CheckButton(label=_('Enable Cleanup'))
-        self.tray = Gtk.CheckButton(label=_('Enable Tray'))
         self.layout = LabeledDropDown(_('Layout '))
-        # self.vumeters = Gtk.CheckButton(active=config_model.vumeters, label=_('Enable VU Meters'))
-        # self.cleanup = Gtk.CheckButton(active=config_model.cleanup, label=_('Enable Cleanup'))
-        # self.tray = Gtk.CheckButton(active=config_model.tray, label=_('Enable Tray'))
         self.layout.load_list(layout_manager.get_layout_list())
 
-        # self.tray.get_accessible().set_name(_('Tray'))
-        # self.vumeters.get_accessible().set_name(_('VU Meters'))
-        # self.cleanup.get_accessible().set_name(_('Cleanup'))
-        # self.layout.get_accessible().set_name(_('Layout'))
         self.apply_button = Gtk.Button(label=_('Apply'))
         self.help_button = Gtk.Button(icon_name='help-about-symbolic')
         self.help_button.set_tooltip_text(_('Open the welcome guide'))
@@ -51,7 +38,6 @@ class SettingsMenuBox(Gtk.Box):
             [Gtk.AccessibleProperty.LABEL],
             [_('Open the welcome guide')]
         )
-        self.tray.set_tooltip_text(_('Enable or disable %s') % ('closing to the tray'))
         self.vumeters.set_tooltip_text(_('Enable or disable %s') % _('VU Meter (volume peak)'))
         self.cleanup.set_tooltip_text(_('Enable or disable %s') % ('cleaning up devices and connections upon closing'))
         self.layout.set_tooltip_text(_('Select the GUI layout'))
@@ -63,7 +49,6 @@ class SettingsMenuBox(Gtk.Box):
         mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         mainbox.append(self.vumeters)
         mainbox.append(self.cleanup)
-        # mainbox.append(self.tray)
         mainbox.append(self.layout)
         mainbox.append(button_box)
 
@@ -73,7 +58,6 @@ class SettingsMenuBox(Gtk.Box):
         self.append(mainbox)
 
     def fill_settings(self, config_model):
-        self.tray.set_active(config_model.tray)
         self.vumeters.set_active(config_model.vumeters)
         self.cleanup.set_active(config_model.cleanup)
         self.layout.set_active_name(config_model.layout)
@@ -82,7 +66,6 @@ class SettingsMenuBox(Gtk.Box):
         return {
             'vumeters': self.vumeters.get_active(),
             'cleanup': self.cleanup.get_active(),
-            'tray': self.tray.get_active(),
             'layout': self.layout.get_active_text(),
         }
 

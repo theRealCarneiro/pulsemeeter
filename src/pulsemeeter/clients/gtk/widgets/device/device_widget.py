@@ -1,9 +1,6 @@
 import gettext
 
-from pulsemeeter.model import device_model
-from pulsemeeter.model.types import DEVICE_TYPE_PRETTY
 from pulsemeeter.model.device_model import DeviceModel
-from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
 
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
@@ -11,19 +8,12 @@ from pulsemeeter.clients.gtk.widgets.common.default_widget import DefaultWidget
 from pulsemeeter.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
 from pulsemeeter.clients.gtk.widgets.utils.widget_box import WidgetBox
 from pulsemeeter.clients.gtk.widgets.device.connection_widget import ConnectionWidget
-# from pulsemeeter.clients.gtk.widgets.containers.connection_box_widget import ConnectionBoxWidget
-# from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import VirtualDevicePopup, HardwareDevicePopup
 from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import DeviceSettingsPopover
-
-# from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
-# from pulsemeeter.clients.gtk.adapters.connection_box_adapter import ConnectionBoxAdapter
-
-# from pulsemeeter.clients.gtk.widgets.device.name_widget import NameWidget
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import GObject, Gtk, Pango  # noqa: E402
+from gi.repository import GObject, Gtk  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
@@ -55,7 +45,6 @@ class DeviceWidget(Gtk.Frame):
         self._update_warning()
 
     def _create_widgets(self, model):
-        # self.name_widget = NameWidget(model.nick, model.description)
         self.nick_label = Gtk.Label()
         self.nick_label.set_markup(f'<b>{self.device_model.nick}</b>')
         self.description_label = Gtk.Label(label=self.device_model.description)
@@ -66,17 +55,13 @@ class DeviceWidget(Gtk.Frame):
         self.volume_widget = VolumeWidget(value=model.volume[0], draw_value=True)
         self.mute_widget = MuteWidget(active=model.mute)
         self.vumeter_widget = VumeterWidget()
-        # self.edit_button = IconButton('document-edit-symbolic')
         self.edit_button = Gtk.MenuButton()
         self.edit_button.set_label('Settings Menu')
         self.edit_button.set_icon_name('open-menu-symbolic')
         self.edit_button.set_tooltip_text('Click to open settings menu')
-        # popup_type = HardwareDevicePopup if model.device_class == 'hardware' else VirtualDevicePopup
         self.popover = DeviceSettingsPopover(model.get_type(), edit=True)
         self.edit_button.set_popover(self.popover)
-        # self.popover.set_relative_to(self.edit_button)
 
-        # if model.primary is not None:
         self.primary_widget = DefaultWidget(active=model.primary)
         self.connections_widgets = {}
 
@@ -239,11 +224,3 @@ class DeviceWidget(Gtk.Frame):
 
         if self.mute_widget.get_mute() != mute:
             self.mute_widget.set_mute(mute)
-
-    # def edit_device_popover(self, _):
-    #     self.popover.show_all()
-    #     self.popover.fill_settings(self.device_model)
-    #     self.popover.popup()
-    #     device_type = self.device_model.get_type()
-    #     self.emit('settings_pressed', self.device_model, self.popover)
-    #     self.popover.nick_widget.input.grab_focus()

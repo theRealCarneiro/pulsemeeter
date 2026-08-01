@@ -77,6 +77,3 @@ class LabeledDropDown(Gtk.Grid):
 
     def get_active(self) -> int:
         return self.dropdown.get_selected()
-
-    def remove_entry(self):
-        pass
