@@ -24,8 +24,13 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - Distro: [e.g. Ubuntu]
- - Python Version [e.g. Python 3.10.2]
+ - Pulsemeeter Version (`pulsemeeter -v`)
+ - Distro: [e.g. Ubuntu 24.04 LTS]
+ - Python Version [e.g. Python 3.14.6]
+ - Installation Method [AUR stable, AUR -git, pipx, source]
+
+**Log files**
+If applicable, please attach a copy of ~/.local/state/pulsemeeter/pulsemeeter.log
 
 **Additional context**
 Add any other context about the problem here.
