@@ -2,10 +2,7 @@ import gettext
 
 from pulsemeeter.model.connection_model import ConnectionModel
 from pulsemeeter.model.connection_model import pair_match
-# from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
 from pulsemeeter.clients.gtk.widgets.device.port_map_widget import PortMap
-
-# from pulsemeeter.clients.gtk.adapters.connection_edit_adapter import ConnectionSettingsAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -21,26 +18,18 @@ class ConnectionSettingsPopup(Gtk.Popover):
     def __init__(self, connection_model: ConnectionModel = None):
 
         super().__init__()
-        # self.get_accessible().set_name(_('Connection Settings'))
         self.connection_model = connection_model
 
         # create widgets
         self.auto_ports_check = Gtk.CheckButton(label=_("Auto ports"), )
-        # self.confirm_button = IconButton('object-select-symbolic')
         self.confirm_button = Gtk.Button(label=_('Apply'))
-        # self.cancel_button = IconButton('window-close-symbolic')
         self.port_map_widget = PortMap(connection_model)
-        # self.button_grid, self.checkboxes = self.create_routing_grid(connection_model)
-
-        # self.auto_ports_check.set_active(connection_model.auto_ports)
 
         # connect events
-        # self.cancel_button.connect('clicked', self.close_pressed)
         self.auto_ports_check.connect('toggled', self.change_checkbox_active)
 
         # add widgets to grid
         button_box = Gtk.Box(halign=Gtk.Align.END)
-        # button_box.append(self.cancel_button)
         button_box.append(self.confirm_button)
 
         main_box = Gtk.Box(hexpand=True, orientation=Gtk.Orientation.VERTICAL)
@@ -48,17 +37,10 @@ class ConnectionSettingsPopup(Gtk.Popover):
         main_box.append(self.port_map_widget)
         main_box.append(button_box)
 
-        # self.cancel_button.get_accessible().set_name(_("Cancel"))
-        # self.confirm_button.get_accessible().set_name(_("Create device"))
-
-        # self.set_modal(False)
         self.set_child(main_box)
-        # self.show_all()
-        # self.name_widget.input.grab_focus()
 
     def fill_settings(self):
         self.auto_ports_check.set_active(self.connection_model.auto_ports)
-        # self.port_map_widget.fill_settings()
 
     def change_checkbox_active(self, widget):
         for checkbox in self.port_map_widget.checkboxes.values():

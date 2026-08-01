@@ -122,9 +122,6 @@ class ConnectionWidget(Gtk.Box):
         self._update_visibility()
         self.toggle_button.handler_unblock(self._toggle_handler_id)
 
-    def get_connection(self):
-        return self.toggle_button.get_active()
-
     def set_route_volume(self, value):
         self.volume_scale.handler_block(self._volume_handler_id)
         self.volume_scale.set_value(value)

@@ -77,8 +77,6 @@ def link(input_name: str, output_name: str, state: bool = True) -> bool:
     operation = [] if state else ['-d']
     command = ['pw-link', input_name, output_name, *operation]
     ret, stdout, stderr = run_command(command)
-    #if ret != 0:
-        #raise RuntimeError(f"Failed to {'link' if state else 'unlink'} devices: {stderr}")
     return True
 
 
@@ -164,25 +162,6 @@ def remove_intermediate_sink(loopback_name: str):
         remove_device(sink_name)
     except RuntimeError:
         LOG.warning('Failed to remove intermediate sink %s', sink_name)
-
-
-def wait_for_device(device_type: str, device_name: str, timeout: float = 2.0, interval: float = 0.05) -> bool:
-    '''
-    Poll until a device appears in PulseAudio.
-    Args:
-        device_type (str): 'sink' or 'source'.
-        device_name (str): Name of the device.
-        timeout (float): Maximum time to wait in seconds.
-        interval (float): Polling interval in seconds.
-    Returns:
-        bool: True if found, False if timed out.
-    '''
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if get_device_by_name(device_type, device_name) is not None:
-            return True
-        time.sleep(interval)
-    return False
 
 
 def get_node_serial(node_name: str) -> str:
@@ -618,20 +597,6 @@ def app_volume(app_type: str, index: int, val: int) -> bool:
     return True
 
 
-def get_default_device_name(app_type: str) -> str:
-    '''
-    Get the default sink or source device name.
-    Args:
-        app_type (str): 'sink_input' or 'source_output'.
-    Returns:
-        str: The default device name.
-    '''
-    info = PULSE.server_info()
-    if app_type == 'sink_input':
-        return info.default_sink_name
-    return info.default_source_name
-
-
 def move_app_device(app_type: str, index: int, device_name: str) -> bool:
     '''
     Move an application stream to a different device.
@@ -752,42 +717,6 @@ def is_pipewire() -> bool:
         bool: True if pulseaudio is available, False otherwise.
     '''
     return shutil.which('pipewire-pulse') is not None
-
-
-def is_pulse() -> bool:
-    '''
-    Check if pulseaudio is available on the system.
-    Returns:
-        bool: True if pulseaudio is available, False otherwise.
-    '''
-    return shutil.which('pulseaudio') is not None
-
-
-def decode_event(event: pulsectl.PulseEventInfo) -> tuple[str, str, int]:
-    '''
-    Receives a PulseEventInfo and returns the str version of .t and .facility
-    Returns:
-        tuple[str, str, int]: facility, event type and object index respectively
-    '''
-    return str_facility(event.facility), str_event_type(event.t), event.index
-
-
-def str_facility(facility: pulsectl.PulseEventFacilityEnum) -> str:
-    '''
-    Receives a PulseEventFacilityEnum and returns the str version
-    Returns:
-        str: The str name of the facility e.g. sink
-    '''
-    return getattr(facility, '_value', None)
-
-
-def str_event_type(event_type: pulsectl.PulseEventFacilityEnum) -> str:
-    '''
-    Receives a PulseEventFacilityEnum and returns the str version
-    Returns:
-        str: The str name of the facility e.g. sink
-    '''
-    return getattr(event_type, '_value', None)
 
 
 def run_command(command: list[str], split: bool = False) -> tuple[int, str, str]:

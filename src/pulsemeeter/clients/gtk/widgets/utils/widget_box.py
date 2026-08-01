@@ -41,7 +41,6 @@ class WidgetBox(Gtk.Box):
         if widget_id in self.widgets:
             widget = self.widgets.pop(widget_id)
             self.remove(widget)
-            # widget.destroy()
             return widget
         return None
 
@@ -57,62 +56,9 @@ class WidgetBox(Gtk.Box):
         '''
         return self.widgets.get(widget_id)
 
-    def has_widget(self, widget_id):
-        '''
-        Check if a widget exists in the container.
-
-        Args:
-            widget_id (str): ID of the widget to check
-
-        Returns:
-            bool: True if widget exists, False otherwise
-        '''
-        return widget_id in self.widgets
-
     def clear(self):
         '''
         Remove all widgets from the container.
         '''
         for widget in self.widgets.values():
             self.remove(widget)
-            # widget.destroy()
-        # self.widgets.clear()
-
-    def get_widget_count(self):
-        '''
-        Get the number of widgets in the container.
-
-        Returns:
-            int: Number of widgets
-        '''
-        return len(self.widgets)
-
-    def get_widget_ids(self):
-        '''
-        Get all widget IDs in the container.
-
-        Returns:
-            list: List of widget IDs
-        '''
-        return list(self.widgets.keys())
-
-    def get_widgets(self):
-        '''
-        Get all widgets in the container.
-
-        Returns:
-            dict: Dictionary of {id: widget} pairs
-        '''
-        return self.widgets.copy()
-
-    def update_widget(self, widget_id, widget):
-        '''
-        Update a widget in the container (remove old, add new).
-
-        Args:
-            widget_id (str): ID of the widget to update
-            widget (Gtk.Widget): The new widget
-        '''
-        if widget_id in self.widgets:
-            self.remove_widget(widget_id)
-        self.add_widget(widget_id, widget)

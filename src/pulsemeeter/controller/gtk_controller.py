@@ -13,18 +13,16 @@ from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.app_model import AppModel
 
 from pulsemeeter.clients.gtk.layouts import layout_manager
-# from pulsemeeter.clients.gtk import layouts
 from pulsemeeter.clients.gtk.widgets.content import Content
 from pulsemeeter.clients.gtk.widgets.device.device_widget import DeviceWidget
 from pulsemeeter.clients.gtk.widgets.app.app_widget import AppWidget
 from pulsemeeter.clients.gtk.widgets.app.app_dropdown import AppDropDown
 from pulsemeeter.clients.gtk.widgets.welcome_window import WelcomeWindow
-# from pulsemeeter.settings import STYLE_FILE
 
 # pylint: disable=wrong-import-order,wrong-import-position
 from gi import require_version as gi_require_version
 gi_require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio, GLib  # noqa: E402
+from gi.repository import Gtk, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
@@ -72,7 +70,6 @@ class GtkController(SignalModel):
 
     vumeter_tasks: dict[str, dict[str, asyncio.Task]]
     device_handlers: dict[str, dict[str, int]]
-    model_handlers: dict[str, dict[str, int]]
     app_handlers: dict[str, dict[str, int]]
 
     def __init__(self, device_repository):
@@ -95,9 +92,6 @@ class GtkController(SignalModel):
         self.app_handlers = {'sink_input': {}, 'source_output': {}}
 
     def create_window(self, application):
-        # layout = layouts.LAYOUTS[self.config_model.layout]
-        # self.window = layout.MainWindow(application=application)
-
         self.create_content(self.config_model.layout)
         self.window = Gtk.Window(title='Pulsemeeter', application=application)
         self.window.set_default_size(self.config_model.window_width, self.config_model.window_height)
@@ -113,11 +107,6 @@ class GtkController(SignalModel):
         self.content = Content()
         arrange_content(self.content)
 
-        # arrange_device_popover = layout_manager.get_arrange_device_settings(layout)
-        # for device_type in ('a', 'b', 'vi', 'hi'):
-        #     popover = self.content.create_device_button[device_type].get_popover()
-        #     arrange_device_popover(popover)
-
         self.connect_content_gtk_events()
         self.content.settings_box.fill_settings(self.config_model)
         return self.content
@@ -131,7 +120,6 @@ class GtkController(SignalModel):
         arrange_device = layout_manager.get_arrange_device(self.config_model.layout)
         device_widget = DeviceWidget(device_model)
         arrange_device(device_widget)
-        # arrange_device_settings(device_widget.popover)
         self.content.device_box[device_type].add_widget(device_id, device_widget)
         self.connect_device_gtk_events(device_type, device_id, device_widget)
         self.append_app_combobox(device_model)
@@ -311,7 +299,6 @@ class GtkController(SignalModel):
         vumeters_changed = self.config_model.vumeters != config_schema['vumeters']
         self.config_model.vumeters = config_schema['vumeters']
         self.config_model.cleanup = config_schema['cleanup']
-        self.config_model.tray = config_schema['tray']
         layout_changed = self.config_model.layout != config_schema['layout']
         self.config_model.layout = config_schema['layout']
         if layout_changed:
@@ -361,9 +348,6 @@ class GtkController(SignalModel):
         '''
 
         signal_map = {
-            # 'add_device_pressed': self.add_device_hijack,
-            # 'device_new': self.device_new,
-            # 'settings_change': self.settings_menu_apply,
             'close-request': self.on_window_destroy
         }
 
@@ -417,9 +401,6 @@ class GtkController(SignalModel):
         self.welcome_window = WelcomeWindow(transient_for=self.window)
         self.welcome_window.present()
 
-    # def connect_connection_gtk_events(self, input_type, input_id, output_type, output_id):
-    #     pass
-
     def connect_app_gtk_events(self, app_type: str, app_index: str, app: AppWidget):
         '''
         Connect a device widget events to the model
@@ -448,7 +429,6 @@ class GtkController(SignalModel):
         '''
         input_model = self.device_repository.get_device(input_type, input_id)
         output_model = self.device_repository.get_device(output_type, output_id)
-        # connection_model = input_model.connections[output_type][output_id]
         button = device_widget.connections_widgets[output_type].get_widget(output_id)
         button.popover.fill_settings()
         button.popover.port_map_widget.clear_port_map()
@@ -653,7 +633,7 @@ class GtkController(SignalModel):
     #
     def device_new_callback(self, device_type, device_id, device_model):
         def wrapper():
-            device = self.create_device_widget(device_type, device_id, device_model, refresh=True)
+            self.create_device_widget(device_type, device_id, device_model, refresh=True)
             return False
 
         GLib.idle_add(wrapper)
@@ -731,7 +711,7 @@ class GtkController(SignalModel):
     def app_new_callback(self, app_type: str, app_index: int, app_model: DeviceModel):
         def wrapper():
             self._mark_app_pinned(app_model)
-            app = self.create_app_widget(app_type, app_index, app_model)
+            self.create_app_widget(app_type, app_index, app_model)
             return False
 
         GLib.idle_add(wrapper)
@@ -758,77 +738,4 @@ class GtkController(SignalModel):
 
     #
     # # End Model Callback functions
-    #
-
-    #
-    # # BINDS
-    #
-
-    # def add_accels(self):
-        # accel_group = Gtk.AccelGroup()
-        # self.window.add_accel_group(accel_group)
-        # self.accel_group = accel_group
-        # self.current_box = 0
-        # self.current_device = 0
-        #
-        # accel_group.connect(ord('j'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(1))
-        # accel_group.connect(ord('k'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_box_focus(-1))
-        #
-        # accel_group.connect(ord('h'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(-1))
-        # accel_group.connect(ord('l'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.change_device_focus(1))
-        #
-        # accel_group.connect(ord('m'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('mute', None))
-        # accel_group.connect(ord('p'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('primary', None))
-        # accel_group.connect(ord('-'), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', -1))
-        # accel_group.connect(ord('='), 0, Gtk.AccelFlags.VISIBLE, lambda *args: self.bind_runner('volume', 1))
-
-    def bind_runner(self, cmd, arg):
-        device_type = self.get_current_kb_device_type()
-        device_id = self.get_current_kb_device_id()
-
-        if cmd == 'device_type_cycle':
-            self.change_box_focus(arg)
-        elif cmd == 'device_cycle':
-            self.change_device_focus(arg)
-        elif cmd == 'mute':
-            self.content.device_box[device_type].widgets[device_id].mute_widget.clicked()
-        elif cmd == 'primary':
-            self.content.device_box[device_type].widgets[device_id].primary_widget.clicked()
-        elif cmd == 'volume':
-            widget = self.content.device_box[device_type].widgets[device_id].volume_widget
-            widget.set_value(widget.get_value() + arg)
-        # elif cmd == 'connect':
-
-    def get_current_kb_device_id(self):
-        device_type = self.get_current_kb_device_type()
-        current_box = self.content.device_box[device_type]
-        device_len = len(current_box.widgets)
-
-        if device_len == 0:
-            return None
-
-        current_device_key = list(current_box.widgets)[self.current_device]
-        return current_device_key
-
-    def get_current_kb_device_type(self):
-        return list(self.content.device_box)[self.current_box]
-
-    def change_box_focus(self, factor):
-        self.current_device = -1
-        self.current_box = (self.current_box + factor - 4) % 4
-        self.content.device_box[self.get_current_kb_device_type()].focus_box()
-
-    def change_device_focus(self, factor):
-        device_type = self.get_current_kb_device_type()
-        current_box = self.content.device_box[device_type]
-        device_len = len(current_box.widgets)
-        self.current_device = (self.current_device + factor - device_len) % device_len
-        self.focus_device(device_type)
-
-    def focus_device(self, device_type):
-        current_box = self.content.device_box[device_type]
-        current_box.widgets[self.get_current_kb_device_id()].edit_button.grab_focus()
-
-    #
-    # # End BINDS
     #

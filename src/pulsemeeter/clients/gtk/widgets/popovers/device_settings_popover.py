@@ -1,14 +1,10 @@
 import gettext
 
 from pulsemeeter.schemas import pulse_mappings
-# from pulsemeeter.model.device_model import DeviceModel
-# from pulsemeeter.schemas.device_schema import CHANNEL_MAPS, INVERSE_CHANNEL_MAPS
 from pulsemeeter.clients.gtk.widgets.utils.input_widget import InputWidget
 from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
 from pulsemeeter.clients.gtk.widgets.common.dropdown_widget import LabeledDropDown
 from pulsemeeter.clients.gtk.widgets.common.port_selector_widget import PortSelector
-
-# from pulsemeeter.clients.gtk.adapters.device_settings_adapter import DeviceSettingsAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -36,8 +32,6 @@ class DeviceSettingsPopover(Gtk.Popover):
         self.combobox_widget.disable_dropdown_autohide()
         self.confirm_button = Gtk.Button(label='Apply')
         self.remove_button = IconButton('user-trash-symbolic')
-        # self.confirm_button = IconButton('emblem-ok-symbolic')
-        # self.cancel_button = IconButton('window-close-symbolic')
 
         if device_type in ('vi', 'b'):
             self.combobox_widget.load_list(list(pulse_mappings.CHANNEL_MAPS))

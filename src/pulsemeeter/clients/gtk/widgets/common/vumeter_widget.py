@@ -17,14 +17,6 @@ class VumeterWidget(Gtk.ProgressBar):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-            # orientation=Gtk.Orientation.HORIZONTAL,
-            # margin_bottom=8,
-            # margin_top=8,
-            # margin_start=10,
-            # margin_end=8,
-            # width_request=100,
-            # hexpand=True
-        # )
 
     async def update_peak(self, peak):
         if peak <= 0.00:

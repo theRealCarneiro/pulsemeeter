@@ -2,7 +2,6 @@ from typing import Literal
 from pydantic import validator, BaseModel
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.schemas.typing import Volume
-from pulsemeeter.model.signal_model import SignalModel
 
 
 class AppModel(BaseModel):
@@ -43,16 +42,12 @@ class AppModel(BaseModel):
 
     def set_volume(self, val: Volume):
         self.volume = val
-        # pmctl.app_volume(self.app_type, self.index, val)
 
     def set_mute(self, state: bool):
         self.mute = state
-        # pmctl.app_mute(self.app_type, self.index, state)
 
     def change_device(self, device_name: str):
         self.device = device_name
-        # print(self)
-        # pmctl.move_app_device(self.app_type, self.index, device_name)
 
     @classmethod
     def pa_to_app_model(cls, app, app_type: str):

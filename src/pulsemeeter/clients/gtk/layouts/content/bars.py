@@ -2,8 +2,6 @@ import gettext
 
 from pulsemeeter.model.types import DEVICE_TYPE_PRETTY as PRETTY
 from pulsemeeter.model.types import DEVICE_TYPE_DESCRIPTION as DESCRIPTION
-# from pulsemeeter.clients.gtk.widgets.utils.framed_widget import FramedWidget
-# from pulsemeeter.clients.gtk.widgets.content import Content
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi

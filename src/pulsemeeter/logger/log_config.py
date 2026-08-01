@@ -4,7 +4,6 @@ import logging.config
 from dataclasses import dataclass
 
 from pulsemeeter import settings
-# from pulsemeeter.logger.logger_config_dict import config
 
 
 @dataclass

@@ -97,7 +97,6 @@ def arrange_widgets(device_widget: DeviceWidget):
         connections_container.append(device_widget.connections_widgets['a'])
         connections_container.append(device_widget.connections_widgets['b'])
         connections_box.append(connections_container)
-        # volume_container.append(connections_box)
         main_container.append(connections_box)
 
 

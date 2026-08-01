@@ -81,10 +81,6 @@ class AppDropDown(Gtk.DropDown):
                 cls._string_list[app_type].remove(i)
                 return
 
-    @classmethod
-    def get_device_list(cls, app_type):
-        return cls._device_data[app_type]
-
     def get_active_text(self):
         index = self.get_selected()
         if index == Gtk.INVALID_LIST_POSITION:

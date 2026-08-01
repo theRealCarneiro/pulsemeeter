@@ -1,11 +1,9 @@
 import gettext
 
 from pulsemeeter.model.types import DEVICE_TYPE_PRETTY
-from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
 from pulsemeeter.clients.gtk.widgets.utils.widget_box import WidgetBox
 from pulsemeeter.clients.gtk.widgets.popovers.device_settings_popover import DeviceSettingsPopover
 from pulsemeeter.clients.gtk.widgets.containers.settings_menu_box import SettingsMenuBox
-# from pulsemeeter.clients.gtk.widgets.utils.framed_widget import FramedWidget
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -30,9 +28,6 @@ class Content(Gtk.Box):
         super().__init__(*args, **kwargs)
         self.settings_button = Gtk.MenuButton(icon_name='emblem-system-symbolic')
         self.settings_box = SettingsMenuBox()
-        # settings_popover = Gtk.Popover()
-        # settings_popover.set_child(self.settings_box)
-        # self.settings_button.set_popover(settings_popover)
 
         gesture = Gtk.GestureClick.new()
         gesture.connect("pressed", self._on_settings_pressed)
