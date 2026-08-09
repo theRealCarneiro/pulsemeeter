@@ -32,11 +32,6 @@ class LabeledDropDown(Gtk.Grid):
 
         self._signal_handler_id = self.dropdown.connect('notify::selected', self._on_selected)
 
-    def disable_dropdown_autohide(self):
-        internal_popover = self.dropdown.get_last_child()
-        if isinstance(internal_popover, Gtk.Popover):
-            internal_popover.set_autohide(False)
-
     def _on_selected(self, widget, pspec):
         active_text = self.get_active_text()
         if active_text is not None:

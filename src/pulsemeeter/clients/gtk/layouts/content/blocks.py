@@ -3,6 +3,7 @@ import gettext
 from pulsemeeter.model.types import DEVICE_TYPE_PRETTY as PRETTY
 from pulsemeeter.model.types import DEVICE_TYPE_DESCRIPTION as DESCRIPTION
 from pulsemeeter.clients.gtk.widgets.utils.framed_widget import FramedWidget
+from pulsemeeter.clients.gtk.widgets.utils.popover_utils import dismiss_on_outside_click
 # from pulsemeeter.clients.gtk.widgets.content import Content
 
 # pylint: disable=wrong-import-order,wrong-import-position
@@ -76,6 +77,7 @@ def arrange_widgets(content):
 
     settings_popover = Gtk.Popover()
     settings_popover.set_child(content.settings_box)
+    dismiss_on_outside_click(settings_popover)
     content.settings_button.set_popover(settings_popover)
 
     settings_box = Gtk.Box(halign=Gtk.Align.END, valign=Gtk.Align.START, vexpand=False,
