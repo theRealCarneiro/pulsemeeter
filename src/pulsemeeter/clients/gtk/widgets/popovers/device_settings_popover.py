@@ -5,6 +5,7 @@ from pulsemeeter.schemas import pulse_mappings
 # from pulsemeeter.schemas.device_schema import CHANNEL_MAPS, INVERSE_CHANNEL_MAPS
 from pulsemeeter.clients.gtk.widgets.utils.input_widget import InputWidget
 from pulsemeeter.clients.gtk.widgets.utils.icon_button_widget import IconButton
+from pulsemeeter.clients.gtk.widgets.utils.popover_utils import dismiss_on_outside_click
 from pulsemeeter.clients.gtk.widgets.common.dropdown_widget import LabeledDropDown
 from pulsemeeter.clients.gtk.widgets.common.port_selector_widget import PortSelector
 
@@ -33,7 +34,6 @@ class DeviceSettingsPopover(Gtk.Popover):
         self.external_widget = Gtk.CheckButton(label=_('External'))
         self.port_selector = PortSelector()
         self.combobox_widget = LabeledDropDown(_('Device: ') if device_type in ('a', 'hi') else _('Channel Map: '))
-        self.combobox_widget.disable_dropdown_autohide()
         self.confirm_button = Gtk.Button(label='Apply')
         self.remove_button = IconButton('user-trash-symbolic')
         # self.confirm_button = IconButton('emblem-ok-symbolic')
@@ -43,6 +43,8 @@ class DeviceSettingsPopover(Gtk.Popover):
             self.combobox_widget.load_list(list(pulse_mappings.CHANNEL_MAPS))
         else:
             self.combobox_widget.connect('changed', self.device_combo_changed)
+
+        dismiss_on_outside_click(self)
 
         self._arrange_widgets()
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pulsemeeter 2.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 20:38-0600\n"
+"POT-Creation-Date: 2026-08-12 22:25-0600\n"
 "PO-Revision-Date: 2026-07-12 17:47-0600\n"
 "Last-Translator: GabrielMuSa\n"
 "Language: es\n"
@@ -334,23 +334,23 @@ msgstr "No se pudo crear el dispositivo"
 msgid "Device disconnected: %s"
 msgstr "Dispositivo desconectado: %s"
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:31
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
 msgid "Nick: "
 msgstr "Alias: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:33
 msgid "Name: "
 msgstr "Nombre: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:33
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:34
 msgid "External"
 msgstr "Externo"
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:36
 msgid "Device: "
 msgstr "Dispositivo: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:35
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:36
 msgid "Channel Map: "
 msgstr "Mapeo del canal: "
 
