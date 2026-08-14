@@ -31,7 +31,10 @@ class AppDropDown(Gtk.DropDown):
             model=self._string_list[app_type],
         )
 
-        accesible_description = _('Select the app %s! device') % app_type.split("_")[1]
+        if app_type == 'sink_input':
+            accesible_description = _('Select the output device for this app')
+        else:
+            accesible_description = _('Select the input device for this app')
         self.set_tooltip_text(accesible_description)
         Gtk.Accessible.update_property(
             self,

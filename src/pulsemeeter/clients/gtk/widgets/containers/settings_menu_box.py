@@ -38,8 +38,8 @@ class SettingsMenuBox(Gtk.Box):
             [Gtk.AccessibleProperty.LABEL],
             [_('Open the welcome guide')]
         )
-        self.vumeters.set_tooltip_text(_('Enable or disable %s') % _('VU Meter (volume peak)'))
-        self.cleanup.set_tooltip_text(_('Enable or disable %s') % ('cleaning up devices and connections upon closing'))
+        self.vumeters.set_tooltip_text(_('Enable or disable VU meters (volume peak)'))
+        self.cleanup.set_tooltip_text(_('Enable or disable cleaning up devices and connections upon closing'))
         self.layout.set_tooltip_text(_('Select the GUI layout'))
 
         button_box = Gtk.Box(vexpand=False, halign=Gtk.Align.END, valign=Gtk.Align.END, spacing=6)
