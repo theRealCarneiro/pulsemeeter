@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pulsemeeter 2.0.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-14 15:43-0600\n"
+"POT-Creation-Date: 2026-08-14 17:20-0600\n"
 "PO-Revision-Date: 2025-08-28 20:33+0200\n"
 "Last-Translator: <dev.mfh@posteo.net>\n"
 "Language: German\n"
@@ -146,9 +146,14 @@ msgstr ""
 msgid "Discord"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:34
-#, python-format
-msgid "Select the app %s! device"
+#: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:35
+#, fuzzy
+msgid "Select the output device for this app"
+msgstr "Wähle das Gerät der App %s aus!"
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:37
+#, fuzzy
+msgid "Select the input device for this app"
 msgstr "Wähle das Gerät der App %s aus!"
 
 #: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:25
@@ -162,11 +167,6 @@ msgstr "Dieses Gerät ist das Standardgerät "
 #: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:36
 msgid "Set as primary device"
 msgstr "Als Standardgerät festlegen"
-
-#: src/pulsemeeter/clients/gtk/widgets/common/dropdown_widget.py:26
-#, python-format
-msgid "Select the %s"
-msgstr "Wähle %s aus"
 
 #: src/pulsemeeter/clients/gtk/widgets/common/mute_widget.py:24
 msgid "Mute"
@@ -213,14 +213,13 @@ msgid "Open the welcome guide"
 msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:41
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:42
-#, python-format
-msgid "Enable or disable %s"
-msgstr "%s aktivieren oder deaktivieren"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:41
-msgid "VU Meter (volume peak)"
+#, fuzzy
+msgid "Enable or disable VU meters (volume peak)"
 msgstr "VU-Meter (Pegelspitze)"
+
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:42
+msgid "Enable or disable cleaning up devices and connections upon closing"
+msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:43
 msgid "Select the GUI layout"
@@ -267,9 +266,17 @@ msgstr ""
 msgid "Nick: "
 msgstr "Spitzname: "
 
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:28
+msgid "Enter a nickname for the device"
+msgstr ""
+
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:29
 msgid "Name: "
 msgstr "Name: "
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:29
+msgid "Enter a name for the device"
+msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:30
 #, fuzzy
@@ -284,22 +291,27 @@ msgid ""
 "create it onstartup or remove it on exit."
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:37
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:38
 msgid "Device: "
 msgstr "Gerät: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:37
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:38
+#, fuzzy
+msgid "Select a device"
+msgstr "Wähle das Gerät der App %s aus!"
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:40
 msgid "Channel Map: "
+msgstr "Kanalzuordnung: "
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:40
+#, fuzzy
+msgid "Select a channel map"
 msgstr "Kanalzuordnung: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:24
 msgid "Auto ports"
 msgstr "Automatische Ports"
-
-#: src/pulsemeeter/clients/gtk/widgets/utils/input_widget.py:28
-#, python-format
-msgid "Enter the %s"
-msgstr "Gib %s ein"
 
 #: src/pulsemeeter/model/types.py:10
 msgid "Hardware Inputs"
@@ -349,4 +361,13 @@ msgstr ""
 
 #~ msgid "Enable Tray"
 #~ msgstr "System-Tray aktivieren"
+
+#~ msgid "Select the %s"
+#~ msgstr "Wähle %s aus"
+
+#~ msgid "Enable or disable %s"
+#~ msgstr "%s aktivieren oder deaktivieren"
+
+#~ msgid "Enter the %s"
+#~ msgstr "Gib %s ein"
 

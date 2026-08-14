@@ -1,12 +1,8 @@
-import gettext
-
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
-
-_ = gettext.gettext
 
 
 class LabeledDropDown(Gtk.Grid):
@@ -18,12 +14,13 @@ class LabeledDropDown(Gtk.Grid):
         'changed': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
-    def __init__(self, label):
+    def __init__(self, label, tooltip=None):
         super().__init__()
         self.label = Gtk.Label(label=label)
         self.string_list = Gtk.StringList()
         self.dropdown = Gtk.DropDown(model=self.string_list, hexpand=True)
-        self.dropdown.set_tooltip_text(_('Select the %s') % label.strip(':'))
+        if tooltip is not None:
+            self.dropdown.set_tooltip_text(tooltip)
         self.label.set_mnemonic_widget(self.dropdown)
         self.entry_list = None
 

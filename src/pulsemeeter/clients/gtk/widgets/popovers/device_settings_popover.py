@@ -25,8 +25,8 @@ class DeviceSettingsPopover(Gtk.Popover):
         self.device_type = device_type
         self.edit = edit
 
-        self.nick_widget = InputWidget(_('Nick: '))
-        self.name_widget = InputWidget(_('Name: '))
+        self.nick_widget = InputWidget(_('Nick: '), tooltip=_('Enter a nickname for the device'))
+        self.name_widget = InputWidget(_('Name: '), tooltip=_('Enter a name for the device'))
         self.external_widget = Gtk.CheckButton(label=_('Externally Managed'))
         self.external_widget.set_tooltip_text(
             _("Check this if another application or config file owns this device's lifecycle (creates and destroys it), "
@@ -34,7 +34,10 @@ class DeviceSettingsPopover(Gtk.Popover):
               "startup or remove it on exit.")
         )
         self.port_selector = PortSelector()
-        self.combobox_widget = LabeledDropDown(_('Device: ') if device_type in ('a', 'hi') else _('Channel Map: '))
+        if device_type in ('a', 'hi'):
+            self.combobox_widget = LabeledDropDown(_('Device: '), tooltip=_('Select a device'))
+        else:
+            self.combobox_widget = LabeledDropDown(_('Channel Map: '), tooltip=_('Select a channel map'))
         self.confirm_button = Gtk.Button(label='Apply')
         self.remove_button = IconButton('user-trash-symbolic')
 
