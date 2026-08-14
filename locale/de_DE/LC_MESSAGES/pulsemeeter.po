@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pulsemeeter 2.0.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-12 22:25-0600\n"
+"POT-Creation-Date: 2026-08-14 15:31-0600\n"
 "PO-Revision-Date: 2025-08-28 20:33+0200\n"
 "Last-Translator: <dev.mfh@posteo.net>\n"
 "Language: German\n"
@@ -317,14 +317,23 @@ msgid "Name: "
 msgstr "Name: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:34
-msgid "External"
+#, fuzzy
+msgid "Externally Managed"
 msgstr "Extern"
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:36
+msgid ""
+"Check this if another application or config file owns this device's "
+"lifecycle (creates and destroys it), such as a PipeWire config or "
+"EasyEffects. Pulsemeeter will route and control the device but will not "
+"create it onstartup or remove it on exit."
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:41
 msgid "Device: "
 msgstr "Gerät: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:36
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:41
 msgid "Channel Map: "
 msgstr "Kanalzuordnung: "
 
