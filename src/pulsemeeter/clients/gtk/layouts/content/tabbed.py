@@ -1,8 +1,6 @@
 import gettext
 
 from pulsemeeter.model.types import DEVICE_TYPE_PRETTY as PRETTY
-# from pulsemeeter.clients.gtk.widgets.utils.framed_widget import FramedWidget
-# from pulsemeeter.clients.gtk.widgets.content import Content
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
@@ -33,12 +31,9 @@ def arrange_widgets(content):
     Returns:
         Gtk.Grid: The grid container
     '''
-    # notebook = Gtk.Notebook(hexpand=True, vexpand=True)
     stack = Gtk.Stack(hexpand=True, vexpand=True)
-    # self.settings_widget = SettingsMenuBox()
 
     content.settings_box.set_vexpand(False)
-    # content.settings_box.apply_button.set_valign(Gtk.Align.END)
 
     # TODO: set box layouts
     for device_type in ('hi', 'vi', 'a', 'b'):
@@ -57,7 +52,6 @@ def arrange_widgets(content):
     tab_bar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
     tab_bar.set_child(switcher)
     tab_bar.set_size_request(-1, 50)
-    # notebook.set_scrollable(True)
 
     scrolled = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
     scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)

@@ -23,7 +23,6 @@ class ConfigModel(BaseModel):
     devices: dict[str, dict[str, DeviceModel]] = {'vi': {}, 'hi': {}, 'a': {}, 'b': {}}
     vumeters: bool = True
     cleanup: bool = False
-    tray: bool = False
     layout: str = 'Blocks'
     window_width: int = 800
     window_height: int = 600

@@ -41,13 +41,9 @@ def arrange_widgets(device_widget: DeviceWidget):
     name_container.append(device_widget.warning_icon)
     name_container.append(device_widget.nick_label)
     name_container.append(device_widget.description_label)
-    # name_container.append(Gtk.Box(hexpand=True))
     name_container.append(device_widget.edit_button)
     if device_widget.device_model.nick == device_widget.device_model.description:
         device_widget.description_label.set_visible(False)
-
-    # device_widget.set_label_widget(name_container)
-    # device_widget.set_label_align(0.5)
 
     control_grid.attach(device_widget.volume_widget, 0, 0, 1, 1)
     control_grid.attach(device_widget.vumeter_widget, 0, 1, 2, 1)

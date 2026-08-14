@@ -2,18 +2,16 @@ import gettext
 import logging
 
 from pulsemeeter.model.app_model import AppModel
-# from pulsemeeter.schemas.typing import AppType
 from pulsemeeter.clients.gtk.widgets.common.volume_widget import VolumeWidget
 from pulsemeeter.clients.gtk.widgets.common.vumeter_widget import VumeterWidget
 from pulsemeeter.clients.gtk.widgets.common.mute_widget import MuteWidget
 from pulsemeeter.clients.gtk.widgets.utils.icon_widget import IconWidget
 from pulsemeeter.clients.gtk.widgets.app.app_dropdown import AppDropDown
-# from pulsemeeter.clients.gtk.adapters.app_adapter import AppAdapter
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio, GLib, GObject  # noqa: E402
+from gi.repository import Gtk, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
@@ -34,7 +32,6 @@ class AppWidget(Gtk.Frame):
         self.app_model = app_model
         super().__init__()
 
-        # self.from_model(app_model)
         self.app_type = app_model.app_type
         self.label = Gtk.Label()
         self.label.set_markup(f'<b>{self.app_model.label}</b>')

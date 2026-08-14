@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pulsemeeter 2.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-14 15:31-0600\n"
+"POT-Creation-Date: 2026-08-14 15:43-0600\n"
 "PO-Revision-Date: 2026-07-12 17:47-0600\n"
 "Last-Translator: GabrielMuSa\n"
 "Language: es\n"
@@ -24,25 +24,25 @@ msgstr ""
 msgid "Invalid device id: %s"
 msgstr "Id de dispositivo no valido: %s"
 
-#: src/pulsemeeter/clients/gtk/layouts/content/tabbed.py:52
+#: src/pulsemeeter/clients/gtk/layouts/content/tabbed.py:47
 msgid "Settings"
 msgstr "Configuración"
 
-#: src/pulsemeeter/clients/gtk/widgets/content.py:54
+#: src/pulsemeeter/clients/gtk/widgets/content.py:49
 #, python-format
 msgid "Create new %s"
 msgstr "Crear nuevo %s"
 
-#: src/pulsemeeter/clients/gtk/widgets/content.py:64
+#: src/pulsemeeter/clients/gtk/widgets/content.py:59
 msgid "Create device"
 msgstr "Crear dispositivo"
 
-#: src/pulsemeeter/clients/gtk/widgets/content.py:69
-#: src/pulsemeeter/clients/gtk/widgets/content.py:79
+#: src/pulsemeeter/clients/gtk/widgets/content.py:64
+#: src/pulsemeeter/clients/gtk/widgets/content.py:74
 msgid "Open settings menu"
 msgstr "Abrir el menú de configuración"
 
-#: src/pulsemeeter/clients/gtk/widgets/content.py:78
+#: src/pulsemeeter/clients/gtk/widgets/content.py:73
 msgid "Settings menu"
 msgstr "Menú de configuración"
 
@@ -173,16 +173,6 @@ msgstr "Ver código fuente"
 msgid "Discord"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/app/app_box_widget.py:21
-#: src/pulsemeeter/model/types.py:16
-msgid "Application Outputs"
-msgstr "Audio de salida de aplicación"
-
-#: src/pulsemeeter/clients/gtk/widgets/app/app_box_widget.py:22
-#: src/pulsemeeter/model/types.py:17
-msgid "Application Inputs"
-msgstr "Audio de entrada de aplicación"
-
 #: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:34
 #, python-format
 msgid "Select the app %s! device"
@@ -217,7 +207,7 @@ msgstr "Activar o desactivar silencio"
 msgid "Selected ports: "
 msgstr "Puertos seleccionados: "
 
-#: src/pulsemeeter/clients/gtk/widgets/common/port_selector_widget.py:37
+#: src/pulsemeeter/clients/gtk/widgets/common/port_selector_widget.py:33
 msgid "Toggle the port "
 msgstr "Activar o desactivar el puerto "
 
@@ -226,74 +216,39 @@ msgstr "Activar o desactivar el puerto "
 msgid "Volume Slider"
 msgstr "Barra de volumen"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:30
-#: src/pulsemeeter/model/types.py:12
-msgid "Hardware Inputs"
-msgstr "Entradas de Hardware"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:31
-#: src/pulsemeeter/model/types.py:13
-msgid "Virtual Inputs"
-msgstr "Entradas Virtuales"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:32
-#: src/pulsemeeter/model/types.py:14
-msgid "Hardware Outputs"
-msgstr "Salidas de Hardware"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:33
-#: src/pulsemeeter/model/types.py:15
-msgid "Virtual Outputs"
-msgstr "Salidas Virtuales"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:54
-#, python-format
-msgid "Create new %s device"
-msgstr "Crear nuevo dispositivo de %s"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/device_box_widget.py:55
-#, python-format
-msgid "Create a %s device"
-msgstr "Crear un dispositivo de %s"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:33
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:28
 msgid "Enable VU Meters"
 msgstr "Habilitar Medidores VU"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:34
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:29
 msgid "Enable Cleanup"
 msgstr "Habilitar Limpieza"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:35
-msgid "Enable Tray"
-msgstr "Habilitar Bandeja"
-
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:36
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:30
 msgid "Layout "
 msgstr "Diseño "
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:46
-#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:30
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:33
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:25
 msgid "Apply"
 msgstr "Aplicar"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:48
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:52
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:35
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:39
 msgid "Open the welcome guide"
 msgstr "Abrir la guía de bienvenida"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:54
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:55
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:56
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:41
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:42
 #, python-format
 msgid "Enable or disable %s"
 msgstr "Habilitar o deshabilitar %s"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:55
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:41
 msgid "VU Meter (volume peak)"
 msgstr "Medidor VU (Nivel de volumen)"
 
-#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:57
+#: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:43
 msgid "Select the GUI layout"
 msgstr "Seleccione el diseño de la interfaz"
 
@@ -316,38 +271,38 @@ msgstr ""
 msgid "Failed to create route"
 msgstr "No se pudo crear la ruta"
 
-#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:97
-#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:107
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:82
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:92
 msgid "Open device settings"
 msgstr "Abrir configuración del dispositivo"
 
-#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:106
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:91
 msgid "Device settings"
 msgstr "Configuración del dispositivo"
 
-#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:142
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:127
 msgid "Failed to create device"
 msgstr "No se pudo crear el dispositivo"
 
-#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:148
+#: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:133
 #, python-format
 msgid "Device disconnected: %s"
 msgstr "Dispositivo desconectado: %s"
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:28
 msgid "Nick: "
 msgstr "Alias: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:33
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:29
 msgid "Name: "
 msgstr "Nombre: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:34
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:30
 #, fuzzy
 msgid "Externally Managed"
 msgstr "Externo"
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:36
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
 msgid ""
 "Check this if another application or config file owns this device's "
 "lifecycle (creates and destroys it), such as a PipeWire config or "
@@ -355,36 +310,69 @@ msgid ""
 "create it onstartup or remove it on exit."
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:41
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:37
 msgid "Device: "
 msgstr "Dispositivo: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:41
+#: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:37
 msgid "Channel Map: "
 msgstr "Mapeo del canal: "
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:28
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:24
 msgid "Auto ports"
 msgstr "Puertos automaticos"
 
-#: src/pulsemeeter/clients/gtk/widgets/utils/input_widget.py:29
+#: src/pulsemeeter/clients/gtk/widgets/utils/input_widget.py:28
 #, python-format
 msgid "Enter the %s"
 msgstr "Ingrese el %s"
 
-#: src/pulsemeeter/model/types.py:22
+#: src/pulsemeeter/model/types.py:10
+msgid "Hardware Inputs"
+msgstr "Entradas de Hardware"
+
+#: src/pulsemeeter/model/types.py:11
+msgid "Virtual Inputs"
+msgstr "Entradas Virtuales"
+
+#: src/pulsemeeter/model/types.py:12
+msgid "Hardware Outputs"
+msgstr "Salidas de Hardware"
+
+#: src/pulsemeeter/model/types.py:13
+msgid "Virtual Outputs"
+msgstr "Salidas Virtuales"
+
+#: src/pulsemeeter/model/types.py:14
+msgid "Application Outputs"
+msgstr "Audio de salida de aplicación"
+
+#: src/pulsemeeter/model/types.py:15
+msgid "Application Inputs"
+msgstr "Audio de entrada de aplicación"
+
+#: src/pulsemeeter/model/types.py:20
 msgid "Physical sources such as microphones and line-in."
 msgstr "Fuentes fisicas como micrófonos y entradas de línea."
 
-#: src/pulsemeeter/model/types.py:23
+#: src/pulsemeeter/model/types.py:21
 msgid "Virtual sinks that applications can play into."
 msgstr "Receptor de audio virtual en los que pueden reproducirse las aplicaciones."
 
-#: src/pulsemeeter/model/types.py:24
+#: src/pulsemeeter/model/types.py:22
 msgid "Physical sinks such as speakers and headphones."
 msgstr "Receptor de audio fisico como altavoces y audifonos."
 
-#: src/pulsemeeter/model/types.py:25
+#: src/pulsemeeter/model/types.py:23
 msgid "Virtual sources that applications can capture from."
 msgstr "Fuentes virtuales de las que las aplicaciones pueden capturar audio."
+
+#~ msgid "Create new %s device"
+#~ msgstr "Crear nuevo dispositivo de %s"
+
+#~ msgid "Create a %s device"
+#~ msgstr "Crear un dispositivo de %s"
+
+#~ msgid "Enable Tray"
+#~ msgstr "Habilitar Bandeja"
 

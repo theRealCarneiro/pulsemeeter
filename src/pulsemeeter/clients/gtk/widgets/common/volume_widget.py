@@ -68,7 +68,6 @@ class VolumeWidget(Gtk.Scale):
             return True
 
         self.blocked = True
-        # print('Scroll locked: ', True)
 
         if self.scroll_lock_timeout is not None:
             GLib.source_remove(self.scroll_lock_timeout)
@@ -79,17 +78,14 @@ class VolumeWidget(Gtk.Scale):
         return False
 
     def _on_button_press(self, *_):
-        # print('BUTTON LOCKED: ', True)
         self.blocked = True
         self.is_pressed = True
 
     def _on_button_release(self, *_):
-        # print('BUTTON LOCKED: ', False)
         self.blocked = False
         self.is_pressed = False
 
     def _clear_scroll_lock(self):
-        # print('Scroll locked: ', False)
         self.blocked = False
         self.scroll_lock_timeout = None
         return False

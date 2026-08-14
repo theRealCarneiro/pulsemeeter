@@ -28,15 +28,10 @@ def arrange_widgets(app_widget: AppWidget):
     app_widget.volume_widget.set_properties(**scale_props)
     app_widget.vumeter_widget.set_properties(margin_top=10, margin_start=10, margin_end=0, **scale_props)
     app_widget.combobox.set_hexpand(True)
-    # app_widget.icon.set_margin_end(5)
 
     name_box = Gtk.Box(spacing=4, halign=Gtk.Align.CENTER, margin_bottom=10)
     name_box.append(app_widget.icon)
     name_box.append(app_widget.label)
-
-    # info_box = Gtk.Box(spacing=4, halign=Gtk.Align.CENTER, orientation=Gtk.Orientation.VERTICAL)
-    # info_box.append(name_box)
-    # info_box.append(app_widget.combobox)
 
     volume_box = Gtk.Box(spacing=4, halign=Gtk.Align.CENTER, orientation=Gtk.Orientation.VERTICAL)
     volume_box.append(app_widget.volume_widget)

@@ -7,9 +7,6 @@ import logging
 from typing import Optional, Any
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.config_model import ConfigModel
-from pulsemeeter.utils.config_persistence import ConfigPersistence
-from pulsemeeter.settings import CONFIG_FILE
-# from pulsemeeter.schemas.typing import PaDeviceType, DeviceClass
 
 LOG = logging.getLogger("generic")
 
@@ -144,70 +141,3 @@ class DeviceRepository:
             Primary device model if found, None otherwise
         '''
         return self.find_device_by_key('primary', True, (device_type,))
-
-    def get_device_count(self, device_type: Optional[str] = None) -> int:
-        '''
-        Get the count of devices.
-
-        Args:
-            device_type: Optional device type to filter by
-
-        Returns:
-            Number of devices
-        '''
-        return len(self.get_devices_by_type(device_type))
-
-    def list_by_key(self, key, device_types) -> list:
-        device_list = []
-        for device_type in device_types:
-            for device in self._devices[device_type].values():
-                device_list.append(device.__dict__[key])
-
-    # def cache_devices(self):
-    #     '''
-    #     Rebuild the internal device cache from current devices.
-    #     '''
-    #     # self._device_cache = {'sink': {}, 'source': {}}
-    #     for device_type in ('hi', 'vi', 'a', 'b'):
-    #         for device_id, device in self.get_devices_by_type(device_type).items():
-    #             self.append_device_cache(device_type, device_id, device)
-    #
-    # def append_device_cache(self, device_type, device_id, device_index):
-    #     '''
-    #     Add a device to the internal cache.
-    #     Args:
-    #         device_type (str): Type of device.
-    #         device_id (str): Device identifier.
-    #         device_index (int): Index of device in Pulseaudio.
-    #     '''
-    #
-    #     device = self.get_device(device_type, device_id)
-    #
-    #     if device_index not in self.device_cache[device.device_type]:
-    #         self._device_cache[device.device_type][device_index] = []
-    #
-    #     self._device_cache[device.device_type][device_index].append((device_type, device_id))
-    #
-    # def pop_device_cache(self, device_type, device_id, device_index):
-    #     '''
-    #     Remove a device from the internal cache.
-    #     Args:
-    #         device_type (str): Type of device (sink | source).
-    #         device_id (str): Device identifier.
-    #         device_index (int): Index of device in Pulseaudio.
-    #     '''
-    #     pa_device_type = 'sink' if device_type in ('vi', 'a') else 'source'
-    #     self._device_cache[pa_device_type][device_index].remove((device_type, device_id))
-    #
-    #     # del index from cache if list is empty
-    #     if not self._device_cache[pa_device_type][device_index]:
-    #         del self._device_cache[pa_device_type][device_index]
-    #
-    # def get_device_from_cache(self, device_type: str, device_index: int):
-    #     '''
-    #     Get a device from the internal cache.
-    #     Args:
-    #         device_type (str): Type of device (sink | source).
-    #         device_index (int): Device identifier on pulseaudio.
-    #     '''
-    #     return self._device_cache[device_type].get(device_index)
