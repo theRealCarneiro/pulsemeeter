@@ -1,0 +1,36 @@
+name: Nix Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  nix-build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+
+    - name: Check flake
+      run: nix flake check --print-build-logs
+
+    - name: Build package
+      run: nix build .#default --print-build-logs
+
+    - name: Start PulseAudio
+      run: |
+        sudo apt update
+        sudo apt install -y pulseaudio
+        pulseaudio --start --exit-idle-time=-1
+        pactl info
+
+    - name: Verify built entrypoint
+      run: |
+        ls -l result/bin/
+        result/bin/pulsemeeter --help
