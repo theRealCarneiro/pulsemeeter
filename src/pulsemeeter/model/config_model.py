@@ -16,8 +16,9 @@ class ConfigModel(BaseModel):
     '''
     Model for the config file. A root_validator runs after construction to
     repair self-inconsistent state (orphan connections, missing entries,
-    out-of-range port_maps, duplicate primaries, empty-name devices) so the
-    rest of the app never has to defend against invalid config shapes.
+    out-of-range port_maps, duplicate primaries, empty-name devices,
+    no-channel devices, mismatched volumes) so the rest of the app
+    never has to defend against invalid config shapes.
     '''
 
     devices: dict[str, dict[str, DeviceModel]] = {'vi': {}, 'hi': {}, 'a': {}, 'b': {}}
@@ -36,6 +37,7 @@ class ConfigModel(BaseModel):
         devices = values['devices']
         cls._ensure_device_buckets(devices)
         cls._drop_invalid_devices(devices)
+        cls._repair_volumes(devices)
         cls._dedupe_primary(devices)
         cls._repair_connections(devices)
         return values
@@ -48,9 +50,9 @@ class ConfigModel(BaseModel):
     @classmethod
     def _drop_invalid_devices(cls, devices):
         for device_type, bucket in devices.items():
-            invalid_ids = [did for did, dev in bucket.items() if not dev.name.strip()]
-            for device_id in invalid_ids:
-                LOG.warning("ConfigModel: dropping %s/%s with empty name", device_type, device_id)
+            invalid = [(did, reason) for did, dev in bucket.items() if (reason := _device_defect(dev)) is not None]
+            for device_id, reason in invalid:
+                LOG.warning("ConfigModel: dropping %s/%s (%s)", device_type, device_id, reason)
                 bucket.pop(device_id)
 
     @classmethod
@@ -121,6 +123,27 @@ class ConfigModel(BaseModel):
                 )
                 connection.port_map = []
                 connection.auto_ports = True
+
+    @classmethod
+    def _repair_volumes(cls, devices):
+        for device_type, bucket in devices.items():
+            for device_id, device in bucket.items():
+                if len(device.volume) == device.channels:
+                    continue
+                LOG.warning("ConfigModel: resetting volume on %s/%s", device_type, device_id)
+                # Reset to existing volume if possible
+                if device.volume:
+                    device.volume = [device.volume[0]] * device.channels
+                else:
+                    device.volume = [100] * device.channels
+
+
+def _device_defect(device):
+    if not device.name.strip():
+        return 'empty name'
+    if device.channels < 1:
+        return 'no channels'
+    return None
 
 
 def _default_sel_channels(device):

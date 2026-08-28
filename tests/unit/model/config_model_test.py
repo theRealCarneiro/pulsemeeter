@@ -50,6 +50,51 @@ def test_drops_devices_with_empty_name():
     assert '2' in config.devices['vi']
 
 
+def test_drops_devices_with_no_channels():
+    bad = _input_device(channels=0)
+    good = _input_device(channels=2)
+    config = ConfigModel(devices={'vi': {'1': bad, '2': good}, 'hi': {}, 'a': {}, 'b': {}})
+    assert '1' not in config.devices['vi']
+    assert '2' in config.devices['vi']
+
+
+def test_drop_runs_before_connection_fill():
+    inp = _input_device()
+    live = _output_device(name='live')
+    dead = _output_device(name='dead', channels=0)
+    config = ConfigModel(devices={'vi': {'1': inp}, 'hi': {}, 'a': {},
+                                'b': {'1': live, '2': dead}})
+    assert set(config.devices['vi']['1'].connections['b']) == {'1'}
+
+
+def test_resets_volume_shorter_than_channels():
+    dev = _input_device(channels=2)
+    dev.volume = [80]
+    config = ConfigModel(devices={'vi': {'1': dev}, 'hi': {}, 'a': {}, 'b': {}})
+    assert config.devices['vi']['1'].volume == [80, 80]
+
+
+def test_resets_volume_longer_than_channels():
+    dev = _input_device(channels=2)
+    dev.volume = [80, 80, 80]
+    config = ConfigModel(devices={'vi': {'1': dev}, 'hi': {}, 'a': {}, 'b': {}})
+    assert config.devices['vi']['1'].volume == [80, 80]
+
+
+def test_resets_empty_volume():
+    dev = _input_device(channels=2)
+    dev.volume = []
+    config = ConfigModel(devices={'vi': {'1': dev}, 'hi': {}, 'a': {}, 'b': {}})
+    assert config.devices['vi']['1'].volume == [100, 100]
+
+
+def test_leaves_correct_volume():
+    dev = _input_device(channels=2)
+    dev.volume = [100, 100]
+    config = ConfigModel(devices={'vi': {'1': dev}, 'hi': {}, 'a': {}, 'b': {}})
+    assert config.devices['vi']['1'].volume == [100, 100]
+
+
 def test_dedupes_primary_within_type():
     a = _input_device(name='a', primary=True)
     b = _input_device(name='b', primary=True)
