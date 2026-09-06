@@ -9,15 +9,17 @@ msgstr ""
 "Project-Id-Version: pulsemeeter 2.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-09-06 16:39-0600\n"
-"PO-Revision-Date: 2026-07-12 17:47-0600\n"
-"Last-Translator: GabrielMuSa\n"
+"PO-Revision-Date: 2026-09-06 23:41+0000\n"
+"Last-Translator: Gabriel <fernandomurcia451@gmail.com>\n"
 "Language: es\n"
-"Language-Team: es <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/pulsemeeter/"
+"pulsemeeter/es/>\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+"X-Generator: Weblate 2026.9.1.dev0\n"
 
 #: src/pulsemeeter/clients/cli/cli_client.py:41
 #, python-format
@@ -171,17 +173,15 @@ msgstr "Ver código fuente"
 
 #: src/pulsemeeter/clients/gtk/widgets/welcome_window.py:132
 msgid "Discord"
-msgstr ""
+msgstr "Discord"
 
 #: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:35
-#, fuzzy
 msgid "Select the output device for this app"
-msgstr "Seleccione el dispositivo de %s de la aplicación"
+msgstr "Seleccione el dispositivo de salida para esta aplicación"
 
 #: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:37
-#, fuzzy
 msgid "Select the input device for this app"
-msgstr "Seleccione el dispositivo de %s de la aplicación"
+msgstr "Seleccione el dispositivo de entrada para esta aplicación"
 
 #: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:25
 msgid "Primary"
@@ -239,13 +239,13 @@ msgid "Open the welcome guide"
 msgstr "Abrir la guía de bienvenida"
 
 #: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:41
-#, fuzzy
 msgid "Enable or disable VU meters (volume peak)"
-msgstr "Medidor VU (Nivel de volumen)"
+msgstr "Activar o desactivar medidor VU (Nivel de volumen)"
 
 #: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:42
 msgid "Enable or disable cleaning up devices and connections upon closing"
 msgstr ""
+"Habilitar o deshabilitar la limpieza de dispositivos y conexiones al cerrar"
 
 #: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:43
 msgid "Select the GUI layout"
@@ -294,7 +294,7 @@ msgstr "Alias: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:28
 msgid "Enter a nickname for the device"
-msgstr ""
+msgstr "Agregar un alias para este dispositivo"
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:29
 msgid "Name: "
@@ -302,12 +302,11 @@ msgstr "Nombre: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:29
 msgid "Enter a name for the device"
-msgstr ""
+msgstr "Agrega un nombre al dispositivo"
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:30
-#, fuzzy
 msgid "Externally Managed"
-msgstr "Externo"
+msgstr "Gestionado externamente"
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:32
 msgid ""
@@ -316,24 +315,26 @@ msgid ""
 "EasyEffects. Pulsemeeter will route and control the device but will not "
 "create it onstartup or remove it on exit."
 msgstr ""
+"Compruebe si otra aplicación o archivo de configuración controla el ciclo de "
+"vida de este dispositivo (lo crea y lo destruye), como por ejemplo una "
+"configuración de PipeWire o EasyEffects. Pulsemeeter enrutará y controlará "
+"el dispositivo, pero no lo creará al iniciar ni lo eliminará al finalizar."
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:38
 msgid "Device: "
 msgstr "Dispositivo: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:38
-#, fuzzy
 msgid "Select a device"
-msgstr "Seleccione el dispositivo de %s de la aplicación"
+msgstr "Seleccione un dispositivo"
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:40
 msgid "Channel Map: "
-msgstr "Mapeo del canal: "
+msgstr "Mapa de canales: "
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:40
-#, fuzzy
 msgid "Select a channel map"
-msgstr "Mapeo del canal: "
+msgstr "Seleccione un mapa de canales"
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:24
 msgid "Auto ports"
@@ -396,4 +397,3 @@ msgstr "Fuentes virtuales de las que las aplicaciones pueden capturar audio."
 
 #~ msgid "Enter the %s"
 #~ msgstr "Ingrese el %s"
-
