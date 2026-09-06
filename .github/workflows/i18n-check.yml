@@ -21,18 +21,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install babel setuptools
 
-    - name: Regenerate .pot and update catalogs
-      run: |
-        python setup.py extract_messages
-        python setup.py update_catalog
+    - name: Regenerate .pot
+      run: python setup.py extract_messages
 
-    - name: Fail if catalogs are out of sync
+    - name: Fail if the template is out of sync with the source
       run: |
-        # The .pot template is gitignored; only the tracked .po catalogs are checked.
-        # -I ignores the auto-stamped date header so only real string changes fail.
-        if ! git diff --exit-code -I 'POT-Creation-Date' -- 'locale/*.po'; then
-          echo "::error::Translation catalogs are out of sync with the source code."
-          echo "Run 'python setup.py extract_messages && python setup.py update_catalog',"
-          echo "then commit the updated .po files (translating new entries if you can)."
+        # Only the .pot is checked. Weblate owns the .po files and rewrites
+        # their headers. Weblate never regenerates the template itself.
+        # -I skips the auto-stamped creation date.
+        if ! git diff --exit-code -I 'POT-Creation-Date' -I '^# Copyright' -- locale/pulsemeeter.pot; then
+          echo "::error::locale/pulsemeeter.pot is out of sync with the source."
+          echo "Run 'python setup.py extract_messages' and commit the result."
           exit 1
         fi

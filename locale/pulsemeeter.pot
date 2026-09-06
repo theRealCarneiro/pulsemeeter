@@ -1,5 +1,5 @@
 # Translations template for pulsemeeter.
-# Copyright (C) 2026 ORGANIZATION
+# Copyright (C) 2026 Gabriel Carneiro
 # This file is distributed under the same license as the pulsemeeter
 # project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
@@ -8,8 +8,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: pulsemeeter 2.2.0\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 18:50-0600\n"
+"Report-Msgid-Bugs-To: "
+"https://github.com/theRealCarneiro/pulsemeeter/issues\n"
+"POT-Creation-Date: 2026-09-06 16:39-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
