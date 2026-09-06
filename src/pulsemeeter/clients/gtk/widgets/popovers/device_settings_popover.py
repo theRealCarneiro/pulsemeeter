@@ -30,7 +30,7 @@ class DeviceSettingsPopover(Gtk.Popover):
         self.external_widget = Gtk.CheckButton(label=_('Externally Managed'))
         self.external_widget.set_tooltip_text(
             _("Check this if another application or config file owns this device's lifecycle (creates and destroys it), "
-              "such as a PipeWire config or EasyEffects. Pulsemeeter will route and control the device but will not create it on"
+              "such as a PipeWire config or EasyEffects. Pulsemeeter will route and control the device but will not create it on "
               "startup or remove it on exit.")
         )
         self.port_selector = PortSelector()
