@@ -104,11 +104,28 @@ def link_channels(input_name: str, output_name: str, channel_map: str, state: bo
             return True
         raise RuntimeError(f'Ports not found for devices {input_name} {output_name}')
 
+    linked = 0
     for pair in channel_map.split(' '):
         input_id, output_id = pair.split(':')
-        input_port = f'{input_name}:{input_ports[int(input_id)]}'
-        output_port = f'{output_name}:{output_ports[int(output_id)]}'
+        input_index, output_index = int(input_id), int(output_id)
+
+        # Drop pairs that no longer have a port instead of failing every channel of the route.
+        if not 0 <= input_index < len(input_ports) or not 0 <= output_index < len(output_ports):
+            LOG.warning(
+                'Skipping out of range channel pair %s for %s (%d ports) -> %s (%d ports)',
+                pair, input_name, len(input_ports), output_name, len(output_ports)
+            )
+            continue
+
+        input_port = f'{input_name}:{input_ports[input_index]}'
+        output_port = f'{output_name}:{output_ports[output_index]}'
         link(input_port, output_port, state=state)
+        linked += 1
+
+    if linked == 0 and state:
+        raise RuntimeError(
+            f'No channel of {channel_map} could be mapped for devices {input_name} {output_name}'
+        )
 
     return True
 

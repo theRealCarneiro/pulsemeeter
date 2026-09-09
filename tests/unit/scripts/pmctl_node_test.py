@@ -80,3 +80,41 @@ class TestCreateDeviceMediaClass(unittest.TestCase):
 
     def test_source(self):
         assert 'media.class=Audio/Source/Virtual\n' in self._create('source', False)
+
+
+class TestLinkChannels(unittest.TestCase):
+
+    def _link_calls(self, input_ports, output_ports, channel_map, state=True):
+        ports = {'output': input_ports, 'input': output_ports}
+        with (
+            patch('pulsemeeter.scripts.pmctl.get_ports', side_effect=lambda t, _n: ports[t]),
+            patch('pulsemeeter.scripts.pmctl.link', return_value=True) as mock_link,
+        ):
+            pmctl.link_channels('in_device', 'out_device', channel_map, state)
+        return [call.args for call in mock_link.call_args_list]
+
+    def test_all_pairs_in_range(self):
+        calls = self._link_calls(['out_FL', 'out_FR'], ['in_FL', 'in_FR'], '0:0 1:1')
+        assert calls == [
+            ('in_device:out_FL', 'out_device:in_FL'),
+            ('in_device:out_FR', 'out_device:in_FR'),
+        ]
+
+    def test_stereo_to_mono_output_links_available_channel(self):
+        calls = self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '0:0 1:1')
+        assert calls == [('in_device:out_FL', 'out_device:playback_MONO')]
+
+    def test_mono_input_to_stereo_output(self):
+        calls = self._link_calls(['capture_MONO'], ['in_FL', 'in_FR'], '0:0 1:1')
+        assert calls == [('in_device:capture_MONO', 'out_device:in_FL')]
+
+    def test_negative_index_is_skipped(self):
+        calls = self._link_calls(['out_FL', 'out_FR'], ['in_FL', 'in_FR'], '0:0 1:-1')
+        assert calls == [('in_device:out_FL', 'out_device:in_FL')]
+
+    def test_no_mappable_pair_raises(self):
+        with self.assertRaises(RuntimeError):
+            self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '1:1')
+
+    def test_no_mappable_pair_on_unlink_is_silent(self):
+        assert self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '1:1', state=False) == []
