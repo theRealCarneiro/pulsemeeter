@@ -244,18 +244,24 @@ class EventController(SignalModel):
         for pa_device_type in ('sink', 'source'):
             pm_device_type = 'vi' if pa_device_type == 'sink' else 'b'
             primary = await pmctl_async.get_primary(pa_device_type)
+            primary_name = primary.name if primary else None
             pm_primary_list = self.device_repository.get_primary_device(pm_device_type)
 
             if pm_primary_list:
                 _, _, pm_primary = pm_primary_list[0]
 
                 # if nothing changed just ignore it
-                if pm_primary.name == primary.name:
+                if pm_primary.name == primary_name:
                     continue
 
                 pm_primary.set_primary(False, emit=False)
 
-            search_list = self.device_repository.find_device_by_key('name', primary.name, [pm_device_type])
+            # no resolvable default right now, emit None
+            if primary_name is None:
+                self.emit('pa_primary_change', pm_device_type, None)
+                continue
+
+            search_list = self.device_repository.find_device_by_key('name', primary_name, [pm_device_type])
 
             # if the primary is not a pm device, emit None
             if not search_list:
