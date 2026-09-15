@@ -115,7 +115,10 @@ class EventController(SignalModel):
             pm_facility = self._facility_map.get(event.facility)
             handler = _pa_event_map.get((pm_facility, event.type))
             if handler:
-                await handler(event)
+                try:
+                    await handler(event)
+                except Exception:
+                    LOG.exception('Error handling %s %s event', pm_facility, event.type)
 
     async def _seed_pa_index_cache(self):
         '''
