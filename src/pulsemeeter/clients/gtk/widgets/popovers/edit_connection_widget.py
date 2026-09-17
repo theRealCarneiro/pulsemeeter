@@ -21,9 +21,10 @@ class ConnectionSettingsPopup(Gtk.Popover):
         self.connection_model = connection_model
 
         # create widgets
-        self.auto_ports_check = Gtk.CheckButton(label=_("Auto ports"), )
+        self.auto_ports_check = Gtk.CheckButton(label=_("Auto ports"), halign=Gtk.Align.CENTER)
         self.confirm_button = Gtk.Button(label=_('Apply'))
         self.port_map_widget = PortMap(connection_model)
+        self.port_map_widget.set_halign(Gtk.Align.CENTER)
 
         # connect events
         self.auto_ports_check.connect('toggled', self.change_checkbox_active)
@@ -32,8 +33,9 @@ class ConnectionSettingsPopup(Gtk.Popover):
         button_box = Gtk.Box(halign=Gtk.Align.END)
         button_box.append(self.confirm_button)
 
-        main_box = Gtk.Box(hexpand=True, orientation=Gtk.Orientation.VERTICAL)
+        main_box = Gtk.Box(hexpand=True, orientation=Gtk.Orientation.VERTICAL, spacing=2)
         main_box.append(self.auto_ports_check)
+        main_box.append(Gtk.Separator())
         main_box.append(self.port_map_widget)
         main_box.append(button_box)
 

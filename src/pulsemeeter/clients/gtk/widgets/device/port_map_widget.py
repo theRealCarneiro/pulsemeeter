@@ -3,7 +3,7 @@ import gettext
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gtk, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
@@ -20,6 +20,14 @@ def port_label(port_name: str) -> str:
             return port_name[len(prefix):]
 
     return port_name
+
+
+def axis_marker(text: str) -> Gtk.Label:
+    label = Gtk.Label(halign=Gtk.Align.CENTER)
+    label.set_markup(f'<small>{GLib.markup_escape_text(text)}</small>')
+    label.add_css_class('dim-label')
+
+    return label
 
 
 class PortMap(Gtk.Box):
@@ -71,22 +79,27 @@ class PortMap(Gtk.Box):
         grid.set_row_spacing(4)
         grid.set_column_spacing(6)
 
-        # Header row (output port labels)
+        # Column 0 and row 0 hold the axis markers, so the port names sit at column 1 and row 1
+        # Checkboxes start at (2, 2)
+        grid.attach(axis_marker(_('out')), 2, 0, len(cols), 1)
+        grid.attach(axis_marker(_('in')), 0, 2, 1, len(rows))
+
+        # Output port labels
         for column, (_unused, output_name) in enumerate(cols):
             label = Gtk.Label(label=port_label(output_name), halign=Gtk.Align.CENTER)
-            grid.attach(label, column + 1, 0, 1, 1)
+            grid.attach(label, column + 2, 1, 1, 1)
 
-        # Rows (input port labels + checkboxes)
+        # Input port labels + checkboxes
         for row, (position, input_name) in enumerate(rows):
             label = Gtk.Label(label=port_label(input_name))
             label.set_halign(Gtk.Align.START)
-            grid.attach(label, 0, row + 1, 1, 1)
+            grid.attach(label, 1, row + 2, 1, 1)
 
             for column, (output_channel, _unused) in enumerate(cols):
                 check = Gtk.CheckButton(active=(position, output_channel) in checked)
                 check.set_sensitive(not self.connection_model.auto_ports)
 
-                grid.attach(check, column + 1, row + 1, 1, 1)
+                grid.attach(check, column + 2, row + 2, 1, 1)
                 self.checkboxes[(position, output_channel)] = check
 
         self.append(grid)
