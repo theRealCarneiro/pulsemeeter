@@ -1,7 +1,5 @@
 import gettext
 
-from pulsemeeter.model.connection_model import pair_match
-
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
@@ -10,6 +8,19 @@ from gi.repository import Gtk  # noqa: E402
 
 _ = gettext.gettext
 
+PORT_NAME_PREFIXES = ('playback_', 'capture_', 'monitor_', 'input_', 'output_')
+
+
+def port_label(port_name: str) -> str:
+    '''
+    Strip the pipewire direction prefix off a port name for display.
+    '''
+    for prefix in PORT_NAME_PREFIXES:
+        if port_name.startswith(prefix):
+            return port_name[len(prefix):]
+
+    return port_name
+
 
 class PortMap(Gtk.Box):
 
@@ -17,82 +28,71 @@ class PortMap(Gtk.Box):
         super().__init__()
         self.connection_model = connection_model
         self.checkboxes = {}
+        self.map_rows = 0
+        self.rendered_positions = []
 
     def clear_port_map(self):
         self.checkboxes = {}
+        self.map_rows = 0
+        self.rendered_positions = []
         first_child = self.get_first_child()
         if first_child is not None:
             self.remove(first_child)
 
-    def create_port_map(self, input_sel_channels, output_sel_channels) -> list[list[str]]:
-        input_ports = [i for i, sel in enumerate(input_sel_channels) if sel]
-        output_ports = [i for i, sel in enumerate(output_sel_channels) if sel]
-
-        port_map = [[] for _ in range(len(input_ports))]
-        for input_port, output_port in pair_match(input_ports, output_ports):
-            port_map[input_port].append(output_port)
-
-        return port_map
-
     def get_port_map(self):
-        port_map = [[] for _ in range(len(self.checkboxes))]
-        for input_port, output_port in self.checkboxes:
-            check = self.checkboxes[(input_port, output_port)]
+        '''
+        Read the checkbox grid back into a port_map.
+        '''
+        active_pairs = [key for key, check in self.checkboxes.items() if check.get_active()]
 
-            if check.get_active():
-                port_map[input_port].append(output_port)
+        return self.connection_model.merge_port_map(
+            active_pairs, self.rendered_positions, self.map_rows
+        )
 
-        return port_map
+    def create_routing_grid(self, input_device, output_device, input_ports, output_ports):
+        '''
+        Build the checkbox grid for a connection.
+        '''
+        input_sel_channels = input_device.get_selected_channel_list()
+        output_sel_channels = output_device.get_selected_channel_list()
 
-    def _get_port_names(self, device_model) -> list[str]:
-        channel_map = device_model.channel_list
-        selected_channels = device_model.selected_channels
-        j = 0
-        ports = []
-        for i, sel in enumerate((selected_channels)):
-            if not sel:
-                continue
+        rows, cols, checked = self.connection_model.routing_grid(
+            input_ports, output_ports, input_sel_channels, output_sel_channels
+        )
 
-            ports.append((i, channel_map[j]))
-            j += 1
+        self.map_rows = len(input_sel_channels)
+        self.rendered_positions = [position for position, _unused in rows]
 
-        return ports
-
-    def create_routing_grid(self, input_device, output_device):
-        input_ports = self._get_port_names(input_device)
-        output_ports = self._get_port_names(output_device)
-        port_map = self.connection_model.port_map
-        if not port_map:
-            port_map = self.create_port_map(self.connection_model.input_sel_channels,
-                                            self.connection_model.output_sel_channels)
+        if not rows or not cols:
+            self.show_message(_('No ports available'))
+            return
 
         grid = Gtk.Grid()
         grid.set_row_spacing(4)
         grid.set_column_spacing(6)
 
         # Header row (output port labels)
-        for j, output_port in enumerate(output_ports):
-            _, output_port_name = output_port
-            label = Gtk.Label(label=str(output_port_name), halign=Gtk.Align.CENTER)
-            grid.attach(label, j + 1, 0, 1, 1)
+        for column, (_unused, output_name) in enumerate(cols):
+            label = Gtk.Label(label=port_label(output_name), halign=Gtk.Align.CENTER)
+            grid.attach(label, column + 1, 0, 1, 1)
 
         # Rows (input port labels + checkboxes)
-        for i, input_port in enumerate(input_ports):
-            input_real_id, input_port_name = input_port
-
-            # Input port label
-            label = Gtk.Label(label=str(input_port_name))
+        for row, (position, input_name) in enumerate(rows):
+            label = Gtk.Label(label=port_label(input_name))
             label.set_halign(Gtk.Align.START)
-            grid.attach(label, 0, i + 1, 1, 1)
+            grid.attach(label, 0, row + 1, 1, 1)
 
-            for j, output_port in enumerate(output_ports):
-                output_real_id, _ = output_port
-                check = Gtk.CheckButton()
+            for column, (output_channel, _unused) in enumerate(cols):
+                check = Gtk.CheckButton(active=(position, output_channel) in checked)
                 check.set_sensitive(not self.connection_model.auto_ports)
-                if output_real_id in port_map[input_real_id]:
-                    check.set_active(True)
 
-                grid.attach(check, j + 1, i + 1, 1, 1)
-                self.checkboxes[(input_real_id, output_real_id)] = check
+                grid.attach(check, column + 1, row + 1, 1, 1)
+                self.checkboxes[(position, output_channel)] = check
 
         self.append(grid)
+
+    def show_message(self, text: str):
+        self.append(Gtk.Label(label=text, halign=Gtk.Align.CENTER))
+
+    def show_unavailable(self):
+        self.show_message(_('Could not read device ports'))

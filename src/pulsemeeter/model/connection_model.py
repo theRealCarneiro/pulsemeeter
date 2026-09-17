@@ -46,6 +46,65 @@ class ConnectionModel(BaseModel):
 
         return ports
 
+    def routing_grid(self, input_ports, output_ports, input_sel_channels, output_sel_channels):
+        '''
+        Build the routing grid from the port lists offered by PW.
+        '''
+        rows = [
+            (position, input_ports[channel])
+            for position, channel in enumerate(input_sel_channels)
+            if channel < len(input_ports)
+        ]
+        cols = [
+            (channel, output_ports[channel])
+            for channel in output_sel_channels
+            if channel < len(output_ports)
+        ]
+
+        live_outputs = {channel for channel, _ in cols}
+        position_of = {channel: position for position, channel in enumerate(input_sel_channels)}
+        checked = set()
+
+        # auto port mapping
+        if self.auto_ports is True:
+            for input_channel, output_channel in pair_match(input_sel_channels, output_sel_channels):
+                if input_channel < len(input_ports) and output_channel in live_outputs:
+                    checked.add((position_of[input_channel], output_channel))
+
+            return rows, cols, checked
+
+        # manual port mapping
+        live_positions = {position for position, _ in rows}
+        for position, targets in enumerate(self.port_map):
+            if position not in live_positions:
+                continue
+            for output_channel in targets:
+                if output_channel in live_outputs:
+                    checked.add((position, output_channel))
+
+        return rows, cols, checked
+
+    def merge_port_map(self, active_pairs, rendered_positions, map_rows):
+        '''
+        Merge edited grid pairs back into a port_map.
+        '''
+        port_map = [list(targets) for targets in self.port_map][:map_rows]
+        while len(port_map) < map_rows:
+            port_map.append([])
+
+        for position in rendered_positions:
+            if position < len(port_map):
+                port_map[position] = []
+
+        for position, output_channel in active_pairs:
+            if position < len(port_map):
+                port_map[position].append(output_channel)
+
+        for targets in port_map:
+            targets.sort()
+
+        return port_map
+
     def reload_settings(self, input_sel_channels=None, output_sel_channels=None):
         '''
         Should be called on device change event to reset the port mapping if the
