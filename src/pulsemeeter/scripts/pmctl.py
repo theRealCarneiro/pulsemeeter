@@ -502,9 +502,11 @@ def get_ports(port_type: str, device_name: str) -> list[str]:
         raise RuntimeError(f"Failed to get ports: {stderr}")
 
     # pw-link lists ports as 'node_name:port_name', one per line
+    # Split on the last colon: node names can contain colons themselves
+    # (bluetooth nodes carry the MAC, e.g. 'bluez_output.6C:FB:ED:49:B3:3A')
     ports = []
     for line in stdout.splitlines():
-        node, _, port = line.partition(':')
+        node, _, port = line.rpartition(':')
         if node == device_name and port:
             ports.append(port)
 
