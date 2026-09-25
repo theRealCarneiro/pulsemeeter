@@ -28,5 +28,32 @@ A frontend to ease the use of pulseaudio's routing capabilities, much like voice
 # Installation
 Please visit the [wiki](https://github.com/theRealCarneiro/pulsemeeter/wiki/Installation) for in depth information on how to install.
 
+# Debian package
+
+A Debian .deb package can be built locally using the 
+packaging script included in this repository.
+Requirements
+
+The build host must be a Debian-based system with debootstrap installed:
+
+sudo apt update
+sudo apt install debootstrap
+
+## Build
+
+From the repository root:
+
+./packaging/debian/build-deb.sh
+
+The generated package will be available in the dist/ directory.
+
+To install the package:
+
+sudo dpkg -i ~/Desktop/pulsemeeter_*.deb
+
+For troubleshooting, the temporary build environment can be kept with:
+
+The Debian package builder creates an isolated Debian build environment and does not modify the host system apart from the tools required to perform the build.
+
 # Discord Server
 If you want to get updates about new features, patches or leave some sugestions, join our [discord server](https://discord.gg/ekWt9NuEWv)
