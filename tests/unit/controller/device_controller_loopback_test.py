@@ -5,12 +5,13 @@ from unittest import mock
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.controller.device_controller import DeviceController
+from pulsemeeter.repository.device_repository import DeviceRepository
 
 
 PATCHED = (
     'get_loopback_targets', 'get_device_serial', 'get_node_serial', 'create_loopback', 'destroy_loopback',
     'kill_stray_loopback', 'wait_for_loopback_gone', 'set_route_volume', 'link',
-    'create_intermediate_sink', 'wait_for_node', 'remove_intermediate_sink',
+    'create_intermediate_sink', 'wait_for_node', 'remove_intermediate_sink', 'remove_device',
 )
 
 MUSIC = SimpleNamespace(name='music', device_type='sink', channels=2, channel_list=['FL', 'FR'])
@@ -118,3 +119,19 @@ class LoopbackConnectionTest(unittest.TestCase):
         self.connect(MUSIC_MIC, state=False)
         self.pm.link.assert_called_once_with(BRIDGE, 'musicmic', state=False)
         self.pm.remove_intermediate_sink.assert_called_once_with(B_ROUTE)
+
+    def test_cleanup_kills_unowned_loopback_before_removing_sink(self):
+        music = SimpleNamespace(name='music', device_class='virtual', external=False, connections={'a': {'1': None}})
+        speakers = SimpleNamespace(name='speakers', device_type='sink', device_class='hardware', external=False)
+        devices = {'vi': {'1': music}, 'hi': {}, 'a': {'1': speakers}, 'b': {}}
+        repository = mock.create_autospec(DeviceRepository, instance=True)
+        repository.get_devices_by_type.side_effect = devices.get
+        repository.get_device.side_effect = lambda device_type, device_id: devices[device_type].get(device_id)
+        repository.get_all_devices.return_value = devices
+        self.controller.device_repository = repository
+
+        order = mock.Mock()
+        order.attach_mock(self.pm.kill_stray_loopback, 'kill_stray_loopback')
+        order.attach_mock(self.pm.remove_device, 'remove_device')
+        self.controller.cleanup()
+        assert order.mock_calls == [mock.call.kill_stray_loopback(A_ROUTE), mock.call.remove_device('music')]

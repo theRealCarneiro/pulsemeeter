@@ -203,6 +203,15 @@ class DeviceController(SignalModel):
         '''
         Removes all pulse devices from pulse and terminates loopback processes.
         '''
+        # Kill route loopbacks by name (ours or not) before their sinks go away
+        for input_type in ('vi', 'hi'):
+            for input_device in self.device_repository.get_devices_by_type(input_type).values():
+                for output_type, connections in input_device.connections.items():
+                    for output_id in connections:
+                        output_device = self.device_repository.get_device(output_type, output_id)
+                        if output_device is not None:
+                            self._teardown_loopback(pmctl.make_loopback_name(input_device.name, output_device.name), output_device)
+
         # Terminate all loopback processes
         for proc in self._loopback_procs.values():
             pmctl.destroy_loopback(proc)
