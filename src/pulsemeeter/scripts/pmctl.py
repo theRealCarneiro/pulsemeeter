@@ -1,7 +1,9 @@
+import os
 import re
 import json
 import time
 import shutil
+import signal
 import logging
 import pulsectl
 import subprocess
@@ -300,6 +302,19 @@ def destroy_loopback(proc: subprocess.Popen):
     LOG.debug('Loopback destroyed (pid=%s)', proc.pid if proc else None)
 
 
+def _loopback_streams(loopback_name: str) -> tuple[list[PulseSinkInputInfo], list[PulseSourceOutputInfo]]:
+    '''
+    Find the streams of running pw-loopbacks with exactly this name.
+    Args:
+        loopback_name (str): The loopback name used when creating.
+    Returns:
+        tuple: (sink-inputs (playback side), source-outputs (capture side)).
+    '''
+    playback = [si for si in PULSE.sink_input_list() if si.proplist.get('node.name') == f'output.{loopback_name}']
+    capture = [so for so in PULSE.source_output_list() if so.proplist.get('node.name') == f'input.{loopback_name}']
+    return playback, capture
+
+
 def set_route_volume(loopback_name: str, volume: int) -> bool:
     '''
     Set the volume of a pw-loopback sink-input by its loopback name.
@@ -311,12 +326,11 @@ def set_route_volume(loopback_name: str, volume: int) -> bool:
     '''
     volume = min(max(0, volume), 153)
     try:
-        for si in PULSE.sink_input_list():
-            if loopback_name in si.name:
-                channels = len(si.volume.values)
-                vol = pulsectl.PulseVolumeInfo(volume / 100, channels)
-                PULSE.volume_set(si, vol)
-                return True
+        for si in _loopback_streams(loopback_name)[0]:
+            channels = len(si.volume.values)
+            vol = pulsectl.PulseVolumeInfo(volume / 100, channels)
+            PULSE.volume_set(si, vol)
+            return True
     except pulsectl.PulseError:
         LOG.error('Failed to set route volume for %s', loopback_name)
     return False
@@ -335,30 +349,90 @@ def wait_for_loopback(loopback_name: str, timeout: float = 2.0, interval: float 
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
-            for si in PULSE.sink_input_list():
-                if loopback_name in si.name:
-                    return True
+            if _loopback_streams(loopback_name)[0]:
+                return True
         except pulsectl.PulseError:
             pass
         time.sleep(interval)
     return False
 
 
-def loopback_exists(loopback_name: str) -> bool:
+def wait_for_loopback_gone(loopback_name: str, timeout: float = 2.0, interval: float = 0.05) -> bool:
     '''
-    Check if a pw-loopback sink-input with the given name already exists.
+    Poll until no pw-loopback with this name is left in PulseAudio.
     Args:
-        loopback_name (str): The loopback name to check for.
+        loopback_name (str): The loopback name to wait for.
+        timeout (float): Maximum time to wait in seconds.
+        interval (float): Polling interval in seconds.
     Returns:
-        bool: True if found.
+        bool: True if gone, False if timed out.
+    '''
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            playback, capture = _loopback_streams(loopback_name)
+            if not playback and not capture:
+                return True
+        except pulsectl.PulseError:
+            pass
+        time.sleep(interval)
+    return False
+
+
+def get_loopback_targets(loopback_name: str) -> tuple[str, str] | None:
+    '''
+    Get the target.object serials a running pw-loopback was created with.
+    Args:
+        loopback_name (str): The loopback name used when creating.
+    Returns:
+        tuple: (capture target, playback target), or None unless exactly one loopback with this name is running.
     '''
     try:
-        for si in PULSE.sink_input_list():
-            if loopback_name in si.name:
-                return True
+        playback, capture = _loopback_streams(loopback_name)
     except pulsectl.PulseError:
-        pass
-    return False
+        return None
+    if len(playback) != 1 or len(capture) != 1:
+        return None
+    return capture[0].proplist.get('target.object', ''), playback[0].proplist.get('target.object', '')
+
+
+def kill_stray_loopback(loopback_name: str) -> int:
+    '''
+    Terminate running pw-loopbacks with this name that we hold no process handle for.
+    Args:
+        loopback_name (str): The loopback name used when creating.
+    Returns:
+        int: Number of processes signalled.
+    '''
+    try:
+        playback, capture = _loopback_streams(loopback_name)
+    except pulsectl.PulseError:
+        LOG.error('Failed to look up stray loopbacks for %s', loopback_name)
+        return 0
+
+    # pw-loopback sets node.group = "pw-loopback-<pid>"
+    pids = set()
+    for stream in playback + capture:
+        pid = stream.proplist.get('node.group', '').removeprefix('pw-loopback-')
+        if pid.isdigit():
+            pids.add(int(pid))
+
+    killed = 0
+    for pid in pids:
+        try:
+            with open(f'/proc/{pid}/cmdline', 'rb') as f:
+                argv = f.read().split(b'\0')
+            # guard against pid reuse
+            if not argv[0].endswith(b'pw-loopback') or loopback_name.encode() not in argv:
+                continue
+            os.kill(pid, signal.SIGTERM)
+            killed += 1
+        except OSError:
+            continue
+
+    if killed:
+        LOG.debug('Terminated %d stray loopback(s) named %s', killed, loopback_name)
+    return killed
 
 
 def get_ports(port_type: str, device_name: str) -> list[str]:
