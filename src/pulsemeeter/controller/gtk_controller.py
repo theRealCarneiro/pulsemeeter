@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import gettext
 import traceback
 import threading
 
@@ -26,6 +27,8 @@ from gi.repository import Gtk, GLib  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 LOG = logging.getLogger("generic")
+
+_ = gettext.gettext
 
 
 class GtkController(SignalModel):
@@ -221,30 +224,32 @@ class GtkController(SignalModel):
         '''
         pa_app_list = pmctl.list_apps(app_type)
 
-        pinned_ids = pmctl.get_pinned_app_ids()
+        pins = pmctl.get_app_pins()
         app_dict = {}
         for app in pa_app_list:
             app = AppModel.pa_to_app_model(app, app_type)
-            self._mark_app_pinned(app, pinned_ids)
+            self._mark_app_pinned(app, pins)
             app_dict[app.index] = app
 
         return app_dict
 
     @staticmethod
-    def _mark_app_pinned(app_model, pinned_ids=None):
+    def _mark_app_pinned(app_model, pins=None):
         '''
-        Set app_model.pinned. pinned_ids None means pw-dump is unavailable, so
-        treat the app as pinned and let the selector show its resolved device.
+        Set app_model.pinned: the "default" metadata decides if it has an entry
+        for the app, else whether the app named a device itself. pins None means
+        pw-dump is unavailable, so treat the app as pinned and let the selector
+        show its resolved device.
         '''
-        if pinned_ids is None:
-            pinned_ids = pmctl.get_pinned_app_ids()
-        app_model.pinned = pinned_ids is None or app_model.object_id in pinned_ids
+        if pins is None:
+            pins = pmctl.get_app_pins()
+        app_model.pinned = pins is None or pins.get(app_model.object_id, app_model.has_target)
         return app_model
 
     def load_app_combobox(self):
         self.block_app_combobox_handlers(True)
-        sink_input_device_list = [('', '')]
-        source_output_device_list = [('', '')]
+        sink_input_device_list = [(_('Default'), '')]
+        source_output_device_list = [(_('Default'), '')]
 
         # apps play into a sink (vi/a)
         for device_type in ('vi', 'a'):
@@ -627,6 +632,11 @@ class GtkController(SignalModel):
         '''
         self.emit('app_device', app_type, app_index, device_nick)
 
+        # pulsemeeter wrote the pin itself, so the pick is the new state
+        app_widget = self.content.app_box[app_type].widgets.get(app_index)
+        if app_widget is not None:
+            app_widget.app_model.pinned = bool(device_nick)
+
     #
     # # End model update functions
     #
@@ -730,8 +740,14 @@ class GtkController(SignalModel):
         def wrapper():
             app_widget = self.content.app_box[app_type].widgets.get(app_index)
             if app_widget:
-                self._mark_app_pinned(app)
                 device_changed = app_widget.app_model.device != app.device
+                # the event doesn't carry the pin, and only a move (or a pick,
+                # see set_app_device) changes it: keep the known one rather
+                # than look it up for every volume step
+                if device_changed:
+                    self._mark_app_pinned(app)
+                else:
+                    app.pinned = app_widget.app_model.pinned
                 app_widget.pa_app_change(app)
                 if device_changed:
                     self._restart_app_vumeter(app_type, app_index)
