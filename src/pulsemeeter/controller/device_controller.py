@@ -203,6 +203,15 @@ class DeviceController(SignalModel):
         '''
         Removes all pulse devices from pulse and terminates loopback processes.
         '''
+        # Kill route loopbacks by name (ours or not) before their sinks go away
+        for input_type in ('vi', 'hi'):
+            for input_device in self.device_repository.get_devices_by_type(input_type).values():
+                for output_type, connections in input_device.connections.items():
+                    for output_id in connections:
+                        output_device = self.device_repository.get_device(output_type, output_id)
+                        if output_device is not None:
+                            self._teardown_loopback(pmctl.make_loopback_name(input_device.name, output_device.name), output_device)
+
         # Terminate all loopback processes
         for proc in self._loopback_procs.values():
             pmctl.destroy_loopback(proc)
@@ -358,9 +367,11 @@ class DeviceController(SignalModel):
         is_b_type = output_device.device_type == 'source'
 
         if state:
-            # If a loopback with this name already exists (e.g. app restarted without cleanup), adopt it
-            if pmctl.loopback_exists(loopback_name):
+            # Keep an existing loopback only if it targets these devices by name
+            if self._loopback_is_current(loopback_name, input_device, output_device):
                 LOG.debug('Loopback %s already exists, adopting', loopback_name)
+                if is_b_type:
+                    pmctl.link(pmctl.make_intermediate_sink_name(loopback_name), output_device.name)
                 pmctl.set_route_volume(loopback_name, connection_model.route_volume)
                 connection_model.connect_failed = False
                 connection_model.connect_error = ''
@@ -369,7 +380,6 @@ class DeviceController(SignalModel):
             self._teardown_loopback(loopback_name, output_device)
 
             try:
-                capture_serial = pmctl.get_device_serial(input_device.device_type, input_device.name)
                 channels = min(input_device.channels, output_device.channels)
 
                 if is_b_type:
@@ -378,19 +388,19 @@ class DeviceController(SignalModel):
                         loopback_name, channels, output_device.channel_list
                     )
                     self._intermediate_sinks[loopback_name] = temp_sink_name
-                    # The bridge sink is hidden from PulseAudio, so look it up via PipeWire
-                    playback_serial = pmctl.wait_for_node(temp_sink_name)
-                    if not playback_serial:
-                        LOG.warning('Intermediate sink %s did not appear in time', temp_sink_name)
+                    if not pmctl.wait_for_node(temp_sink_name):
+                        raise RuntimeError(f'Intermediate sink {temp_sink_name} did not appear in time')
+                    playback_target = temp_sink_name
                 else:
                     # A-type: direct loopback to output sink
-                    playback_serial = pmctl.get_device_serial(output_device.device_type, output_device.name)
+                    playback_target = output_device.name
 
                 proc = pmctl.create_loopback(
                     name=loopback_name,
-                    capture_serial=capture_serial,
-                    playback_serial=playback_serial,
+                    capture_target=input_device.name,
+                    playback_target=playback_target,
                     channels=channels,
+                    capture_sink=input_device.device_type == 'sink',
                 )
                 self._loopback_procs[loopback_name] = proc
 
@@ -416,14 +426,35 @@ class DeviceController(SignalModel):
         else:
             self._teardown_loopback(loopback_name, output_device)
 
+    def _loopback_is_current(self, loopback_name, input_device, output_device):
+        '''True if exactly one loopback with this name is running and it targets these devices by name.'''
+        if output_device.device_type == 'source':
+            playback_target = pmctl.make_intermediate_sink_name(loopback_name)
+            # without its bridge a kept loopback would wait forever
+            if not pmctl.get_node_serial(playback_target):
+                return False
+        else:
+            playback_target = output_device.name
+
+        return pmctl.get_loopback_targets(loopback_name) == (input_device.name, playback_target)
+
     def _teardown_loopback(self, loopback_name, output_device):
-        '''Destroy loopback process and clean up intermediate sink if they exist.'''
+        '''Destroy any loopback with this name (ours or a leftover) and its intermediate sink.'''
+        stopped = 0
         if loopback_name in self._loopback_procs:
             pmctl.destroy_loopback(self._loopback_procs.pop(loopback_name))
-        temp_sink_name = self._intermediate_sinks.pop(loopback_name, None)
-        if temp_sink_name:
-            pmctl.link(temp_sink_name, output_device.name, state=False)
-            pmctl.remove_intermediate_sink(loopback_name)
+            stopped += 1
+        stopped += pmctl.kill_stray_loopback(loopback_name)
+        # A replacement must not start while the old streams are still listed
+        if stopped and not pmctl.wait_for_loopback_gone(loopback_name):
+            LOG.warning('Loopback %s still present after teardown', loopback_name)
+
+        self._intermediate_sinks.pop(loopback_name, None)
+        if output_device.device_type == 'source':
+            temp_sink_name = pmctl.make_intermediate_sink_name(loopback_name)
+            if pmctl.get_node_serial(temp_sink_name):
+                pmctl.link(temp_sink_name, output_device.name, state=False)
+                pmctl.remove_intermediate_sink(loopback_name)
 
     def set_route_volume(self, input_type, input_id, output_type, output_id, volume):
         '''Set per-route volume for a loopback connection.'''

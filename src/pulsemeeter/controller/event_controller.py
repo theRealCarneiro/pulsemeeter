@@ -2,7 +2,6 @@ import time
 import asyncio
 import logging
 import pulsectl
-import pulsectl_asyncio
 import threading
 import traceback
 import concurrent
@@ -128,7 +127,7 @@ class EventController(SignalModel):
         we were listening).
         '''
         try:
-            async with pulsectl_asyncio.PulseAsync() as pulse:
+            async with pmctl_async.pulse_connection() as pulse:
                 for facility, list_call in (('sink', pulse.sink_list), ('source', pulse.source_list)):
                     for dev in await list_call():
                         self._pa_index_cache[(facility, dev.index)] = dev.name
