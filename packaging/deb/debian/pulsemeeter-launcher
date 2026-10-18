@@ -1,0 +1,13 @@
+#!/usr/bin/python3
+'''
+Debian entry point for pulsemeeter.
+Puts the bundled pulsectl and pulsectl-asyncio ahead of any system copy,
+so the tested pair is always used together.
+'''
+import sys
+
+sys.path.insert(0, '/usr/share/pulsemeeter/vendor')
+
+from pulsemeeter.main import main  # noqa: E402
+
+sys.exit(main())

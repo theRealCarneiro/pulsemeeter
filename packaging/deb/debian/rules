@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME = pulsemeeter
+# The test suite needs a running PulseAudio server, so it runs in the Tests workflow instead
+export PYBUILD_DISABLE = test
+
+PKG_DIR = debian/pulsemeeter
+# pulsectl-asyncio is not packaged by Debian or Ubuntu. It is bundled privately
+# together with the pulsectl release it is tested against (see build.sh).
+VENDOR_DIR = /usr/share/pulsemeeter/vendor
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_install:
+	dh_auto_install --destdir=$(PKG_DIR)
+	# Debian ships the license as /usr/share/doc/pulsemeeter/copyright
+	rm -rf $(PKG_DIR)/usr/share/licenses
+	@test -d vendor/pulsectl_asyncio || { echo "vendor/ is missing, build with packaging/deb/build.sh" >&2; exit 1; }
+	mkdir -p $(PKG_DIR)$(VENDOR_DIR)
+	cp -r vendor/. $(PKG_DIR)$(VENDOR_DIR)/
+	# Replace the generated entry point with one that can find the bundled modules
+	install -m 755 debian/pulsemeeter-launcher $(PKG_DIR)/usr/bin/pulsemeeter
+
+override_dh_python3:
+	# Dependencies are listed in debian/control, since the bundled ones must not be guessed.
+	# /usr/share/pulsemeeter is picked up as a private dir and byte-compiled on install.
+	dh_python3 --no-guessing-deps

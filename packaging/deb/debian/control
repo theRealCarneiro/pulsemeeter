@@ -1,0 +1,39 @@
+Source: pulsemeeter
+Section: sound
+Priority: optional
+Maintainer: Gabriel Carneiro <therealcarneiro@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-babel,
+ python3-setuptools,
+ python3-wheel,
+Standards-Version: 4.7.0
+Homepage: https://github.com/theRealCarneiro/pulsemeeter
+Vcs-Browser: https://github.com/theRealCarneiro/pulsemeeter
+Vcs-Git: https://github.com/theRealCarneiro/pulsemeeter.git
+Rules-Requires-Root: no
+
+Package: pulsemeeter
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ gir1.2-gtk-4.0,
+ libpulse0,
+ pipewire-bin,
+ pipewire-pulse,
+ python3-gi,
+ python3-pydantic,
+Suggests:
+ easyeffects,
+Description: Voicemeeter-like audio routing frontend for PipeWire
+ Pulsemeeter is a GTK 4 frontend that makes PipeWire's audio routing
+ easy to use, following a workflow similar to Voicemeeter.
+ .
+ It can create virtual input and output devices, route audio from any
+ input to any hardware or virtual output, control volume and mute, set
+ channel layouts and port mappings, and move application streams
+ between devices.
