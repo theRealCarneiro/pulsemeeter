@@ -17,14 +17,14 @@ class AppController(SignalModel):
         self.emit('app_mute', app_type, app_index, state)
 
     def change_device(self, app_type, app_index, device_name: str):
-        if not device_name:
-            # blank = unpin so it follows the default
-            object_id = pmctl.get_app_object_id(app_index, app_type)
-            if object_id is not None:
+        object_id = pmctl.get_app_object_id(app_index, app_type)
+        if object_id is not None:
+            if device_name:
+                device_type = 'sink' if app_type == 'sink_input' else 'source'
+                pmctl.pin_app(object_id, device_type, device_name)
+            else:
+                # blank = follow the default
                 pmctl.unpin_app(object_id)
-            self.emit('app_device_change', app_type, app_index, '')
-            return
-        pmctl.move_app_device(app_type, app_index, device_name)
         self.emit('app_device_change', app_type, app_index, device_name)
 
     def get_app_by_id(self, index: str, app_type: str):

@@ -204,44 +204,86 @@ def wait_for_node(node_name: str, timeout: float = 2.0, interval: float = 0.05) 
 _NO_TARGET = ('', -1, '-1', None)
 
 
-def get_pinned_app_ids() -> set | None:
+def has_target(props: dict) -> bool:
     '''
-    Return PipeWire object ids of app streams pinned to a device: target.object
-    or target.node set, either on the node or in the "default" metadata store.
-    Returns None if pw-dump is unavailable.
+    True if a stream's own properties name a device: the app asked for one
+    itself (e.g. pw-record --target). pipewire-pulse passes node props through
+    to the pulse proplist, so no PipeWire lookup is needed.
+    '''
+    return any(props.get(k) not in _NO_TARGET for k in ('target.object', 'target.node', 'node.target'))
+
+
+def is_movable(props: dict) -> bool:
+    '''
+    False if a stream refuses to be moved: node.dont-move (native clients),
+    or node.dont-reconnect (what pipewire-pulse makes of PA_STREAM_DONT_MOVE).
+    '''
+    return not any(str(props.get(k)).lower() in ('true', '1') for k in ('node.dont-move', 'node.dont-reconnect'))
+
+
+def get_app_pins() -> dict | None:
+    '''
+    Return {stream object id: pinned} for the streams the "default" metadata
+    store has a target for: True if pinned to a device, False if set to follow
+    the default (-1). Streams without an entry are left out; their own
+    has_target() decides. Returns None if pw-dump is unavailable.
     '''
     try:
-        graph = json.loads(subprocess.check_output(['pw-dump'], stderr=subprocess.DEVNULL))
+        # only the "default" metadata store, not the whole graph (~1 KB instead of ~1 MB)
+        graph = json.loads(subprocess.check_output(['pw-dump', 'default'], stderr=subprocess.DEVNULL))
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
 
-    pinned = set()
+    pins = {}
     for obj in graph:
-        obj_type = obj.get('type')
-        if obj_type == 'PipeWire:Interface:Node':
-            props = obj.get('info', {}).get('props', {})
-            if any(props.get(k) not in _NO_TARGET for k in ('target.object', 'target.node', 'node.target')):
-                pinned.add(obj.get('id'))
-        elif obj_type == 'PipeWire:Interface:Metadata' and obj.get('props', {}).get('metadata.name') == 'default':
+        if obj.get('type') == 'PipeWire:Interface:Metadata' and obj.get('props', {}).get('metadata.name') == 'default':
             for entry in obj.get('metadata', []):
-                if entry.get('key') in ('target.object', 'target.node') and entry.get('value') not in _NO_TARGET:
-                    pinned.add(entry.get('subject'))
-    return pinned
+                value = entry.get('value')
+                if entry.get('key') not in ('target.object', 'target.node') or value in ('', None):
+                    continue
+                subject = entry.get('subject')
+                pins[subject] = pins.get(subject, False) or str(value) != '-1'
+    return pins
 
 
-def unpin_app(object_id: int) -> bool:
+def _set_app_target(object_id: int, node_id, serial) -> bool:
     '''
-    Clear a stream's routing target (by PipeWire object id) so it follows the
-    default again. Clears both target.object and target.node - a pulse move
-    sets both, and either one left behind still reads as pinned.
+    Write a stream's target to the "default" metadata the way pipewire-pulse
+    does for a move: target.node is the device's node id, target.object its
+    serial, -1 for both means "follow the default".
     '''
     try:
-        for key in ('target.object', 'target.node'):
-            subprocess.run(['pw-metadata', str(object_id), key, ''],
+        for key, value in (('target.node', node_id), ('target.object', serial)):
+            subprocess.run(['pw-metadata', '--', str(object_id), key, str(value), 'Spa:Id'],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
         return True
     except OSError:
         return False
+
+
+def pin_app(object_id: int, device_type: str, device_name: str) -> bool:
+    '''
+    Pin a stream (by PipeWire object id) to a device; WirePlumber moves it
+    there. Unlike a pulse move, this also pins to the default device, which
+    pipewire-pulse would turn into "follow the default".
+    '''
+    device = get_device_by_name(device_type, device_name)
+    if device is None:
+        return False
+    node_id = device.proplist.get('object.id')
+    serial = device.proplist.get('object.serial', device.index)
+    if node_id is None:
+        return False
+    return _set_app_target(object_id, node_id, serial)
+
+
+def unpin_app(object_id: int) -> bool:
+    '''
+    Set a stream (by PipeWire object id) to follow the default device. -1
+    rather than clearing the target, so it also overrides a device the app
+    asked for itself.
+    '''
+    return _set_app_target(object_id, -1, -1)
 
 
 def create_loopback(name: str, capture_target: str, playback_target: str, channels: int,
@@ -661,30 +703,6 @@ def app_volume(app_type: str, index: int, val: int) -> bool:
     channels = len(app.volume.values)
     volume = pulsectl.PulseVolumeInfo(val / 100, channels)
     PULSE.volume_set(app, volume)
-    return True
-
-
-def move_app_device(app_type: str, index: int, device_name: str) -> bool:
-    '''
-    Move an application stream to a different device.
-    Args:
-        app_type (str): 'sink_input' or 'source_output'.
-        index (int): Index of the application stream.
-        device_name (str): Name of the new device.
-    Returns:
-        int: 0 on success, -1 on failure.
-    '''
-    device_type = 'sink' if app_type == 'sink_input' else 'source'
-    device = get_device_by_name(device_type, device_name)
-    move = PULSE.sink_input_move if app_type == 'sink_input' else PULSE.source_output_move
-
-    try:
-        move(index, device.index)
-
-    # some apps have DONT MOVE flag, the app will crash
-    except pulsectl.PulseOperationFailed:
-        LOG.debug('App #%d device cant be moved', index)
-
     return True
 
 

@@ -43,6 +43,11 @@ class AppWidget(Gtk.Frame):
         self.handlers = {}
 
         self.combobox.set_active_device(app_model.display_device)
+        if not app_model.movable:
+            hint = _("This app doesn't allow changing its device")
+            self.combobox.set_sensitive(False)
+            self.combobox.set_tooltip_text(hint)
+            Gtk.Accessible.update_property(self.combobox, [Gtk.AccessibleProperty.DESCRIPTION], [hint])
 
         Gtk.Accessible.update_property(
             self,
@@ -74,6 +79,7 @@ class AppWidget(Gtk.Frame):
         self.app_model.volume = app.volume
         self.app_model.mute = app.mute
         self.app_model.device = app.device
+        self.app_model.has_target = app.has_target
         self.app_model.pinned = app.pinned
         self.app_model.object_id = app.object_id
 

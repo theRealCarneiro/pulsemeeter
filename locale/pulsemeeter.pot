@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: pulsemeeter 2.2.0\n"
 "Report-Msgid-Bugs-To: "
 "https://github.com/theRealCarneiro/pulsemeeter/issues\n"
-"POT-Creation-Date: 2026-09-06 17:54-0600\n"
+"POT-Creation-Date: 2026-10-18 15:09-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -150,6 +150,10 @@ msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/app/app_dropdown.py:37
 msgid "Select the input device for this app"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/app/app_widget.py:47
+msgid "This app doesn't allow changing its device"
 msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/common/default_widget.py:25
@@ -300,6 +304,11 @@ msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:24
 msgid "Auto ports"
+msgstr ""
+
+#: src/pulsemeeter/controller/gtk_controller.py:251
+#: src/pulsemeeter/controller/gtk_controller.py:252
+msgid "Default"
 msgstr ""
 
 #: src/pulsemeeter/model/types.py:10
