@@ -275,7 +275,7 @@ def create_loopback(name: str, capture_target: str, playback_target: str, channe
     ]
 
     LOG.debug('Creating loopback: %s', command)
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return proc
 
 
