@@ -1,0 +1,5 @@
+pulsemeeter (2.2.0-1) unstable; urgency=medium
+
+  * Initial Debian package.
+
+ -- Gabriel Carneiro <therealcarneiro@gmail.com>  Sat, 17 Oct 2026 22:35:00 -0600

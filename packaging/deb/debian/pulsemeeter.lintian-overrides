@@ -1,0 +1,5 @@
+# Built and published upstream, not uploaded to the Debian archive
+pulsemeeter: initial-upload-closes-no-bugs
+pulsemeeter: no-manual-page [usr/bin/pulsemeeter]
+# The upstream icons are not square
+pulsemeeter: icon-size-and-directory-name-mismatch *

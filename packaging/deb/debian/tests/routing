@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Runs the installed pulsemeeter against its own PipeWire instance: creates two
+# virtual devices, links them, removes them, then starts the GUI on GTK's Broadway backend.
+set -euo pipefail
+
+# WirePlumber needs a session bus. Use a private one so a desktop session is never touched.
+if [ -z "${PULSEMEETER_TEST_BUS:-}" ]; then
+    PULSEMEETER_TEST_BUS=1 exec dbus-run-session -- "$0" "$@"
+fi
+
+# Isolated from any running session: own PipeWire sockets, config and logs
+TMP="$(mktemp -d)"
+export XDG_RUNTIME_DIR="$TMP/runtime" XDG_CONFIG_HOME="$TMP/config" XDG_STATE_HOME="$TMP/state"
+LOG_DIR="$TMP/logs"
+mkdir -m 700 "$XDG_RUNTIME_DIR" && mkdir "$LOG_DIR"
+trap 'kill $(jobs -p) 2>/dev/null || true; rm -rf "$TMP"' EXIT
+
+fail() {
+    echo "FAIL: $*" >&2
+    for log in "$LOG_DIR"/*.log; do echo "== $log" >&2; tail -20 "$log" >&2; done
+    exit 1
+}
+
+wait_for() {
+    for _ in $(seq 100); do
+        "$@" >/dev/null 2>&1 && return 0
+        sleep 0.1
+    done
+    return 1
+}
+
+has_ports() {
+    pw-link --output | grep -q "^$1:"
+}
+
+is_linked() {
+    pw-link --links | grep -A1 "^$1:" | grep -q -- "-> $2:"
+}
+
+node_exists() {
+    pw-cli ls Node | grep -q "node.name = \"$1\""
+}
+
+echo "Starting PipeWire"
+pipewire >"$LOG_DIR/pipewire.log" 2>&1 &
+wait_for test -S "$XDG_RUNTIME_DIR/pipewire-0" || fail "pipewire did not start"
+wireplumber >"$LOG_DIR/wireplumber.log" 2>&1 &
+pipewire-pulse >"$LOG_DIR/pipewire-pulse.log" 2>&1 &
+wait_for test -S "$XDG_RUNTIME_DIR/pulse/native" || fail "pipewire-pulse did not start"
+
+echo "pulsemeeter $(pulsemeeter --version)"
+
+# Generic device names only, these end up in CI logs
+python3 - <<'EOF'
+import sys
+sys.path.insert(0, '/usr/share/pulsemeeter/vendor')
+from pulsemeeter.settings import CONFIG_FILE
+from pulsemeeter.model.config_model import ConfigModel
+from pulsemeeter.model.device_model import DeviceModel
+from pulsemeeter.utils.config_persistence import ConfigPersistence
+
+
+def virtual_device(name, device_type):
+    return DeviceModel(name=name, channels=2, channel_list=['front-left', 'front-right'],
+                       selected_channels=[True, True], device_type=device_type, device_class='virtual')
+
+
+persistence = ConfigPersistence(ConfigModel, CONFIG_FILE)
+persistence._config = ConfigModel(devices={
+    'vi': {'1': virtual_device('vi_a', 'source')},
+    'hi': {},
+    'a': {},
+    'b': {'1': virtual_device('b_a', 'sink')},
+})
+persistence.save()
+EOF
+
+echo "Creating devices"
+pulsemeeter init
+wait_for has_ports vi_a || fail "vi_a was not created"
+wait_for has_ports b_a || fail "b_a was not created"
+
+echo "Routing and controls"
+pulsemeeter connect vi 1 b 1 1
+wait_for is_linked vi_a b_a || fail "vi_a was not linked to b_a"
+pulsemeeter volume b 1 50
+pulsemeeter mute vi 1 1
+
+echo "Cleaning up devices"
+pulsemeeter cleanup
+wait_for eval '! node_exists vi_a && ! node_exists b_a' || fail "devices were not removed"
+
+echo "Starting GUI"
+gtk4-broadwayd :5 >"$LOG_DIR/broadwayd.log" 2>&1 &
+sleep 1
+rc=0
+GDK_BACKEND=broadway BROADWAY_DISPLAY=:5 timeout 10 pulsemeeter >"$LOG_DIR/gui.log" 2>&1 || rc=$?
+# 124 means it was still running when the timeout stopped it
+[ "$rc" -eq 124 ] || fail "GUI exited with status $rc"
+! grep -q Traceback "$LOG_DIR/gui.log" || fail "GUI raised an exception"
+node_exists vi_a || fail "GUI did not create devices"

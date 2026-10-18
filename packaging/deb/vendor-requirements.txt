@@ -1,0 +1,4 @@
+# Bundled into /usr/share/pulsemeeter/vendor by build.sh, since Debian and Ubuntu do not package pulsectl-asyncio.
+# pulsectl is pinned with it because pulsectl-asyncio relies on its internals.
+pulsectl==24.12.0 --hash=sha256:13a60be940594f03ead3245b3dfe3aff4a3f9a792af347674bde5e716d4f76d2
+pulsectl-asyncio==1.3.2 --hash=sha256:aa3adf89fe91a80ec1a5c92de3dcfd17a8f171006a07a2ec59a4a13d031fc70d

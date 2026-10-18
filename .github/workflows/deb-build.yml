@@ -1,0 +1,105 @@
+name: Debian Package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    # Built on Debian stable so the .deb uses xz compression, which every supported dpkg can read
+    container: debian:trixie
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends ca-certificates git build-essential debhelper dh-python \
+          pybuild-plugin-pyproject python3-all python3-babel python3-setuptools python3-wheel python3-pip lintian
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Build package
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        # Snapshot builds sort below the release of the same version, so a real release always upgrades them
+        if [ "$GITHUB_EVENT_NAME" != release ]; then
+          export DEB_VERSION_SUFFIX="~r$(git rev-list --count HEAD).g$(git rev-parse --short=7 HEAD)"
+        fi
+        packaging/deb/build.sh dist/deb
+
+    - name: Lintian
+      run: lintian --fail-on error,warning --info dist/deb/*.deb
+
+    - name: Upload package
+      uses: actions/upload-artifact@v4
+      with:
+        name: pulsemeeter-deb
+        path: dist/deb/*.deb
+        if-no-files-found: error
+
+  install-test:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['debian:trixie', 'ubuntu:24.04', 'ubuntu:26.04']
+    container: ${{ matrix.image }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: pulsemeeter-deb
+        path: dist/deb
+
+    # The same steps a user takes: dpkg -i, then let apt fetch the missing dependencies
+    - name: Install with dpkg
+      run: |
+        apt-get update
+        dpkg -i dist/deb/pulsemeeter_*_all.deb || apt-get install -f -y
+        dpkg -s pulsemeeter | grep -q '^Status: install ok installed'
+
+    # Runs debian/tests against the installed package, pulling in the test dependencies
+    - name: autopkgtest
+      run: |
+        apt-get install -y autopkgtest
+        autopkgtest dist/deb/pulsemeeter_*_all.deb packaging/deb/ -- null
+
+    - name: Purge leaves no files behind
+      run: |
+        dpkg --purge pulsemeeter
+        ! ls -d /usr/share/pulsemeeter /usr/lib/python3/dist-packages/pulsemeeter /usr/bin/pulsemeeter 2>/dev/null
+
+  release:
+    if: github.event_name == 'release'
+    needs: [build, install-test]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: pulsemeeter-deb
+        path: dist/deb
+
+    - name: Attach package to the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # A copy with a fixed name makes releases/latest/download/pulsemeeter_all.deb always point at the newest package
+        cp dist/deb/pulsemeeter_*_all.deb dist/deb/pulsemeeter_all.deb
+        gh release upload "${{ github.event.release.tag_name }}" dist/deb/*.deb --repo "$GITHUB_REPOSITORY" --clobber
