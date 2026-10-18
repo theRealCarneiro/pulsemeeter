@@ -68,11 +68,17 @@ async def get_primary(device_type: str):
             return None
 
 
-async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30):
+async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30, *, gain=None):
+    '''
+    Feed peaks of a device, or of one stream on it, to `callback`.
+    `gain`, if given, is called for every peak and scales it.
+    '''
     is_device_meter = stream_index is None
     if device_type == 'sink':
         name += '.monitor'
     else:
+        # pulse can only monitor a sink input on its own, so a source output
+        # is metered on its whole source, before its own volume: `gain` puts it back
         stream_index = None
 
     async with pulse_connection(f'{name}_{device_type}_peak') as pulse:
@@ -85,6 +91,8 @@ async def subscribe_peak(name, device_type, callback, stream_index=None, rate=30
                 return
 
         async for peak in pulse.subscribe_peak_sample(name, rate, stream_idx=stream_index):
+            if gain is not None:
+                peak *= gain()
             await callback(peak)
 
 

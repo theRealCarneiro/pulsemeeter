@@ -615,10 +615,10 @@ def get_device_by_index(device_type: str, device_index: str) -> PulseSinkInfo | 
 
 def get_app_device(app_type: str, app: PulseSinkInputInfo | PulseSourceOutputInfo) -> PulseSinkInfo | PulseSourceInfo:
     '''
-    Get a device object by type and name.
+    Get the device an application stream is on.
     Args:
-        device_type (str): 'sink' or 'source'.
-        device_index (str): Index of the device on pulse.
+        app_type (str): 'sink_input' (plays into app.sink) or 'source_output' (records from app.source).
+        app: The application stream object.
     Returns:
         Device object or None if not found.
     '''
@@ -735,16 +735,17 @@ def app_by_id(index: int, app_type: str) -> PulseSinkInputInfo | PulseSourceOutp
     '''
     app_info = PULSE.sink_input_info if app_type == 'sink_input' else PULSE.source_output_info
     app = app_info(index)
-    device_type = 'sink' if app_type == 'sink_input' else 'source'
-    device = get_device_by_index(device_type, app.sink)
+    device = get_app_device(app_type, app)
     app.device_name = device.name
     return app
 
 
 def get_app_object_id(index: int, app_type: str) -> int | None:
     '''Return the app stream's PipeWire object id, or None if not resolvable.'''
+    # only the stream's proplist is needed, not its device (app_by_id)
+    app_info = PULSE.sink_input_info if app_type == 'sink_input' else PULSE.source_output_info
     try:
-        app = app_by_id(index, app_type)
+        app = app_info(index)
     except pulsectl.PulseError:
         return None
     object_id = app.proplist.get('object.id')
