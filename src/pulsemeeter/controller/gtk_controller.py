@@ -476,9 +476,9 @@ class GtkController(SignalModel):
             tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             LOG.error("Vumeter task error: \n %s", tb_str)
 
-    def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None):
+    def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None, gain=None):
         future = asyncio.run_coroutine_threadsafe(
-            subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index),
+            subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index, gain=gain),
             self.vumeter_loop
         )
 
@@ -526,8 +526,11 @@ class GtkController(SignalModel):
         name = app_widget.app_model.device
         if not name:
             return
+        # a source output is metered on its whole source, so apply its own
+        # volume and mute (kept current by pa_app_change) to the peaks
+        gain = app_widget.app_model.linear_gain if app_type == 'source_output' else None
         self.vumeter_tasks[app_type][app_index] = self.start_vumeter(
-            stream_type, name, app_widget.vumeter_widget, app_index
+            stream_type, name, app_widget.vumeter_widget, app_index, gain=gain
         )
 
     def _restart_app_vumeter(self, app_type: str, app_index):
