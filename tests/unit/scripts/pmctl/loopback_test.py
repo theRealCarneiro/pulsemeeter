@@ -33,6 +33,25 @@ def _cmdline(argv):
     return mock.mock_open(read_data=b'\0'.join(argv) + b'\0')
 
 
+class TestCreateLoopback(unittest.TestCase):
+
+    def _props(self, *args, **kwargs):
+        with mock.patch.object(pmctl.subprocess, 'Popen') as m_popen:
+            pmctl.create_loopback(*args, **kwargs)
+        command = m_popen.call_args.args[0]
+        return command[command.index('--capture-props') + 1], command[command.index('--playback-props') + 1]
+
+    def test_targets_quoted_names_without_fallback(self):
+        capture, playback = self._props('pm_route_Virtual_Input_to_speakers', 'Virtual Input', 'speakers', 2, capture_sink=True)
+        assert capture == ('target.object="Virtual Input" node.dont-fallback=true node.linger=true node.virtual=true'
+                           ' stream.capture.sink=true')
+        assert playback == 'target.object="speakers" node.dont-fallback=true node.linger=true node.virtual=true'
+
+    def test_source_capture_has_no_capture_sink(self):
+        capture, _ = self._props('pm_route_mic_to_speakers', 'mic', 'speakers', 2)
+        assert 'stream.capture.sink' not in capture
+
+
 class TestLoopbackStreams(unittest.TestCase):
 
     def test_matches_node_name_exactly(self):

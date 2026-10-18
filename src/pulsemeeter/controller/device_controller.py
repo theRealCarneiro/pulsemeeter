@@ -367,7 +367,7 @@ class DeviceController(SignalModel):
         is_b_type = output_device.device_type == 'source'
 
         if state:
-            # Keep an existing loopback only if it still targets the current nodes
+            # Keep an existing loopback only if it targets these devices by name
             if self._loopback_is_current(loopback_name, input_device, output_device):
                 LOG.debug('Loopback %s already exists, adopting', loopback_name)
                 if is_b_type:
@@ -380,10 +380,6 @@ class DeviceController(SignalModel):
             self._teardown_loopback(loopback_name, output_device)
 
             try:
-                capture_serial = pmctl.get_device_serial(input_device.device_type, input_device.name)
-                # An empty target.object would link to the default device
-                if not capture_serial:
-                    raise RuntimeError(f'No PipeWire serial for {input_device.name}')
                 channels = min(input_device.channels, output_device.channels)
 
                 if is_b_type:
@@ -392,21 +388,19 @@ class DeviceController(SignalModel):
                         loopback_name, channels, output_device.channel_list
                     )
                     self._intermediate_sinks[loopback_name] = temp_sink_name
-                    # The bridge sink is hidden from PulseAudio, so look it up via PipeWire
-                    playback_serial = pmctl.wait_for_node(temp_sink_name)
-                    if not playback_serial:
+                    if not pmctl.wait_for_node(temp_sink_name):
                         raise RuntimeError(f'Intermediate sink {temp_sink_name} did not appear in time')
+                    playback_target = temp_sink_name
                 else:
                     # A-type: direct loopback to output sink
-                    playback_serial = pmctl.get_device_serial(output_device.device_type, output_device.name)
-                    if not playback_serial:
-                        raise RuntimeError(f'No PipeWire serial for {output_device.name}')
+                    playback_target = output_device.name
 
                 proc = pmctl.create_loopback(
                     name=loopback_name,
-                    capture_serial=capture_serial,
-                    playback_serial=playback_serial,
+                    capture_target=input_device.name,
+                    playback_target=playback_target,
                     channels=channels,
+                    capture_sink=input_device.device_type == 'sink',
                 )
                 self._loopback_procs[loopback_name] = proc
 
@@ -433,18 +427,16 @@ class DeviceController(SignalModel):
             self._teardown_loopback(loopback_name, output_device)
 
     def _loopback_is_current(self, loopback_name, input_device, output_device):
-        '''True if exactly one loopback with this name is running and it targets the current nodes.'''
-        targets = pmctl.get_loopback_targets(loopback_name)
-        if targets is None:
-            return False
-
-        capture_serial = pmctl.get_device_serial(input_device.device_type, input_device.name)
+        '''True if exactly one loopback with this name is running and it targets these devices by name.'''
         if output_device.device_type == 'source':
-            playback_serial = pmctl.get_node_serial(pmctl.make_intermediate_sink_name(loopback_name))
+            playback_target = pmctl.make_intermediate_sink_name(loopback_name)
+            # without its bridge a kept loopback would wait forever
+            if not pmctl.get_node_serial(playback_target):
+                return False
         else:
-            playback_serial = pmctl.get_device_serial(output_device.device_type, output_device.name)
+            playback_target = output_device.name
 
-        return bool(capture_serial and playback_serial) and targets == (capture_serial, playback_serial)
+        return pmctl.get_loopback_targets(loopback_name) == (input_device.name, playback_target)
 
     def _teardown_loopback(self, loopback_name, output_device):
         '''Destroy any loopback with this name (ours or a leftover) and its intermediate sink.'''

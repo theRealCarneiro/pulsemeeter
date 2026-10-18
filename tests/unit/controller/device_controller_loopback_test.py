@@ -9,17 +9,18 @@ from pulsemeeter.repository.device_repository import DeviceRepository
 
 
 PATCHED = (
-    'get_loopback_targets', 'get_device_serial', 'get_node_serial', 'create_loopback', 'destroy_loopback',
+    'get_loopback_targets', 'get_node_serial', 'create_loopback', 'destroy_loopback',
     'kill_stray_loopback', 'wait_for_loopback_gone', 'set_route_volume', 'link',
     'create_intermediate_sink', 'wait_for_node', 'remove_intermediate_sink', 'remove_device',
 )
 
 MUSIC = SimpleNamespace(name='music', device_type='sink', channels=2, channel_list=['FL', 'FR'])
 SPEAKERS = SimpleNamespace(name='speakers', device_type='sink', channels=2, channel_list=['FL', 'FR'])
-MUSIC_MIC = SimpleNamespace(name='musicmic', device_type='source', channels=2, channel_list=['FL', 'FR'])
+VIRTUAL_OUT = SimpleNamespace(name='virtual_out', device_type='source', channels=2, channel_list=['FL', 'FR'])
+HW_INPUT = SimpleNamespace(name='hw_input', device_type='source', channels=2, channel_list=['FL', 'FR'])
 
 A_ROUTE = pmctl.make_loopback_name('music', 'speakers')
-B_ROUTE = pmctl.make_loopback_name('music', 'musicmic')
+B_ROUTE = pmctl.make_loopback_name('music', 'virtual_out')
 BRIDGE = pmctl.make_intermediate_sink_name(B_ROUTE)
 
 
@@ -34,8 +35,6 @@ class LoopbackConnectionTest(unittest.TestCase):
         thread_patcher.start()
         self.addCleanup(thread_patcher.stop)
 
-        self.serials = {'music': '40753', 'speakers': '104'}
-        self.pm.get_device_serial.side_effect = lambda _type, name: self.serials.get(name, '')
         self.pm.get_node_serial.return_value = ''
         self.pm.kill_stray_loopback.return_value = 0
         self.pm.wait_for_loopback_gone.return_value = True
@@ -47,26 +46,26 @@ class LoopbackConnectionTest(unittest.TestCase):
         self.connection = SimpleNamespace(route_volume=42, connect_failed=False, connect_error='')
 
     def connect(self, output, state=True):
-        name = B_ROUTE if output is MUSIC_MIC else A_ROUTE
+        name = B_ROUTE if output is VIRTUAL_OUT else A_ROUTE
         self.controller._set_loopback_connection(name, MUSIC, output, self.connection, state)
 
     def test_current_loopback_is_kept(self):
-        self.pm.get_loopback_targets.return_value = ('40753', '104')
+        self.pm.get_loopback_targets.return_value = ('music', 'speakers')
         self.connect(SPEAKERS)
         self.pm.create_loopback.assert_not_called()
         self.pm.kill_stray_loopback.assert_not_called()
         self.pm.set_route_volume.assert_called_once_with(A_ROUTE, 42)
         assert not self.connection.connect_failed
 
-    def test_loopback_pinned_to_old_serial_is_replaced(self):
-        # music was recreated (129 -> 40753) under a running loopback
+    def test_serial_targeted_loopback_is_replaced(self):
+        # spawned by an older version, pinned to serials
         self.pm.get_loopback_targets.return_value = ('129', '104')
         self.pm.kill_stray_loopback.return_value = 1
         self.connect(SPEAKERS)
         self.pm.kill_stray_loopback.assert_called_once_with(A_ROUTE)
         self.pm.wait_for_loopback_gone.assert_called_once_with(A_ROUTE)
         self.pm.create_loopback.assert_called_once_with(
-            name=A_ROUTE, capture_serial='40753', playback_serial='104', channels=2)
+            name=A_ROUTE, capture_target='music', playback_target='speakers', channels=2, capture_sink=True)
         assert A_ROUTE in self.controller._loopback_procs
 
     def test_missing_or_duplicated_loopback_is_created(self):
@@ -90,34 +89,40 @@ class LoopbackConnectionTest(unittest.TestCase):
         self.pm.wait_for_loopback_gone.assert_called_once_with(A_ROUTE)
         assert A_ROUTE not in self.controller._loopback_procs
 
-    def test_missing_serial_fails_route_instead_of_falling_back(self):
+    def test_hardware_input_is_captured_as_source(self):
         self.pm.get_loopback_targets.return_value = None
-        del self.serials['music']
-        self.connect(SPEAKERS)
-        self.pm.create_loopback.assert_not_called()
-        assert self.connection.connect_failed
-        assert 'music' in self.connection.connect_error
+        route = pmctl.make_loopback_name('hw_input', 'speakers')
+        self.controller._set_loopback_connection(route, HW_INPUT, SPEAKERS, self.connection, True)
+        self.pm.create_loopback.assert_called_once_with(
+            name=route, capture_target='hw_input', playback_target='speakers', channels=2, capture_sink=False)
 
     def test_current_b_type_loopback_is_kept_and_bridge_relinked(self):
-        self.pm.get_loopback_targets.return_value = ('40753', '158')
+        self.pm.get_loopback_targets.return_value = ('music', BRIDGE)
         self.pm.get_node_serial.return_value = '158'
-        self.connect(MUSIC_MIC)
+        self.connect(VIRTUAL_OUT)
         self.pm.create_loopback.assert_not_called()
-        self.pm.link.assert_called_once_with(BRIDGE, 'musicmic')
+        self.pm.link.assert_called_once_with(BRIDGE, 'virtual_out')
+
+    def test_b_type_loopback_without_bridge_is_replaced(self):
+        self.pm.get_loopback_targets.return_value = ('music', BRIDGE)
+        self.pm.create_intermediate_sink.return_value = BRIDGE
+        self.connect(VIRTUAL_OUT)
+        self.pm.create_loopback.assert_called_once_with(
+            name=B_ROUTE, capture_target='music', playback_target=BRIDGE, channels=2, capture_sink=True)
 
     def test_b_type_bridge_timeout_fails_route(self):
         self.pm.get_loopback_targets.return_value = None
         self.pm.create_intermediate_sink.return_value = BRIDGE
         self.pm.wait_for_node.return_value = ''
-        self.connect(MUSIC_MIC)
+        self.connect(VIRTUAL_OUT)
         self.pm.create_loopback.assert_not_called()
         assert self.connection.connect_failed
 
     def test_teardown_removes_leftover_bridge(self):
         # bridge left over from a previous run
         self.pm.get_node_serial.return_value = '158'
-        self.connect(MUSIC_MIC, state=False)
-        self.pm.link.assert_called_once_with(BRIDGE, 'musicmic', state=False)
+        self.connect(VIRTUAL_OUT, state=False)
+        self.pm.link.assert_called_once_with(BRIDGE, 'virtual_out', state=False)
         self.pm.remove_intermediate_sink.assert_called_once_with(B_ROUTE)
 
     def test_cleanup_kills_unowned_loopback_before_removing_sink(self):

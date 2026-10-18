@@ -201,21 +201,6 @@ def wait_for_node(node_name: str, timeout: float = 2.0, interval: float = 0.05) 
     return ''
 
 
-def get_device_serial(device_type: str, device_name: str) -> str:
-    '''
-    Get the PipeWire object.serial for a device.
-    Args:
-        device_type (str): 'sink' or 'source'.
-        device_name (str): Name of the device.
-    Returns:
-        str: The object.serial, or empty string if not found.
-    '''
-    device = get_device_by_name(device_type, device_name)
-    if device:
-        return device.proplist.get('object.serial', '')
-    return ''
-
-
 _NO_TARGET = ('', -1, '-1', None)
 
 
@@ -259,26 +244,34 @@ def unpin_app(object_id: int) -> bool:
         return False
 
 
-def create_loopback(name: str, capture_serial: str, playback_serial: str, channels: int) -> subprocess.Popen:
+def create_loopback(name: str, capture_target: str, playback_target: str, channels: int,
+                    capture_sink: bool = False) -> subprocess.Popen:
     '''
     Spawn a pw-loopback subprocess for per-route volume control.
-    Targets devices by PipeWire object.serial for unambiguous routing.
+    Targets nodes by name, so a recreated device is picked up again automatically.
     Args:
         name (str): Unique loopback name.
-        capture_serial (str): PipeWire object.serial of the capture device.
-        playback_serial (str): PipeWire object.serial of the playback device.
+        capture_target (str): node.name to capture from.
+        playback_target (str): node.name to play into.
         channels (int): Number of audio channels.
+        capture_sink (bool): The capture target is a sink (capture its monitor).
     Returns:
         subprocess.Popen: The loopback subprocess handle.
     '''
+    # While a target is missing, wait unlinked instead of falling back to the default device
+    common = 'node.dont-fallback=true node.linger=true node.virtual=true'
+    capture_props = f'target.object={json.dumps(capture_target, ensure_ascii=False)} {common}'
+    if capture_sink:
+        capture_props += ' stream.capture.sink=true'
+
     command = [
         'pw-loopback',
         '--name', name,
         '--channels', str(channels),
         # node.virtual=true makes pipewire-pulse report no client for the streams,
         # which hides them from volume applets like plasma-pa
-        '--capture-props', f'target.object={capture_serial} node.virtual=true',
-        '--playback-props', f'target.object={playback_serial} node.virtual=true',
+        '--capture-props', capture_props,
+        '--playback-props', f'target.object={json.dumps(playback_target, ensure_ascii=False)} {common}',
     ]
 
     LOG.debug('Creating loopback: %s', command)
@@ -381,7 +374,7 @@ def wait_for_loopback_gone(loopback_name: str, timeout: float = 2.0, interval: f
 
 def get_loopback_targets(loopback_name: str) -> tuple[str, str] | None:
     '''
-    Get the target.object serials a running pw-loopback was created with.
+    Get the target.object values a running pw-loopback was created with.
     Args:
         loopback_name (str): The loopback name used when creating.
     Returns:
