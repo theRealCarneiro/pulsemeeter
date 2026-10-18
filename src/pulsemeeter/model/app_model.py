@@ -22,6 +22,8 @@ class AppModel(BaseModel):
     device: str
     # PipeWire object id, for pin lookup
     object_id: int | None = None
+    # the app named a device itself, in its own stream properties
+    has_target: bool = False
     # pinned to a device, or following the default
     pinned: bool = False
 
@@ -66,7 +68,8 @@ class AppModel(BaseModel):
             volume=int(app.volume.values[0] * 100),
             mute=bool(app.mute),
             device=app.device_name,
-            object_id=int(object_id) if object_id is not None else None
+            object_id=int(object_id) if object_id is not None else None,
+            has_target=pmctl.has_target(app.proplist)
         )
 
         return app

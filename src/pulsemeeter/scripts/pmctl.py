@@ -204,25 +204,31 @@ def wait_for_node(node_name: str, timeout: float = 2.0, interval: float = 0.05) 
 _NO_TARGET = ('', -1, '-1', None)
 
 
+def has_target(props: dict) -> bool:
+    '''
+    True if a stream's own properties name a device: the app asked for one
+    itself (e.g. pw-record --target). pipewire-pulse passes node props through
+    to the pulse proplist, so no PipeWire lookup is needed.
+    '''
+    return any(props.get(k) not in _NO_TARGET for k in ('target.object', 'target.node', 'node.target'))
+
+
 def get_pinned_app_ids() -> set | None:
     '''
-    Return PipeWire object ids of app streams pinned to a device: target.object
-    or target.node set, either on the node or in the "default" metadata store.
+    Return PipeWire object ids of app streams pinned by a move: target.object
+    or target.node set in the "default" metadata store. A target the app set
+    itself is in its proplist instead, see has_target().
     Returns None if pw-dump is unavailable.
     '''
     try:
-        graph = json.loads(subprocess.check_output(['pw-dump'], stderr=subprocess.DEVNULL))
+        # only the "default" metadata store, not the whole graph (~1 KB instead of ~1 MB)
+        graph = json.loads(subprocess.check_output(['pw-dump', 'default'], stderr=subprocess.DEVNULL))
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
 
     pinned = set()
     for obj in graph:
-        obj_type = obj.get('type')
-        if obj_type == 'PipeWire:Interface:Node':
-            props = obj.get('info', {}).get('props', {})
-            if any(props.get(k) not in _NO_TARGET for k in ('target.object', 'target.node', 'node.target')):
-                pinned.add(obj.get('id'))
-        elif obj_type == 'PipeWire:Interface:Metadata' and obj.get('props', {}).get('metadata.name') == 'default':
+        if obj.get('type') == 'PipeWire:Interface:Metadata' and obj.get('props', {}).get('metadata.name') == 'default':
             for entry in obj.get('metadata', []):
                 if entry.get('key') in ('target.object', 'target.node') and entry.get('value') not in _NO_TARGET:
                     pinned.add(entry.get('subject'))

@@ -233,12 +233,13 @@ class GtkController(SignalModel):
     @staticmethod
     def _mark_app_pinned(app_model, pinned_ids=None):
         '''
-        Set app_model.pinned. pinned_ids None means pw-dump is unavailable, so
-        treat the app as pinned and let the selector show its resolved device.
+        Set app_model.pinned: the app named a device itself, or a move pinned it.
+        pinned_ids None means pw-dump is unavailable, so treat the app as pinned
+        and let the selector show its resolved device.
         '''
         if pinned_ids is None:
             pinned_ids = pmctl.get_pinned_app_ids()
-        app_model.pinned = pinned_ids is None or app_model.object_id in pinned_ids
+        app_model.pinned = app_model.has_target or pinned_ids is None or app_model.object_id in pinned_ids
         return app_model
 
     def load_app_combobox(self):
@@ -624,6 +625,14 @@ class GtkController(SignalModel):
         '''
         self.emit('app_device', app_type, app_index, device_nick)
 
+        # (un)pinning on the device the app is already on sends no pulse event,
+        # so read the pin back now; a move to another device gets its event
+        app_widget = self.content.app_box[app_type].widgets.get(app_index)
+        if app_widget is not None:
+            self._mark_app_pinned(app_widget.app_model)
+            if device_nick in ('', app_widget.app_model.device):
+                app_widget.change_device(app_widget.app_model.display_device)
+
     #
     # # End model update functions
     #
@@ -727,8 +736,14 @@ class GtkController(SignalModel):
         def wrapper():
             app_widget = self.content.app_box[app_type].widgets.get(app_index)
             if app_widget:
-                self._mark_app_pinned(app)
                 device_changed = app_widget.app_model.device != app.device
+                # the event doesn't carry the pin, and only a move (or our own
+                # change, see set_app_device) changes it: keep the known one
+                # rather than look it up for every volume step
+                if device_changed:
+                    self._mark_app_pinned(app)
+                else:
+                    app.pinned = app_widget.app_model.pinned
                 app_widget.pa_app_change(app)
                 if device_changed:
                     self._restart_app_vumeter(app_type, app_index)

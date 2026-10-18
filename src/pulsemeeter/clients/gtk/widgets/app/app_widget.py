@@ -74,6 +74,7 @@ class AppWidget(Gtk.Frame):
         self.app_model.volume = app.volume
         self.app_model.mute = app.mute
         self.app_model.device = app.device
+        self.app_model.has_target = app.has_target
         self.app_model.pinned = app.pinned
         self.app_model.object_id = app.object_id
 

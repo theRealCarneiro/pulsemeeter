@@ -67,6 +67,12 @@ class TestClassFunctions(unittest.TestCase):
         self.assertEqual(app.volume, 75)
         self.assertEqual(app.device, 'Main')
 
+    def test_pa_to_app_model_has_target(self):
+        pa_app = _FakePaApp(index=5, name='pw-record', values=[1.0])
+        assert not AppModel.pa_to_app_model(pa_app, 'source_output').has_target
+        pa_app.proplist['target.object'] = 'some_source'
+        assert AppModel.pa_to_app_model(pa_app, 'source_output').has_target
+
     def test_list_apps(self):
         pa_app_list = [
             _FakePaApp(index=1, name='Firefox', values=[1.0]),
