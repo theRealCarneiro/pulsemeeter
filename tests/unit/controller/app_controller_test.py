@@ -42,7 +42,7 @@ class _AppControllerCases:
             else:
                 info.side_effect = pulsectl.PulseIndexError(INDEX)
 
-        patcher = mock.patch.multiple(pmctl, PULSE=self.pulse, unpin_app=mock.DEFAULT, move_app_device=mock.DEFAULT)
+        patcher = mock.patch.multiple(pmctl, PULSE=self.pulse, unpin_app=mock.DEFAULT, pin_app=mock.DEFAULT)
         self.pm = SimpleNamespace(**patcher.start())
         self.addCleanup(patcher.stop)
 
@@ -54,7 +54,7 @@ class _AppControllerCases:
     def test_blank_device_unpins_stream(self):
         self.controller.change_device(self.APP_TYPE, INDEX, '')
         self.pm.unpin_app.assert_called_once_with(OBJECT_ID)
-        self.pm.move_app_device.assert_not_called()
+        self.pm.pin_app.assert_not_called()
         assert self.emitted == [('app_device_change', self.APP_TYPE, INDEX, '')]
 
     def test_blank_device_for_gone_stream_skips_unpin(self):
@@ -63,9 +63,10 @@ class _AppControllerCases:
         self.pm.unpin_app.assert_not_called()
         assert self.emitted == [('app_device_change', self.APP_TYPE, INDEX, '')]
 
-    def test_device_name_moves_stream(self):
+    def test_device_name_pins_stream(self):
         self.controller.change_device(self.APP_TYPE, INDEX, 'test_device')
-        self.pm.move_app_device.assert_called_once_with(self.APP_TYPE, INDEX, 'test_device')
+        device_type = 'sink' if self.APP_TYPE == 'sink_input' else 'source'
+        self.pm.pin_app.assert_called_once_with(OBJECT_ID, device_type, 'test_device')
         self.pm.unpin_app.assert_not_called()
         assert self.emitted == [('app_device_change', self.APP_TYPE, INDEX, 'test_device')]
 
