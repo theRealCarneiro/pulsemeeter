@@ -112,18 +112,3 @@ class TestDisplayDevice(unittest.TestCase):
         assert model.object_id is None
         assert model.pinned is False
         assert model.display_device == ''
-
-
-class TestLinearGain(unittest.TestCase):
-
-    def test_full_volume(self):
-        assert _app(volume=100).linear_gain() == 1.0
-
-    def test_volume_is_cubic(self):
-        assert _app(volume=50).linear_gain() == 0.125
-
-    def test_zero_volume(self):
-        assert _app(volume=0).linear_gain() == 0.0
-
-    def test_muted(self):
-        assert _app(volume=100, mute=True).linear_gain() == 0.0

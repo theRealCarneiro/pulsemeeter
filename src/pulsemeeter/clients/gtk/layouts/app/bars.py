@@ -26,7 +26,9 @@ def arrange_widgets(app_widget: AppWidget):
     app_widget.set_properties(margin_top=10, margin_bottom=10, margin_start=10, margin_end=10, hexpand=False, vexpand=False)
     app_widget.mute_widget.set_properties(**button_props)
     app_widget.volume_widget.set_properties(**scale_props)
-    app_widget.vumeter_widget.set_properties(margin_top=10, margin_start=10, margin_end=0, **scale_props)
+    meter = app_widget.vumeter_widget  # None for recording apps
+    if meter is not None:
+        meter.set_properties(margin_top=10, margin_start=10, margin_end=0, **scale_props)
     app_widget.combobox.set_hexpand(True)
 
     name_box = Gtk.Box(spacing=4, halign=Gtk.Align.CENTER, margin_bottom=10)
@@ -38,9 +40,12 @@ def arrange_widgets(app_widget: AppWidget):
     volume_box.append(app_widget.mute_widget)
 
     control_grid = Gtk.Grid(hexpand=True, row_spacing=10, column_spacing=10, halign=Gtk.Align.CENTER)
-    control_grid.attach(app_widget.vumeter_widget, 0, 1, 1, 1)
-    control_grid.attach(volume_box, 1, 1, 1, 1)
-    control_grid.attach(app_widget.combobox, 0, 2, 2, 1)
+    # without a meter the volume column is the only one, so it stays centered
+    volume_column = 0 if meter is None else 1
+    if meter is not None:
+        control_grid.attach(meter, 0, 1, 1, 1)
+    control_grid.attach(volume_box, volume_column, 1, 1, 1)
+    control_grid.attach(app_widget.combobox, 0, 2, volume_column + 1, 1)
 
     main_grid = Gtk.Grid(margin_bottom=10, margin_end=10, margin_start=10, hexpand=True, row_spacing=10, column_spacing=10)
     main_grid.attach(name_box, 0, 0, 1, 1)

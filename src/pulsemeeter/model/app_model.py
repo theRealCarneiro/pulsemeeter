@@ -37,13 +37,6 @@ class AppModel(BaseModel):
         '''
         return self.device if self.pinned else ''
 
-    def linear_gain(self) -> float:
-        '''
-        The stream's volume and mute as an amplitude factor. Pulse volume is
-        cubic, so 50% scales the signal by 0.125.
-        '''
-        return 0.0 if self.mute else (self.volume / 100) ** 3
-
     @validator('icon')
     def set_icon(cls, icon):
         '''

@@ -481,9 +481,9 @@ class GtkController(SignalModel):
             tb_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             LOG.error("Vumeter task error: \n %s", tb_str)
 
-    def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None, gain=None):
+    def start_vumeter(self, app_type, app_name, vumeter_widget, stream_index=None):
         future = asyncio.run_coroutine_threadsafe(
-            subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index, gain=gain),
+            subscribe_peak(app_name, app_type, vumeter_widget.update_peak, stream_index=stream_index),
             self.vumeter_loop
         )
 
@@ -502,7 +502,7 @@ class GtkController(SignalModel):
             widget = self.content.device_box[type_].widgets.get(id_)
         else:
             widget = self.content.app_box[type_].widgets.get(id_)
-        if widget is not None:
+        if widget is not None and widget.vumeter_widget is not None:
             widget.vumeter_widget.set_fraction(0)
             widget.vumeter_widget.set_sensitive(False)
 
@@ -523,25 +523,17 @@ class GtkController(SignalModel):
         if not self.config_model.vumeters:
             return
         app_widget = self.content.app_box[app_type].widgets.get(app_index)
-        if app_widget is None:
+        if app_widget is None or app_widget.vumeter_widget is None:
             return
         stream_type = app_type.split('_')[0]
-        # meter the app's actual device so the meter follows it on a move;
-        # a fake name would fall back to metering the default source
+        # pipewire-pulse attaches the meter to the stream itself (by index),
+        # so it follows the app across moves without a restart
         name = app_widget.app_model.device
         if not name:
             return
-        # a source output is metered on its whole source, so apply its own
-        # volume and mute (kept current by pa_app_change) to the peaks
-        gain = app_widget.app_model.linear_gain if app_type == 'source_output' else None
         self.vumeter_tasks[app_type][app_index] = self.start_vumeter(
-            stream_type, name, app_widget.vumeter_widget, app_index, gain=gain
+            stream_type, name, app_widget.vumeter_widget, app_index
         )
-
-    def _restart_app_vumeter(self, app_type: str, app_index):
-        """Re-subscribe an app's peak stream after it moves to a new device."""
-        self.stop_vumeter(app_type, app_index)
-        self._start_app_vumeter(app_type, app_index)
 
     def _restart_device_vumeter(self, device_type: str, device_id: str):
         """(Re)subscribe a peak stream for a device that just appeared in PA."""
@@ -749,8 +741,6 @@ class GtkController(SignalModel):
                 else:
                     app.pinned = app_widget.app_model.pinned
                 app_widget.pa_app_change(app)
-                if device_changed:
-                    self._restart_app_vumeter(app_type, app_index)
             return False
 
         GLib.idle_add(wrapper)

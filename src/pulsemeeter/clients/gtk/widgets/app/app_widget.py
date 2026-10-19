@@ -39,7 +39,9 @@ class AppWidget(Gtk.Frame):
         self.volume_widget = VolumeWidget(value=app_model.volume, draw_value=True)
         self.combobox = AppDropDown(app_model.app_type)
         self.mute_widget = MuteWidget(active=app_model.mute)
-        self.vumeter_widget = VumeterWidget()
+        # only playback apps get a meter: pulse meters a playback stream itself,
+        # but a recording stream's level could only be guessed from its source
+        self.vumeter_widget = VumeterWidget() if self.app_type == 'sink_input' else None
         self.handlers = {}
 
         self.combobox.set_active_device(app_model.display_device)
