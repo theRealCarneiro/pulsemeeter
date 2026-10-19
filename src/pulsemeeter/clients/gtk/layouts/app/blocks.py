@@ -24,11 +24,14 @@ def _set_properties(app_widget: AppWidget):
     app_widget.set_properties(margin_top=10, margin_bottom=10, margin_start=10, margin_end=10)
     app_widget.mute_widget.set_properties(**button_props, margin_bottom=10)
     app_widget.volume_widget.set_properties(**scale_props)
-    app_widget.vumeter_widget.set_properties(margin_start=10, **scale_props)
+    meter = app_widget.vumeter_widget  # None for recording apps
+    if meter is not None:
+        meter.set_properties(margin_start=10, **scale_props)
     app_widget.combobox.set_properties(
         hexpand=True,
         halign=Gtk.Align.END,
-        margin_bottom=10
+        # without a meter row below the volume, the gap above it looks too big
+        margin_bottom=10 if meter is not None else 0
     )
     app_widget.icon.set_margin_end(5)
 
@@ -49,6 +52,7 @@ def arrange_widgets(app_widget: AppWidget):
 
     control_grid.attach(app_widget.volume_widget, 0, 0, 1, 1)
     control_grid.attach(app_widget.mute_widget, 1, 0, 1, 1)
-    control_grid.attach(app_widget.vumeter_widget, 0, 1, 2, 1)
+    if app_widget.vumeter_widget is not None:  # recording apps have none
+        control_grid.attach(app_widget.vumeter_widget, 0, 1, 2, 1)
 
     app_widget.set_child(main_grid)

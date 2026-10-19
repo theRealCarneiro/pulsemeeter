@@ -126,10 +126,11 @@ class TestSourceOutput(_AppStreamCases, unittest.TestCase):
 
 
 class TestSubscribePeak(unittest.TestCase):
-    '''App vumeters: pulse can only monitor a sink input on its own.'''
+    '''Vumeters: a playback app is metered on its own stream, a device on its source.'''
 
-    def _subscribe(self, device_type, stream_index, peaks, gain=None):
+    def _subscribe(self, device_type, stream_index, peaks):
         pulse = mock.Mock()
+        pulse.get_source_by_name = mock.AsyncMock()
 
         async def subscribe_peak_sample(name, rate, stream_idx=None):
             for peak in peaks:
@@ -146,26 +147,20 @@ class TestSubscribePeak(unittest.TestCase):
             received.append(peak)
 
         with mock.patch.object(pmctl_async, 'pulse_connection', connection):
-            asyncio.run(pmctl_async.subscribe_peak(
-                'test_device', device_type, callback, stream_index=stream_index, gain=gain
-            ))
+            asyncio.run(pmctl_async.subscribe_peak('test_device', device_type, callback, stream_index=stream_index))
         return pulse, received
 
     def test_sink_input_meters_its_own_stream(self):
         pulse, received = self._subscribe('sink', 7, [0.5])
         pulse.subscribe_peak_sample.assert_called_once_with('test_device.monitor', 30, stream_idx=7)
+        pulse.get_source_by_name.assert_not_called()
         assert received == [0.5]
 
-    def test_source_output_meters_source_scaled_by_gain(self):
-        pulse, received = self._subscribe('source', 7, [0.5], gain=lambda: 0.125)
+    def test_source_device_meters_the_source(self):
+        pulse, received = self._subscribe('source', None, [0.5])
+        pulse.get_source_by_name.assert_awaited_once_with('test_device')
         pulse.subscribe_peak_sample.assert_called_once_with('test_device', 30, stream_idx=None)
-        assert received == [0.0625]
-
-    def test_gain_is_read_for_every_peak(self):
-        # the slider changes the gain while the meter keeps running
-        gains = iter([1.0, 0.125, 0.0])
-        _, received = self._subscribe('source', 7, [0.5, 0.5, 0.5], gain=lambda: next(gains))
-        assert received == [0.5, 0.0625, 0.0]
+        assert received == [0.5]
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: pulsemeeter 2.2.0\n"
 "Report-Msgid-Bugs-To: "
 "https://github.com/theRealCarneiro/pulsemeeter/issues\n"
-"POT-Creation-Date: 2026-10-18 15:09-0600\n"
+"POT-Creation-Date: 2026-10-18 17:57-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -152,7 +152,7 @@ msgstr ""
 msgid "Select the input device for this app"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/app/app_widget.py:47
+#: src/pulsemeeter/clients/gtk/widgets/app/app_widget.py:49
 msgid "This app doesn't allow changing its device"
 msgstr ""
 
