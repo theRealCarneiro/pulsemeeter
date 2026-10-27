@@ -28,9 +28,13 @@ class ConnectionWidget(Gtk.Box):
         # Warning icon shown when route fails to set up
         self.warning_icon = Gtk.Image.new_from_icon_name('dialog-warning')
 
-        # Toggle button with [warning_icon | label] as its content
+        # Info icon shown when automatic mapping paired channels by order
+        self.info_icon = Gtk.Image.new_from_icon_name('dialog-information')
+
+        # Toggle button with [warning_icon | info_icon | label] as its content
         toggle_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4, halign=Gtk.Align.CENTER)
         toggle_content.append(self.warning_icon)
+        toggle_content.append(self.info_icon)
         toggle_content.append(Gtk.Label(label=label))
         self.toggle_button = Gtk.ToggleButton(active=connection_model.state)
         self.toggle_button.set_child(toggle_content)
@@ -89,13 +93,15 @@ class ConnectionWidget(Gtk.Box):
 
     def update_warning(self):
         """
-        Show warning when this route has a real failure.
+        Show warning when this route has a real failure, or links only part of its channels.
+        Show info when automatic mapping had to pair channels by order.
         """
-        failed = bool(getattr(self.connection_model, 'connect_failed', False))
-        self.warning_icon.set_visible(failed)
-        if failed:
-            error = getattr(self.connection_model, 'connect_error', '') or _('Failed to create route')
-            self.toggle_button.set_tooltip_text(error)
+        problem = self.connection_model.error_text() or self.connection_model.warning_text()
+        order = self.connection_model.order_text()
+        self.warning_icon.set_visible(bool(problem))
+        self.info_icon.set_visible(not problem and bool(order))
+        if problem or order:
+            self.toggle_button.set_tooltip_text(problem or order)
         else:
             self.set_accessible() # Restores normal tooltip
 

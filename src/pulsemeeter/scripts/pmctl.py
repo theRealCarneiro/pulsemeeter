@@ -74,15 +74,20 @@ def link(input_name: str, output_name: str, state: bool = True) -> bool:
         output_name (str): Name of the output device.
         state (bool): True to link, False to unlink.
     Returns:
-        bool: True on success, raises on failure.
+        bool: True when the link ends up in the requested state.
     '''
     operation = [] if state else ['-d']
     command = ['pw-link', input_name, output_name, *operation]
-    ret, stdout, stderr = run_command(command)
-    return True
+    # The C locale keeps pw-link's error text in English, so it can be matched below
+    ret, _, stderr = run_command(command, env={**os.environ, 'LC_ALL': 'C'})
+
+    # pw-link fails when the link is already in the requested state, as on every reconnect
+    already = 'File exists' if state else 'No such file or directory'
+    return ret == 0 or already in stderr
 
 
-def link_channels(input_name: str, output_name: str, channel_map: str, state: bool = True) -> bool:
+def link_channels(input_name: str, output_name: str, channel_map: str, state: bool = True, *,
+                  input_ports: list[str] | None = None, output_ports: list[str] | None = None) -> list[str]:
     '''
     Link or unlink two PipeWire devices using a channel map string (e.g. '0:0 1:1').
     Args:
@@ -90,21 +95,29 @@ def link_channels(input_name: str, output_name: str, channel_map: str, state: bo
         output_name (str): Name of the output device.
         channel_map (str): Channel map string, e.g. '0:0 1:1'.
         state (bool): True to link, False to unlink.
+        input_ports (list[str]): Output ports of the input device, when the
+            caller already read them to build channel_map. Read here if None.
+        output_ports (list[str]): Input ports of the output device, likewise.
     Returns:
-        bool: True on success, raises on failure.
+        list[str]: The pairs that could not be linked, as 'input_port -> output_port'.
+            Raises when linking and no pair could be linked at all.
     '''
-    if not channel_map:
-        return True
+    if input_ports is None:
+        input_ports = get_ports('output', input_name)
+    if output_ports is None:
+        output_ports = get_ports('input', output_name)
 
-    input_ports = get_ports('output', input_name)
-    output_ports = get_ports('input', output_name)
-
+    # Check ports before the empty map, since missing ports also produce an empty map
     if not input_ports or not output_ports:
         if not state:
-            return True
+            return []
         raise RuntimeError(f'Ports not found for devices {input_name} {output_name}')
 
+    if not channel_map:
+        return []
+
     linked = 0
+    unlinked = []
     for pair in channel_map.split(' '):
         input_id, output_id = pair.split(':')
         input_index, output_index = int(input_id), int(output_id)
@@ -115,19 +128,24 @@ def link_channels(input_name: str, output_name: str, channel_map: str, state: bo
                 'Skipping out of range channel pair %s for %s (%d ports) -> %s (%d ports)',
                 pair, input_name, len(input_ports), output_name, len(output_ports)
             )
+            unlinked.append(pair)
             continue
 
         input_port = f'{input_name}:{input_ports[input_index]}'
         output_port = f'{output_name}:{output_ports[output_index]}'
-        link(input_port, output_port, state=state)
+        if not link(input_port, output_port, state=state):
+            LOG.warning('pw-link failed for %s -> %s', input_port, output_port)
+            unlinked.append(f'{input_ports[input_index]} -> {output_ports[output_index]}')
+            continue
+
         linked += 1
 
     if linked == 0 and state:
         raise RuntimeError(
-            f'No channel of {channel_map} could be mapped for devices {input_name} {output_name}'
+            f'No channel of {channel_map} could be linked for devices {input_name} {output_name}'
         )
 
-    return True
+    return unlinked
 
 
 def make_loopback_name(input_name: str, output_name: str) -> str:
@@ -824,14 +842,15 @@ def is_pipewire() -> bool:
     return shutil.which('pipewire-pulse') is not None
 
 
-def run_command(command: list[str], split: bool = False) -> tuple[int, str, str]:
+def run_command(command: list[str], split: bool = False, env: dict[str, str] | None = None) -> tuple[int, str, str]:
     """
     Run a shell command and return (returncode, stdout, stderr).
     If split is True, split the command string into a list.
+    If env is given, it replaces the environment the command runs in.
     """
     if split and isinstance(command, str):
         command = command.split()
     LOG.debug('Running command: %s', command)
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     stdout, stderr = proc.communicate()
     return proc.returncode, stdout.decode(), stderr.decode()

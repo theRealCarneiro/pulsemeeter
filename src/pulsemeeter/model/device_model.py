@@ -5,7 +5,7 @@ from pulsemeeter.schemas.typing import Volume, PaDeviceType, DeviceClass
 from pydantic import BaseModel, Field, root_validator, validator
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.schemas import pulse_mappings
-from pulsemeeter.model.connection_model import ConnectionModel
+from pulsemeeter.model.connection_model import ConnectionModel, port_position
 
 LOG = logging.getLogger("generic")
 
@@ -203,34 +203,24 @@ class DeviceModel(BaseModel):
 
         return [i for i in range(len(sel_channels)) if sel_channels[i] is True]
 
-    def str_port_map(self, output_type: str, output_id: str, output) -> str:
+    def get_selected_channels(self, ports: list[str]) -> list[tuple[int, str]]:
         '''
-        Returns a string formated portmap for pmctl
-            "output_type" is either 'a' or 'b'
-            "output_id" is an int > 0
-            "output" is the DeviceModel of the output device
+        Returns the selected channels as (index, channel name) pairs, the form
+        the automatic port mapping pairs devices up on
+            "ports" are the device's live port names, as returned by pmctl.get_ports
+
+        Names are read off the ports rather than channel_list
         '''
-        output_ports = output.get_selected_channel_list()
-        input_ports: list = self.get_selected_channel_list()
-        ports: str = ''
 
-        # auto port mapping
-        if self.connections[output_type][output_id].auto_ports is True:
+        sel_channels = self.selected_channels or []
 
-            # iterate until when the shorter ends
-            for input_port, output_port in zip(input_ports, output_ports):
-                ports += f'{input_port}:{output_port} '
+        return [
+            (i, port_position(port))
+            for i, port in enumerate(ports)
 
-        # manual port mapping
-        else:
-            port_map = self.connections[output_type][output_id].port_map
-            for input_port, target_ports in enumerate(port_map):
-                for target_port in target_ports:
-                    ports += f'{input_ports[input_port]}:{target_port} '
-
-        ports = ports[:-1]
-
-        return ports
+            # a channel the config has never seen cannot have been deselected
+            if i >= len(sel_channels) or sel_channels[i] is True
+        ]
 
     def update_from_pa(self, pa_device):
         '''

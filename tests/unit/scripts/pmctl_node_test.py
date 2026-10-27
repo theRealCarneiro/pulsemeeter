@@ -118,3 +118,32 @@ class TestLinkChannels(unittest.TestCase):
 
     def test_no_mappable_pair_on_unlink_is_silent(self):
         assert self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '1:1', state=False) == []
+
+    def test_empty_map_with_missing_ports_raises(self):
+        # Missing ports also give an empty map, which is a failed route, not a no-op
+        with self.assertRaises(RuntimeError):
+            self._link_calls(['out_FL', 'out_FR'], [], '')
+
+    def test_pairs_pw_link_rejects_are_returned(self):
+        ports = {'output': ['monitor_FR', 'capture_1'], 'input': ['playback_FL', 'playback_FR']}
+        with (
+            patch('pulsemeeter.scripts.pmctl.get_ports', side_effect=lambda t, _n: ports[t]),
+            patch('pulsemeeter.scripts.pmctl.link', side_effect=[True, False]),
+        ):
+            unlinked = pmctl.link_channels('in_device', 'out_device', '0:0 1:1')
+        assert unlinked == ['capture_1 -> playback_FR']
+
+
+class TestLink(unittest.TestCase):
+
+    def test_link_that_already_exists(self):
+        # Every reconnect relinks existing links, which pw-link reports as an error
+        result = (255, '', 'failed to link ports: File exists')
+        with patch('pulsemeeter.scripts.pmctl.run_command', return_value=result):
+            assert pmctl.link('a:monitor_FL', 'b:playback_FL') is True
+
+    def test_runs_in_the_c_locale(self):
+        # pw-link's error text is translated, and link() matches it
+        with patch('pulsemeeter.scripts.pmctl.run_command', return_value=(0, '', '')) as mock_run:
+            pmctl.link('a:monitor_FL', 'b:playback_FL')
+        assert mock_run.call_args.kwargs['env']['LC_ALL'] == 'C'

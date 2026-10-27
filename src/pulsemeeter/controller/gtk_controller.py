@@ -435,7 +435,6 @@ class GtkController(SignalModel):
         input_model = self.device_repository.get_device(input_type, input_id)
         output_model = self.device_repository.get_device(output_type, output_id)
         button = device_widget.connections_widgets[output_type].get_widget(output_id)
-        button.popover.fill_settings()
         port_map_widget = button.popover.port_map_widget
         port_map_widget.clear_port_map()
 
@@ -447,6 +446,9 @@ class GtkController(SignalModel):
             LOG.exception('Failed to build routing grid for %s -> %s', input_model.name, output_model.name)
             port_map_widget.clear_port_map()
             port_map_widget.show_unavailable()
+
+        # after the grid, since the note under it is sized from the grid's width
+        button.popover.fill_settings()
 
     def add_device_hijack(self, _, settings_widget, device_type, device_id):
         '''

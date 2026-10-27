@@ -143,8 +143,13 @@ class DeviceWidget(Gtk.Frame):
         '''Refresh own and child route warning indicators from current model state.'''
         self._update_warning()
         for output_type, widget_box in self.connections_widgets.items():
-            for connection_widget in widget_box.widgets.values():
+            for output_id, connection_widget in widget_box.widgets.items():
                 connection_widget.update_warning()
+                connection_widget.popover.refresh_status()
+
+                # an open popover's grid still shows the ports from when it opened
+                if connection_widget.popover.get_visible():
+                    self.emit('connection_settings_pressed', output_type, output_id)
 
     def reload_connection_widgets(self):
         self.connections_widgets['a'].clear()
@@ -152,15 +157,18 @@ class DeviceWidget(Gtk.Frame):
         self._create_connection_widgets()
 
     def _create_connection_widgets(self):
+        # Route buttons all take the width of the widest, which grows when it shows a warning or info icon
+        size_group = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
         for output_type in ('a', 'b'):
             for output_id, connection_schema in self.device_model.connections[output_type].items():
                 button = ConnectionWidget(connection_schema.nick, connection_schema)
+                size_group.add_widget(button.toggle_button)
                 self.connections_widgets[output_type].add_widget(output_id, button)
                 button.connect('connection', self._on_connection_change, output_type, output_id)
                 button.connect('route_volume', self._on_route_volume, output_type, output_id)
                 button.connect('use_loopback', self._on_use_loopback, output_type, output_id)
                 button.connect('settings_pressed', self._on_connection_edit_pressed, output_type, output_id)
-                button.popover.confirm_button.connect('clicked', self._on_connection_settings_save, output_type, output_id)
+                button.popover.connect('settings_changed', self._on_connection_settings_changed, output_type, output_id)
 
     def _connect_callbacks(self):
         self.volume_widget.connect('volume', self._on_volume_change)
@@ -194,10 +202,18 @@ class DeviceWidget(Gtk.Frame):
     def _on_primary_change(self, _):
         self.emit('primary')
 
-    def _on_connection_settings_save(self, _, output_type, output_id):
-        popover = self.connections_widgets[output_type].widgets[output_id].popover
-        schema = popover.get_connection_model()
+    def _on_connection_settings_changed(self, popover, schema, output_type, output_id):
+        connection_widget = self.connections_widgets[output_type].widgets[output_id]
+        auto_toggled = schema.auto_ports != connection_widget.connection_model.auto_ports
         self.emit('update_connection', output_type, output_id, schema)
+
+        # the route was relinked with the new settings, so its warning may have changed
+        connection_widget.update_warning()
+        popover.refresh_status()
+
+        # automatic and manual mapping tick different boxes, so the grid is rebuilt
+        if auto_toggled:
+            self.emit('connection_settings_pressed', output_type, output_id)
 
     def _on_settings_save(self, _):
         schema = self.popover.to_schema()

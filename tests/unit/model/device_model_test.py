@@ -124,3 +124,14 @@ class TestClassMethods(unittest.TestCase):
 
     def test_list_devices_empty(self):
         self.assertEqual(DeviceModel.list_devices([], 'sink'), [])
+
+
+class TestGetSelectedChannels(unittest.TestCase):
+
+    def test_channel_the_config_has_never_seen_is_selected(self):
+        # Added while in mono, now back in stereo: nobody deselected FR
+        device = _device(channels=1, channel_list=['mono'], selected_channels=[True])
+        self.assertEqual(
+            device.get_selected_channels(['playback_FL', 'playback_FR']),
+            [(0, 'FL'), (1, 'FR')]
+        )

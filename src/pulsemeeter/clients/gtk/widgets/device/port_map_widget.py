@@ -3,12 +3,13 @@ import gettext
 # pylint: disable=wrong-import-order,wrong-import-position
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, GLib  # noqa: E402
+from gi.repository import Gtk, GLib, GObject  # noqa: E402
 # pylint: enable=wrong-import-order,wrong-import-position
 
 _ = gettext.gettext
 
 PORT_NAME_PREFIXES = ('playback_', 'capture_', 'monitor_', 'input_', 'output_')
+COLUMN_SPACING = 6
 
 
 def port_label(port_name: str) -> str:
@@ -31,6 +32,11 @@ def axis_marker(text: str) -> Gtk.Label:
 
 
 class PortMap(Gtk.Box):
+
+    __gsignals__ = {
+        # a checkbox was clicked, read the new map with get_port_map
+        'changed': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
+    }
 
     def __init__(self, connection_model):
         super().__init__()
@@ -61,14 +67,15 @@ class PortMap(Gtk.Box):
         '''
         Build the checkbox grid for a connection.
         '''
-        input_sel_channels = input_device.get_selected_channel_list()
-        output_sel_channels = output_device.get_selected_channel_list()
+        input_channels = input_device.get_selected_channels(input_ports)
+        output_channels = output_device.get_selected_channels(output_ports)
 
         rows, cols, checked = self.connection_model.routing_grid(
-            input_ports, output_ports, input_sel_channels, output_sel_channels
+            input_ports, output_ports, input_channels, output_channels
         )
 
-        self.map_rows = len(input_sel_channels)
+        # Keep rows for input channels that are gone for now, so the manual map survives
+        self.map_rows = max(len(input_channels), len(input_device.get_selected_channel_list()))
         self.rendered_positions = [position for position, _unused in rows]
 
         if not rows or not cols:
@@ -77,7 +84,7 @@ class PortMap(Gtk.Box):
 
         grid = Gtk.Grid()
         grid.set_row_spacing(4)
-        grid.set_column_spacing(6)
+        grid.set_column_spacing(COLUMN_SPACING)
 
         # Column 0 and row 0 hold the axis markers, so the port names sit at column 1 and row 1
         # Checkboxes start at (2, 2)
@@ -101,8 +108,12 @@ class PortMap(Gtk.Box):
 
                 grid.attach(check, column + 2, row + 2, 1, 1)
                 self.checkboxes[(position, output_channel)] = check
+                check.connect('toggled', self._on_check_toggled)
 
         self.append(grid)
+
+    def _on_check_toggled(self, _check):
+        self.emit('changed')
 
     def show_message(self, text: str):
         self.append(Gtk.Label(label=text, halign=Gtk.Align.CENTER))
