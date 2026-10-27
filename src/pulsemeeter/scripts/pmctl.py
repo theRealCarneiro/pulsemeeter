@@ -47,7 +47,10 @@ def create_device(device_type: str, name: str, channels: int, position: list[str
     ret, stdout, stderr = run_command(command, split=False)
     # pw-cli exits 0 even on protocol/syntax failures; detect those via stderr
     if ret != 0 or 'error' in (stderr or '').lower():
-        raise RuntimeError(f"Failed to create device: {(stderr or stdout).strip() or 'pw-cli reported failure'}")
+        # Only fail when the node was not created
+        if not get_node_serial(name):
+            raise RuntimeError(f"Failed to create device: {(stderr or stdout).strip() or 'pw-cli reported failure'}")
+        LOG.debug('pw-cli reported errors but created %s: %s', name, stderr.strip())
     return True
 
 
@@ -505,14 +508,13 @@ def kill_stray_loopback(loopback_name: str) -> int:
     return killed
 
 
-def get_ports(port_type: str, device_name: str) -> list[str]:
+def list_ports(port_type: str) -> dict[str, list[str]]:
     '''
-    Get ports for a device in PipeWire.
+    Get the ports of every device in PipeWire.
     Args:
         port_type (str): 'input' or 'output'.
-        device_name (str): Name of the device.
     Returns:
-        list[str]: list of port names.
+        dict[str, list[str]]: port names by device name, in the order pw-link lists them.
     '''
     command = ['pw-link', f'--{port_type}']
     ret, stdout, stderr = run_command(command)
@@ -522,13 +524,52 @@ def get_ports(port_type: str, device_name: str) -> list[str]:
     # pw-link lists ports as 'node_name:port_name', one per line
     # Split on the last colon: node names can contain colons themselves
     # (bluetooth nodes carry the MAC, e.g. 'bluez_output.6C:FB:ED:49:B3:3A')
-    ports = []
+    ports = {}
     for line in stdout.splitlines():
         node, _, port = line.rpartition(':')
-        if node == device_name and port:
-            ports.append(port)
+        if node and port:
+            ports.setdefault(node, []).append(port)
 
     return ports
+
+
+def get_ports(port_type: str, device_name: str) -> list[str]:
+    '''
+    Get ports for a device in PipeWire.
+    Args:
+        port_type (str): 'input' or 'output'.
+        device_name (str): Name of the device.
+    Returns:
+        list[str]: list of port names.
+    '''
+    return list_ports(port_type).get(device_name, [])
+
+
+def wait_for_ports(port_counts: dict[str, int], timeout: float = 5.0, interval: float = 0.05) -> list[str]:
+    '''
+    Poll until devices have all their ports in PipeWire.
+    Args:
+        port_counts (dict[str, int]): The number of ports to wait for in each
+            direction, by device name.
+        timeout (float): Maximum time to wait in seconds.
+        interval (float): Polling interval in seconds.
+    Returns:
+        list[str]: The devices still missing ports when the time ran out.
+    '''
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            listed = [list_ports('input'), list_ports('output')]
+        except RuntimeError:
+            listed = [{}, {}]
+
+        missing = [
+            name for name, count in port_counts.items()
+            if any(len(ports.get(name, [])) < count for ports in listed)
+        ]
+        if not missing or time.monotonic() >= deadline:
+            return missing
+        time.sleep(interval)
 
 
 def mute(device_type: str, device_name: str, state: bool, pulse=None) -> int:

@@ -47,7 +47,14 @@ class DeviceController(SignalModel):
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):
             for device_id in self.device_repository.get_devices_by_type(device_type):
-                self._try_init_device(device_type, device_id, "Skipping init for %s/%s", cache=False)
+                self._try_init_device(device_type, device_id, "Skipping init for %s/%s", cache=False, wait=False)
+
+        # Wait for the ports of every device at once, after creating them all
+        self._wait_for_ports([
+            device
+            for device_type in ('vi', 'b')
+            for device in self.device_repository.get_devices_by_type(device_type).values()
+        ])
 
         # Mark any devices PA doesn't currently know about as not present
         for device_type in ('vi', 'b', 'hi', 'a'):
@@ -64,17 +71,20 @@ class DeviceController(SignalModel):
                 except Exception:
                     LOG.exception("Skipping reconnect for %s/%s", device_type, device_id)
 
-    def _try_init_device(self, device_type, device_id, log_msg, cache=True):
+    def _try_init_device(self, device_type, device_id, log_msg, cache=True, wait=True):
         """
         init_device with status-flag bookkeeping. Returns True on success.
         Centralizes the init_failed / init_error update so the four call
         sites (startup, hot-plug, update, create) stay consistent.
+        "wait" also waits for the device's ports.
         """
         device = self.device_repository.get_device(device_type, device_id)
         try:
             self.init_device(device_type, device_id, cache=cache)
             device.init_failed = False
             device.init_error = ''
+            if wait:
+                self._wait_for_ports([device])
             return True
         except Exception as e:
             LOG.exception(log_msg, device_type, device_id)
@@ -93,6 +103,23 @@ class DeviceController(SignalModel):
         device = self.device_repository.get_device(device_type, device_id)
         if device_type in ('vi', 'b') and not device.external and not pmctl.device_exists(device.name):
             pmctl.create_device(device.device_type, device.name, device.channels, device.channel_list)
+
+    @staticmethod
+    def _wait_for_ports(devices):
+        '''
+        Wait until the virtual devices Pulsemeeter creates have a port per channel in each direction
+        '''
+        port_counts = {
+            device.name: device.channels
+            for device in devices
+            if device.device_class == 'virtual' and not device.external and not device.init_failed
+        }
+        if not port_counts:
+            return
+
+        missing = pmctl.wait_for_ports(port_counts)
+        if missing:
+            LOG.warning('Not all ports of %s appeared in time, linking the ones there are', ', '.join(missing))
 
     def bulk_connect(self, device_type, device_id, state):
         '''

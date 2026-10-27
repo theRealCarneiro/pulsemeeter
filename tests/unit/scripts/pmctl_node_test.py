@@ -82,6 +82,27 @@ class TestCreateDeviceMediaClass(unittest.TestCase):
         assert 'media.class=Audio/Source/Virtual\n' in self._create('source', False)
 
 
+class TestCreateDeviceErrors(unittest.TestCase):
+
+    # pw-cli output with errors about objects other than the new node
+    OTHER_OBJECT_ERRORS = (0, '', 'remote 0: error id:90 seq:178 res:-2 (No such file or directory): no global 89\n')
+
+    def test_errors_about_other_objects_do_not_fail_a_created_device(self):
+        with (
+            patch('pulsemeeter.scripts.pmctl.run_command', return_value=self.OTHER_OBJECT_ERRORS),
+            patch('pulsemeeter.scripts.pmctl.get_node_serial', return_value='1264'),
+        ):
+            assert pmctl.create_device('sink', 'Misc', 2, ['FL', 'FR']) is True
+
+    def test_error_without_the_node_fails(self):
+        with (
+            patch('pulsemeeter.scripts.pmctl.run_command', return_value=self.OTHER_OBJECT_ERRORS),
+            patch('pulsemeeter.scripts.pmctl.get_node_serial', return_value=''),
+            self.assertRaises(RuntimeError),
+        ):
+            pmctl.create_device('sink', 'Misc', 2, ['FL', 'FR'])
+
+
 class TestLinkChannels(unittest.TestCase):
 
     def _link_calls(self, input_ports, output_ports, channel_map, state=True):

@@ -4,7 +4,9 @@ from unittest import mock
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.signal_model import SignalModel
 from pulsemeeter.model.device_model import DeviceModel
+from pulsemeeter.model.config_model import ConfigModel
 from pulsemeeter.model.connection_model import ConnectionModel
+from pulsemeeter.repository.device_repository import DeviceRepository
 from pulsemeeter.controller.device_controller import DeviceController
 
 
@@ -197,3 +199,45 @@ class UpdateConnectionTest(unittest.TestCase):
         assert self.connection.port_map == [[0], [1]]
         assert self.connection.order_pairs == []
         assert not self.connection.connect_failed
+
+
+class StartupTest(unittest.TestCase):
+    '''Startup links a new virtual device once all its ports are listed'''
+
+    def setUp(self):
+        self.polls = 0
+        self.existing = {'headphones'}
+        for name, kwargs in (
+            ('is_pipewire', {'return_value': True}),
+            ('device_exists', {'side_effect': lambda name: name in self.existing}),
+            ('create_device', {'side_effect': lambda _type, name, *_args: self.existing.add(name)}),
+            ('list_ports', {'side_effect': self.list_ports}),
+            ('kill_stray_loopback', {'return_value': 0}),
+        ):
+            mock.patch.object(pmctl, name, **kwargs).start()
+        mock.patch('pulsemeeter.scripts.pmctl.time.sleep', side_effect=self.next_poll).start()
+        self.link = mock.patch.object(pmctl, 'link', return_value=True).start()
+        self.addCleanup(mock.patch.stopall)
+
+    def next_poll(self, _seconds):
+        self.polls += 1
+
+    def list_ports(self, port_type):
+        # The new sink has no ports at first, then only its right channel, then both
+        positions = [[], ['FR'], ['FL', 'FR']][min(self.polls, 2)]
+        prefix = 'playback' if port_type == 'input' else 'monitor'
+        ports = {'desktop': [f'{prefix}_{position}' for position in positions]}
+        if port_type == 'input':
+            ports['headphones'] = ['playback_FL', 'playback_FR']
+        return ports
+
+    def test_new_sink_is_linked_once_all_its_ports_are_listed(self):
+        config = ConfigModel(devices={'vi': {'1': _device('desktop')}, 'a': {'1': _device('headphones', device_class='hardware')}})
+        config.devices['vi']['1'].connections['a']['1'].state = True
+
+        DeviceController(DeviceRepository(mock.Mock(get_config=lambda: config)))
+
+        assert [call.args for call in self.link.call_args_list] == [
+            ('desktop:monitor_FL', 'headphones:playback_FL'),
+            ('desktop:monitor_FR', 'headphones:playback_FR'),
+        ]
