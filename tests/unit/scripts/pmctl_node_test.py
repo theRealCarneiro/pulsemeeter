@@ -67,19 +67,16 @@ class TestGetPorts(unittest.TestCase):
 
 class TestCreateDeviceMediaClass(unittest.TestCase):
 
-    def _create(self, device_type, hidden):
+    def _create(self, device_type):
         with patch('pulsemeeter.scripts.pmctl.run_command', return_value=(0, '', '')) as mock_run:
-            pmctl.create_device(device_type, 'test_device', 2, ['FL', 'FR'], hidden=hidden)
+            pmctl.create_device(device_type, 'test_device', 2, ['FL', 'FR'])
         return mock_run.call_args[0][0][3]
 
     def test_sink(self):
-        assert 'media.class=Audio/Sink\n' in self._create('sink', False)
-
-    def test_hidden_sink(self):
-        assert 'media.class=Audio/Sink/Internal\n' in self._create('sink', True)
+        assert 'media.class=Audio/Sink\n' in self._create('sink')
 
     def test_source(self):
-        assert 'media.class=Audio/Source/Virtual\n' in self._create('source', False)
+        assert 'media.class=Audio/Source/Virtual\n' in self._create('source')
 
 
 class TestCreateDeviceErrors(unittest.TestCase):

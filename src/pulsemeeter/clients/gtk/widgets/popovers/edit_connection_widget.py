@@ -89,9 +89,6 @@ class ConnectionSettingsPopup(Gtk.Popover):
         if model.auto_ports and (model.unrouted_ports or model.order_pairs):
             lines.append(_('Untick Auto ports to keep this routing as your own and hide this warning.'))
 
-        if model.use_loopback:
-            lines.append(_('Loopback routes match channels on their own. These settings apply with loopback off.'))
-
         self.status_box.set_visible(bool(lines))
         if not lines:
             return

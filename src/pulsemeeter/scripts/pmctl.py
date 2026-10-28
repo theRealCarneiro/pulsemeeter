@@ -14,7 +14,7 @@ LOG = logging.getLogger('generic')
 PULSE = pulsectl.Pulse('pmctl')
 
 
-def create_device(device_type: str, name: str, channels: int, position: list[str], hidden: bool = False) -> bool:
+def create_device(device_type: str, name: str, channels: int, position: list[str]) -> bool:
     '''
     Create a PipeWire device.
     Args:
@@ -22,16 +22,12 @@ def create_device(device_type: str, name: str, channels: int, position: list[str
         name (str): Name of the device.
         channels (int): Number of audio channels.
         position (list[str]): Channel map positions.
-        hidden (bool): Use a media.class that pipewire-pulse does not expose,
-            hiding the device from PulseAudio clients (volume applets, pactl).
     Returns:
         bool: True on success, raises on failure.
     '''
 
     class_map = {'sink': 'Sink', 'source': 'Source/Virtual'}
     media_class = f'Audio/{class_map[device_type]}'
-    if hidden:
-        media_class += '/Internal'
 
     data = f'''{{
         factory.name=support.null-audio-sink
@@ -165,49 +161,20 @@ def make_loopback_name(input_name: str, output_name: str) -> str:
     return re.sub(r'[^a-zA-Z0-9._-]', '_', raw)
 
 
-def make_intermediate_sink_name(loopback_name: str) -> str:
+def loopback_nodes(loopback_name: str) -> tuple[str, str]:
     '''
-    Generate a deterministic intermediate sink name for a b-type loopback connection.
+    Get the node names pw-loopback gives its two streams.
     Args:
-        loopback_name (str): The loopback name from make_loopback_name().
+        loopback_name (str): The loopback name used when creating.
     Returns:
-        str: The intermediate sink name ({loopback_name}_bridge).
+        tuple: (capture stream, playback stream).
     '''
-    return f'{loopback_name}_bridge'
-
-
-def create_intermediate_sink(loopback_name: str, channels: int, position: list[str]) -> str:
-    '''
-    Create a temporary intermediate sink for b-type loopback routing.
-    Args:
-        loopback_name (str): The loopback name from make_loopback_name().
-        channels (int): Number of audio channels.
-        position (list[str]): Channel map positions.
-    Returns:
-        str: The intermediate sink name.
-    '''
-    sink_name = make_intermediate_sink_name(loopback_name)
-    create_device('sink', sink_name, channels, position, hidden=True)
-    return sink_name
-
-
-def remove_intermediate_sink(loopback_name: str):
-    '''
-    Remove a temporary intermediate sink for b-type loopback routing.
-    Args:
-        loopback_name (str): The loopback name from make_loopback_name().
-    '''
-    sink_name = make_intermediate_sink_name(loopback_name)
-    try:
-        remove_device(sink_name)
-    except RuntimeError:
-        LOG.warning('Failed to remove intermediate sink %s', sink_name)
+    return f'input.{loopback_name}', f'output.{loopback_name}'
 
 
 def get_node_serial(node_name: str) -> str:
     '''
     Get the PipeWire object.serial for a node via pw-cli, bypassing PulseAudio.
-    Works for nodes hidden from the pulse API (e.g. intermediate sinks).
     Args:
         node_name (str): The PipeWire node.name.
     Returns:
@@ -218,25 +185,6 @@ def get_node_serial(node_name: str) -> str:
         return ''
     match = re.search(r'object\.serial\s*=\s*"(\d+)"', stdout)
     return match.group(1) if match else ''
-
-
-def wait_for_node(node_name: str, timeout: float = 2.0, interval: float = 0.05) -> str:
-    '''
-    Poll until a PipeWire node appears, bypassing PulseAudio.
-    Args:
-        node_name (str): The PipeWire node.name.
-        timeout (float): Maximum time to wait in seconds.
-        interval (float): Polling interval in seconds.
-    Returns:
-        str: The node's object.serial, or empty string if timed out.
-    '''
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        serial = get_node_serial(node_name)
-        if serial:
-            return serial
-        time.sleep(interval)
-    return ''
 
 
 _NO_TARGET = ('', -1, '-1', None)
@@ -324,34 +272,33 @@ def unpin_app(object_id: int) -> bool:
     return _set_app_target(object_id, -1, -1)
 
 
-def create_loopback(name: str, capture_target: str, playback_target: str, channels: int,
-                    capture_sink: bool = False) -> subprocess.Popen:
+def create_loopback(name: str, capture_target: str, playback_target: str, channels: int) -> subprocess.Popen:
     '''
     Spawn a pw-loopback subprocess for per-route volume control.
-    Targets nodes by name, so a recreated device is picked up again automatically.
+    The session manager leaves its streams unlinked, the caller links their ports with pw-link.
     Args:
         name (str): Unique loopback name.
-        capture_target (str): node.name to capture from.
-        playback_target (str): node.name to play into.
+        capture_target (str): node.name the caller links to the capture stream.
+        playback_target (str): node.name the caller links the playback stream to.
         channels (int): Number of audio channels.
-        capture_sink (bool): The capture target is a sink (capture its monitor).
     Returns:
         subprocess.Popen: The loopback subprocess handle.
     '''
-    # While a target is missing, wait unlinked instead of falling back to the default device
-    common = 'node.dont-fallback=true node.linger=true node.virtual=true'
-    capture_props = f'target.object={json.dumps(capture_target, ensure_ascii=False)} {common}'
-    if capture_sink:
-        capture_props += ' stream.capture.sink=true'
+    # Only the caller links the streams, the targets are recorded to match a running loopback to its route
+    common = 'node.autoconnect=false node.linger=true node.virtual=true'
+
+    # Channels are linked by index, so they carry no speaker position
+    positions = ' '.join(f'AUX{index}' for index in range(channels))
 
     command = [
         'pw-loopback',
         '--name', name,
         '--channels', str(channels),
+        '--channel-map', f'[ {positions} ]',
         # node.virtual=true makes pipewire-pulse report no client for the streams,
         # which hides them from volume applets like plasma-pa
-        '--capture-props', capture_props,
-        '--playback-props', f'target.object={json.dumps(playback_target, ensure_ascii=False)} {common}',
+        '--capture-props', f'pulsemeeter.target={json.dumps(capture_target, ensure_ascii=False)} {common}',
+        '--playback-props', f'pulsemeeter.target={json.dumps(playback_target, ensure_ascii=False)} {common}',
     ]
 
     LOG.debug('Creating loopback: %s', command)
@@ -383,8 +330,9 @@ def _loopback_streams(loopback_name: str) -> tuple[list[PulseSinkInputInfo], lis
     Returns:
         tuple: (sink-inputs (playback side), source-outputs (capture side)).
     '''
-    playback = [si for si in PULSE.sink_input_list() if si.proplist.get('node.name') == f'output.{loopback_name}']
-    capture = [so for so in PULSE.source_output_list() if so.proplist.get('node.name') == f'input.{loopback_name}']
+    capture_name, playback_name = loopback_nodes(loopback_name)
+    playback = [si for si in PULSE.sink_input_list() if si.proplist.get('node.name') == playback_name]
+    capture = [so for so in PULSE.source_output_list() if so.proplist.get('node.name') == capture_name]
     return playback, capture
 
 
@@ -409,25 +357,48 @@ def set_route_volume(loopback_name: str, volume: int) -> bool:
     return False
 
 
-def wait_for_loopback(loopback_name: str, timeout: float = 2.0, interval: float = 0.05) -> bool:
+def wait_for_loopback(proc: subprocess.Popen, loopback_name: str, channels: int,
+                      timeout: float = 2.0, interval: float = 0.01) -> bool:
     '''
-    Poll until the pw-loopback sink-input appears in PulseAudio.
+    Poll until a pw-loopback is listed in PulseAudio and both its streams have a port per channel.
     Args:
+        proc (subprocess.Popen): The loopback process, waiting stops if it exits.
         loopback_name (str): The loopback name to wait for.
+        channels (int): The number of channels it was created with.
         timeout (float): Maximum time to wait in seconds.
         interval (float): Polling interval in seconds.
     Returns:
-        bool: True if found, False if timed out.
+        bool: True if ready, False if it exited or timed out.
     '''
+    capture_name, playback_name = loopback_nodes(loopback_name)
     deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
+    while time.monotonic() < deadline and proc.poll() is None:
         try:
-            if _loopback_streams(loopback_name)[0]:
+            ports_ready = (len(get_ports('input', capture_name)) >= channels
+                           and len(get_ports('output', playback_name)) >= channels)
+            if ports_ready and _loopback_streams(loopback_name)[0]:
                 return True
-        except pulsectl.PulseError:
+        except (pulsectl.PulseError, RuntimeError):
             pass
         time.sleep(interval)
     return False
+
+
+def remove_bridge(loopback_name: str):
+    '''
+    Remove the sink older versions played a loopback into when routing to a virtual output.
+    It outlives its loopback, and versions before 2.2 listed it as a regular sink.
+    Args:
+        loopback_name (str): The loopback name used when creating.
+    '''
+    bridge_name = f'{loopback_name}_bridge'
+    if not get_node_serial(bridge_name):
+        return
+
+    try:
+        remove_device(bridge_name)
+    except RuntimeError:
+        LOG.warning('Failed to remove leftover bridge sink %s', bridge_name)
 
 
 def wait_for_loopback_gone(loopback_name: str, timeout: float = 2.0, interval: float = 0.05) -> bool:
@@ -454,7 +425,8 @@ def wait_for_loopback_gone(loopback_name: str, timeout: float = 2.0, interval: f
 
 def get_loopback_targets(loopback_name: str) -> tuple[str, str] | None:
     '''
-    Get the target.object values a running pw-loopback was created with.
+    Get the targets a running pw-loopback was created with.
+    Loopbacks of older versions, which the session manager linked, recorded none.
     Args:
         loopback_name (str): The loopback name used when creating.
     Returns:
@@ -466,7 +438,7 @@ def get_loopback_targets(loopback_name: str) -> tuple[str, str] | None:
         return None
     if len(playback) != 1 or len(capture) != 1:
         return None
-    return capture[0].proplist.get('target.object', ''), playback[0].proplist.get('target.object', '')
+    return capture[0].proplist.get('pulsemeeter.target', ''), playback[0].proplist.get('pulsemeeter.target', '')
 
 
 def kill_stray_loopback(loopback_name: str) -> int:
@@ -531,6 +503,31 @@ def list_ports(port_type: str) -> dict[str, list[str]]:
             ports.setdefault(node, []).append(port)
 
     return ports
+
+
+def get_links(node_name: str) -> list[tuple[str, str]]:
+    '''
+    Get the links leaving a node's output ports.
+    Args:
+        node_name (str): Name of the node.
+    Returns:
+        list[tuple[str, str]]: (output port, input port) pairs, both as 'node_name:port_name'.
+    '''
+    command = ['pw-link', '--links', '--output']
+    ret, stdout, stderr = run_command(command)
+    if ret != 0:
+        raise RuntimeError(f"Failed to get links: {stderr}")
+
+    # Each output port is listed at the start of a line, its links follow it indented as '  |-> node:port'
+    links = []
+    port = ''
+    for line in stdout.splitlines():
+        if not line.startswith(' '):
+            port = line
+        elif port.rpartition(':')[0] == node_name and '|->' in line:
+            links.append((port, line.partition('|->')[2].strip()))
+
+    return links
 
 
 def get_ports(port_type: str, device_name: str) -> list[str]:

@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: pulsemeeter 2.2.0\n"
 "Report-Msgid-Bugs-To: "
 "https://github.com/theRealCarneiro/pulsemeeter/issues\n"
-"POT-Creation-Date: 2026-10-27 16:58-0600\n"
+"POT-Creation-Date: 2026-10-27 21:23-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -323,12 +323,6 @@ msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:90
 msgid "Untick Auto ports to keep this routing as your own and hide this warning."
-msgstr ""
-
-#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:93
-msgid ""
-"Loopback routes match channels on their own. These settings apply with "
-"loopback off."
 msgstr ""
 
 #: src/pulsemeeter/controller/gtk_controller.py:251

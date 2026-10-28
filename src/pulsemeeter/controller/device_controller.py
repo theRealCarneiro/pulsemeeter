@@ -1,6 +1,5 @@
 import sys
 import logging
-import threading
 
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.device_model import DeviceModel
@@ -38,7 +37,6 @@ class DeviceController(SignalModel):
         super().__init__()
 
         self._loopback_procs = {}
-        self._intermediate_sinks = {}
         self.device_repository = device_repository
         if not pmctl.is_pipewire():
             LOG.error('ERROR: pipewire-pulse not detected, pipewire-pulse is required')
@@ -237,20 +235,12 @@ class DeviceController(SignalModel):
                     for output_id in connections:
                         output_device = self.device_repository.get_device(output_type, output_id)
                         if output_device is not None:
-                            self._teardown_loopback(pmctl.make_loopback_name(input_device.name, output_device.name), output_device)
+                            self._teardown_loopback(pmctl.make_loopback_name(input_device.name, output_device.name))
 
         # Terminate all loopback processes
         for proc in self._loopback_procs.values():
             pmctl.destroy_loopback(proc)
         self._loopback_procs.clear()
-
-        # Remove all intermediate sinks
-        for sink_name in self._intermediate_sinks.values():
-            try:
-                pmctl.remove_device(sink_name)
-            except RuntimeError:
-                LOG.warning('Failed to remove intermediate sink %s during cleanup', sink_name)
-        self._intermediate_sinks.clear()
 
         device_dict = self.device_repository.get_all_devices()
         for _, device_list in device_dict.items():
@@ -336,7 +326,7 @@ class DeviceController(SignalModel):
 
         loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
 
-        # A warning only describes the last link, and loopback routes never set one
+        # A warning only describes the last link
         connection_model.clear_warnings()
 
         # Disconnects always clear the failure flag
@@ -362,7 +352,7 @@ class DeviceController(SignalModel):
             )
         else:
             self._set_link_connection(input_device, output_device, connection_model, state)
-            self._teardown_loopback(loopback_name, output_device)
+            self._teardown_loopback(loopback_name)
 
     def _device_available(self, device):
         '''Check device presence via pw-link subprocess.'''
@@ -372,11 +362,13 @@ class DeviceController(SignalModel):
         except RuntimeError:
             return False
 
-    def _set_link_connection(self, input_device, output_device, connection_model, state, previous=None):
+    def _set_link_connection(self, input_device, output_device, connection_model, state, previous=None, loopback_name=None):
         '''
         Direct pw-link connection.
             "previous" is a copy of the connection from before its port settings
             were edited: pairs only it maps are unlinked, and the rest keep playing
+            "loopback_name" names the route's loopback, whose playback side is linked
+            in place of the input device
         '''
         connection_model.clear_warnings()
         try:
@@ -387,17 +379,26 @@ class DeviceController(SignalModel):
             output_channels = output_device.get_selected_channels(output_ports)
             port_map = connection_model.str_port_map(input_channels, output_channels)
 
+            # The loopback plays each input channel on its port of the same index, so the map applies as it is
+            source_name, source_ports = input_device.name, input_ports
+            if loopback_name is not None:
+                source_name = pmctl.loopback_nodes(loopback_name)[1]
+                source_ports = pmctl.get_ports('output', source_name)
+
             # An edit while a device has no ports only saves, its device widget already shows it is gone
-            if previous is not None and not (input_ports and output_ports):
+            if previous is not None and not (source_ports and output_ports):
                 return
 
             # Relinking a pair that is already linked is a no-op, so only the removed pairs need unlinking
             if previous is not None:
                 pmctl.link_channels(
-                    input_device.name, output_device.name,
+                    source_name, output_device.name,
                     removed_pairs(previous.str_port_map(input_channels, output_channels), port_map), False,
-                    input_ports=input_ports, output_ports=output_ports
+                    input_ports=source_ports, output_ports=output_ports
                 )
+
+            if loopback_name is not None and state:
+                self._unlink_stale_loopback_links(source_name, source_ports, output_device.name, output_ports, port_map)
 
             # A manual map whose channels are all gone links nothing, which pmctl would report as success
             manual_links = not connection_model.auto_ports and any(connection_model.port_map)
@@ -409,9 +410,18 @@ class DeviceController(SignalModel):
                 return
 
             unlinked = pmctl.link_channels(
-                input_device.name, output_device.name, port_map, state,
-                input_ports=input_ports, output_ports=output_ports
+                source_name, output_device.name, port_map, state,
+                input_ports=source_ports, output_ports=output_ports
             )
+
+            # Warnings name the input's own channel, not the loopback port carrying it
+            if loopback_name is not None:
+                input_port_of = dict(zip(source_ports, input_ports))
+                unlinked = [
+                    input_port_of.get(source, source) + arrow + target
+                    for source, arrow, target in (pair.partition(' -> ') for pair in unlinked)
+                ]
+
             if state:
                 connection_model.connect_failed = False
                 connection_model.connect_error = ''
@@ -450,99 +460,85 @@ class DeviceController(SignalModel):
 
         connection_model.failed_pairs = unlinked
 
+    @staticmethod
+    def _unlink_stale_loopback_links(playback_name, playback_ports, output_name, output_ports, port_map):
+        '''
+        Unlink whatever a route loopback plays into that the port map does not link. The loopback
+        carries only this route, so those links are left over from an earlier map, such as one
+        edited while the input was gone, or from an earlier run.
+        '''
+        kept = set()
+        for pair in port_map.split():
+            source, target = (int(index) for index in pair.split(':'))
+            if source < len(playback_ports) and target < len(output_ports):
+                kept.add((f'{playback_name}:{playback_ports[source]}', f'{output_name}:{output_ports[target]}'))
+
+        for link in pmctl.get_links(playback_name):
+            if link not in kept:
+                pmctl.link(*link, state=False)
+
     def _set_loopback_connection(self, loopback_name, input_device, output_device, connection_model, state):
-        '''pw-loopback connection for per-route volume control.'''
-        is_b_type = output_device.device_type == 'source'
+        '''
+        pw-loopback connection for per-route volume control. The loopback takes every input
+        channel on its port of the same index, and its playback side is linked to the output
+        by the route's port map, as a direct route is.
+        '''
+        if not state:
+            self._teardown_loopback(loopback_name)
+            return
 
-        if state:
-            # Keep an existing loopback only if it targets these devices by name
-            if self._loopback_is_current(loopback_name, input_device, output_device):
+        try:
+            input_ports = pmctl.get_ports('output', input_device.name)
+            channels = len(input_ports)
+            if not channels:
+                raise RuntimeError(f'Ports not found for device {input_device.name}')
+
+            if self._loopback_is_current(loopback_name, input_device, output_device, channels):
                 LOG.debug('Loopback %s already exists, adopting', loopback_name)
-                if is_b_type:
-                    pmctl.link(pmctl.make_intermediate_sink_name(loopback_name), output_device.name)
-                pmctl.set_route_volume(loopback_name, connection_model.route_volume)
-                connection_model.connect_failed = False
-                connection_model.connect_error = ''
-                return
-
-            self._teardown_loopback(loopback_name, output_device)
-
-            try:
-                channels = min(input_device.channels, output_device.channels)
-
-                if is_b_type:
-                    # B-type: loopback → intermediate sink → pw-link monitor → virtual output
-                    temp_sink_name = pmctl.create_intermediate_sink(
-                        loopback_name, channels, output_device.channel_list
-                    )
-                    self._intermediate_sinks[loopback_name] = temp_sink_name
-                    if not pmctl.wait_for_node(temp_sink_name):
-                        raise RuntimeError(f'Intermediate sink {temp_sink_name} did not appear in time')
-                    playback_target = temp_sink_name
-                else:
-                    # A-type: direct loopback to output sink
-                    playback_target = output_device.name
-
-                proc = pmctl.create_loopback(
-                    name=loopback_name,
-                    capture_target=input_device.name,
-                    playback_target=playback_target,
-                    channels=channels,
-                    capture_sink=input_device.device_type == 'sink',
-                )
+            else:
+                self._teardown_loopback(loopback_name)
+                proc = pmctl.create_loopback(loopback_name, input_device.name, output_device.name, channels)
                 self._loopback_procs[loopback_name] = proc
+                if not pmctl.wait_for_loopback(proc, loopback_name, channels):
+                    raise RuntimeError('pw-loopback did not start in time')
 
-                # Wait for loopback in background thread to avoid blocking GTK main thread
-                volume = connection_model.route_volume
-                output_name = output_device.name
-                def _wait_and_set_volume():
-                    if pmctl.wait_for_loopback(loopback_name):
-                        if is_b_type:
-                            # Link the bridge sink's monitor outputs to the virtual output's inputs
-                            LOG.debug('Linking bridge %s → virtual output %s', temp_sink_name, output_name)
-                            pmctl.link(temp_sink_name, output_name)
-                        pmctl.set_route_volume(loopback_name, volume)
-                    else:
-                        LOG.warning('Loopback %s did not appear in time', loopback_name)
-                threading.Thread(target=_wait_and_set_volume, daemon=True).start()
-                connection_model.connect_failed = False
-                connection_model.connect_error = ''
-            except Exception as e:
-                LOG.exception('Failed to create loopback %s', loopback_name)
-                connection_model.connect_failed = True
-                connection_model.connect_error = f'Failed to create loopback: {e}'
-        else:
-            self._teardown_loopback(loopback_name, output_device)
+            # Set before the playback side is linked, so the route never plays at the wrong volume
+            pmctl.set_route_volume(loopback_name, connection_model.route_volume)
 
-    def _loopback_is_current(self, loopback_name, input_device, output_device):
-        '''True if exactly one loopback with this name is running and it targets these devices by name.'''
-        if output_device.device_type == 'source':
-            playback_target = pmctl.make_intermediate_sink_name(loopback_name)
-            # without its bridge a kept loopback would wait forever
-            if not pmctl.get_node_serial(playback_target):
-                return False
-        else:
-            playback_target = output_device.name
+            capture_map = ' '.join(f'{index}:{index}' for index in range(channels))
+            capture_failed = pmctl.link_channels(
+                input_device.name, pmctl.loopback_nodes(loopback_name)[0], capture_map, input_ports=input_ports
+            )
+        except Exception as e:
+            LOG.exception('Failed to create loopback %s', loopback_name)
+            connection_model.connect_failed = True
+            connection_model.connect_error = f'Failed to create loopback: {e}'
+            return
 
-        return pmctl.get_loopback_targets(loopback_name) == (input_device.name, playback_target)
+        self._set_link_connection(input_device, output_device, connection_model, True, loopback_name=loopback_name)
+        connection_model.failed_pairs += capture_failed
 
-    def _teardown_loopback(self, loopback_name, output_device):
-        '''Destroy any loopback with this name (ours or a leftover) and its intermediate sink.'''
+    def _loopback_is_current(self, loopback_name, input_device, output_device, channels):
+        '''True if exactly one loopback with this name is running, made for these devices and channel count.'''
+        if pmctl.get_loopback_targets(loopback_name) != (input_device.name, output_device.name):
+            return False
+
+        return len(pmctl.get_ports('output', pmctl.loopback_nodes(loopback_name)[1])) == channels
+
+    def _teardown_loopback(self, loopback_name):
+        '''Destroy any loopback with this name, ours or a leftover, and the bridge sink older versions gave it.'''
         stopped = 0
         if loopback_name in self._loopback_procs:
             pmctl.destroy_loopback(self._loopback_procs.pop(loopback_name))
             stopped += 1
         stopped += pmctl.kill_stray_loopback(loopback_name)
-        # A replacement must not start while the old streams are still listed
-        if stopped and not pmctl.wait_for_loopback_gone(loopback_name):
-            LOG.warning('Loopback %s still present after teardown', loopback_name)
+        if not stopped:
+            return
 
-        self._intermediate_sinks.pop(loopback_name, None)
-        if output_device.device_type == 'source':
-            temp_sink_name = pmctl.make_intermediate_sink_name(loopback_name)
-            if pmctl.get_node_serial(temp_sink_name):
-                pmctl.link(temp_sink_name, output_device.name, state=False)
-                pmctl.remove_intermediate_sink(loopback_name)
+        # A replacement must not start while the old streams are still listed
+        if not pmctl.wait_for_loopback_gone(loopback_name):
+            LOG.warning('Loopback %s still present after teardown', loopback_name)
+        pmctl.remove_bridge(loopback_name)
 
     def set_route_volume(self, input_type, input_id, output_type, output_id, volume):
         '''Set per-route volume for a loopback connection.'''
@@ -610,11 +606,17 @@ class DeviceController(SignalModel):
         cur_connection_model.auto_ports = connection_model.auto_ports
         cur_connection_model.port_map = connection_model.port_map
 
-        # Nothing is linked through the map when the route is off, and pw-loopback maps channels itself
-        if not cur_connection_model.state or cur_connection_model.use_loopback:
+        # Nothing is linked through the map when the route is off
+        if not cur_connection_model.state:
             return
 
-        self._set_link_connection(input_device, output_device, cur_connection_model, True, previous=previous)
+        loopback_name = None
+        if cur_connection_model.use_loopback:
+            loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
+
+        self._set_link_connection(
+            input_device, output_device, cur_connection_model, True, previous=previous, loopback_name=loopback_name
+        )
 
     def create_connection(self, input_device, output_device):
         '''
