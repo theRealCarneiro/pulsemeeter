@@ -5,7 +5,7 @@ import threading
 from pulsemeeter.scripts import pmctl
 from pulsemeeter.model.device_model import DeviceModel
 from pulsemeeter.model.signal_model import SignalModel
-from pulsemeeter.model.connection_model import ConnectionModel
+from pulsemeeter.model.connection_model import ConnectionModel, matched_by_order, pair_match, port_position, removed_pairs
 from pulsemeeter.repository.device_repository import DeviceRepository
 
 LOG = logging.getLogger("generic")
@@ -47,7 +47,14 @@ class DeviceController(SignalModel):
         # we have to create the virtual devices first
         for device_type in ('vi', 'b'):
             for device_id in self.device_repository.get_devices_by_type(device_type):
-                self._try_init_device(device_type, device_id, "Skipping init for %s/%s", cache=False)
+                self._try_init_device(device_type, device_id, "Skipping init for %s/%s", cache=False, wait=False)
+
+        # Wait for the ports of every device at once, after creating them all
+        self._wait_for_ports([
+            device
+            for device_type in ('vi', 'b')
+            for device in self.device_repository.get_devices_by_type(device_type).values()
+        ])
 
         # Mark any devices PA doesn't currently know about as not present
         for device_type in ('vi', 'b', 'hi', 'a'):
@@ -64,17 +71,20 @@ class DeviceController(SignalModel):
                 except Exception:
                     LOG.exception("Skipping reconnect for %s/%s", device_type, device_id)
 
-    def _try_init_device(self, device_type, device_id, log_msg, cache=True):
+    def _try_init_device(self, device_type, device_id, log_msg, cache=True, wait=True):
         """
         init_device with status-flag bookkeeping. Returns True on success.
         Centralizes the init_failed / init_error update so the four call
         sites (startup, hot-plug, update, create) stay consistent.
+        "wait" also waits for the device's ports.
         """
         device = self.device_repository.get_device(device_type, device_id)
         try:
             self.init_device(device_type, device_id, cache=cache)
             device.init_failed = False
             device.init_error = ''
+            if wait:
+                self._wait_for_ports([device])
             return True
         except Exception as e:
             LOG.exception(log_msg, device_type, device_id)
@@ -93,6 +103,23 @@ class DeviceController(SignalModel):
         device = self.device_repository.get_device(device_type, device_id)
         if device_type in ('vi', 'b') and not device.external and not pmctl.device_exists(device.name):
             pmctl.create_device(device.device_type, device.name, device.channels, device.channel_list)
+
+    @staticmethod
+    def _wait_for_ports(devices):
+        '''
+        Wait until the virtual devices Pulsemeeter creates have a port per channel in each direction
+        '''
+        port_counts = {
+            device.name: device.channels
+            for device in devices
+            if device.device_class == 'virtual' and not device.external and not device.init_failed
+        }
+        if not port_counts:
+            return
+
+        missing = pmctl.wait_for_ports(port_counts)
+        if missing:
+            LOG.warning('Not all ports of %s appeared in time, linking the ones there are', ', '.join(missing))
 
     def bulk_connect(self, device_type, device_id, state):
         '''
@@ -309,6 +336,9 @@ class DeviceController(SignalModel):
 
         loopback_name = pmctl.make_loopback_name(input_device.name, output_device.name)
 
+        # A warning only describes the last link, and loopback routes never set one
+        connection_model.clear_warnings()
+
         # Disconnects always clear the failure flag
         if not state:
             connection_model.connect_failed = False
@@ -342,16 +372,53 @@ class DeviceController(SignalModel):
         except RuntimeError:
             return False
 
-    def _set_link_connection(self, input_device, output_device, connection_model, state):
-        '''Direct pw-link connection.'''
-        input_sel_channels = input_device.get_selected_channel_list()
-        output_sel_channels = output_device.get_selected_channel_list()
-        port_map = connection_model.str_port_map(input_sel_channels, output_sel_channels)
+    def _set_link_connection(self, input_device, output_device, connection_model, state, previous=None):
+        '''
+        Direct pw-link connection.
+            "previous" is a copy of the connection from before its port settings
+            were edited: pairs only it maps are unlinked, and the rest keep playing
+        '''
+        connection_model.clear_warnings()
         try:
-            pmctl.link_channels(input_device.name, output_device.name, port_map, state)
+            # Map and link on the live ports, not the layout saved in the config
+            input_ports = pmctl.get_ports('output', input_device.name)
+            output_ports = pmctl.get_ports('input', output_device.name)
+            input_channels = input_device.get_selected_channels(input_ports)
+            output_channels = output_device.get_selected_channels(output_ports)
+            port_map = connection_model.str_port_map(input_channels, output_channels)
+
+            # An edit while a device has no ports only saves, its device widget already shows it is gone
+            if previous is not None and not (input_ports and output_ports):
+                return
+
+            # Relinking a pair that is already linked is a no-op, so only the removed pairs need unlinking
+            if previous is not None:
+                pmctl.link_channels(
+                    input_device.name, output_device.name,
+                    removed_pairs(previous.str_port_map(input_channels, output_channels), port_map), False,
+                    input_ports=input_ports, output_ports=output_ports
+                )
+
+            # A manual map whose channels are all gone links nothing, which pmctl would report as success
+            manual_links = not connection_model.auto_ports and any(connection_model.port_map)
+            if state and manual_links and not port_map and input_channels and output_channels:
+                LOG.warning('Every manual link is missing between %s and %s', input_device.name, output_device.name)
+                connection_model.connect_failed = True
+                connection_model.connect_error = ''
+                connection_model.missing_links = connection_model.count_missing_links(input_channels, output_channels)
+                return
+
+            unlinked = pmctl.link_channels(
+                input_device.name, output_device.name, port_map, state,
+                input_ports=input_ports, output_ports=output_ports
+            )
             if state:
                 connection_model.connect_failed = False
                 connection_model.connect_error = ''
+                self._set_route_warning(
+                    connection_model, input_ports=input_ports, output_ports=output_ports,
+                    input_channels=input_channels, output_channels=output_channels, unlinked=unlinked
+                )
         except Exception as e:
             # Broad catch: pmctl.link_channels can raise RuntimeError (missing
             # ports) or IndexError/ValueError (malformed port_map). Crashing
@@ -361,6 +428,27 @@ class DeviceController(SignalModel):
             if state:
                 connection_model.connect_failed = True
                 connection_model.connect_error = f'Link failed: {e}'
+
+    @staticmethod
+    def _set_route_warning(connection_model, *, input_ports, output_ports, input_channels, output_channels, unlinked):
+        '''
+        Record what a linked route leaves out, and the pairs automatic mapping matched by order.
+        Output channels left without a source, and channels the user deselected, are not warned about.
+        '''
+        if connection_model.auto_ports:
+            output_positions = [port_position(port) for port in output_ports]
+            unrouted = connection_model.unrouted_channels(input_channels, output_channels, output_positions)
+            connection_model.unrouted_ports = [input_ports[index] for index in unrouted]
+
+            if matched_by_order(input_channels, output_channels):
+                connection_model.order_pairs = [
+                    f'{input_ports[input_index]} -> {output_ports[output_index]}'
+                    for input_index, output_index in pair_match(input_channels, output_channels)
+                ]
+        else:
+            connection_model.missing_links = connection_model.count_missing_links(input_channels, output_channels)
+
+        connection_model.failed_pairs = unlinked
 
     def _set_loopback_connection(self, loopback_name, input_device, output_device, connection_model, state):
         '''pw-loopback connection for per-route volume control.'''
@@ -505,24 +593,28 @@ class DeviceController(SignalModel):
 
     def update_connection(self, input_type, input_id, output_type, output_id, connection_model):
         '''
-        Update the connection model between two devices.
+        Update the port settings of a connection between two devices, relinking
+        only the channel pairs that change so the rest of the route keeps playing.
         Args:
             input_type (str): Input device type.
             input_id (str): Input device identifier.
             output_type (str): Output device type.
             output_id (str): Output device identifier.
-            connection_model: New connection model.
+            connection_model: Connection model carrying the new auto_ports and port_map.
         '''
         input_device = self.device_repository.get_device(input_type, input_id)
+        output_device = self.device_repository.get_device(output_type, output_id)
         cur_connection_model = input_device.connections[output_type][output_id]
-        state = connection_model.state
-
-        self.set_connection(input_type, input_id, output_type, output_id, False)
+        previous = cur_connection_model.model_copy(deep=True)
 
         cur_connection_model.auto_ports = connection_model.auto_ports
         cur_connection_model.port_map = connection_model.port_map
 
-        self.set_connection(input_type, input_id, output_type, output_id, state)
+        # Nothing is linked through the map when the route is off, and pw-loopback maps channels itself
+        if not cur_connection_model.state or cur_connection_model.use_loopback:
+            return
+
+        self._set_link_connection(input_device, output_device, cur_connection_model, True, previous=previous)
 
     def create_connection(self, input_device, output_device):
         '''

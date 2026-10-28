@@ -80,3 +80,91 @@ class TestCreateDeviceMediaClass(unittest.TestCase):
 
     def test_source(self):
         assert 'media.class=Audio/Source/Virtual\n' in self._create('source', False)
+
+
+class TestCreateDeviceErrors(unittest.TestCase):
+
+    # pw-cli output with errors about objects other than the new node
+    OTHER_OBJECT_ERRORS = (0, '', 'remote 0: error id:90 seq:178 res:-2 (No such file or directory): no global 89\n')
+
+    def test_errors_about_other_objects_do_not_fail_a_created_device(self):
+        with (
+            patch('pulsemeeter.scripts.pmctl.run_command', return_value=self.OTHER_OBJECT_ERRORS),
+            patch('pulsemeeter.scripts.pmctl.get_node_serial', return_value='1264'),
+        ):
+            assert pmctl.create_device('sink', 'Misc', 2, ['FL', 'FR']) is True
+
+    def test_error_without_the_node_fails(self):
+        with (
+            patch('pulsemeeter.scripts.pmctl.run_command', return_value=self.OTHER_OBJECT_ERRORS),
+            patch('pulsemeeter.scripts.pmctl.get_node_serial', return_value=''),
+            self.assertRaises(RuntimeError),
+        ):
+            pmctl.create_device('sink', 'Misc', 2, ['FL', 'FR'])
+
+
+class TestLinkChannels(unittest.TestCase):
+
+    def _link_calls(self, input_ports, output_ports, channel_map, state=True):
+        ports = {'output': input_ports, 'input': output_ports}
+        with (
+            patch('pulsemeeter.scripts.pmctl.get_ports', side_effect=lambda t, _n: ports[t]),
+            patch('pulsemeeter.scripts.pmctl.link', return_value=True) as mock_link,
+        ):
+            pmctl.link_channels('in_device', 'out_device', channel_map, state)
+        return [call.args for call in mock_link.call_args_list]
+
+    def test_all_pairs_in_range(self):
+        calls = self._link_calls(['out_FL', 'out_FR'], ['in_FL', 'in_FR'], '0:0 1:1')
+        assert calls == [
+            ('in_device:out_FL', 'out_device:in_FL'),
+            ('in_device:out_FR', 'out_device:in_FR'),
+        ]
+
+    def test_stereo_to_mono_output_links_available_channel(self):
+        calls = self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '0:0 1:1')
+        assert calls == [('in_device:out_FL', 'out_device:playback_MONO')]
+
+    def test_mono_input_to_stereo_output(self):
+        calls = self._link_calls(['capture_MONO'], ['in_FL', 'in_FR'], '0:0 1:1')
+        assert calls == [('in_device:capture_MONO', 'out_device:in_FL')]
+
+    def test_negative_index_is_skipped(self):
+        calls = self._link_calls(['out_FL', 'out_FR'], ['in_FL', 'in_FR'], '0:0 1:-1')
+        assert calls == [('in_device:out_FL', 'out_device:in_FL')]
+
+    def test_no_mappable_pair_raises(self):
+        with self.assertRaises(RuntimeError):
+            self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '1:1')
+
+    def test_no_mappable_pair_on_unlink_is_silent(self):
+        assert self._link_calls(['out_FL', 'out_FR'], ['playback_MONO'], '1:1', state=False) == []
+
+    def test_empty_map_with_missing_ports_raises(self):
+        # Missing ports also give an empty map, which is a failed route, not a no-op
+        with self.assertRaises(RuntimeError):
+            self._link_calls(['out_FL', 'out_FR'], [], '')
+
+    def test_pairs_pw_link_rejects_are_returned(self):
+        ports = {'output': ['monitor_FR', 'capture_1'], 'input': ['playback_FL', 'playback_FR']}
+        with (
+            patch('pulsemeeter.scripts.pmctl.get_ports', side_effect=lambda t, _n: ports[t]),
+            patch('pulsemeeter.scripts.pmctl.link', side_effect=[True, False]),
+        ):
+            unlinked = pmctl.link_channels('in_device', 'out_device', '0:0 1:1')
+        assert unlinked == ['capture_1 -> playback_FR']
+
+
+class TestLink(unittest.TestCase):
+
+    def test_link_that_already_exists(self):
+        # Every reconnect relinks existing links, which pw-link reports as an error
+        result = (255, '', 'failed to link ports: File exists')
+        with patch('pulsemeeter.scripts.pmctl.run_command', return_value=result):
+            assert pmctl.link('a:monitor_FL', 'b:playback_FL') is True
+
+    def test_runs_in_the_c_locale(self):
+        # pw-link's error text is translated, and link() matches it
+        with patch('pulsemeeter.scripts.pmctl.run_command', return_value=(0, '', '')) as mock_run:
+            pmctl.link('a:monitor_FL', 'b:playback_FL')
+        assert mock_run.call_args.kwargs['env']['LC_ALL'] == 'C'

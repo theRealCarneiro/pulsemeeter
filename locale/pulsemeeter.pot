@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: pulsemeeter 2.2.0\n"
 "Report-Msgid-Bugs-To: "
 "https://github.com/theRealCarneiro/pulsemeeter/issues\n"
-"POT-Creation-Date: 2026-10-18 17:57-0600\n"
+"POT-Creation-Date: 2026-10-27 16:58-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -202,7 +202,6 @@ msgid "Layout "
 msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/containers/settings_menu_box.py:33
-#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:25
 msgid "Apply"
 msgstr ""
 
@@ -223,21 +222,17 @@ msgstr ""
 msgid "Select the GUI layout"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:50
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:54
 msgid "Enable per-route volume (uses pw-loopback)"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:62
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:66
 msgid "Route volume"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:78
+#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:82
 #, python-format
 msgid "Connect to %s, right click to open connection settings"
-msgstr ""
-
-#: src/pulsemeeter/clients/gtk/widgets/device/connection_widget.py:97
-msgid "Failed to create route"
 msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:82
@@ -256,6 +251,22 @@ msgstr ""
 #: src/pulsemeeter/clients/gtk/widgets/device/device_widget.py:133
 #, python-format
 msgid "Device disconnected: %s"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/device/port_map_widget.py:82
+msgid "No ports available"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/device/port_map_widget.py:91
+msgid "out"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/device/port_map_widget.py:92
+msgid "in"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/device/port_map_widget.py:122
+msgid "Could not read device ports"
 msgstr ""
 
 #: src/pulsemeeter/clients/gtk/widgets/popovers/device_settings_popover.py:28
@@ -302,13 +313,55 @@ msgstr ""
 msgid "Select a channel map"
 msgstr ""
 
-#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:24
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:46
 msgid "Auto ports"
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:86
+msgid "No matching channel names, matched channels by order."
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:90
+msgid "Untick Auto ports to keep this routing as your own and hide this warning."
+msgstr ""
+
+#: src/pulsemeeter/clients/gtk/widgets/popovers/edit_connection_widget.py:93
+msgid ""
+"Loopback routes match channels on their own. These settings apply with "
+"loopback off."
 msgstr ""
 
 #: src/pulsemeeter/controller/gtk_controller.py:251
 #: src/pulsemeeter/controller/gtk_controller.py:252
 msgid "Default"
+msgstr ""
+
+#: src/pulsemeeter/model/connection_model.py:53
+msgid "Every channel the manual map links is missing"
+msgstr ""
+
+#: src/pulsemeeter/model/connection_model.py:55
+msgid "Failed to create route"
+msgstr ""
+
+#: src/pulsemeeter/model/connection_model.py:63
+#, python-format
+msgid "%s not routed"
+msgstr ""
+
+#: src/pulsemeeter/model/connection_model.py:66
+#, python-format
+msgid "Links to missing channels in the manual map: %d"
+msgstr ""
+
+#: src/pulsemeeter/model/connection_model.py:69
+#, python-format
+msgid "Failed to link: %s"
+msgstr ""
+
+#: src/pulsemeeter/model/connection_model.py:80
+#, python-format
+msgid "No matching channel names, matched channels by order: %s"
 msgstr ""
 
 #: src/pulsemeeter/model/types.py:10
