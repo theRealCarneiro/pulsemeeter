@@ -39,7 +39,7 @@ class TestCreateLoopback(unittest.TestCase):
         with mock.patch.object(pmctl.subprocess, 'Popen') as m_popen:
             pmctl.create_loopback('pm_route_Virtual_Input_to_speakers', 'Virtual Input', 'speakers', 2)
         command = m_popen.call_args.args[0]
-        assert command[command.index('--channel-map') + 1] == '[ AUX0 AUX1 ]'
+        assert command[command.index('-m') + 1] == '[ AUX0 AUX1 ]'
         assert command[command.index('--capture-props') + 1] == (
             'pulsemeeter.target="Virtual Input" node.autoconnect=false node.linger=true node.virtual=true')
         assert command[command.index('--playback-props') + 1] == (
