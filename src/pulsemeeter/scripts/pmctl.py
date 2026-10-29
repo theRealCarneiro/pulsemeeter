@@ -294,7 +294,7 @@ def create_loopback(name: str, capture_target: str, playback_target: str, channe
         'pw-loopback',
         '--name', name,
         '--channels', str(channels),
-        '--channel-map', f'[ {positions} ]',
+        '-m', f'[ {positions} ]',
         # node.virtual=true makes pipewire-pulse report no client for the streams,
         # which hides them from volume applets like plasma-pa
         '--capture-props', f'pulsemeeter.target={json.dumps(capture_target, ensure_ascii=False)} {common}',
